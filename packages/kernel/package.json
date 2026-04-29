@@ -1,0 +1,28 @@
+{
+  "name": "@aethereos/kernel",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Kernel do Aethereos — núcleo agnóstico de implementação (Driver Model, SCP, audit, permissions)",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tenant": "./src/tenant/index.ts",
+    "./scp": "./src/scp/index.ts",
+    "./audit": "./src/audit/logger.ts",
+    "./permissions": "./src/permissions/index.ts",
+    "./invariants": "./src/invariants/operations.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src"
+  },
+  "devDependencies": {
+    "@aethereos/config-ts": "workspace:*",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "@aethereos/drivers": "workspace:*",
+    "@aethereos/scp-registry": "workspace:*",
+    "zod": "^3.24.0"
+  }
+}
