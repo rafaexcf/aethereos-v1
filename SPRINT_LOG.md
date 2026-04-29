@@ -1082,3 +1082,62 @@ Milestones entregues: M32 (LiteLLM), M33 (Langfuse), M34 (Unleash + FeatureFlags
 **Testes acumulados após Sprint 5:** 50+ testes unitários cobrindo todos os drivers e utilitários do kernel.
 
 Próximo passo: revisão humana dos ADRs e das decisões arquiteturais antes de iniciar Sprint 6.
+
+---
+
+# Sprint 6 — Apps internos da Camada 1 + AI Copilot
+
+Início: 2026-04-29T10:00:00Z
+Modelo: Claude Code (claude-sonnet-4-6, Sprint 6 N=1)
+Plano-mestre: ver CAMADA_1_PLANO_MESTRE.md
+
+## Dívida operacional herdada
+
+- `aethereos-langfuse-dev` em loop (Restarting) — decisão: aceitar, usar withDegradedObservability fallback
+- `aethereos-tempo-dev` instável (Up mas sobe e cai) — decisão: aceitar, OTel instrumentado sem destino real
+- `aethereos-otel-collector-dev` em loop (Restarting) — decisão: aceitar, SDK OTel continua instrumentado
+
+Fix planejado para Sprint 7 ou sessão dedicada.
+
+## Calibração inicial (Sprint 6)
+
+**1. 6 apps internos canônicos da Camada 1:**
+
+- Drive (gestão de arquivos sobre Supabase Storage)
+- Pessoas (cadastro de colaboradores, memberships)
+- Chat (mensagens em tempo real via Supabase Realtime)
+- Configurações (perfil, empresa, plano, sistema, integrações)
+- Notificações (já existe via M37 — bell + drawer)
+- Painel de Operações (já existe via M39 — /settings/ops)
+
+**2. Como apps são montados no shell-commercial:**
+Apps internos são Componentes React diretos (não iframes), registrados em `AppRegistry` e integrados via rotas TanStack Router. O Window Manager do `ui-shell` gerencia janelas abertas; o Dock é o launcher. Cada app usa `<AppShell>` como wrapper de layout (a criar em M41). EmbeddedApp (SaaS externos como comercio.digital) continua via iframe.
+
+**3. Por que Modo Sombra é obrigatório no Copilot durante o primeiro ano (P9 + Interpretação A+):**
+P9 exige que `actor_type` distinga humano de agente em todo evento. Interpretação A+ fixa autonomia 0-1 no ano 1: agente sugere (proposta tipada), humano executa via UI de aprovação. Ações irreversíveis nunca executam automaticamente. A infraestrutura de rastreabilidade ainda não está auditada por terceiros — executar ações automáticas sem aprovação violaria o contrato de confiança com o cliente e potencialmente a Fundamentação 12.4.
+
+**4. Como `actor.type=agent` distingue chamadas do Copilot no SCP:**
+Todo evento emitido pelo Copilot carrega `actor: { type: "agent", agent_id, supervising_user_id }` no envelope SCP. O `PermissionEngine` verifica o tipo de actor antes de qualquer verificação de capability — agentes são bloqueados nas 8 operações invariantes antes mesmo de checar se têm permissão. Langfuse e audit_log correlacionam por `agent_id` + `correlation_id`.
+
+**5. 5 Action Intents mínimas razoáveis para MVP do Copilot:**
+
+- `agent.action.create_note` — criar arquivo de texto/nota no Drive
+- `agent.action.create_person` — cadastrar nova pessoa em kernel.people
+- `agent.action.send_chat_message` — enviar mensagem em canal de Chat
+- `agent.action.update_settings` — sugerir mudança de config não-crítica
+- `agent.action.search_knowledge` — busca semântica no Drive (RAG)
+
+**6. O que é Trust Center e como expõe métricas P15:**
+Trust Center é a aba "Métricas LLM" dentro do App Auditoria (M48). Expõe: custo cumulativo de tokens LLM (30 dias), breakdown por modelo, latência p50/p95/p99, taxa de fallback degenerado ativado, hit rate de cache de prompt. P15 exige que essas métricas sejam declaradas ANTES do merge de feature LLM — o Trust Center é o lugar onde elas são visíveis em runtime para o owner da company.
+
+**7. Por que App Auditoria é read-only mesmo para staff:**
+Eventos SCP e audit_log são append-only por design arquitetural (imutabilidade de evidência — P11 auto-certificáveis). Permitir edição destroiria a garantia de cadeia de evidências. Mesmo o staff da plataforma não pode alterar registros históricos — só visualizar. Ações de moderação geram NOVOS eventos, não sobrescrevem os antigos.
+
+**8. Como App Painel Admin diferencia "perspectiva staff" de "perspectiva owner da company":**
+
+- **Owner da company** vê apenas sua própria company: membros, plano, configurações, uso, billing. Não vê outras companies.
+- **Staff** (role custom no JWT, separada de membership) acessa `/staff/*` — rota protegida por middleware que rejeita qualquer claim de membership. Staff vê TODAS as companies em modo operacional (suspensão, auditoria de acesso, suporte). TODO acesso staff a dados de uma company gera evento `platform.staff.access` + notificação automática ao owner — transparência obrigatória.
+
+## Histórico de milestones (Sprint 6)
+
+[preenchido conforme avança]
