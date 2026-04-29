@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     "@aethereos/scp-registry",
     "@aethereos/drivers",
     "@aethereos/drivers-supabase",
+    "@aethereos/observability",
   ],
 
   webpack(config) {

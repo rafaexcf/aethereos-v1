@@ -946,3 +946,24 @@ Plano-mestre: ver CAMADA_1_PLANO_MESTRE.md
 - Estratégias de segmentação suportadas: default (todos), userWithId (whitelist por user_id), remoteAddress (whitelist por IP), flexibleRollout (hash determinístico % por tenant)
 - Degraded mode: quando Unleash offline, isEnabled() retorna false conservativo; isDegraded getter expõe estado ao caller
 - Decisão: variante resolvida por primeiro variant.enabled=true na lista (Unleash padrão de avaliação client-side)
+
+### Milestone M35 — OTel stack + packages/observability + Grafana dashboard
+
+- Iniciada: 2026-04-30T00:45:00Z
+- Concluída: 2026-04-30T01:10:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm test --filter=@aethereos/observability` → 4/4 ✅
+  - `pnpm typecheck --filter=@aethereos/observability --filter=@aethereos/comercio-digital` → ok
+  - `pnpm lint --filter=@aethereos/observability` → ok
+- Arquivos criados:
+  - `packages/observability/` — NodeSDK factory (startSdk/stopSdk), createLogger (pino + OTel trace correlation mixin), getTracer/getMeter wrappers
+  - `infra/otel/grafana/dashboards/aethereos-overview.json` — dashboard provisionado: LLM rate, p95 latency, error rate, token usage (Prometheus) + trace list (Tempo)
+  - `apps/comercio-digital/instrumentation.ts` — Next.js 15 server startup hook: inicia SDK com serviceName=comercio-digital quando NEXT_RUNTIME=nodejs
+- Arquivos modificados:
+  - `apps/comercio-digital/package.json` — dep @aethereos/observability workspace:\*
+  - `apps/comercio-digital/tsconfig.json` — path alias @aethereos/observability
+  - `apps/comercio-digital/next.config.ts` — @aethereos/observability em transpilePackages
+  - `packages/config-ts/base.json` — path alias @aethereos/observability
+- Decisão: removido @opentelemetry/sdk-metrics de direct deps para evitar conflito de instância dupla com sdk-node (private property \_shutdown incompatível no TypeScript); métricas via OTEL_METRICS_EXPORTER=otlp em runtime
+- Decisão: instrumentation.ts não passa otlpEndpoint explícito — SDK lê OTEL_EXPORTER_OTLP_ENDPOINT do ambiente automaticamente

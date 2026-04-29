@@ -14,6 +14,7 @@
     "@aethereos/drivers": "workspace:*",
     "@aethereos/drivers-supabase": "workspace:*",
     "@aethereos/kernel": "workspace:*",
+    "@aethereos/observability": "workspace:*",
     "@aethereos/scp-registry": "workspace:*",
     "@aethereos/ui-shell": "workspace:*",
     "next": "^15.0.0",

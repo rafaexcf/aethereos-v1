@@ -12,7 +12,8 @@
       ],
       "@aethereos/kernel": ["../../packages/kernel/src/index.ts"],
       "@aethereos/scp-registry": ["../../packages/scp-registry/src/index.ts"],
-      "@aethereos/ui-shell": ["../../packages/ui-shell/src/index.ts"]
+      "@aethereos/ui-shell": ["../../packages/ui-shell/src/index.ts"],
+      "@aethereos/observability": ["../../packages/observability/src/index.ts"]
     },
     "allowJs": true
   },
