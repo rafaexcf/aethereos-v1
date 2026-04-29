@@ -129,14 +129,117 @@ Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
   - tsconfig.build.json override `noEmit: false` + `emitDeclarationOnly: true` para emitir .d.ts sem .js
   - oklch como espaço de cor para design tokens (P3 gamut, CSS nativo)
 
+## Milestone M7 — Supabase migrations: schema kernel
+
+- Iniciada: 2026-04-29T03:15:00Z
+- Concluída: 2026-04-29T03:45:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm typecheck` → ok
+  - `pnpm lint` → ok
+  - `pnpm deps:check` → ok
+- Arquivos criados: `supabase/migrations/20260429000001_kernel_schema.sql`
+- Arquivos modificados: `supabase/config.toml` (schemas + extra_search_path adicionam `kernel`)
+- Decisões tomadas:
+  - `kernel.set_tenant_context(uuid)` valida `companies.status = 'active'`, grava `app.current_company_id` via `set_config()`
+  - `kernel.set_tenant_context_unsafe(uuid)` sem validação para service_role (scp-worker)
+  - `kernel.scp_outbox` com `status: pending|published|failed`, `attempts`, `last_error` — worker usa `FOR UPDATE SKIP LOCKED`
+  - `kernel.audit_log` append-only: INSERT para authenticated, SELECT restrito a admins via RLS
+  - `kernel.agents.supervising_user_id NOT NULL` obrigatório (Interpretação A+, CLAUDE.md seção 8)
+  - `kernel.touch_updated_at()` trigger genérico para todas as tabelas com `updated_at`
+
+## Milestone M8 — drivers-supabase
+
+- Iniciada: 2026-04-29T03:45:00Z
+- Concluída: 2026-04-29T05:00:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm typecheck` → ok (7 packages)
+  - `pnpm lint` → ok
+  - `pnpm deps:check` → ok
+- Arquivos criados: `packages/drivers-supabase/src/schema/kernel.ts` (Drizzle schema espelhando SQL), `src/database/supabase-database-driver.ts`, `src/auth/supabase-auth-driver.ts`, `src/storage/supabase-storage-driver.ts`, `src/vector/supabase-pgvector-driver.ts`, `src/index.ts`, `package.json`, `tsconfig.json`
+- Arquivos modificados: `packages/config-ts/base.json` (path alias `@aethereos/drivers-supabase`)
+- Decisões tomadas:
+  - `import * as schema` (não `import type`) pois schema é valor passado ao Drizzle constructor
+  - `sql as drizzleSql` de `drizzle-orm` para `set_tenant_context()` dentro de transação (postgres.js template literal não é SQLWrapper do Drizzle)
+  - `exactOptionalPropertyTypes: true` → spreads condicionais em `Session` (email, refresh_token)
+  - Actor "human" sem campo `role` (apenas `type`, `user_id`, `session_id?`)
+  - `packages/drivers-supabase` sem `build` script: workspace-source pattern (importado como fonte, não como pacote compilado)
+  - Storage paths prefixados com `company_id` para isolação física
+
+## Milestone M9 — drivers-nats + scp-worker
+
+- Iniciada: 2026-04-29T05:00:00Z
+- Concluída: 2026-04-29T06:30:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm typecheck` → ok (7 packages)
+  - `pnpm lint` → ok
+  - `pnpm deps:check` → ok
+- Arquivos criados: `packages/drivers-nats/src/nats-event-bus-driver.ts`, `src/index.ts`, `package.json`, `tsconfig.json`, `apps/scp-worker/{src/main.ts,package.json,tsconfig.json}`, `infra/local/docker-compose.dev.yml`
+- Arquivos modificados: `packages/config-ts/{base.json,library-build.json,package.json}` (path alias NATS, fix library-build sem rootDir, export library-build), `eslint.config.mjs` (ignora `**/*.d.ts`)
+- Decisões tomadas:
+  - `import { headers as natsHeaders } from "nats"` — `NatsConnection` não tem método `.headers()` estático
+  - Subject: `ae.scp.{tenant_id}.{event.type}` — usa `envelope.tenant_id` (não `company_id`), `envelope.type` (não `event_type`)
+  - Dedup via `Nats-Msg-Id: envelope.id` (não `event_id`) — `envelope.id` é o UUID canônico do envelope
+  - Durable consumer: objeto condicional com `durable_name` apenas quando `durable === true` (exactOptionalPropertyTypes)
+  - `library-build.json` sem `composite` e sem `rootDir`: `composite` obriga listar todos os inputs; `rootDir` causa TS6059 quando há imports de outros pacotes workspace. Pacotes importados como workspace-source não têm build step
+  - scp-worker: `FOR UPDATE SKIP LOCKED` garante segurança com múltiplos workers; SIGTERM/SIGINT com drain gracioso
+
+## Milestone M10 — SCP event end-to-end: platform.company.created
+
+- Iniciada: 2026-04-29T06:30:00Z
+- Concluída: 2026-04-29T07:00:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm typecheck` → ok (7 packages, 0 errors)
+  - `pnpm lint` → ok
+  - `pnpm deps:check` → ok (0 errors)
+- Arquivos criados: `apps/scp-worker/src/examples/platform-company-created.ts`
+- Arquivos modificados: `packages/scp-registry/src/schemas/platform.ts` (alias `platform.company.created` → `PlatformTenantCreatedPayloadSchema`, adicionado ao `PLATFORM_EVENT_SCHEMAS`)
+- Decisões tomadas:
+  - `platform.company.created` é alias de `platform.tenant.created` (mesmo schema Zod); dois tipos distintos para compatibilidade semântica com código que emite `company.created`
+  - Schemas `platform.*` são pré-registrados em `BUILT_IN_SCHEMAS` do scp-registry — apps NÃO devem chamar `register()` para domínios reservados (chamada lança exceção "reserved by kernel")
+  - Exemplo não usa `register()` nem importa `PLATFORM_EVENT_SCHEMAS`; apenas importa drivers, kernel e types
+  - Pipeline validado estaticamente: TenantContext → KernelPublisher.publish() → scp_outbox → scp-worker → NATS → consumer
+
 ---
 
 ## Decisões menores tomadas durante o sprint
 
-<!-- Justificativas que não viram ADR mas precisam ser rastreáveis -->
+- `tsPreCompilationDeps: false` em dep-cruiser (sem arquivos .ts no início)
+- ESLint v10 flat config (eslint.config.mjs) pois @eslint/js é ESM-only
+- `console.log` bloqueado via eslint (produção usa logs estruturados pino/OTel)
+- oklch como espaço de cor para tokens do ui-shell (P3 gamut, nativo CSS)
+- Stale `.d.ts` em `packages/drivers/src/` deletados após tentativa de build falha; `**/*.d.ts` adicionado ao ESLint ignores
 
 ---
 
 ## Bloqueios encontrados
 
-<!-- Preenchido se houver bloqueios -->
+Nenhum bloqueio crítico. Obstáculos técnicos resolvidos inline:
+
+- `rootDir` em configs compartilhados → workspace-source pattern (sem build step para pacotes consumidos como fonte)
+- `exactOptionalPropertyTypes` → spreads condicionais em todos os pontos de construção de objetos com campos opcionais
+- NATS `headers()` não é método de instância → import direto do módulo nats
+
+---
+
+## Sumário do Sprint
+
+**Sprint concluído em: 2026-04-29**
+
+Todos os 10 milestones concluídos com sucesso. O monorepo Aethereos passou de um repositório vazio (commit de bootstrap) para uma base funcional com:
+
+1. **Guardrails mecânicos**: dep-cruiser, ESLint, Husky, commitlint, GitHub Actions CI
+2. **TypeScript compartilhado**: configs base/library/react-library/vite-app/next-app/library-build
+3. **Driver Model [INV]**: 10 interfaces canônicas (database, event-bus, auth, storage, vector, secrets, cache, feature-flags, llm, observability)
+4. **SCP Registry [INV]**: schemas Zod para todos os domínios reservados do kernel, envelope tipado, Ed25519 placeholder, registry com pré-registro de BUILT_IN_SCHEMAS
+5. **Kernel**: KernelPublisher (Outbox), PermissionEngine (bloqueia invariantes para agentes), AuditLogger, BaseConsumer, TenantContext helpers
+6. **ui-shell skeleton**: componentes stub (WindowManager, Dock, Tabs, Desktop, Mesa), design tokens oklch, build step Vite
+7. **Supabase migrations**: schema `kernel` completo com RLS multi-tenant, set_tenant_context(), scp_outbox, audit_log, agents (supervising_user_id obrigatório A+)
+8. **drivers-supabase**: SupabaseDatabaseDriver (Drizzle + Outbox), SupabaseAuthDriver, SupabaseStorageDriver, PgvectorDriver
+9. **drivers-nats**: NatsEventBusDriver (JetStream, dedup, durable consumers) + scp-worker (Outbox polling + graceful shutdown) + docker-compose NATS local
+10. **E2E SCP pipeline**: platform.company.created alias registrado; exemplo executável valida stack completa em modo dev
+
+**Próxima fase (pós-sprint):** Implementar shell-base (Camada 0) com Vite + React + TanStack Router; conectar drivers ao shell via Context/DI; primeira tela funcional local-first (OPFS).
