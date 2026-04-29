@@ -394,6 +394,26 @@ OPFS (Origin Private File System) provê acesso a arquivos binários por origem,
 ## Milestone M17 — Documentação de arquitetura da Camada 0
 
 - Iniciada: 2026-04-29T11:55:00Z
+- Concluída: 2026-04-29T12:20:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `ls docs/architecture/CAMADA_0.md` → ok
+  - `ls docs/runbooks/local-dev-shell-base.md` → ok
+  - `wc -l docs/architecture/CAMADA_0.md` → 247 linhas (>= 200 ✓)
+- Arquivos criados:
+  - `docs/architecture/CAMADA_0.md` (247 linhas): diagrama de blocos textual, mapa de drivers, fluxo de boot, modelo de dados SQLite, persistência, Service Worker, bundle/performance, segurança, limites O-que-faz/não-faz, extensão Camada 1, dependências
+  - `docs/runbooks/local-dev-shell-base.md` (203 linhas): setup, OPFS DevTools, exportar SQLite, IndexedDB, troubleshooting (SW travado, OPFS indisponível, WASM fail, reset workspace), vars de ambiente, checklist PR
+- Arquivos modificados:
+  - `README.md` raiz (+ seção "Camada 0 — começando" com links para docs)
+- Decisões tomadas:
+  - Diagrama em ASCII art (sem deps externas de diagramação)
+  - Tabela de mapeamento Driver Local ↔ Driver Cloud mantida aqui e repetida no ADR-0015 (M18)
+  - Runbook inclui snippet JS para exportar OPFS via console — útil para suporte
+- Próximo: M18 — ADR-0015 + encerramento Sprint 2
+
+## Milestone M18 — ADR-0015 + encerramento Sprint 2
+
+- Iniciada: 2026-04-29T12:25:00Z
 - Status: IN_PROGRESS
 
 ---

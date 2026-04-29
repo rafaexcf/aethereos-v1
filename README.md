@@ -59,6 +59,24 @@ Veja [CLAUDE.md seção 10](./CLAUDE.md#10-comandos-do-dia-a-dia).
 
 Ver `LICENSE` em cada workspace para detalhe.
 
+## Camada 0 — começando
+
+A Camada 0 (`apps/shell-base/`) é o ponto de entrada para quem quer rodar o Aethereos localmente sem nenhuma dependência de servidor.
+
+```bash
+pnpm install
+pnpm --filter=@aethereos/shell-base dev
+# Abre em http://localhost:5173
+```
+
+Não precisa de Docker, Supabase, NATS ou qualquer outro serviço externo. Tudo roda no navegador via OPFS + SQLite WASM.
+
+Veja:
+
+- [`apps/shell-base/README.md`](./apps/shell-base/README.md) — início rápido e instalação como PWA
+- [`docs/architecture/CAMADA_0.md`](./docs/architecture/CAMADA_0.md) — arquitetura detalhada
+- [`docs/runbooks/local-dev-shell-base.md`](./docs/runbooks/local-dev-shell-base.md) — debug OPFS, SQLite, troubleshooting
+
 ## Status
 
-🚧 Em bootstrap. Ver `docs/adr/` para decisões e roadmap.
+Em bootstrap ativo. Sprint 2 (Camada 0) concluído. Ver `SPRINT_LOG.md` e `docs/adr/` para histórico de decisões.
