@@ -103,6 +103,71 @@ export type AgentCopilotActionRejectedPayload = z.infer<
   typeof AgentCopilotActionRejectedPayloadSchema
 >;
 
+// ---------------------------------------------------------------------------
+// Intent Payload Schemas — typed payloads for Copilot Action Intents (MX5)
+// Each intent type has its own Zod schema; the union is the canonical type.
+// ---------------------------------------------------------------------------
+
+export const CopilotIntentCreatePersonSchema = z.object({
+  full_name: z.string().min(1).max(200),
+  email: z.string().max(200),
+  source_request: z.string().max(120),
+});
+export type CopilotIntentCreatePerson = z.infer<
+  typeof CopilotIntentCreatePersonSchema
+>;
+
+export const CopilotIntentCreateFileSchema = z.object({
+  name: z.string().min(1).max(200),
+  kind: z.enum(["folder", "file"]),
+  source_request: z.string().max(120),
+});
+export type CopilotIntentCreateFile = z.infer<
+  typeof CopilotIntentCreateFileSchema
+>;
+
+export const CopilotIntentSendNotificationSchema = z.object({
+  title: z.string().min(1).max(100),
+  body: z.string().max(200),
+  type: z.enum(["info", "warning", "error"]),
+});
+export type CopilotIntentSendNotification = z.infer<
+  typeof CopilotIntentSendNotificationSchema
+>;
+
+export const CopilotIntentUpdateSettingsSchema = z.object({
+  scope: z.enum(["user", "company"]),
+  key: z.string().min(1),
+  source_request: z.string().max(120),
+});
+export type CopilotIntentUpdateSettings = z.infer<
+  typeof CopilotIntentUpdateSettingsSchema
+>;
+
+export const CopilotIntentCreateChannelSchema = z.object({
+  name: z.string().min(1).max(80),
+  kind: z.enum(["channel", "dm"]),
+  source_request: z.string().max(120),
+});
+export type CopilotIntentCreateChannel = z.infer<
+  typeof CopilotIntentCreateChannelSchema
+>;
+
+export type CopilotIntentPayload =
+  | ({ intent_type: "create_person" } & CopilotIntentCreatePerson)
+  | ({ intent_type: "create_file" } & CopilotIntentCreateFile)
+  | ({ intent_type: "send_notification" } & CopilotIntentSendNotification)
+  | ({ intent_type: "update_settings" } & CopilotIntentUpdateSettings)
+  | ({ intent_type: "create_channel" } & CopilotIntentCreateChannel);
+
+export const COPILOT_INTENT_SCHEMAS = {
+  create_person: CopilotIntentCreatePersonSchema,
+  create_file: CopilotIntentCreateFileSchema,
+  send_notification: CopilotIntentSendNotificationSchema,
+  update_settings: CopilotIntentUpdateSettingsSchema,
+  create_channel: CopilotIntentCreateChannelSchema,
+} as const satisfies Record<string, z.ZodSchema>;
+
 export const AGENT_EVENT_SCHEMAS = {
   "agent.registered": AgentRegisteredPayloadSchema,
   "agent.action.requested": AgentActionRequestedPayloadSchema,

@@ -13,10 +13,19 @@ export type {
 } from "./schemas/platform.js";
 
 // Agent events
-export { AGENT_EVENT_SCHEMAS } from "./schemas/agent.js";
+export {
+  AGENT_EVENT_SCHEMAS,
+  COPILOT_INTENT_SCHEMAS,
+} from "./schemas/agent.js";
 export type {
   AgentRegisteredPayload,
   AgentActionRequestedPayload,
+  CopilotIntentPayload,
+  CopilotIntentCreatePerson,
+  CopilotIntentCreateFile,
+  CopilotIntentSendNotification,
+  CopilotIntentUpdateSettings,
+  CopilotIntentCreateChannel,
 } from "./schemas/agent.js";
 
 // Context events

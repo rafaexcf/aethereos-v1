@@ -6,9 +6,14 @@
  * P9 actor.type=agent em todo evento SCP emitido daqui
  * Interpretação A+: supervising_user_id obrigatório
  * Shadow Mode: Copilot propõe ações tipadas; humano aprova/rejeita (autonomia 0-1)
+ * MX5: intents validados via Zod (COPILOT_INTENT_SCHEMAS); operações invariantes
+ *       (Fundamentação 12.4) bloqueadas por canPropose() antes de criar proposta.
  */
 import { useState, useRef, useEffect, useCallback } from "react";
 import { instrumentedChat } from "@aethereos/kernel";
+import { isInvariantOperation } from "@aethereos/kernel";
+import { COPILOT_INTENT_SCHEMAS } from "@aethereos/scp-registry";
+import type { CopilotIntentPayload } from "@aethereos/scp-registry";
 import type { LLMDriver, ObservabilityDriver } from "@aethereos/drivers";
 
 // ---------------------------------------------------------------------------
@@ -37,7 +42,7 @@ type ProposalStatus = "pending" | "approved" | "rejected" | "executed";
 interface ActionProposal {
   id: string;
   intentType: IntentType;
-  payload: Record<string, unknown>;
+  payload: CopilotIntentPayload;
   status: ProposalStatus;
   conversationId: string;
   createdAt: Date;
@@ -66,23 +71,80 @@ Quando o usuário pedir uma ação (criar pessoa, enviar notificação, criar ca
 diga o que você faria e que vai propor a ação para aprovação (Shadow Mode).`;
 
 // ---------------------------------------------------------------------------
-// Intent detection (keyword → ActionProposal)
-// Shadow Mode: detecta intenção no texto do usuário, propõe ação tipada
+// Operações bloqueadas (Fundamentação 12.4 [INV])
+// Detectadas por regex ANTES de tentar gerar proposta.
+// ---------------------------------------------------------------------------
+
+const BLOCKED_PATTERNS: Array<{
+  pattern: RegExp;
+  operationId: string;
+}> = [
+  {
+    pattern: /demitir|dispensar|rescis[aã]o|terminar\s+contrato/i,
+    operationId: "employee.termination",
+  },
+  {
+    pattern: /bloquear\s+(fornecedor|cliente)|remover\s+(fornecedor|cliente)/i,
+    operationId: "entity.structural_change",
+  },
+  {
+    pattern: /plano\s+de\s+contas|conta\s+cont[aá]bil/i,
+    operationId: "accounting.chart_of_accounts_change",
+  },
+  {
+    pattern: /transfer[eê]ncia|transferir\s+valor|pagar\s+fatura\s+acima/i,
+    operationId: "financial.transfer_above_limit",
+  },
+  {
+    pattern: /pol[ií]tica\s+de\s+governan[cç]a|alterar\s+pol[ií]tica/i,
+    operationId: "governance.policy_change",
+  },
+  {
+    pattern:
+      /acesso\s+(admin|privilegiado)|revogar\s+acesso|conceder\s+acesso/i,
+    operationId: "access.privileged_change",
+  },
+  {
+    pattern: /excluir\s+(todos|dados|registros)|deletar\s+(todos|dados)/i,
+    operationId: "data.deletion",
+  },
+  {
+    pattern: /regime\s+tribut[aá]rio|sefaz|cadastro\s+fiscal|cnpj\s+fiscal/i,
+    operationId: "fiscal.tax_config_change",
+  },
+];
+
+interface CanProposeResult {
+  allowed: boolean;
+  reason?: string;
+}
+
+function canPropose(body: string): CanProposeResult {
+  for (const { pattern, operationId } of BLOCKED_PATTERNS) {
+    if (pattern.test(body) && isInvariantOperation(operationId)) {
+      return {
+        allowed: false,
+        reason: `Operação '${operationId}' é invariante (Fundamentação 12.4). Não posso propor esta ação automaticamente — requer aprovação humana explícita fora do Shadow Mode.`,
+      };
+    }
+  }
+  return { allowed: true };
+}
+
+// ---------------------------------------------------------------------------
+// Intent detection (keyword → ActionProposal com payload tipado via Zod)
 // ---------------------------------------------------------------------------
 
 const INTENT_PATTERNS: Array<{
   pattern: RegExp;
   type: IntentType;
-  buildPayload: (
-    match: RegExpMatchArray,
-    body: string,
-  ) => Record<string, unknown>;
+  buildRaw: (body: string) => Record<string, unknown>;
 }> = [
   {
     pattern:
       /criar?\s+pessoa|adicionar?\s+pessoa|cadastrar?\s+pessoa|nova?\s+pessoa/i,
     type: "create_person",
-    buildPayload: (_m, body) => ({
+    buildRaw: (body) => ({
       full_name: "Nova Pessoa",
       email: "",
       source_request: body.slice(0, 120),
@@ -92,7 +154,7 @@ const INTENT_PATTERNS: Array<{
     pattern:
       /criar?\s+(pasta|arquivo|documento)|nova?\s+(pasta|arquivo)|upload/i,
     type: "create_file",
-    buildPayload: (_m, body) => ({
+    buildRaw: (body) => ({
       name: "Novo Documento",
       kind: "folder",
       source_request: body.slice(0, 120),
@@ -101,7 +163,7 @@ const INTENT_PATTERNS: Array<{
   {
     pattern: /notifica|avisar|comunicar|alertar/i,
     type: "send_notification",
-    buildPayload: (_m, body) => ({
+    buildRaw: (body) => ({
       title: "Notificação do Copilot",
       body: body.slice(0, 200),
       type: "info",
@@ -110,7 +172,7 @@ const INTENT_PATTERNS: Array<{
   {
     pattern: /configura|alterar?\s+config|mudar?\s+config|atualizar?\s+config/i,
     type: "update_settings",
-    buildPayload: (_m, body) => ({
+    buildRaw: (body) => ({
       scope: "company",
       key: "copilot.suggestion",
       source_request: body.slice(0, 120),
@@ -119,7 +181,7 @@ const INTENT_PATTERNS: Array<{
   {
     pattern: /criar?\s+canal|novo\s+canal|adicionar?\s+canal/i,
     type: "create_channel",
-    buildPayload: (_m, body) => ({
+    buildRaw: (body) => ({
       name: "novo-canal",
       kind: "channel",
       source_request: body.slice(0, 120),
@@ -144,18 +206,26 @@ const INTENT_ICONS: Record<IntentType, string> = {
 };
 
 function detectIntent(body: string): ActionProposal | null {
-  for (const { pattern, type, buildPayload } of INTENT_PATTERNS) {
-    const match = body.match(pattern);
-    if (match !== null) {
-      return {
-        id: crypto.randomUUID(),
-        intentType: type,
-        payload: buildPayload(match, body),
-        status: "pending",
-        conversationId: "",
-        createdAt: new Date(),
-      };
-    }
+  for (const { pattern, type, buildRaw } of INTENT_PATTERNS) {
+    if (!pattern.test(body)) continue;
+
+    const schema = COPILOT_INTENT_SCHEMAS[type];
+    const parsed = schema.safeParse(buildRaw(body));
+    if (!parsed.success) continue;
+
+    const payload = {
+      intent_type: type,
+      ...parsed.data,
+    } as CopilotIntentPayload;
+
+    return {
+      id: crypto.randomUUID(),
+      intentType: type,
+      payload,
+      status: "pending",
+      conversationId: "",
+      createdAt: new Date(),
+    };
   }
   return null;
 }
@@ -213,10 +283,10 @@ function ActionApprovalPanel({
         )}
       </div>
 
-      {/* Payload preview */}
+      {/* Payload preview — exclui campos internos */}
       <div className="mb-2 rounded bg-zinc-900/50 p-2 font-mono text-zinc-500 leading-relaxed">
         {Object.entries(proposal.payload)
-          .filter(([k]) => k !== "source_request")
+          .filter(([k]) => k !== "source_request" && k !== "intent_type")
           .map(([k, v]) => (
             <div key={k}>
               <span className="text-zinc-600">{k}:</span>{" "}
@@ -293,7 +363,6 @@ export function CopilotDrawer({
     );
     // TODO: executar ação real via driver correspondente
     // TODO: emitir agent.copilot.action_approved via KernelPublisher
-    // TODO: emitir agent.copilot.action_approved com actor.type=agent
   }, []);
 
   const handleReject = useCallback((proposalId: string) => {
@@ -320,6 +389,21 @@ export function CopilotDrawer({
     setMessages((prev) => [...prev, userMsg]);
     setDraft("");
     setLoading(true);
+
+    // Verifica operações invariantes ANTES de chamar LLM (Fundamentação 12.4)
+    const permission = canPropose(body);
+    if (!permission.allowed) {
+      setLoading(false);
+      const blockedMsg: CopilotMessage = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: `Não posso propor esta ação. ${permission.reason ?? "Operação bloqueada por guardrail de agente (Fundamentação 12.4 [INV])."}`,
+        isDegraded: false,
+        createdAt: new Date(),
+      };
+      setMessages((prev) => [...prev, blockedMsg]);
+      return;
+    }
 
     llm.withTenant({
       company_id: companyId,
@@ -349,7 +433,7 @@ export function CopilotDrawer({
 
     setLoading(false);
 
-    // Detect intent in user message → generate Shadow Mode proposal
+    // Detect intent em userMsg → gera proposta Shadow Mode (payload tipado via Zod)
     const detected = detectIntent(body);
 
     if (result.ok) {
@@ -376,8 +460,8 @@ export function CopilotDrawer({
         };
         proposalId = proposal.id;
         setProposals((prev) => [...prev, proposal]);
-        // TODO: inserir em kernel.agent_proposals via SupabaseDatabaseDriver
-        // TODO: emitir agent.copilot.action_proposed via KernelPublisher com actor.type=agent
+        // TODO: inserir em kernel.agent_proposals via SupabaseBrowserDataDriver
+        // TODO: emitir agent.copilot.action_proposed via KernelPublisher (Sprint 7)
       }
 
       const assistantMsg: CopilotMessage = {
@@ -391,8 +475,8 @@ export function CopilotDrawer({
       if (proposalId !== undefined) assistantMsg.proposalId = proposalId;
       setMessages((prev) => [...prev, assistantMsg]);
 
-      // TODO: persistir em kernel.copilot_messages via SupabaseDatabaseDriver
-      // TODO: emitir agent.copilot.message_sent via KernelPublisher
+      // TODO: persistir em kernel.copilot_messages via SupabaseBrowserDataDriver
+      // TODO: emitir agent.copilot.message_sent via KernelPublisher (Sprint 7)
     } else {
       const errMsg: CopilotMessage = {
         id: crypto.randomUUID(),
