@@ -414,11 +414,25 @@ OPFS (Origin Private File System) provê acesso a arquivos binários por origem,
 ## Milestone M18 — ADR-0015 + encerramento Sprint 2
 
 - Iniciada: 2026-04-29T12:25:00Z
-- Status: IN_PROGRESS
+- Concluída: 2026-04-29T13:00:00Z
+- Status: SUCCESS
+
+### Entregáveis
+
+- `docs/adr/0015-camada-0-arquitetura-local-first.md` — ADR completo: contexto, decisão (stack table, drivers table, invariantes), consequências, alternativas rejeitadas, mapeamento Local↔Cloud, checklist de PR review
+- `CLAUDE.md` raiz — adicionada referência ao ADR-0015 na seção 4
+- `SPRINT_LOG.md` — atualizado com M18 SUCCESS e seção de encerramento do Sprint 2
+- `docs/SPRINT_2_REPORT_2026-04-29.md` — relatório executivo do Sprint 2
+
+### Validação do Driver Model
+
+O sprint comprovou empiricamente que as interfaces de `@aethereos/drivers` são genuinamente agnósticas: o mesmo código de kernel (`KernelPublisher`, `PermissionEngine`, `AuditLogger`) rodou sem modificação em Camada 0 usando apenas drivers de navegador — sem servidores, sem rede, sem Docker.
+
+- Próximo: Sprint 3 — Camada 1 (shell-commercial + drivers-supabase integrados + auth OAuth 2.1)
 
 ---
 
-## Decisões menores tomadas durante o sprint
+## Decisões menores tomadas durante o sprint (Sprint 2)
 
 - `tsPreCompilationDeps: false` em dep-cruiser (sem arquivos .ts no início)
 - ESLint v10 flat config (eslint.config.mjs) pois @eslint/js é ESM-only
@@ -428,7 +442,7 @@ OPFS (Origin Private File System) provê acesso a arquivos binários por origem,
 
 ---
 
-## Bloqueios encontrados
+## Bloqueios encontrados (Sprint 1)
 
 Nenhum bloqueio crítico. Obstáculos técnicos resolvidos inline:
 
@@ -436,9 +450,21 @@ Nenhum bloqueio crítico. Obstáculos técnicos resolvidos inline:
 - `exactOptionalPropertyTypes` → spreads condicionais em todos os pontos de construção de objetos com campos opcionais
 - NATS `headers()` não é método de instância → import direto do módulo nats
 
+## Bloqueios encontrados (Sprint 2 — Camada 0)
+
+Nenhum bloqueio crítico. Obstáculos técnicos resolvidos inline:
+
+- `tsconfig.json` da app com `include` relativo ao `config-ts/` → sobrescrever `include`/`exclude` explicitamente na app
+- `Actor.id` não existe no discriminated union (campo é `user_id` para `type: "human"`) → corrigido em `boot.ts`
+- `exactOptionalPropertyTypes` com `title: undefined` → omitir a chave em vez de atribuir `undefined`
+- BUSL-1.1 verbatim text triggou content filter (400) → abordagem params-only + URL `https://mariadb.com/bsl11/`, aprovada pelo usuário
+- commitlint subject-case rejeitou "PWA" e "WASM" maiúsculos → lowercase no subject
+- sql.js sem tipos TypeScript → `src/types/sql-js.d.ts` com declare module manual
+- WASM fora do SW precache → `globPatterns` incluindo `wasm` + `maximumFileSizeToCacheInBytes: 5MB`
+
 ---
 
-## Sumário do Sprint
+## Sumário do Sprint 1 (M1–M10)
 
 **Sprint concluído em: 2026-04-29**
 
@@ -454,5 +480,42 @@ Todos os 10 milestones concluídos com sucesso. O monorepo Aethereos passou de u
 8. **drivers-supabase**: SupabaseDatabaseDriver (Drizzle + Outbox), SupabaseAuthDriver, SupabaseStorageDriver, PgvectorDriver
 9. **drivers-nats**: NatsEventBusDriver (JetStream, dedup, durable consumers) + scp-worker (Outbox polling + graceful shutdown) + docker-compose NATS local
 10. **E2E SCP pipeline**: platform.company.created alias registrado; exemplo executável valida stack completa em modo dev
+
+---
+
+## Sumário do Sprint 2 (M11–M18) — Camada 0
+
+**Sprint 2 concluído em: 2026-04-29**
+
+Sprint 2 construiu a Camada 0 completa do Aethereos: o shell local-first que roda 100% no navegador, sem backend, sob BUSL-1.1. Tudo o que a Camada 1 precisa como base está pronto.
+
+### Entregáveis do Sprint 2
+
+| Milestone | Entregável                                                                                                                                       | Status  |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------- |
+| M11       | `packages/drivers-local` — 7 drivers browser-only (LocalDatabase, OPFSStorage, LocalAuth, WebCrypto, MemoryCache, StaticFlags, BroadcastChannel) | SUCCESS |
+| M12       | `apps/shell-base` scaffold — Vite 6 + React 19 + TanStack Router + Tailwind v4 + vite-plugin-pwa                                                 | SUCCESS |
+| M13       | Boot local-first — sql.js WASM lazy, OPFS + IndexedDB fallback, SQLite ae_meta, autoSave                                                         | SUCCESS |
+| M14       | Shell visual mínimo — Dock + Mesa + WindowManager + Notepad, Zustand session/windows stores                                                      | SUCCESS |
+| M15       | PWA offline-first — Service Worker, WASM precacheado, navigateFallback, funciona offline                                                         | SUCCESS |
+| M16       | BUSL-1.1 em todos os pacotes da Camada 0 (params-only + URL canônica)                                                                            | SUCCESS |
+| M17       | Documentação de arquitetura — `CAMADA_0.md`, runbook de dev, README atualizado                                                                   | SUCCESS |
+| M18       | ADR-0015, encerramento Sprint 2                                                                                                                  | SUCCESS |
+
+### Métricas finais
+
+- **Bundle inicial:** ~113 KB gzip (< 500 KB [INV] ✓)
+- **Testes unitários:** 57 testes nos drivers locais, todos passando
+- **Dependências externas runtime:** 0 (além do browser)
+- **Drivers implementados:** 7 de 10 (VectorDriver, LlmDriver, ObservabilityDriver sem sentido em Camada 0)
+- **Driver Model validado:** kernel e consumers rodaram sem modificação com drivers de navegador
+
+### Validação da hipótese central
+
+> "Se as interfaces de drivers forem genuinamente agnósticas, deve ser possível implementá-las inteiramente com APIs do navegador."
+
+**Confirmado.** O código de domínio (`KernelPublisher`, `PermissionEngine`, consumers) é **idêntico** em Camada 0 e Camada 1 — apenas a composição de drivers muda. O Driver Model [INV] está empiricamente validado.
+
+**Próximo sprint:** Sprint 3 — Camada 1 (`apps/shell-commercial/`): substituir drivers locais por `drivers-supabase` + `drivers-nats`, integrar OAuth 2.1 via Supabase Auth, multi-tenant RLS, AI Copilot (LiteLLM gateway).
 
 **Próxima fase (pós-sprint):** Implementar shell-base (Camada 0) com Vite + React + TanStack Router; conectar drivers ao shell via Context/DI; primeira tela funcional local-first (OPFS).
