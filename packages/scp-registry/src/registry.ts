@@ -1,4 +1,4 @@
-import { z } from "zod";
+import type { z } from "zod";
 import type { Result } from "@aethereos/drivers";
 import { ok, err, ValidationError } from "@aethereos/drivers";
 import { PLATFORM_EVENT_SCHEMAS } from "./schemas/platform.js";
