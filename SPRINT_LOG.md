@@ -902,3 +902,26 @@ Plano-mestre: ver CAMADA_1_PLANO_MESTRE.md
   - `TenantContext.company_id` (snake_case) — consistente com o padrão do Driver Model; `actor.user_id` para extrair userId
   - OTel configs criados como stubs agora (M35 os expande) para que o compose file seja válido desde M32
   - `dev:infra` atualizado para iniciar apenas `nats litellm` (serviços essenciais); scripts separados para cada stack adicional
+
+### Milestone M33 — Langfuse self-hosted local + ObservabilityDriver concreto
+
+- Iniciada: 2026-04-29T23:50:00Z
+- Concluída: 2026-04-30T00:15:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm test --filter=@aethereos/drivers-langfuse` → 12/12 ✅
+  - `pnpm typecheck` → ok (20 packages)
+  - `pnpm lint` → ok
+- Arquivos criados:
+  - `packages/drivers-langfuse/` — LangfuseObservabilityDriver implementando ObservabilityDriver via HTTP API (sem SDK externo), com buffer local + flush periódico
+  - `packages/kernel/src/llm/instrumented-chat.ts` — wrapper obrigatório: todo LLM call passa por aqui, registra span + métricas + correlation_id
+- Arquivos modificados:
+  - `infra/litellm/config.yaml` — success_callback e failure_callback para Langfuse
+  - `infra/local/docker-compose.dev.yml` — env vars LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_HOST no serviço litellm
+  - `packages/kernel/src/index.ts` — exporta instrumentedChat + InstrumentedChatOptions
+  - `packages/config-ts/base.json` — path alias @aethereos/drivers-langfuse
+- Decisões tomadas:
+  - Langfuse driver usa HTTP API diretamente (sem SDK npm), consistente com padrão LiteLLM driver
+  - `const self = this` → `const enqueue = (e) => this.#enqueue(e)` para evitar no-this-alias
+  - `LLMDriverError` não exportado → return type como `Awaited<ReturnType<LLMDriver["complete"]>>`
+  - LiteLLM-Langfuse callback configurado via `success_callback/failure_callback` no config.yaml (LLM-specific tracing gratuito sem código extra)

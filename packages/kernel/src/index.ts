@@ -31,3 +31,7 @@ export {
   getInvariantOperation,
 } from "./invariants/operations.js";
 export type { InvariantOperation } from "./invariants/operations.js";
+
+// LLM
+export { instrumentedChat } from "./llm/instrumented-chat.js";
+export type { InstrumentedChatOptions } from "./llm/instrumented-chat.js";

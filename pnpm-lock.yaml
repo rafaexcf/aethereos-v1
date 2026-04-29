@@ -309,6 +309,28 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
+  packages/drivers-langfuse:
+    dependencies:
+      "@aethereos/drivers":
+        specifier: workspace:*
+        version: link:../drivers
+    devDependencies:
+      "@aethereos/config-eslint":
+        specifier: workspace:*
+        version: link:../config-eslint
+      "@aethereos/config-ts":
+        specifier: workspace:*
+        version: link:../config-ts
+      "@types/node":
+        specifier: ^22.10.0
+        version: 22.19.17
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.17)(happy-dom@18.0.1)(lightningcss@1.32.0)(terser@5.46.2)
+
   packages/drivers-litellm:
     dependencies:
       "@aethereos/drivers":
