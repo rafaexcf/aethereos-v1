@@ -2,13 +2,19 @@ version: "3.9"
 
 # Infraestrutura local de desenvolvimento para Aethereos.
 # Supabase é gerenciado separadamente via `pnpm db:start` (supabase CLI).
-# Este compose provisiona apenas o event bus (NATS JetStream).
+# Este compose provisiona: NATS JetStream, LiteLLM gateway, Langfuse, Unleash, OTel stack.
 #
 # Uso:
-#   docker compose -f infra/local/docker-compose.dev.yml up -d
+#   pnpm dev:infra              — sobe NATS + LiteLLM (infra mínima)
+#   pnpm dev:observability      — sobe Langfuse + OTel stack
+#   pnpm dev:feature-flags      — sobe Unleash
+#   docker compose -f infra/local/docker-compose.dev.yml up -d  — tudo
 #   docker compose -f infra/local/docker-compose.dev.yml down
 
 services:
+  # ---------------------------------------------------------------------------
+  # NATS JetStream — event bus do SCP
+  # ---------------------------------------------------------------------------
   nats:
     image: nats:2.11-alpine
     container_name: aethereos-nats-dev
@@ -30,6 +36,235 @@ services:
       retries: 5
     restart: unless-stopped
 
+  # ---------------------------------------------------------------------------
+  # LiteLLM — gateway LLM unificado (ADR-0014 #6, P15)
+  # Porta: 4000 | API OpenAI-compatible | config: infra/litellm/config.yaml
+  # ---------------------------------------------------------------------------
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: aethereos-litellm-dev
+    ports:
+      - "4000:4000"
+    volumes:
+      - ../litellm/config.yaml:/app/config.yaml:ro
+    environment:
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-dev-litellm-master-key-replace-me}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-sk-ant-placeholder}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-sk-placeholder}
+      STORE_MODEL_IN_DB: "False"
+    command:
+      ["--config", "/app/config.yaml", "--port", "4000", "--detailed_debug"]
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -sf http://localhost:4000/health/liveliness || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Langfuse — observabilidade LLM (traces, custos, qualidade)
+  # Porta: 3001 | Login: admin@example.com / password
+  # ---------------------------------------------------------------------------
+  langfuse-postgres:
+    image: postgres:16-alpine
+    container_name: aethereos-langfuse-postgres-dev
+    environment:
+      POSTGRES_DB: langfuse
+      POSTGRES_USER: langfuse
+      POSTGRES_PASSWORD: langfuse_dev_password
+    volumes:
+      - langfuse_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U langfuse -d langfuse"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  langfuse:
+    image: langfuse/langfuse:latest
+    container_name: aethereos-langfuse-dev
+    depends_on:
+      langfuse-postgres:
+        condition: service_healthy
+    ports:
+      - "3001:3000"
+    environment:
+      DATABASE_URL: postgresql://langfuse:langfuse_dev_password@langfuse-postgres:5432/langfuse
+      NEXTAUTH_URL: http://localhost:3001
+      NEXTAUTH_SECRET: langfuse-dev-nextauth-secret-replace-in-prod
+      SALT: langfuse-dev-salt-replace-in-prod
+      ENCRYPTION_KEY: 0000000000000000000000000000000000000000000000000000000000000000
+      LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "true"
+      TELEMETRY_ENABLED: "false"
+      LANGFUSE_INIT_ORG_ID: aethereos-dev-org
+      LANGFUSE_INIT_ORG_NAME: Aethereos Dev
+      LANGFUSE_INIT_PROJECT_ID: aethereos-dev-project
+      LANGFUSE_INIT_PROJECT_NAME: Aethereos Dev
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: pk-lf-dev-aethereos-replace-me
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: sk-lf-dev-aethereos-replace-me
+      LANGFUSE_INIT_USER_EMAIL: admin@aethereos.local
+      LANGFUSE_INIT_USER_NAME: Admin
+      LANGFUSE_INIT_USER_PASSWORD: aethereos-dev-password
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -sf http://localhost:3000/api/public/health || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Unleash — feature flags com segmentação por tenant/plan (ADR-0014 #8)
+  # Porta: 4242 | Login: admin / unleash4all
+  # ---------------------------------------------------------------------------
+  unleash-postgres:
+    image: postgres:16-alpine
+    container_name: aethereos-unleash-postgres-dev
+    environment:
+      POSTGRES_DB: unleash
+      POSTGRES_USER: unleash
+      POSTGRES_PASSWORD: unleash_dev_password
+    volumes:
+      - unleash_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U unleash -d unleash"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  unleash:
+    image: unleashorg/unleash-server:latest
+    container_name: aethereos-unleash-dev
+    depends_on:
+      unleash-postgres:
+        condition: service_healthy
+    ports:
+      - "4242:4242"
+    environment:
+      DATABASE_URL: postgresql://unleash:unleash_dev_password@unleash-postgres:5432/unleash
+      DATABASE_SSL: "false"
+      LOG_LEVEL: warn
+      INIT_FRONTEND_API_TOKENS: "default:development.unleash-frontend-dev-token"
+      INIT_CLIENT_API_TOKENS: "default:development.unleash-client-dev-token"
+      INIT_ADMIN_API_TOKENS: "*:*.unleash-admin-dev-token"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:4242/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # OpenTelemetry Collector — recebe OTLP e distribui para Tempo/Loki/Prometheus
+  # ---------------------------------------------------------------------------
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: aethereos-otel-collector-dev
+    ports:
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
+      - "8889:8889" # Prometheus metrics (self)
+    volumes:
+      - ../otel/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
+    depends_on:
+      - tempo
+      - loki
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Grafana Tempo — distributed tracing backend
+  # ---------------------------------------------------------------------------
+  tempo:
+    image: grafana/tempo:latest
+    container_name: aethereos-tempo-dev
+    ports:
+      - "3200:3200" # tempo HTTP API
+      - "9095:9095" # tempo gRPC
+    volumes:
+      - ../otel/tempo-config.yaml:/etc/tempo/config.yaml:ro
+      - tempo_data:/var/tempo
+    command: ["-config.file=/etc/tempo/config.yaml"]
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Grafana Loki — log aggregation backend
+  # ---------------------------------------------------------------------------
+  loki:
+    image: grafana/loki:latest
+    container_name: aethereos-loki-dev
+    ports:
+      - "3100:3100"
+    volumes:
+      - ../otel/loki-config.yaml:/etc/loki/config.yaml:ro
+      - loki_data:/loki
+    command: ["-config.file=/etc/loki/config.yaml"]
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Prometheus — metrics backend
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: aethereos-prometheus-dev
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../otel/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.enable-remote-write-receiver"
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Grafana — dashboards (Tempo + Loki + Prometheus)
+  # Porta: 3002 | Login: admin / admin
+  # ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:latest
+    container_name: aethereos-grafana-dev
+    depends_on:
+      - tempo
+      - loki
+      - prometheus
+    ports:
+      - "3002:3000"
+    volumes:
+      - ../otel/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ../otel/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_FEATURE_TOGGLES_ENABLE: traceqlEditor
+    restart: unless-stopped
+
 volumes:
   nats_data:
+    driver: local
+  langfuse_postgres_data:
+    driver: local
+  unleash_postgres_data:
+    driver: local
+  tempo_data:
+    driver: local
+  loki_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
     driver: local

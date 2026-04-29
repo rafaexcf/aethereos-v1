@@ -9,6 +9,9 @@
       ],
       "@aethereos/drivers-nats": ["../../packages/drivers-nats/src/index.ts"],
       "@aethereos/drivers-local": ["../../packages/drivers-local/src/index.ts"],
+      "@aethereos/drivers-litellm": [
+        "../../packages/drivers-litellm/src/index.ts"
+      ],
       "@aethereos/kernel": ["../../packages/kernel/src/index.ts"],
       "@aethereos/scp-registry": ["../../packages/scp-registry/src/index.ts"],
       "@aethereos/ui-shell": ["../../packages/ui-shell/src/index.ts"],

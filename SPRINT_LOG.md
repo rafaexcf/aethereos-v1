@@ -878,4 +878,27 @@ Plano-mestre: ver CAMADA_1_PLANO_MESTRE.md
 
 ## Histórico de milestones (Sprint 5)
 
-[preenchido conforme avança]
+### Milestone M32 — LiteLLM gateway local + LLMDriver concreto
+
+- Iniciada: 2026-04-29T23:05:00Z
+- Concluída: 2026-04-29T23:45:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm test --filter=@aethereos/drivers-litellm` → 12/12 ✅
+  - `pnpm typecheck` → ok (19 packages)
+  - `pnpm lint` → ok
+- Arquivos criados:
+  - `infra/litellm/config.yaml` — config LiteLLM: claude-3-5-sonnet + gpt-4o-mini, fallback chain, routing simple-shuffle
+  - `infra/local/docker-compose.dev.yml` — adicionados: litellm, langfuse-postgres, langfuse, unleash-postgres, unleash, otel-collector, tempo, loki, prometheus, grafana (todos em um compose R13)
+  - `infra/otel/otel-collector-config.yaml`, `tempo-config.yaml`, `loki-config.yaml`, `prometheus.yml` — configs stub para OTel stack (M35 expande)
+  - `infra/otel/grafana/datasources/datasources.yaml`, `infra/otel/grafana/dashboards/dashboard.yaml` — provisionamento Grafana
+  - `packages/drivers-litellm/` — package completo: LiteLLMDriver, price table, 12 unit tests
+  - `.env.local.example` — documenta todas as variáveis de ambiente do Sprint 5
+- Arquivos modificados:
+  - `packages/config-ts/base.json` — path alias `@aethereos/drivers-litellm`
+  - `package.json` raiz — `dev:infra` (NATS + LiteLLM), `dev:llm` (alias), `dev:observability`, `dev:feature-flags`, `dev:otel` scripts
+- Decisões tomadas:
+  - `LLMDriverError` não é exportado pelo @aethereos/drivers; tipo local `type LLMDriverError = RateLimitError | TimeoutError | NetworkError`
+  - `TenantContext.company_id` (snake_case) — consistente com o padrão do Driver Model; `actor.user_id` para extrair userId
+  - OTel configs criados como stubs agora (M35 os expande) para que o compose file seja válido desde M32
+  - `dev:infra` atualizado para iniciar apenas `nats litellm` (serviços essenciais); scripts separados para cada stack adicional
