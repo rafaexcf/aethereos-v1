@@ -42,9 +42,16 @@ export type PlatformUserCreatedPayload = z.infer<
   typeof PlatformUserCreatedPayloadSchema
 >;
 
+// platform.company.created é o evento canônico de criação de empresa/tenant.
+// Alias de platform.tenant.created — ambos usam o mesmo payload.
+export const PlatformCompanyCreatedPayloadSchema =
+  PlatformTenantCreatedPayloadSchema;
+export type PlatformCompanyCreatedPayload = PlatformTenantCreatedPayload;
+
 /** Mapa de tipo de evento → schema de payload para eventos platform.* */
 export const PLATFORM_EVENT_SCHEMAS = {
   "platform.tenant.created": PlatformTenantCreatedPayloadSchema,
+  "platform.company.created": PlatformCompanyCreatedPayloadSchema,
   "platform.tenant.suspended": PlatformTenantSuspendedPayloadSchema,
   "platform.user.created": PlatformUserCreatedPayloadSchema,
 } as const satisfies Record<string, z.ZodSchema>;
