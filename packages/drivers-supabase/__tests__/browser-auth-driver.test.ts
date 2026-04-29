@@ -251,18 +251,29 @@ describe("SupabaseBrowserAuthDriver", () => {
   });
 
   describe("getCompanyClaims (JWT claims customizados)", () => {
+    // Helper: gera access_token JWT-like com payload customizado.
+    // O hook custom_access_token injeta companies/active_company_id na raiz do JWT.
+    function makeJwt(payload: Record<string, unknown>): string {
+      const enc = (obj: unknown) =>
+        Buffer.from(JSON.stringify(obj))
+          .toString("base64")
+          .replace(/\+/g, "-")
+          .replace(/\//g, "_")
+          .replace(/=/g, "");
+      return `${enc({ alg: "HS256" })}.${enc(payload)}.sig`;
+    }
+
     test("retorna companies e activeCompanyId dos JWT claims", async () => {
+      const jwtPayload = {
+        sub: "user-123",
+        companies: ["company-a", "company-b"],
+        active_company_id: "company-a",
+      };
       mockGetSession.mockResolvedValueOnce({
         data: {
           session: {
             ...MOCK_SESSION,
-            user: {
-              ...MOCK_SESSION.user,
-              app_metadata: {
-                companies: ["company-a", "company-b"],
-                active_company_id: "company-a",
-              },
-            },
+            access_token: makeJwt(jwtPayload),
           },
         },
         error: null,

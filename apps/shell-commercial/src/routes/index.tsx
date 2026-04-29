@@ -1,7 +1,7 @@
 import { createRoute, useNavigate } from "@tanstack/react-router";
 import { rootRoute } from "./__root";
 import { useSessionStore } from "../stores/session";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -21,11 +21,20 @@ function DesktopPage() {
     clearSession,
   } = useSessionStore();
 
+  const [companyName, setCompanyName] = useState<string | null>(null);
+  const [outboxCount, setOutboxCount] = useState<number | null>(null);
+
   useEffect(() => {
     if (userId === null) {
       void navigate({ to: "/login" });
     }
   }, [userId, navigate]);
+
+  useEffect(() => {
+    if (drivers === null || activeCompanyId === null) return;
+    void drivers.auth.getCompanyName(activeCompanyId).then(setCompanyName);
+    void drivers.auth.getOutboxCount(activeCompanyId).then(setOutboxCount);
+  }, [drivers, activeCompanyId]);
 
   async function handleSignOut() {
     if (drivers === null) return;
@@ -38,6 +47,10 @@ function DesktopPage() {
     setActiveCompany(companyId);
     if (drivers !== null) {
       drivers.auth.withCompanyContext(companyId);
+      setCompanyName(null);
+      setOutboxCount(null);
+      void drivers.auth.getCompanyName(companyId).then(setCompanyName);
+      void drivers.auth.getOutboxCount(companyId).then(setOutboxCount);
     }
   }
 
@@ -59,7 +72,7 @@ function DesktopPage() {
             />
           ) : (
             <span className="rounded-md bg-zinc-800 px-2 py-1 font-mono text-xs text-zinc-400">
-              {activeCompanyId}
+              {companyName ?? activeCompanyId}
             </span>
           )}
         </div>
@@ -79,15 +92,21 @@ function DesktopPage() {
       <main className="flex flex-1 items-center justify-center">
         <div className="space-y-4 text-center">
           <h1 className="text-4xl font-bold text-zinc-100">
-            Aethereos — Camada 1
+            {companyName ?? "Aethereos"}
           </h1>
           <p className="text-zinc-400">
             Cloud multi-tenant. Empresa ativa:{" "}
             <code className="rounded bg-zinc-800 px-2 py-0.5 text-sm font-mono text-violet-400">
-              {activeCompanyId}
+              {companyName ?? activeCompanyId}
             </code>
           </p>
-          <p className="text-sm text-zinc-600">
+          {outboxCount !== null && (
+            <p className="text-sm text-zinc-500">
+              Eventos SCP publicados:{" "}
+              <span className="font-mono text-zinc-300">{outboxCount}</span>
+            </p>
+          )}
+          <p className="text-xs text-zinc-600">
             Driver Model validado: mesmo kernel, drivers cloud.
           </p>
         </div>

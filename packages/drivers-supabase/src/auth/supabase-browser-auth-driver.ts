@@ -173,7 +173,8 @@ export class SupabaseBrowserAuthDriver implements AuthDriver {
 
   /**
    * Extrai companies e active_company_id dos JWT claims (injetados pelo hook).
-   * Retorna arrays vazios se token não tem claims customizados ainda.
+   * Decodifica o JWT diretamente porque o hook injeta na raiz do payload,
+   * não em app_metadata (que é o que session.user.app_metadata expõe).
    */
   async getCompanyClaims(): Promise<{
     companies: string[];
@@ -182,12 +183,54 @@ export class SupabaseBrowserAuthDriver implements AuthDriver {
     const { data } = await this.#client.auth.getSession();
     if (data.session === null) return { companies: [], activeCompanyId: null };
 
-    const claims = data.session.user.app_metadata as Record<string, unknown>;
-    const companies = (claims["companies"] as string[] | undefined) ?? [];
-    const activeCompanyId =
-      (claims["active_company_id"] as string | null | undefined) ?? null;
+    try {
+      const parts = data.session.access_token.split(".");
+      const payloadPart = parts[1];
+      if (!payloadPart) return { companies: [], activeCompanyId: null };
+      const base64 = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
+      const payload = JSON.parse(atob(base64)) as Record<string, unknown>;
+      const companies = Array.isArray(payload["companies"])
+        ? (payload["companies"] as string[])
+        : [];
+      const activeCompanyId =
+        typeof payload["active_company_id"] === "string"
+          ? payload["active_company_id"]
+          : null;
+      return { companies, activeCompanyId };
+    } catch {
+      return { companies: [], activeCompanyId: null };
+    }
+  }
 
-    return { companies, activeCompanyId };
+  /** Retorna o nome da empresa ativa (requer db-pre-request hook configurado). */
+  async getCompanyName(companyId: string): Promise<string | null> {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (this.#client as any)
+        .schema("kernel")
+        .from("companies")
+        .select("name")
+        .eq("id", companyId)
+        .single();
+      return (data as { name: string } | null)?.name ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Conta eventos no Outbox da empresa ativa (requer SELECT policy em scp_outbox). */
+  async getOutboxCount(companyId: string): Promise<number> {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { count } = await (this.#client as any)
+        .schema("kernel")
+        .from("scp_outbox")
+        .select("*", { count: "exact", head: true })
+        .eq("company_id", companyId);
+      return typeof count === "number" ? count : 0;
+    } catch {
+      return 0;
+    }
   }
 
   // AuthDriver interface methods (server-side operations — delegates to Supabase)
