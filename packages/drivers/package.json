@@ -20,5 +20,6 @@
   },
   "dependencies": {
     "zod": "^3.24.0"
-  }
+  },
+  "license": "BUSL-1.1"
 }

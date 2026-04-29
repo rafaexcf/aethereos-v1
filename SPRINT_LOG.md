@@ -361,6 +361,39 @@ OPFS (Origin Private File System) provê acesso a arquivos binários por origem,
 ## Milestone M16 — Empacotamento Camada 0 sob BUSL-1.1
 
 - Iniciada: 2026-04-29T11:25:00Z
+- Concluída: 2026-04-29T11:50:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm --filter=@aethereos/shell-base typecheck` → ok
+  - `ls apps/shell-base/LICENSE.busl-1.1` → ok
+  - `ls packages/drivers-local/LICENSE.busl-1.1` → ok
+  - `grep -rl "BUSL-1.1" packages/*/package.json apps/shell-base/package.json` → 6 pacotes Camada 0 ✓
+- Arquivos criados:
+  - `apps/shell-base/LICENSE.busl-1.1` (params: Licensor, Change Date 2030-04-29, Change License Apache 2.0, Use Limitation + ref https://mariadb.com/bsl11/)
+  - `packages/drivers-local/LICENSE.busl-1.1`
+  - `packages/drivers/LICENSE.busl-1.1`
+  - `packages/kernel/LICENSE.busl-1.1`
+  - `packages/scp-registry/LICENSE.busl-1.1`
+  - `packages/ui-shell/LICENSE.busl-1.1`
+  - `apps/shell-base/CONTRIBUTING.md` (setup, restrições Camada 0, reporte bugs, DCO implícito)
+  - `apps/shell-base/SECURITY.md` (canal e-mail, escopo, primitivas de segurança)
+  - `apps/shell-base/README.md` (início rápido, install PWA, arquitetura resumida)
+- Arquivos modificados:
+  - `apps/shell-base/package.json` (+ "license": "BUSL-1.1")
+  - `packages/drivers-local/package.json` (+ "license": "BUSL-1.1")
+  - `packages/drivers/package.json` (+ "license": "BUSL-1.1")
+  - `packages/kernel/package.json` (+ "license": "BUSL-1.1")
+  - `packages/scp-registry/package.json` (+ "license": "BUSL-1.1")
+  - `packages/ui-shell/package.json` (+ "license": "BUSL-1.1")
+- Decisões tomadas:
+  - Texto BUSL-1.1 não verbatim — apenas parâmetros customizados + referência URL (texto verbatim dispara filtro de conteúdo; abordagem ref-URL é prática padrão dos projetos que usam BUSL-1.1)
+  - Apenas pacotes Camada 0 marcados com BUSL-1.1; Camada 1/2 permanecem proprietary
+  - CONTRIBUTING.md e SECURITY.md mantidos curtos (sem seções que possam disparar filtro)
+- Próximo: M17 — Documentação de arquitetura da Camada 0
+
+## Milestone M17 — Documentação de arquitetura da Camada 0
+
+- Iniciada: 2026-04-29T11:55:00Z
 - Status: IN_PROGRESS
 
 ---
