@@ -201,14 +201,17 @@ export class SupabaseBrowserAuthDriver implements AuthDriver {
   async getCompanyClaims(): Promise<{
     companies: string[];
     activeCompanyId: string | null;
+    isStaff: boolean;
   }> {
     const { data } = await this.#client.auth.getSession();
-    if (data.session === null) return { companies: [], activeCompanyId: null };
+    if (data.session === null)
+      return { companies: [], activeCompanyId: null, isStaff: false };
 
     try {
       const parts = data.session.access_token.split(".");
       const payloadPart = parts[1];
-      if (!payloadPart) return { companies: [], activeCompanyId: null };
+      if (!payloadPart)
+        return { companies: [], activeCompanyId: null, isStaff: false };
       const base64 = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
       const payload = JSON.parse(atob(base64)) as Record<string, unknown>;
       const companies = Array.isArray(payload["companies"])
@@ -218,9 +221,10 @@ export class SupabaseBrowserAuthDriver implements AuthDriver {
         typeof payload["active_company_id"] === "string"
           ? payload["active_company_id"]
           : null;
-      return { companies, activeCompanyId };
+      const isStaff = payload["is_staff"] === true;
+      return { companies, activeCompanyId, isStaff };
     } catch {
-      return { companies: [], activeCompanyId: null };
+      return { companies: [], activeCompanyId: null, isStaff: false };
     }
   }
 

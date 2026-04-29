@@ -9,7 +9,8 @@
 import { createRoute, useNavigate } from "@tanstack/react-router";
 import { rootRoute } from "./__root.js";
 import { useSessionStore } from "../stores/session.js";
-import { useEffect, useState } from "react";
+import { useDrivers } from "../lib/drivers-context.js";
+import { useEffect, useState, useCallback } from "react";
 
 // ---------------------------------------------------------------------------
 // Demo data — substituir por query real quando Supabase conectado
@@ -90,18 +91,34 @@ const DEMO_STAFF_LOG: StaffAccessLog[] = [
 
 function StaffPage() {
   const navigate = useNavigate();
-  const { userId, email } = useSessionStore();
+  const { userId, email, isStaff } = useSessionStore();
+  const drivers = useDrivers();
   const [activeCompanyId, setActiveCompanyId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"companies" | "access_log">(
     "companies",
   );
 
+  // Middleware: exige sessão autenticada + JWT is_staff=true
   useEffect(() => {
     if (userId === null) {
       void navigate({ to: "/login" });
+      return;
     }
-    // TODO: verificar role=staff no JWT custom claim; redirecionar se não staff
-  }, [userId, navigate]);
+    if (!isStaff) {
+      void navigate({ to: "/" });
+    }
+  }, [userId, isStaff, navigate]);
+
+  // Registra acesso staff em kernel.staff_access_log (browser outbox para platform.staff.access)
+  const recordStaffAccess = useCallback(
+    async (companyId: string, action: string) => {
+      if (drivers === null || userId === null) return;
+      await drivers.data
+        .from("staff_access_log")
+        .insert({ staff_user_id: userId, company_id: companyId, action });
+    },
+    [drivers, userId],
+  );
 
   const activeCompany =
     activeCompanyId !== null
@@ -121,7 +138,7 @@ function StaffPage() {
     pending: "bg-yellow-900/20 text-yellow-400",
   };
 
-  if (userId === null) return null;
+  if (userId === null || !isStaff) return null;
 
   return (
     <div className="flex h-screen flex-col bg-zinc-950 text-zinc-100">
@@ -181,8 +198,8 @@ function StaffPage() {
 
           <div className="mt-4 border-t border-zinc-800 p-3">
             <p className="text-xs text-zinc-700">
-              Acesso staff registrado em platform.staff.access. Owners
-              notificados automaticamente.
+              Acesso registrado em kernel.staff_access_log. Emissão de
+              platform.staff.access via outbox no Sprint 7.
             </p>
           </div>
         </aside>
@@ -305,7 +322,10 @@ function StaffPage() {
                   <button
                     key={company.id}
                     type="button"
-                    onClick={() => setActiveCompanyId(company.id)}
+                    onClick={() => {
+                      setActiveCompanyId(company.id);
+                      void recordStaffAccess(company.id, "company.viewed");
+                    }}
                     className="flex items-center gap-4 px-4 py-3 text-left hover:bg-zinc-900"
                   >
                     <div className="flex flex-1 flex-col gap-0.5 min-w-0">

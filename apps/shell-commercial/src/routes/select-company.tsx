@@ -72,6 +72,7 @@ function SelectCompanyPage() {
         refreshToken: refreshed.value.refresh_token,
         companies: claims.companies,
         activeCompanyId: companyId,
+        isStaff: claims.isStaff,
       });
     }
 

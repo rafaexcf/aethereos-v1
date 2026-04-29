@@ -10,6 +10,7 @@ export type {
   PlatformTenantCreatedPayload,
   PlatformTenantSuspendedPayload,
   PlatformUserCreatedPayload,
+  PlatformStaffAccessPayload,
 } from "./schemas/platform.js";
 
 // Agent events

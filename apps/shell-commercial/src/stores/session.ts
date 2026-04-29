@@ -11,6 +11,8 @@ interface SessionState {
   companies: string[];
   /** Company ativa para esta sessão */
   activeCompanyId: string | null;
+  /** true se o JWT contém is_staff=true (Aethereos internal staff) */
+  isStaff: boolean;
   drivers: CloudDrivers | null;
 }
 
@@ -23,6 +25,7 @@ interface SessionActions {
     refreshToken: string | undefined;
     companies: string[];
     activeCompanyId: string | null;
+    isStaff: boolean;
   }) => void;
   setActiveCompany: (companyId: string) => void;
   clearSession: () => void;
@@ -38,6 +41,7 @@ const initialState: SessionState = {
   refreshToken: null,
   companies: [],
   activeCompanyId: null,
+  isStaff: false,
   drivers: null,
 };
 
@@ -53,12 +57,14 @@ export const useSessionStore = create<SessionStore>((set) => ({
     refreshToken,
     companies,
     activeCompanyId,
+    isStaff,
   }) =>
     set({
       userId,
       accessToken,
       companies,
       activeCompanyId,
+      isStaff,
       ...(email !== undefined ? { email } : {}),
       ...(refreshToken !== undefined ? { refreshToken } : {}),
     }),

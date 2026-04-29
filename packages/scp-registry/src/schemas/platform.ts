@@ -178,6 +178,21 @@ export type PlatformChatChannelCreatedPayload = z.infer<
   typeof PlatformChatChannelCreatedPayloadSchema
 >;
 
+// ---------------------------------------------------------------------------
+// Eventos de staff (Painel Admin Multi-tenant — M49)
+// ---------------------------------------------------------------------------
+
+export const PlatformStaffAccessPayloadSchema = z.object({
+  staff_user_id: z.string().uuid(),
+  company_id: z.string().uuid(),
+  action: z.string().min(1).max(100),
+  resource_id: z.string().optional(),
+  ip: z.string().optional(),
+});
+export type PlatformStaffAccessPayload = z.infer<
+  typeof PlatformStaffAccessPayloadSchema
+>;
+
 /** Mapa de tipo de evento → schema de payload para eventos platform.* */
 export const PLATFORM_EVENT_SCHEMAS = {
   "platform.tenant.created": PlatformTenantCreatedPayloadSchema,
@@ -195,4 +210,5 @@ export const PLATFORM_EVENT_SCHEMAS = {
   "platform.chat.message_sent": PlatformChatMessageSentPayloadSchema,
   "platform.chat.channel_created": PlatformChatChannelCreatedPayloadSchema,
   "platform.settings.updated": PlatformSettingsUpdatedPayloadSchema,
+  "platform.staff.access": PlatformStaffAccessPayloadSchema,
 } as const satisfies Record<string, z.ZodSchema>;

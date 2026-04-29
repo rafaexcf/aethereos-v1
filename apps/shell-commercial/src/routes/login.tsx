@@ -42,6 +42,7 @@ function LoginPage() {
       refreshToken: session.refresh_token,
       companies: claims.companies,
       activeCompanyId: claims.activeCompanyId,
+      isStaff: claims.isStaff,
     });
 
     if (claims.activeCompanyId !== null) {

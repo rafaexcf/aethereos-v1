@@ -36,6 +36,7 @@ export async function boot(): Promise<void> {
     refreshToken: session.refresh_token,
     companies: claims.companies,
     activeCompanyId: claims.activeCompanyId,
+    isStaff: claims.isStaff,
   });
 
   // Define company context nos drivers se já tem uma company ativa
