@@ -1,0 +1,538 @@
+import { useState, useCallback } from "react";
+import { AppShell } from "@aethereos/ui-shell";
+import { useSessionStore } from "../../stores/session.js";
+
+// ---------------------------------------------------------------------------
+// Tipos de domínio (espelham kernel.people)
+// ---------------------------------------------------------------------------
+
+type PersonStatus = "active" | "inactive" | "onboarding";
+
+interface Person {
+  id: string;
+  companyId: string;
+  userId?: string;
+  fullName: string;
+  email?: string;
+  phone?: string;
+  roleLabel?: string;
+  department?: string;
+  status: PersonStatus;
+  createdAt: Date;
+}
+
+// ---------------------------------------------------------------------------
+// Demo state
+// ---------------------------------------------------------------------------
+
+const DEMO_PEOPLE: Person[] = [
+  {
+    id: "p1",
+    companyId: "demo",
+    fullName: "Ana Silva",
+    email: "ana@demo.com",
+    roleLabel: "CTO",
+    department: "Tecnologia",
+    status: "active",
+    createdAt: new Date(Date.now() - 86_400_000 * 30),
+  },
+  {
+    id: "p2",
+    companyId: "demo",
+    fullName: "Carlos Mendes",
+    email: "carlos@demo.com",
+    roleLabel: "Analista",
+    department: "Financeiro",
+    status: "active",
+    createdAt: new Date(Date.now() - 86_400_000 * 15),
+  },
+  {
+    id: "p3",
+    companyId: "demo",
+    fullName: "Beatriz Costa",
+    email: "beatriz@demo.com",
+    roleLabel: "Designer",
+    department: "Produto",
+    status: "onboarding",
+    createdAt: new Date(Date.now() - 86_400_000 * 2),
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const STATUS_LABELS: Record<PersonStatus, string> = {
+  active: "Ativo",
+  inactive: "Inativo",
+  onboarding: "Onboarding",
+};
+
+const STATUS_COLORS: Record<PersonStatus, string> = {
+  active: "text-green-400 bg-green-900/30",
+  inactive: "text-zinc-400 bg-zinc-800",
+  onboarding: "text-yellow-400 bg-yellow-900/30",
+};
+
+function initials(name: string): string {
+  return name
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0] ?? "")
+    .join("")
+    .toUpperCase();
+}
+
+// ---------------------------------------------------------------------------
+// Formulário de criação/edição
+// ---------------------------------------------------------------------------
+
+interface PersonFormData {
+  fullName: string;
+  email: string;
+  phone: string;
+  roleLabel: string;
+  department: string;
+  status: PersonStatus;
+}
+
+const emptyForm: PersonFormData = {
+  fullName: "",
+  email: "",
+  phone: "",
+  roleLabel: "",
+  department: "",
+  status: "active",
+};
+
+interface PersonFormProps {
+  initial?: PersonFormData;
+  onSave: (data: PersonFormData) => void;
+  onCancel: () => void;
+}
+
+function PersonForm({
+  initial = emptyForm,
+  onSave,
+  onCancel,
+}: PersonFormProps) {
+  const [form, setForm] = useState<PersonFormData>(initial);
+
+  function field(key: keyof PersonFormData) {
+    return {
+      value: form[key],
+      onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+        setForm((f) => ({ ...f, [key]: e.target.value })),
+    };
+  }
+
+  return (
+    <div className="flex flex-col gap-3 p-4">
+      <div className="grid grid-cols-2 gap-3">
+        <label className="flex flex-col gap-1">
+          <span className="text-xs text-zinc-500">Nome completo *</span>
+          <input
+            type="text"
+            {...field("fullName")}
+            placeholder="João Silva"
+            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs text-zinc-500">E-mail</span>
+          <input
+            type="email"
+            {...field("email")}
+            placeholder="joao@empresa.com"
+            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs text-zinc-500">Telefone</span>
+          <input
+            type="tel"
+            {...field("phone")}
+            placeholder="(11) 99999-9999"
+            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs text-zinc-500">Cargo</span>
+          <input
+            type="text"
+            {...field("roleLabel")}
+            placeholder="Analista de Dados"
+            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs text-zinc-500">Departamento</span>
+          <input
+            type="text"
+            {...field("department")}
+            placeholder="Tecnologia"
+            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs text-zinc-500">Status</span>
+          <select
+            {...field("status")}
+            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-violet-500"
+          >
+            <option value="active">Ativo</option>
+            <option value="onboarding">Onboarding</option>
+            <option value="inactive">Inativo</option>
+          </select>
+        </label>
+      </div>
+      <div className="flex justify-end gap-2 pt-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:border-zinc-500"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          onClick={() => onSave(form)}
+          disabled={form.fullName.trim().length === 0}
+          className="rounded-md bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-500 disabled:opacity-50"
+        >
+          Salvar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Diálogo de confirmação dupla para desativação
+// ---------------------------------------------------------------------------
+
+interface DeactivateDialogProps {
+  person: Person;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+function DeactivateDialog({
+  person,
+  onConfirm,
+  onCancel,
+}: DeactivateDialogProps) {
+  const [confirmed, setConfirmed] = useState(false);
+
+  return (
+    <div className="flex flex-col gap-4 p-6">
+      <div className="flex flex-col gap-2">
+        <h3 className="text-sm font-semibold text-zinc-100">
+          Desativar {person.fullName}?
+        </h3>
+        <p className="text-xs text-zinc-400">
+          Esta ação desativa o colaborador mas não o exclui permanentemente. O
+          acesso ao sistema será revogado.
+        </p>
+        <div className="mt-2 rounded-md border border-yellow-600/40 bg-yellow-900/20 p-3">
+          <p className="text-xs text-yellow-300">
+            ⚠️ Operação sensível — exige confirmação dupla.
+            Demissão/desligamento é listado nas operações invariantes (12.4) que
+            agentes nunca executam automaticamente.
+          </p>
+        </div>
+      </div>
+      <label className="flex cursor-pointer items-center gap-2">
+        <input
+          type="checkbox"
+          checked={confirmed}
+          onChange={(e) => setConfirmed(e.target.checked)}
+          className="h-4 w-4 accent-red-500"
+        />
+        <span className="text-xs text-zinc-300">
+          Confirmo que desejo desativar{" "}
+          <strong className="text-zinc-100">{person.fullName}</strong>
+        </span>
+      </label>
+      <div className="flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:border-zinc-500"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          onClick={onConfirm}
+          disabled={!confirmed}
+          className="rounded-md bg-red-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-600 disabled:opacity-40"
+        >
+          Desativar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// PessoasApp principal
+// ---------------------------------------------------------------------------
+
+type FilterStatus = "all" | PersonStatus;
+
+export function PessoasApp() {
+  const { activeCompanyId } = useSessionStore();
+
+  const [people, setPeople] = useState<Person[]>(DEMO_PEOPLE);
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
+  const [filterDept, setFilterDept] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [editingPerson, setEditingPerson] = useState<Person | null>(null);
+  const [deactivating, setDeactivating] = useState<Person | null>(null);
+  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+
+  const departments = [
+    ...new Set(people.map((p) => p.department).filter(Boolean)),
+  ] as string[];
+
+  const filtered = people.filter((p) => {
+    if (filterStatus !== "all" && p.status !== filterStatus) return false;
+    if (filterDept.length > 0 && p.department !== filterDept) return false;
+    return true;
+  });
+
+  const handleCreate = useCallback(
+    (data: PersonFormData) => {
+      const newPerson: Person = {
+        id: crypto.randomUUID(),
+        companyId: activeCompanyId ?? "demo",
+        fullName: data.fullName,
+        status: data.status,
+        createdAt: new Date(),
+      };
+      if (data.email.length > 0) newPerson.email = data.email;
+      if (data.phone.length > 0) newPerson.phone = data.phone;
+      if (data.roleLabel.length > 0) newPerson.roleLabel = data.roleLabel;
+      if (data.department.length > 0) newPerson.department = data.department;
+      setPeople((prev) => [...prev, newPerson]);
+      setShowForm(false);
+      // TODO: inserir em kernel.people + emitir platform.person.created
+    },
+    [activeCompanyId],
+  );
+
+  const handleUpdate = useCallback(
+    (data: PersonFormData) => {
+      if (editingPerson === null) return;
+      setPeople((prev) =>
+        prev.map((p) => {
+          if (p.id !== editingPerson.id) return p;
+          const updated: Person = {
+            ...p,
+            fullName: data.fullName,
+            status: data.status,
+          };
+          if (data.email.length > 0) updated.email = data.email;
+          if (data.phone.length > 0) updated.phone = data.phone;
+          if (data.roleLabel.length > 0) updated.roleLabel = data.roleLabel;
+          if (data.department.length > 0) updated.department = data.department;
+          return updated;
+        }),
+      );
+      setEditingPerson(null);
+      // TODO: atualizar em kernel.people + emitir platform.person.updated
+    },
+    [editingPerson],
+  );
+
+  function handleDeactivate(person: Person) {
+    setDeactivating(person);
+  }
+
+  function confirmDeactivate() {
+    if (deactivating === null) return;
+    setPeople((prev) =>
+      prev.map((p) =>
+        p.id === deactivating.id ? { ...p, status: "inactive" as const } : p,
+      ),
+    );
+    setDeactivating(null);
+    if (selectedPerson?.id === deactivating.id) {
+      setSelectedPerson((prev) =>
+        prev !== null ? { ...prev, status: "inactive" } : null,
+      );
+    }
+    // TODO: emitir platform.person.deactivated (bloqueado para agentes via PermissionEngine)
+  }
+
+  const totalActive = people.filter((p) => p.status === "active").length;
+
+  return (
+    <AppShell
+      title="Pessoas"
+      subtitle={`${totalActive} ativo(s) de ${people.length} cadastrado(s)`}
+      actions={
+        <div className="flex items-center gap-2">
+          <select
+            value={filterDept}
+            onChange={(e) => setFilterDept(e.target.value)}
+            className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-zinc-300 focus:outline-none"
+          >
+            <option value="">Todos os depto.</option>
+            {departments.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
+          <div className="flex rounded-md border border-zinc-700 overflow-hidden">
+            {(
+              ["all", "active", "onboarding", "inactive"] as FilterStatus[]
+            ).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setFilterStatus(s)}
+                className={[
+                  "px-2 py-1 text-xs transition-colors",
+                  filterStatus === s
+                    ? "bg-violet-600 text-white"
+                    : "text-zinc-400 hover:text-zinc-200",
+                ].join(" ")}
+              >
+                {s === "all" ? "Todos" : STATUS_LABELS[s]}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setEditingPerson(null);
+              setShowForm(true);
+            }}
+            className="rounded-md bg-violet-600 px-3 py-1 text-xs font-medium text-white hover:bg-violet-500"
+          >
+            + Cadastrar
+          </button>
+        </div>
+      }
+    >
+      {/* Painel de detalhe/edição/form */}
+      {(showForm || editingPerson !== null || deactivating !== null) && (
+        <div className="shrink-0 border-b border-zinc-800 bg-zinc-900/50">
+          {deactivating !== null ? (
+            <DeactivateDialog
+              person={deactivating}
+              onConfirm={confirmDeactivate}
+              onCancel={() => setDeactivating(null)}
+            />
+          ) : (
+            <PersonForm
+              initial={
+                editingPerson !== null
+                  ? {
+                      fullName: editingPerson.fullName,
+                      email: editingPerson.email ?? "",
+                      phone: editingPerson.phone ?? "",
+                      roleLabel: editingPerson.roleLabel ?? "",
+                      department: editingPerson.department ?? "",
+                      status: editingPerson.status,
+                    }
+                  : emptyForm
+              }
+              onSave={editingPerson !== null ? handleUpdate : handleCreate}
+              onCancel={() => {
+                setShowForm(false);
+                setEditingPerson(null);
+              }}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Lista de pessoas */}
+      <div className="flex flex-1 flex-col overflow-y-auto divide-y divide-zinc-800">
+        {filtered.length === 0 ? (
+          <div className="flex flex-1 items-center justify-center text-sm text-zinc-600">
+            Nenhuma pessoa encontrada
+          </div>
+        ) : (
+          filtered.map((person) => (
+            <div
+              key={person.id}
+              className={[
+                "group flex items-center gap-3 px-4 py-3 hover:bg-zinc-900 cursor-pointer",
+                selectedPerson?.id === person.id ? "bg-zinc-900" : "",
+              ].join(" ")}
+              onClick={() =>
+                setSelectedPerson((prev) =>
+                  prev?.id === person.id ? null : person,
+                )
+              }
+            >
+              {/* Avatar */}
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-700/30 text-sm font-medium text-violet-300">
+                {initials(person.fullName)}
+              </div>
+
+              {/* Info */}
+              <div className="flex flex-1 flex-col gap-0.5 overflow-hidden">
+                <span className="truncate text-sm font-medium text-zinc-100">
+                  {person.fullName}
+                </span>
+                <span className="truncate text-xs text-zinc-500">
+                  {[person.roleLabel, person.department]
+                    .filter(Boolean)
+                    .join(" · ")}
+                  {person.email !== undefined && (
+                    <span className="ml-1 text-zinc-600">· {person.email}</span>
+                  )}
+                </span>
+              </div>
+
+              {/* Status badge */}
+              <span
+                className={[
+                  "shrink-0 rounded-full px-2 py-0.5 text-xs",
+                  STATUS_COLORS[person.status],
+                ].join(" ")}
+              >
+                {STATUS_LABELS[person.status]}
+              </span>
+
+              {/* Ações — visíveis no hover */}
+              <div className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingPerson(person);
+                    setShowForm(false);
+                  }}
+                  className="rounded p-1 text-xs text-zinc-500 hover:text-zinc-300"
+                  title="Editar"
+                >
+                  ✏️
+                </button>
+                {person.status !== "inactive" && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeactivate(person);
+                    }}
+                    className="rounded p-1 text-xs text-zinc-500 hover:text-red-400"
+                    title="Desativar"
+                  >
+                    🚫
+                  </button>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </AppShell>
+  );
+}

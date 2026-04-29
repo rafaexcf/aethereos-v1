@@ -160,6 +160,39 @@ export const files = kernelSchema.table(
   ],
 );
 
+// ---------------------------------------------------------------------------
+// Cadastro de Pessoas — M42
+// ---------------------------------------------------------------------------
+
+export const people = kernelSchema.table(
+  "people",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    userId: uuid("user_id"),
+    fullName: text("full_name").notNull(),
+    email: text("email"),
+    phone: text("phone"),
+    roleLabel: text("role_label"),
+    department: text("department"),
+    metadata: jsonb("metadata").notNull().default({}),
+    status: text("status").notNull().default("active"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("kernel_people_company_status_idx").on(t.companyId, t.status),
+    index("kernel_people_company_dept_idx").on(t.companyId, t.department),
+    uniqueIndex("kernel_people_unique_email_idx").on(t.companyId, t.email),
+  ],
+);
+
 export const fileVersions = kernelSchema.table(
   "file_versions",
   {

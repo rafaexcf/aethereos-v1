@@ -102,6 +102,42 @@ export type PlatformNotificationDispatchedPayload = z.infer<
   typeof PlatformNotificationDispatchedPayloadSchema
 >;
 
+// ---------------------------------------------------------------------------
+// Eventos de pessoas (Cadastro de Pessoas — M42)
+// ---------------------------------------------------------------------------
+
+export const PlatformPersonCreatedPayloadSchema = z.object({
+  person_id: z.string().uuid(),
+  company_id: z.string().uuid(),
+  full_name: z.string().min(1),
+  email: z.string().email().optional(),
+  created_by: z.string().uuid(),
+});
+export type PlatformPersonCreatedPayload = z.infer<
+  typeof PlatformPersonCreatedPayloadSchema
+>;
+
+export const PlatformPersonUpdatedPayloadSchema = z.object({
+  person_id: z.string().uuid(),
+  company_id: z.string().uuid(),
+  fields_changed: z.array(z.string()),
+  updated_by: z.string().uuid(),
+});
+export type PlatformPersonUpdatedPayload = z.infer<
+  typeof PlatformPersonUpdatedPayloadSchema
+>;
+
+export const PlatformPersonDeactivatedPayloadSchema = z.object({
+  person_id: z.string().uuid(),
+  company_id: z.string().uuid(),
+  full_name: z.string().min(1),
+  deactivated_by: z.string().uuid(),
+  approval_token: z.string().uuid(),
+});
+export type PlatformPersonDeactivatedPayload = z.infer<
+  typeof PlatformPersonDeactivatedPayloadSchema
+>;
+
 /** Mapa de tipo de evento → schema de payload para eventos platform.* */
 export const PLATFORM_EVENT_SCHEMAS = {
   "platform.tenant.created": PlatformTenantCreatedPayloadSchema,
@@ -113,4 +149,7 @@ export const PLATFORM_EVENT_SCHEMAS = {
   "platform.folder.created": PlatformFolderCreatedPayloadSchema,
   "platform.notification.dispatched":
     PlatformNotificationDispatchedPayloadSchema,
+  "platform.person.created": PlatformPersonCreatedPayloadSchema,
+  "platform.person.updated": PlatformPersonUpdatedPayloadSchema,
+  "platform.person.deactivated": PlatformPersonDeactivatedPayloadSchema,
 } as const satisfies Record<string, z.ZodSchema>;
