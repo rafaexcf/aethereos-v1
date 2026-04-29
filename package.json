@@ -1,0 +1,54 @@
+{
+  "name": "aethereos",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Aethereos — OS B2B no navegador. Camada 0 (open source local-first) + Camada 1 (proprietária) + Camada 2 (distribuições verticais).",
+  "license": "SEE LICENSE IN LICENSE",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20.19.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:isolation": "turbo run test:isolation",
+    "test:e2e": "turbo run test:e2e",
+    "deps:check": "depcruise --config .dependency-cruiser.cjs packages apps tooling",
+    "deps:graph": "depcruise --config .dependency-cruiser.cjs --output-type dot packages apps | dot -T svg > docs/architecture/dependency-graph.svg",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,md,json,yaml,yml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,md,json,yaml,yml}\"",
+    "clean": "turbo run clean && rm -rf node_modules .turbo",
+    "ci:audit": "pnpm audit --audit-level=high",
+    "ci:full": "pnpm typecheck && pnpm lint && pnpm deps:check && pnpm test && pnpm test:isolation && pnpm build",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "dependency-cruiser": "^16.5.0",
+    "husky": "^9.1.0",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.4.0",
+    "turbo": "^2.3.0",
+    "typescript": "^5.7.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "prettier --write"
+    ],
+    "*.{md,json,yaml,yml}": [
+      "prettier --write"
+    ]
+  },
+  "pnpm": {
+    "peerDependencyRules": {
+      "allowedVersions": {
+        "react": "19",
+        "react-dom": "19"
+      }
+    }
+  }
+}

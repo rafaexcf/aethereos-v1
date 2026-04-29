@@ -1,0 +1,39 @@
+Aethereos — Licenciamento
+
+Este monorepo contém código sob licenças diferentes por workspace.
+
+CAMADA 0 (open source local-first):
+- apps/shell-base/
+- packages/kernel/* (núcleo agnostico)
+- packages/drivers/* (interfaces e LocalDrivers)
+- packages/ui-shell/* (componentes compartilhados)
+- packages/scp-registry/*
+Licença: Business Source License 1.1 (BUSL-1.1)
+Change Date: 2030-04-29 (4 anos após bootstrap)
+Change License: Apache License 2.0
+Texto canônico da BUSL-1.1: https://mariadb.com/bsl11/
+
+Use restrito até a Change Date: uso comercial em produção que ofereça os
+componentes da Camada 0 como serviço hospedado a terceiros é vedado.
+Uso pessoal, educacional, de pesquisa, e em produção interna da própria
+empresa adotante é permitido.
+
+CAMADA 1 (proprietária):
+- apps/shell-commercial/
+- packages/drivers-supabase/
+- packages/drivers-nats/
+- demais drivers concretos cloud
+- Services proprietários e distribuições verticais
+Licença: comercial proprietária. Todos os direitos reservados.
+
+CAMADA 2 (distribuições verticais):
+- apps/comercio-digital/
+- apps/logitix/
+- apps/kwix/
+- apps/autergon/
+- apps/sites/*
+Licença: comercial proprietária. Todos os direitos reservados.
+
+Em caso de dúvida sobre licença de um arquivo específico, consulte o
+package.json do workspace correspondente, campo "license", e o
+docs/adr/0001-fundacao.md.

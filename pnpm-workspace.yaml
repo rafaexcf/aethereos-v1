@@ -1,0 +1,13 @@
+packages:
+  # Aplicações executáveis
+  - 'apps/*'
+  - 'apps/sites/*'
+
+  # Pacotes compartilhados (kernel, drivers, UI, SDK, etc.)
+  - 'packages/*'
+
+  # Ferramentas internas (codemods, scripts, ADR helpers)
+  - 'tooling/*'
+
+# Aethereos requer Node 20.19+ ou 22.12+ (Fundamentação 14.1)
+# pnpm 9.x cravado conforme Bootstrap dia 4
