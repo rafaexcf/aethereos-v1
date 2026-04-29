@@ -753,3 +753,32 @@ Sprint 3 construiu a Camada 1 completa do Aethereos: o shell cloud-first multi-t
 6. **scp-worker produção:** criar Deployment com réplicas, health checks e alertas de backlog NATS
 
 **Próximo sprint:** Sprint 4 — `apps/comercio-digital/` (primeiro SaaS standalone, Next.js 15 App Router).
+
+---
+
+# Sprint 4 — comercio.digital (primeiro SaaS standalone)
+
+Início: 2026-04-29T18:00:00Z
+Modelo: Claude Code (claude-sonnet-4-6, Sprint 4 N=1)
+
+## Decisão de escopo registrada
+
+Validação local-only (sem Supabase cloud, sem Stripe live, sem domínio).
+Cloud + produção ficam para humano após este sprint.
+
+## Calibração inicial (Sprint 4)
+
+1. **Next.js 15 (não Vite):** comercio.digital é SaaS standalone com landing SEO-first, indexação, metadata/OG por rota, sitemap — exige SSR/SSG do Next.js. Shells são PWA/OS sem SSR; ADR-0014 #16 [DEC] explicita a separação.
+2. **3 rotas-mãe canônicas:** `/(public)` SEO-first sem auth; `/app` autenticada dashboard standalone; `/embed` iframe sem chrome com token via postMessage.
+3. **Integração via embed (EMBED_PROTOCOL.md):** shell-commercial cria iframe para `/embed`. Envia `host.token.set` via postMessage. Layout embed chama `auth.setSession()` e emite `embed.ready`. Sessão delegada, sem login próprio.
+4. **Stripe gateway, não billing:** Stripe = charge único + refund. Billing recorrente metered (usage SCP, tokens LLM, etc.) = Lago (Sprint 5+). ADR-0014 #9 [DEC].
+5. **`commerce.checkout.started` vs `commerce.order.paid`:** `started` = sessão Stripe criada, pagamento em andamento (pode ser abandonado). `paid` = webhook `checkout.session.completed` confirmado — transação consumada. Downstream só age sobre `paid`.
+6. **Camada 2 reusa Camada 1:** `comercio.digital` importa `@aethereos/kernel`, `@aethereos/ui-shell`, `@aethereos/drivers-supabase`, `@aethereos/scp-registry`. "Camada 2" = posição na hierarquia de produto, não reimplementação isolada.
+7. **`/browser` vs entry padrão:** Server Components e Route Handlers importam `@aethereos/drivers-supabase` (inclui `postgres` Node.js). Client Components importam `@aethereos/drivers-supabase/browser` (apenas `SupabaseBrowserAuthDriver`, sem Node.js).
+
+## Histórico de milestones (Sprint 4)
+
+### M26 — Scaffold apps/comercio-digital/ Next.js 15 + estrutura tripla
+
+- Iniciada: 2026-04-29T18:05:00Z
+- Status: EM ANDAMENTO
