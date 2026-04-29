@@ -23,6 +23,12 @@ const ChatApp = lazy(() =>
   import("../apps/chat/index.js").then((m) => ({ default: m.ChatApp })),
 );
 
+const ConfiguracoesApp = lazy(() =>
+  import("../apps/configuracoes/index.js").then((m) => ({
+    default: m.ConfiguracoesApp,
+  })),
+);
+
 export const APP_REGISTRY: AppDefinition[] = [
   {
     id: "drive",
@@ -44,6 +50,13 @@ export const APP_REGISTRY: AppDefinition[] = [
     icon: "💬",
     minRole: "member",
     component: ChatApp,
+  },
+  {
+    id: "configuracoes",
+    label: "Configurações",
+    icon: "⚙️",
+    minRole: "member",
+    component: ConfiguracoesApp,
   },
 ];
 

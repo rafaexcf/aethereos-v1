@@ -139,6 +139,20 @@ export type PlatformPersonDeactivatedPayload = z.infer<
 >;
 
 // ---------------------------------------------------------------------------
+// Eventos de configurações (M44)
+// ---------------------------------------------------------------------------
+
+export const PlatformSettingsUpdatedPayloadSchema = z.object({
+  scope: z.enum(["user", "company", "platform"]),
+  scope_id: z.string().uuid(),
+  key: z.string().min(1),
+  updated_by: z.string().uuid(),
+});
+export type PlatformSettingsUpdatedPayload = z.infer<
+  typeof PlatformSettingsUpdatedPayloadSchema
+>;
+
+// ---------------------------------------------------------------------------
 // Eventos de chat (M43)
 // ---------------------------------------------------------------------------
 
@@ -180,4 +194,5 @@ export const PLATFORM_EVENT_SCHEMAS = {
   "platform.person.deactivated": PlatformPersonDeactivatedPayloadSchema,
   "platform.chat.message_sent": PlatformChatMessageSentPayloadSchema,
   "platform.chat.channel_created": PlatformChatChannelCreatedPayloadSchema,
+  "platform.settings.updated": PlatformSettingsUpdatedPayloadSchema,
 } as const satisfies Record<string, z.ZodSchema>;

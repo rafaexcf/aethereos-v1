@@ -125,6 +125,24 @@ export const scpOutbox = kernelSchema.table(
 );
 
 // ---------------------------------------------------------------------------
+// Configurações — M44
+// ---------------------------------------------------------------------------
+
+export const settings = kernelSchema.table(
+  "settings",
+  {
+    scope: text("scope").notNull(),
+    scopeId: uuid("scope_id").notNull(),
+    key: text("key").notNull(),
+    value: jsonb("value").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("kernel_settings_scope_id_idx").on(t.scope, t.scopeId)],
+);
+
+// ---------------------------------------------------------------------------
 // Drive — M41
 // ---------------------------------------------------------------------------
 
