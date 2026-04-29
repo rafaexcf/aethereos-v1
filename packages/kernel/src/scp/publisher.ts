@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import type {
   DatabaseDriver,
   EventBusDriver,
@@ -7,6 +6,7 @@ import type {
 import { ValidationError } from "@aethereos/drivers";
 import type { PartialEnvelope } from "@aethereos/scp-registry";
 import { buildEnvelope, hasSchema } from "@aethereos/scp-registry";
+import { getCurrentCorrelationId } from "../correlation.js";
 
 export interface PublishResult {
   readonly correlation_id: string;
@@ -65,7 +65,7 @@ export class KernelPublisher {
       };
     }
 
-    const correlation_id = randomUUID();
+    const correlation_id = context.correlation_id ?? getCurrentCorrelationId();
     const partial: PartialEnvelope = {
       type: eventType,
       tenant_id: context.company_id,

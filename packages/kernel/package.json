@@ -28,6 +28,7 @@
   "dependencies": {
     "@aethereos/drivers": "workspace:*",
     "@aethereos/scp-registry": "workspace:*",
+    "@opentelemetry/api": "^1.9.0",
     "zod": "^3.24.0"
   },
   "license": "BUSL-1.1"

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { randomUUID } from "node:crypto";
 
 export function middleware(request: NextRequest): NextResponse {
   const { pathname, searchParams } = request.nextUrl;
@@ -27,7 +28,14 @@ export function middleware(request: NextRequest): NextResponse {
     }
   }
 
-  const response = NextResponse.next();
+  // Propagate or generate correlation ID for every request
+  const correlationId = request.headers.get("x-correlation-id") ?? randomUUID();
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-correlation-id", correlationId);
+
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  response.headers.set("x-correlation-id", correlationId);
 
   if (isEmbed) {
     response.headers.set("x-aethereos-embed", "true");

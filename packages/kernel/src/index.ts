@@ -35,3 +35,6 @@ export type { InvariantOperation } from "./invariants/operations.js";
 // LLM
 export { instrumentedChat } from "./llm/instrumented-chat.js";
 export type { InstrumentedChatOptions } from "./llm/instrumented-chat.js";
+
+// Correlation
+export { getCurrentCorrelationId } from "./correlation.js";

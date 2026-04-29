@@ -967,3 +967,23 @@ Plano-mestre: ver CAMADA_1_PLANO_MESTRE.md
   - `packages/config-ts/base.json` — path alias @aethereos/observability
 - Decisão: removido @opentelemetry/sdk-metrics de direct deps para evitar conflito de instância dupla com sdk-node (private property \_shutdown incompatível no TypeScript); métricas via OTEL_METRICS_EXPORTER=otlp em runtime
 - Decisão: instrumentation.ts não passa otlpEndpoint explícito — SDK lê OTEL_EXPORTER_OTLP_ENDPOINT do ambiente automaticamente
+
+### Milestone M36 — correlation ID end-to-end (HTTP → OTel → outbox → NATS)
+
+- Iniciada: 2026-04-30T01:10:00Z
+- Concluída: 2026-04-30T01:30:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm test --filter=@aethereos/kernel` → 12/12 ✅
+  - `pnpm typecheck --filter=@aethereos/kernel --filter=@aethereos/comercio-digital` → ok
+  - `pnpm lint --filter=@aethereos/kernel` → ok
+- Arquivos criados:
+  - `packages/kernel/src/correlation.ts` — getCurrentCorrelationId(): lê trace_id do OTel span ativo, fallback para randomUUID()
+  - `packages/kernel/__tests__/correlation.test.ts` — 4 testes (span válido, sem span, span inválido, UUIDs diferentes)
+- Arquivos modificados:
+  - `packages/kernel/src/scp/publisher.ts` — usa context.correlation_id ?? getCurrentCorrelationId() em vez de sempre gerar novo UUID
+  - `packages/kernel/src/index.ts` — exporta getCurrentCorrelationId
+  - `packages/kernel/package.json` — dep @opentelemetry/api ^1.9.0
+  - `apps/comercio-digital/middleware.ts` — lê x-correlation-id do request ou gera novo UUID; propaga em request headers + response headers
+- Fluxo completo: HTTP request → middleware gera/propaga x-correlation-id → OTel NodeSDK instrumenta e cria span com trace_id → getCurrentCorrelationId() lê trace_id → KernelPublisher usa como correlation_id → NatsEventBusDriver seta X-Correlation-Id no header NATS → consumer recebe com mesmo ID → Langfuse tag (via instrumentedChat)
+- Decisão: NATS driver já propagava correlation_id (linhas 96-98 do nats-event-bus-driver.ts) — nenhuma mudança necessária

@@ -461,6 +461,9 @@ importers:
       "@aethereos/scp-registry":
         specifier: workspace:*
         version: link:../scp-registry
+      "@opentelemetry/api":
+        specifier: ^1.9.0
+        version: 1.9.1
       zod:
         specifier: ^3.24.0
         version: 3.25.76
