@@ -548,3 +548,27 @@ Modelo: Claude Code (claude-sonnet-4-6, Sprint 3 N=1)
 **6. Agente vs humano no SCP (Interpretação A+):** `actor.type: "human"` (user_id, session_id) vs `"agent"` (agent_id, supervising_user_id). Agentes têm JWT TTL 15min, capability tokens sempre subconjunto do supervisor humano. 8 operações invariantes bloqueadas para agentes. Autonomia 0-1 no ano 1.
 
 ## Histórico de milestones (Sprint 3)
+
+## Milestone M19 — Supabase local + testes de isolação RLS
+
+- Iniciada: 2026-04-29T14:05:00Z
+- Concluída: 2026-04-29T14:30:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm typecheck` → ok
+  - `pnpm lint` → ok (corrigiu `!` non-null assertion → `?? ""`)
+  - `pnpm test:isolation` → 7 testes skipped (sem DB) = ok
+- Arquivos criados:
+  - `apps/scp-worker/__tests__/rls.test.ts` — 7 testes: fail-closed sem contexto, isolação A vs B, switch de contexto na sessão
+  - `apps/scp-worker/vitest.isolation.config.ts` — config vitest com `node` environment
+  - `docs/runbooks/local-dev-shell-commercial.md` — runbook completo: subir DB, verificar RLS, rodar worker, troubleshooting
+- Arquivos modificados:
+  - `apps/scp-worker/package.json` — `+ test:isolation`, `+ vitest ^2.1.0`
+  - `package.json` raiz — `+ dev:db: supabase start && supabase db reset`
+- Decisões tomadas:
+  - Docker não disponível no ambiente WSL2 de dev — testes usam `describe.skipIf(!hasDb)` com `TEST_DATABASE_URL`
+  - `postgres(dbUrl ?? "")` em vez de `postgres(dbUrl!)` — respeita `no-non-null-assertion` (describe é skipped quando dbUrl é undefined)
+  - `SET LOCAL ROLE authenticated` dentro de transação para simular RLS sem precisar de conexão separada
+  - `set_config('app.current_company_id', ..., true)` — terceiro parâmetro `true` = transaction-local (equivale a SET LOCAL)
+  - Outbox tests: authenticated não tem SELECT na scp_outbox (apenas INSERT) — validado que service_role vê cross-tenant
+  - Vitest 2.1 (não 3.x): compatível com NodeNext moduleResolution já usado pelo scp-worker
