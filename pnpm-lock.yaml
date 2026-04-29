@@ -101,6 +101,9 @@ importers:
       react-dom:
         specifier: ^19.0.0
         version: 19.2.5(react@19.2.5)
+      sql.js:
+        specifier: ^1.12.0
+        version: 1.14.1
       zustand:
         specifier: ^5.0.0
         version: 5.0.12(@types/react@19.2.14)(react@19.2.5)(use-sync-external-store@1.6.0(react@19.2.5))
@@ -220,7 +223,7 @@ importers:
         version: 2.105.1
       drizzle-orm:
         specifier: ^0.41.0
-        version: 0.41.0(postgres@3.4.9)
+        version: 0.41.0(postgres@3.4.9)(sql.js@1.14.1)
       postgres:
         specifier: ^3.4.5
         version: 3.4.9
@@ -5212,6 +5215,12 @@ packages:
       }
     deprecated: Please use @jridgewell/sourcemap-codec instead
 
+  sql.js@1.14.1:
+    resolution:
+      {
+        integrity: sha512-gcj8zBWU5cFsi9WUP+4bFNXAyF1iRpA3LLyS/DP5xlrNzGmPIizUeBggKa8DbDwdqaKwUcTEnChtd2grWo/x/A==,
+      }
+
   stackback@0.0.2:
     resolution:
       {
@@ -7840,9 +7849,10 @@ snapshots:
     dependencies:
       is-obj: 2.0.0
 
-  drizzle-orm@0.41.0(postgres@3.4.9):
+  drizzle-orm@0.41.0(postgres@3.4.9)(sql.js@1.14.1):
     optionalDependencies:
       postgres: 3.4.9
+      sql.js: 1.14.1
 
   dunder-proto@1.0.1:
     dependencies:
@@ -9141,6 +9151,8 @@ snapshots:
       whatwg-url: 7.1.0
 
   sourcemap-codec@1.4.8: {}
+
+  sql.js@1.14.1: {}
 
   stackback@0.0.2: {}
 

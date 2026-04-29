@@ -289,6 +289,34 @@ OPFS (Origin Private File System) provê acesso a arquivos binários por origem,
 ## Milestone M13 — Boot local-first: SQLite WASM + OPFS
 
 - Iniciada: 2026-04-29T10:05:00Z
+- Concluída: 2026-04-29T10:30:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm --filter=@aethereos/shell-base typecheck` → ok
+  - `pnpm --filter=@aethereos/shell-base build` → ok
+  - Bundle inicial (sem sql.js lazy): ~107 KB gzip (limite: 500 KB) ✓
+  - sql.js lazy chunks: 14.5 KB JS + 323 KB WASM (carregados em boot, cacheados pelo SW)
+- Arquivos criados/modificados:
+  - `apps/shell-base/package.json` (+ sql.js ^1.12.0)
+  - `apps/shell-base/src/vite-env.d.ts` (/// reference vite/client + vite-plugin-pwa)
+  - `apps/shell-base/src/types/sql-js.d.ts` (ambient declaration mínima para sql.js)
+  - `apps/shell-base/tsconfig.json` (include src/\*_/_.d.ts)
+  - `apps/shell-base/src/lib/boot.ts` (boot completo: sql.js lazy import + OPFS/IDB load/save + ae_meta schema + autoSave)
+  - `apps/shell-base/src/lib/boot-context.tsx` (BootProvider + useBootResult React hook)
+  - `apps/shell-base/src/main.tsx` (App component: boot async, LoadingScreen, ErrorScreen, BootProvider)
+- Decisões tomadas:
+  - `import sqlWasmUrl from "sql.js/dist/sql-wasm.wasm?url"` — Vite copia WASM para dist/assets/ com hash; apenas URL string no bundle inicial
+  - `await import("sql.js")` — chunk lazy separado; não inflata bundle inicial
+  - `sql.js` não inclui tipos; escrevemos `src/types/sql-js.d.ts` com interface mínima necessária (Database, SqlJsStatic, initSqlJs)
+  - Actor.type="human" usa `user_id` (não `id`) — discriminated union corrigida durante typecheck
+  - auto-save a cada 30s + beforeunload via `window.addEventListener`
+  - LoadingScreen + ErrorScreen em main.tsx (sem dependência extra)
+  - `buildDrivers()` ao nível de módulo (fora do componente) para evitar re-criação em re-renders
+- Próximo: M14 — Shell visual mínimo: Window Manager + Dock + Mesa + Bloco de Notas
+
+## Milestone M14 — Shell visual mínimo: Window Manager + Dock + Mesa
+
+- Iniciada: 2026-04-29T10:35:00Z
 - Status: IN_PROGRESS
 
 ---

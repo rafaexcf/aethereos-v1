@@ -7,6 +7,6 @@
       "@aethereos/drivers-local": ["../../packages/drivers-local/src/index.ts"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts", "vite.config.ts"],
   "exclude": ["node_modules", "dist"]
 }
