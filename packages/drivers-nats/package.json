@@ -1,5 +1,5 @@
 {
-  "name": "@aethereos/drivers-supabase",
+  "name": "@aethereos/drivers-nats",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -12,9 +12,7 @@
   },
   "dependencies": {
     "@aethereos/drivers": "workspace:*",
-    "@supabase/supabase-js": "^2.49.0",
-    "drizzle-orm": "^0.41.0",
-    "postgres": "^3.4.5"
+    "nats": "^2.29.3"
   },
   "devDependencies": {
     "@aethereos/config-eslint": "workspace:*",

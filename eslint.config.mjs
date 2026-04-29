@@ -13,6 +13,8 @@ export default tseslint.config(
       "**/coverage/**",
       "**/.turbo/**",
       "pnpm-lock.yaml",
+      // Generated declaration files — never lint .d.ts
+      "**/*.d.ts",
       // Config files at root are CJS — ESLint won't lint them
       ".dependency-cruiser.cjs",
       "commitlint.config.cjs",

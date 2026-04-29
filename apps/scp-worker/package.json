@@ -1,19 +1,19 @@
 {
-  "name": "@aethereos/drivers-supabase",
+  "name": "@aethereos/scp-worker",
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "exports": {
-    ".": "./src/index.ts"
-  },
   "scripts": {
+    "dev": "node --watch --experimental-specifier-resolution=node dist/main.js",
+    "build": "tsc --project tsconfig.build.json",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "start": "node dist/main.js"
   },
   "dependencies": {
     "@aethereos/drivers": "workspace:*",
-    "@supabase/supabase-js": "^2.49.0",
-    "drizzle-orm": "^0.41.0",
+    "@aethereos/drivers-supabase": "workspace:*",
+    "@aethereos/drivers-nats": "workspace:*",
     "postgres": "^3.4.5"
   },
   "devDependencies": {

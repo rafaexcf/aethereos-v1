@@ -7,6 +7,7 @@
       "@aethereos/drivers-supabase": [
         "../../packages/drivers-supabase/src/index.ts"
       ],
+      "@aethereos/drivers-nats": ["../../packages/drivers-nats/src/index.ts"],
       "@aethereos/kernel": ["../../packages/kernel/src/index.ts"],
       "@aethereos/scp-registry": ["../../packages/scp-registry/src/index.ts"],
       "@aethereos/ui-shell": ["../../packages/ui-shell/src/index.ts"],

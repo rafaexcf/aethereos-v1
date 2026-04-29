@@ -1,0 +1,35 @@
+version: "3.9"
+
+# Infraestrutura local de desenvolvimento para Aethereos.
+# Supabase é gerenciado separadamente via `pnpm db:start` (supabase CLI).
+# Este compose provisiona apenas o event bus (NATS JetStream).
+#
+# Uso:
+#   docker compose -f infra/local/docker-compose.dev.yml up -d
+#   docker compose -f infra/local/docker-compose.dev.yml down
+
+services:
+  nats:
+    image: nats:2.11-alpine
+    container_name: aethereos-nats-dev
+    ports:
+      - "4222:4222" # client connections
+      - "8222:8222" # HTTP monitoring
+    command:
+      - "--jetstream"
+      - "--store_dir=/data"
+      - "--http_port=8222"
+      - "--cluster_name=aethereos-dev"
+      - "--name=aethereos-nats-dev"
+    volumes:
+      - nats_data:/data
+    healthcheck:
+      test: ["CMD", "nats-server", "--version"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  nats_data:
+    driver: local

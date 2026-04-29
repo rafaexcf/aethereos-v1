@@ -24,6 +24,8 @@
     "clean": "turbo run clean && rm -rf node_modules .turbo",
     "ci:audit": "pnpm audit --audit-level=high",
     "ci:full": "pnpm typecheck && pnpm lint && pnpm deps:check && pnpm test && pnpm test:isolation && pnpm build",
+    "dev:infra": "docker compose -f infra/local/docker-compose.dev.yml up -d",
+    "dev:infra:down": "docker compose -f infra/local/docker-compose.dev.yml down",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",

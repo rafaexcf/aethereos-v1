@@ -8,6 +8,7 @@
     "./library": "./library.json",
     "./react-library": "./react-library.json",
     "./vite-app": "./vite-app.json",
-    "./next-app": "./next-app.json"
+    "./next-app": "./next-app.json",
+    "./library-build": "./library-build.json"
   }
 }
