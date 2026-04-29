@@ -1610,3 +1610,68 @@ Sprint 8 cobrirá dívidas externas (LLM real, Staff service_role, RAG, fix cont
 - Total de commits Sprint 7 Revisado: 6 (MX7–MX12)
 - 38 testes de isolamento/pipeline (skip automático sem TEST_DATABASE_URL)
 - Aguardando revisão humana. Sprint 8 não iniciado.
+
+---
+
+# Sprint 8 — Dívidas externas + RAG não-validado + Staff service_role + fix containers + Playwright E2E
+
+Início: 2026-04-29T00:00:00Z
+Modelo: Claude Code (claude-sonnet-4-6, Sprint 8 N=1)
+
+## Decisões humanas registradas
+
+- Sem chave LLM real (Copilot em degradado)
+- RAG implementado mas NÃO VALIDADO E2E
+- Fix de containers em paralelo com demais milestones
+- Escopo completo: LLM degradado + RAG não-validado + Staff service_role + fix containers + Playwright E2E
+
+## Calibração inicial (7 pontos respondidos)
+
+1. **RAG não pode ser validado E2E sem LLM real**: pipeline requer embeddings reais (`embed-text` → LiteLLM `/embeddings`); sem API key, embedder retorna 503 (modo degradado), `kernel.embeddings` fica vazia, retrieval retorna 0 chunks — impossível validar "resposta correta com citação".
+
+2. **`service_role` vs `anon` key**: `anon` aplica RLS + autenticação JWT (browser-safe, pública); `service_role` bypassa RLS completamente (acesso root ao Postgres via PostgREST — server-only, nunca ao browser).
+
+3. **Por que `service_role` nunca ao browser**: qualquer detentor da key tem acesso irrestrito a todo o banco sem RLS; se vazada via bundle JS ou env pública (`VITE_*`), qualquer usuário pode explorar todos os dados cross-tenant.
+
+4. **Edge Functions resolvem `service_role` sem expor ao browser**: rodam Deno server-side na edge da Supabase; recebem `SUPABASE_SERVICE_ROLE_KEY` como env server-only; browser envia JWT, Edge Function valida claims e usa client privilegiado internamente — padrão estabelecido em MX8 (scp-publish) e continuado em MX14 (staff).
+
+5. **3 containers em loop e causas**:
+   - `langfuse`: `langfuse:latest` agora é v3 que exige ClickHouse obrigatório (não configurado)
+   - `tempo`: conflito porta 9095 — `server.grpc_listen_port` default + `distributor.receivers.otlp.grpc.endpoint` competem pelo mesmo bind dentro do container
+   - `otel-collector`: exporter `loki` removido das versões recentes do otelcol-contrib; config usa tipo inexistente
+
+6. **Playwright = browser automation real**: Vitest/tsx roda em Node sem navegador, não consegue validar JWT real via HTTP Edge Function → NATS → consumer. Playwright abre Chromium real, interage como usuário e permite assertion direta no banco no caminho crítico SCP.
+
+7. **pgvector + VectorDriver mantêm Driver Model**: `VectorDriver` é interface canônica ([INV]); `SupabasePgvectorDriver` (server, Drizzle) e `SupabaseBrowserVectorDriver` (browser, supabase-js, search-only) implementam a interface — domínio nunca importa pgvector diretamente; troca por Qdrant em F3 sem mudar domínio.
+
+## Histórico de milestones (Sprint 8)
+
+| Milestone | Descrição                                             | Status  | Commit   |
+| --------- | ----------------------------------------------------- | ------- | -------- |
+| MX13      | Diagnóstico e fix dos 3 containers em loop            | DONE    | pendente |
+| MX14      | Staff panel com dados reais via Edge Function         | PENDING |          |
+| MX15      | pgvector + VectorDriver concreto + embedder           | PENDING |          |
+| MX16      | Integração RAG com Copilot (cega, sem LLM real)       | PENDING |          |
+| MX17      | Playwright E2E: pipeline SCP completo no browser real | PENDING |          |
+| MX18      | Encerramento Sprint 8                                 | PENDING |          |
+
+### MX13 — Diagnóstico e fix dos 3 containers em loop
+
+- Iniciada: 2026-04-29T00:00:00Z
+- Concluída: 2026-04-29T00:00:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `docker ps` → otel-collector Up 5min, tempo Up 5min, langfuse Up (healthy) ✅
+  - `curl http://localhost:3001/api/public/health` → `{"status":"OK","version":"2.95.11"}` ✅
+  - `pnpm typecheck` → 22/22 ✅
+  - `pnpm lint` → 22/22 ✅
+- Causas raiz identificadas:
+  - **Langfuse**: `langfuse:latest` = v3 que exige `CLICKHOUSE_URL` (não configurado); fix: pin para `langfuse/langfuse:2` + corrigir `ENCRYPTION_KEY` (all-zeros rejeitado pela validação v2)
+  - **Tempo**: `server.grpc_listen_port` default 9095 conflita com `distributor.receivers.otlp.grpc.endpoint: 0.0.0.0:9095`; fix: adicionar `server.grpc_listen_port: 9096` no tempo-config.yaml
+  - **OTel Collector**: exporter `loki` removido do otelcol-contrib 0.151.0; fix: substituir por `otlphttp/loki` com endpoint `http://loki:3100/otlp` (Loki 3.x suporta OTLP nativo)
+- Arquivos modificados:
+  - `infra/local/docker-compose.dev.yml` — Langfuse: `latest` → `langfuse:2`, ENCRYPTION_KEY: all-zeros → hex não-zero
+  - `infra/otel/tempo-config.yaml` — `server.grpc_listen_port: 9096` adicionado
+  - `infra/otel/otel-collector-config.yaml` — exporter `loki` → `otlphttp/loki`
+- Arquivos criados:
+  - `docs/runbooks/operational-containers.md` — versões estáveis + guia de troubleshooting

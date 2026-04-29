@@ -20,8 +20,8 @@ exporters:
     endpoint: tempo:9095
     tls:
       insecure: true
-  loki:
-    endpoint: http://loki:3100/loki/api/v1/push
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
   prometheus:
     endpoint: 0.0.0.0:8889
     namespace: aethereos
@@ -35,7 +35,7 @@ service:
     logs:
       receivers: [otlp]
       processors: [memory_limiter, batch]
-      exporters: [loki]
+      exporters: [otlphttp/loki]
     metrics:
       receivers: [otlp]
       processors: [memory_limiter, batch]
