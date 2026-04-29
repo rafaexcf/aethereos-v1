@@ -73,6 +73,9 @@ importers:
       "@aethereos/ui-shell":
         specifier: workspace:*
         version: link:../../packages/ui-shell
+      drizzle-orm:
+        specifier: ^0.41.0
+        version: 0.41.0(postgres@3.4.9)(sql.js@1.14.1)
       next:
         specifier: ^15.0.0
         version: 15.5.15(@babel/core@7.29.0)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
@@ -113,6 +116,9 @@ importers:
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
+      vitest:
+        specifier: ^2.0.0
+        version: 2.1.9(@types/node@22.19.17)(happy-dom@18.0.1)(lightningcss@1.32.0)(terser@5.46.2)
 
   apps/scp-worker:
     dependencies:

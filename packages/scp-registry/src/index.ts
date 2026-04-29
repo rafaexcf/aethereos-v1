@@ -34,5 +34,13 @@ export {
   listRegistered,
 } from "./registry.js";
 
+// Commerce events
+export { COMMERCE_EVENT_SCHEMAS } from "./schemas/commerce.js";
+export type {
+  CommerceProductCreatedPayload,
+  CommerceProductUpdatedPayload,
+  CommerceProductArchivedPayload,
+} from "./schemas/commerce.js";
+
 // Helpers
 export { buildEnvelope, verifyEnvelope, signEnvelope } from "./helpers.js";

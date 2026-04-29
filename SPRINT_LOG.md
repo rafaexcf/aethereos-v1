@@ -781,4 +781,22 @@ Cloud + produção ficam para humano após este sprint.
 ### M26 — Scaffold apps/comercio-digital/ Next.js 15 + estrutura tripla
 
 - Iniciada: 2026-04-29T18:05:00Z
+- Concluída: 2026-04-29T19:00:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm --filter=@aethereos/comercio-digital typecheck` → ok
+  - `pnpm --filter=@aethereos/comercio-digital lint` → ok
+  - `pnpm --filter=@aethereos/comercio-digital build` → 15/15 páginas geradas, bundle < 200KB
+- Arquivos criados: 29 arquivos — scaffold completo com estrutura tripla, middleware, lib/, pages
+- Decisões tomadas:
+  - `browser.ts` extensões `.js` removidas para compatibilidade com webpack do Next.js
+  - `next.config.ts` extensionAlias: `.js` → [`.ts`, `.tsx`, `.js`] (workspace-source pattern)
+  - `postcss.config.js` em CommonJS (sem `"type": "module"` no package.json)
+  - `eslint.config.mjs` ignora `**/postcss.config.js` (CJS sem type:module)
+  - Driver criado lazy (dentro de useEffect/handler) em Client Components para evitar crash SSR com SUPABASE_URL vazio no build
+  - `setSession()` adicionado a `SupabaseBrowserAuthDriver` para embed flow
+
+### M27 — Catálogo de produtos: schema + CRUD básico
+
+- Iniciada: 2026-04-29T19:05:00Z
 - Status: EM ANDAMENTO
