@@ -1007,3 +1007,22 @@ Plano-mestre: ver CAMADA_1_PLANO_MESTRE.md
   - `apps/shell-commercial/src/routes/index.tsx` — bell no header com dados de demo
 - Decisão: NotificationBell recebe notifications como prop (state local por ora); integração real com SupabaseNotificationDriver via session store fica para M40+
 - Decisão: service_role policy separada para insert (workers podem notificar qualquer usuário do tenant sem RLS de user_id)
+
+### Milestone M38 — Modo Degenerado P14 (withDegraded wrappers)
+
+- Iniciada: 2026-04-30T01:55:00Z
+- Concluída: 2026-04-30T02:15:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm test --filter=@aethereos/kernel` → 22/22 ✅
+  - `pnpm typecheck --filter=@aethereos/kernel` → ok
+  - `pnpm lint --filter=@aethereos/kernel` → ok
+- Arquivos criados:
+  - `packages/kernel/src/degraded/degraded-llm-driver.ts` — DegradedLLMDriver: complete() retorna model="degraded" + resposta vazia; embed() retorna embedding vazio; ping() ok
+  - `packages/kernel/src/degraded/degraded-observability-driver.ts` — DegradedObservabilityDriver: noop span + noop metrics; nunca lança exceção
+  - `packages/kernel/src/degraded/with-degraded.ts` — withDegradedLLM() e withDegradedObservability(): tenta primary, captura throw, ativa fallback, chama onDegrade() apenas na primeira falha
+  - `packages/kernel/__tests__/degraded.test.ts` — 10 testes cobrindo DegradedLLMDriver, DegradedObservabilityDriver, withDegradedLLM, withDegradedObservability
+- Arquivos modificados:
+  - `packages/kernel/src/index.ts` — exporta DegradedLLMDriver, DegradedObservabilityDriver, withDegradedLLM, withDegradedObservability, DegradedCallback
+- P14 cobre: LLM e Observabilidade; FeatureFlagDriver já tem degraded mode nativo (isDegraded); EventBusDriver não precisa pois outbox garante durabilidade
+- Decisão: withDegraded usa tryPrimary()/trySync() internos (sem Proxy — Proxy em TypeScript é frágil com private fields); fallback ativado somente quando primary lança; onDegrade() chamado uma vez por sequência de falhas

@@ -38,3 +38,12 @@ export type { InstrumentedChatOptions } from "./llm/instrumented-chat.js";
 
 // Correlation
 export { getCurrentCorrelationId } from "./correlation.js";
+
+// Degraded Mode (P14)
+export {
+  DegradedLLMDriver,
+  DegradedObservabilityDriver,
+  withDegradedLLM,
+  withDegradedObservability,
+} from "./degraded/index.js";
+export type { DegradedCallback } from "./degraded/index.js";
