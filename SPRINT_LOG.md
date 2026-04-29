@@ -987,3 +987,23 @@ Plano-mestre: ver CAMADA_1_PLANO_MESTRE.md
   - `apps/comercio-digital/middleware.ts` — lê x-correlation-id do request ou gera novo UUID; propaga em request headers + response headers
 - Fluxo completo: HTTP request → middleware gera/propaga x-correlation-id → OTel NodeSDK instrumenta e cria span com trace_id → getCurrentCorrelationId() lê trace_id → KernelPublisher usa como correlation_id → NatsEventBusDriver seta X-Correlation-Id no header NATS → consumer recebe com mesmo ID → Langfuse tag (via instrumentedChat)
 - Decisão: NATS driver já propagava correlation_id (linhas 96-98 do nats-event-bus-driver.ts) — nenhuma mudança necessária
+
+### Milestone M37 — sistema unificado de notificações
+
+- Iniciada: 2026-04-30T01:30:00Z
+- Concluída: 2026-04-30T01:55:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm typecheck --filter=@aethereos/shell-commercial --filter=@aethereos/drivers --filter=@aethereos/drivers-supabase` → ok
+  - `pnpm lint --filter=@aethereos/shell-commercial --filter=@aethereos/drivers --filter=@aethereos/drivers-supabase` → ok
+- Arquivos criados:
+  - `supabase/migrations/20260430000001_notifications_schema.sql` — tabela kernel.notifications com RLS (user_id + company_id), indexes para unread count e listagem paginada
+  - `packages/drivers/src/interfaces/notification.ts` — NotificationDriver: create, list, markRead, getUnreadCount
+  - `packages/drivers-supabase/src/notification/supabase-notification-driver.ts` — implementação Supabase via supabase-js queries no schema kernel
+  - `apps/shell-commercial/src/components/NotificationBell.tsx` — bell com badge de contagem, dropdown de lista, marca como lido ao abrir
+- Arquivos modificados:
+  - `packages/drivers/src/index.ts` — exporta NotificationDriver e tipos
+  - `packages/drivers-supabase/src/index.ts` — exporta SupabaseNotificationDriver
+  - `apps/shell-commercial/src/routes/index.tsx` — bell no header com dados de demo
+- Decisão: NotificationBell recebe notifications como prop (state local por ora); integração real com SupabaseNotificationDriver via session store fica para M40+
+- Decisão: service_role policy separada para insert (workers podem notificar qualquer usuário do tenant sem RLS de user_id)

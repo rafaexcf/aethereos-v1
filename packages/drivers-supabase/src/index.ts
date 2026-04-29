@@ -17,3 +17,5 @@ export { SupabasePgvectorDriver } from "./vector/index.js";
 export type { SupabasePgvectorConfig } from "./vector/index.js";
 
 export * from "./schema/index.js";
+
+export { SupabaseNotificationDriver } from "./notification/index.js";

@@ -75,3 +75,10 @@ export type {
   SpanOptions,
   MetricOptions,
 } from "./interfaces/observability.js";
+export type {
+  NotificationDriver,
+  Notification,
+  NotificationType,
+  CreateNotification,
+  ListNotificationsOptions,
+} from "./interfaces/notification.js";

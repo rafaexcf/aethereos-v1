@@ -2,9 +2,13 @@ import { createRoute, useNavigate } from "@tanstack/react-router";
 import { rootRoute } from "./__root";
 import { useSessionStore } from "../stores/session";
 import { isEmbedMode } from "../lib/embed";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { EmbeddedApp } from "../components/EmbeddedApp";
 import { useFeatureFlag, useFeatureFlagsContext } from "@aethereos/ui-shell";
+import {
+  NotificationBell,
+  type NotificationItem,
+} from "../components/NotificationBell";
 
 export const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -32,6 +36,31 @@ function DesktopPage() {
 
   const dashboardsFlag = useFeatureFlag("feature.experimental.dashboards");
   const { setFlag } = useFeatureFlagsContext();
+
+  const [notifications, setNotifications] = useState<NotificationItem[]>([
+    {
+      id: "demo-1",
+      type: "success",
+      title: "Sprint 5 concluído",
+      body: "LiteLLM, Langfuse, Unleash, OTel e notificações estão operacionais.",
+      read_at: null,
+      created_at: new Date(),
+    },
+    {
+      id: "demo-2",
+      type: "info",
+      title: "Feature flags ativas",
+      body: "Unleash está configurado e pronto para segmentação por tenant.",
+      read_at: null,
+      created_at: new Date(Date.now() - 60_000),
+    },
+  ]);
+
+  const handleMarkRead = useCallback((ids: string[]) => {
+    setNotifications((prev) =>
+      prev.map((n) => (ids.includes(n.id) ? { ...n, read_at: new Date() } : n)),
+    );
+  }, []);
 
   useEffect(() => {
     if (userId === null) {
@@ -87,7 +116,11 @@ function DesktopPage() {
             )}
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <NotificationBell
+              notifications={notifications}
+              onMarkRead={handleMarkRead}
+            />
             <span className="text-sm text-zinc-400">{email ?? userId}</span>
             <button
               onClick={handleSignOut}
