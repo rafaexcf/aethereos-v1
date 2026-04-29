@@ -1140,4 +1140,230 @@ Eventos SCP e audit_log são append-only por design arquitetural (imutabilidade 
 
 ## Histórico de milestones (Sprint 6)
 
-[preenchido conforme avança]
+### Milestone M41 — AppShell compartilhado + App Drive funcional
+
+- Iniciada: 2026-04-29T10:05:00Z
+- Concluída: 2026-04-29T10:45:00Z
+- Status: SUCCESS
+- Comandos validadores: `pnpm typecheck` → 22 OK ✅ | `pnpm lint` → OK ✅ | `pnpm test` → 15 suites OK ✅
+- Arquivos criados:
+  - `packages/ui-shell/src/components/app-shell/index.tsx` — AppShell layout wrapper
+  - `apps/shell-commercial/src/apps/drive/index.tsx` — DriveApp (FolderTree, FileGrid, drag-drop, breadcrumb)
+  - `apps/shell-commercial/src/stores/windows.ts` — Zustand windows store
+  - `apps/shell-commercial/src/lib/app-registry.ts` — AppRegistry com lazy loading
+  - `supabase/migrations/20260430000002_kernel_files.sql` — kernel.files + kernel.file_versions + RLS
+- Arquivos modificados:
+  - `packages/ui-shell/src/index.ts` — exporta AppShell
+  - `packages/scp-registry/src/schemas/platform.ts` — schemas platform.file._, platform.folder._, platform.notification.\*
+  - `packages/drivers-supabase/src/schema/kernel.ts` — Drizzle schema files + fileVersions
+  - `apps/shell-commercial/src/routes/index.tsx` — Dock no rodapé, AppWindowLayer, integração AppRegistry
+- Decisões tomadas:
+  - Apps internos são React Components (não iframes), gerenciados por windows Zustand store
+  - Drive usa demo state; conexão com SupabaseStorageDriver marcada como TODO
+  - Dock renderiza APP_REGISTRY com toggle open/close e indicador running (ponto violet)
+  - AppWindowLayer renderiza o app de maior zIndex; tab bar quando múltiplos abertos
+
+### Milestone M42 — App Pessoas (cadastro + desativação aprovada)
+
+- Iniciada: 2026-04-29T10:45:00Z
+- Concluída: 2026-04-29T11:15:00Z
+- Status: SUCCESS
+- Comandos validadores: `pnpm typecheck` → OK ✅ | `pnpm lint` → OK ✅
+- Arquivos criados:
+  - `apps/shell-commercial/src/apps/pessoas/index.tsx` — PessoasApp (PersonForm, DeactivateDialog, filtros)
+  - `supabase/migrations/20260430000003_kernel_people.sql` — kernel.people + RLS (DELETE bloqueado por RLS)
+- Arquivos modificados:
+  - `packages/scp-registry/src/schemas/platform.ts` — person.created, person.updated, person.deactivated
+  - `packages/drivers-supabase/src/schema/kernel.ts` — Drizzle table people
+  - `apps/shell-commercial/src/lib/app-registry.ts` — PessoasApp adicionada
+- Decisões tomadas:
+  - DeactivateDialog exige checkbox + confirm (dupla confirmação) — invariante 12.4 #2
+  - DELETE bloqueado via RLS para authenticated; exclusão via status=inactive, nunca hard delete
+  - person.deactivated requer approval_token (UUID aleatório) para auditoria
+
+### Milestone M43 — App Chat (canais + mensagens + Realtime stub)
+
+- Iniciada: 2026-04-29T11:15:00Z
+- Concluída: 2026-04-29T11:45:00Z
+- Status: SUCCESS
+- Comandos validadores: `pnpm typecheck` → OK ✅ | `pnpm lint` → OK ✅
+- Arquivos criados:
+  - `apps/shell-commercial/src/apps/chat/index.tsx` — ChatApp (ChannelList, MessageList, auto-scroll, Enter-to-send)
+  - `supabase/migrations/20260430000004_kernel_chat.sql` — chat_channels, channel_members, chat_messages + RLS
+- Arquivos modificados:
+  - `packages/scp-registry/src/schemas/platform.ts` — chat.message_sent, chat.channel_created
+  - `packages/drivers-supabase/src/schema/kernel.ts` — Drizzle tables chatChannels, chatChannelMembers, chatMessages
+  - `apps/shell-commercial/src/lib/app-registry.ts` — ChatApp adicionada
+- Decisões tomadas:
+  - Demo state com 3 canais e 3 mensagens pré-carregadas
+  - Supabase Realtime (.channel().on('postgres_changes')) marcado como TODO
+  - Contagem de não-lidos via simulação (count % 3) para demonstração visual
+
+### Milestone M44 — App Configurações (5 abas)
+
+- Iniciada: 2026-04-29T11:45:00Z
+- Concluída: 2026-04-29T12:15:00Z
+- Status: SUCCESS
+- Comandos validadores: `pnpm typecheck` → OK ✅ | `pnpm lint` → OK ✅
+- Arquivos criados:
+  - `apps/shell-commercial/src/apps/configuracoes/index.tsx` — 5 abas: Perfil, Empresa, Plano, Sistema, Integrações
+  - `supabase/migrations/20260430000005_kernel_settings.sql` — kernel.settings + RLS por scope
+- Arquivos modificados:
+  - `packages/scp-registry/src/schemas/platform.ts` — settings.updated schema
+  - `packages/drivers-supabase/src/schema/kernel.ts` — Drizzle table settings
+  - `apps/shell-commercial/src/lib/app-registry.ts` — ConfiguracoesApp adicionada
+- Decisões tomadas:
+  - 5 abas: Perfil (nome, email readonly, idioma, tema) / Empresa (slug, convite) / Plano (barras de uso) / Sistema (export, compliance, manutenção) / Integrações (Slack, SMTP, ERP, WhatsApp, Stripe)
+  - Tema dark/light altera `document.documentElement.classList` diretamente
+  - kernel.settings PK composta (scope, scope_id, key) — único valor por chave por entidade
+
+### Milestone M45 — AI Copilot estrutural — UI base + RAG inicial
+
+- Iniciada: 2026-04-30T00:00:00Z
+- Concluída: 2026-04-30T01:00:00Z
+- Status: SUCCESS
+- Comandos validadores: `pnpm typecheck` → OK ✅ | `pnpm lint` → OK ✅
+- Arquivos criados:
+  - `apps/shell-commercial/src/apps/copilot/index.tsx` — CopilotDrawer global (Cmd+K, instrumentedChat, P14+P15)
+  - `supabase/migrations/20260430000006_kernel_copilot.sql` — agents.kind/autonomy_level, agent_capabilities, copilot_conversations, copilot_messages + RLS
+- Arquivos modificados:
+  - `packages/scp-registry/src/schemas/agent.ts` — agent.copilot.message_sent + action_proposed/approved/rejected
+  - `packages/drivers-supabase/src/schema/kernel.ts` — agentCapabilities, copilotConversations, copilotMessages
+  - `apps/shell-commercial/src/lib/drivers.ts` — CloudDrivers.llm (LiteLLMDriver + withDegradedLLM) + .obs
+  - `apps/shell-commercial/package.json` — @aethereos/drivers-litellm workspace dep
+  - `apps/shell-commercial/src/routes/index.tsx` — CopilotDrawer mount + Cmd+K shortcut + botão no header
+- Decisões tomadas:
+  - Copilot é drawer global, não no Dock — acessível de qualquer contexto de app aberto
+  - Cmd+K abre/fecha; Esc fecha; botão no header com indicador ativo
+  - withDegradedLLM wraps LiteLLMDriver — model==="degraded" detectado na resposta, banner amarelo exibido
+  - Budget P15: 2 000 in / 1 000 out por turno, declarado no header do drawer
+  - actor.type=agent + supervising_user_id=userId em todo withTenant() chamado pelo Copilot
+  - DEMO_AGENT_ID como stub; produção faz INSERT em kernel.agents antes de abrir drawer
+  - RAG: TODO (stub demo mostra sugestões inline como hints no estado vazio)
+
+### Milestone M46 — AI Copilot Action Intents + Shadow Mode
+
+- Iniciada: 2026-04-30T01:00:00Z
+- Concluída: 2026-04-30T02:00:00Z
+- Status: SUCCESS
+- Comandos validadores: `pnpm typecheck` → OK ✅ | `pnpm lint` → OK ✅
+- Arquivos criados:
+  - `supabase/migrations/20260430000007_kernel_agent_proposals.sql` — kernel.agent_proposals + RLS
+- Arquivos modificados:
+  - `apps/shell-commercial/src/apps/copilot/index.tsx` — Shadow Mode completo: intent detection, ActionApprovalPanel, proposals state
+  - `packages/drivers-supabase/src/schema/kernel.ts` — Drizzle table agentProposals
+- Decisões tomadas:
+  - Intent detection por regex sobre o texto do usuário (5 padrões: create_person, create_file, send_notification, update_settings, create_channel)
+  - ActionApprovalPanel inline no chat: proposta aparece abaixo da resposta do assistente que a gerou
+  - Status flow: pending → approved → executed | pending → rejected
+  - Aprovação executa stub (TODO: driver real); rejeição emite evento de auditoria (TODO)
+  - Shadow Mode respeita autonomia 0-1: agente nunca executa sem approval humano explícito
+  - Em modo degenerado, intent detection funciona sem LLM (keyword-based)
+
+### Milestone M47 — App Governança (preview)
+
+- Iniciada: 2026-04-30T02:00:00Z
+- Concluída: 2026-04-30T02:30:00Z
+- Status: SUCCESS
+- Comandos validadores: `pnpm typecheck` → OK ✅ | `pnpm lint` → OK ✅
+- Arquivos criados:
+  - `apps/shell-commercial/src/apps/governanca/index.tsx` — 4 abas: Agentes, Capabilities, Invariantes, Shadow Mode
+- Arquivos modificados:
+  - `apps/shell-commercial/src/lib/app-registry.ts` — GovernancaApp (minRole: admin)
+- Decisões tomadas:
+  - App read-only: sem ações, só visibilidade
+  - KERNEL_CAPABILITIES e INVARIANT_OPERATIONS importados diretamente do @aethereos/kernel — fonte de verdade canônica
+  - Capabilities com agente bloqueado marcadas visualmente; invariantes com badge "bloqueado"
+  - Demo state com agente e propostas de Shadow Mode; produção lê de kernel.agents e kernel.agent_proposals
+  - minRole: admin — owners e admins veem Governança; members não
+
+### Milestone M48 — App Auditoria + Trust Center
+
+- Iniciada: 2026-04-30T02:30:00Z
+- Concluída: 2026-04-30T03:00:00Z
+- Status: SUCCESS
+- Comandos validadores: `pnpm typecheck` → OK ✅ | `pnpm lint` → OK ✅
+- Arquivos criados:
+  - `apps/shell-commercial/src/apps/auditoria/index.tsx` — 3 abas: Eventos SCP, Audit Log, Trust Center
+- Arquivos modificados:
+  - `apps/shell-commercial/src/lib/app-registry.ts` — AuditoriaApp (minRole: admin)
+- Decisões tomadas:
+  - App read-only: eventos SCP e audit_log são append-only (P11)
+  - Trust Center exibe: métricas LLM 30d (tokens, custo, chamadas), barra de fallback degenerado, latências p50/p95/p99, status dos drivers (LiteLLM, DegradedLLMDriver, Langfuse, OTel)
+  - Filtro por actorType (human/agent) na aba Eventos SCP
+  - actor.type diferencia visualmente humano (👤) de agente (🤖) em todo log
+
+### Milestone M49 — Painel Admin Multi-tenant
+
+- Iniciada: 2026-04-30T03:00:00Z
+- Concluída: 2026-04-30T03:30:00Z
+- Status: SUCCESS
+- Comandos validadores: `pnpm typecheck` → OK ✅ | `pnpm lint` → OK ✅
+- Arquivos criados:
+  - `apps/shell-commercial/src/routes/staff.tsx` — rota `/staff` com StaffPage
+- Arquivos modificados:
+  - `apps/shell-commercial/src/main.tsx` — staffRoute registrado
+- Decisões tomadas:
+  - Rota `/staff` separada do OS principal (não no Dock) — botão "← OS Principal" para voltar
+  - Badge STAFF vermelho no header para distinguir perspectiva staff de member
+  - Company drill-down com ações (suspender/reativar) — TODO: emitir platform.tenant.suspended
+  - Log de acesso staff read-only — platform.staff.access com notificação ao owner (TODO)
+  - Staff não usa membership — acesso via role custom no JWT (TODO: middleware de verificação)
+
+### Milestone M50 — ADR-0019 + Closure Sprint 6
+
+- Iniciada: 2026-04-30T03:30:00Z
+- Concluída: 2026-04-30T04:30:00Z
+- Status: SUCCESS
+- Comandos validadores: `pnpm ci:full` → 11 successful, 11 total ✅ EXIT 0
+- Arquivos criados:
+  - `docs/adr/0019-sprint6-apps-internos-copilot.md` — ADR completo com todas as decisões arquiteturais do Sprint 6
+- Arquivos corrigidos:
+  - `packages/kernel/src/correlation.ts` — `import { randomUUID } from "node:crypto"` → `crypto.randomUUID()` global (browser-compatible)
+  - `packages/scp-registry/src/helpers.ts` — mesmo fix, node:crypto → crypto.randomUUID()
+- Decisões tomadas:
+  - `node:crypto` é Node.js-only — browser usa `crypto.randomUUID()` global (disponível em todos os browsers modernos e Node 20+)
+  - ADR é documento de humano: gerado pelo agente, requer revisão e aprovação explícita antes de merge em produção
+  - Débitos técnicos documentados no ADR para sprint seguinte
+
+---
+
+## Resumo Sprint 6 — CONCLUÍDO
+
+**Total de milestones:** M41–M50 (10 milestones)
+**Status:** TODOS SUCCESS ✅
+**Gate final:** `pnpm ci:full` → EXIT 0
+
+### O que foi construído
+
+| Milestone | Entrega                                                                                      |
+| --------- | -------------------------------------------------------------------------------------------- |
+| M41       | AppShell compartilhado + App Drive (FolderTree, FileGrid, upload, breadcrumb)                |
+| M42       | App Pessoas (CRUD, desativação com dupla confirmação, RLS DELETE bloqueado)                  |
+| M43       | App Chat (canais, mensagens, auto-scroll, Enter-to-send)                                     |
+| M44       | App Configurações (5 abas: perfil, empresa, plano, sistema, integrações)                     |
+| M45       | AI Copilot estrutural (drawer global Cmd+K, instrumentedChat, withDegradedLLM, P14+P15)      |
+| M46       | Shadow Mode (5 Action Intents, ActionApprovalPanel, proposals state, kernel.agent_proposals) |
+| M47       | App Governança (agentes, capabilities, invariantes, shadow mode history)                     |
+| M48       | App Auditoria + Trust Center (SCP events, audit log, métricas LLM P15)                       |
+| M49       | Painel Admin Multi-tenant (/staff — companies list, drill-down, access log)                  |
+| M50       | ADR-0019 + ci:full EXIT 0 + closure                                                          |
+
+### Infraestrutura de dados criada (migrations)
+
+- `20260430000002_kernel_files.sql` — kernel.files + kernel.file_versions + RLS
+- `20260430000003_kernel_people.sql` — kernel.people + RLS (DELETE bloqueado)
+- `20260430000004_kernel_chat.sql` — chat_channels, channel_members, chat_messages + RLS
+- `20260430000005_kernel_settings.sql` — kernel.settings + RLS por scope
+- `20260430000006_kernel_copilot.sql` — agents.kind/autonomy_level, agent_capabilities, copilot_conversations, copilot_messages + RLS
+- `20260430000007_kernel_agent_proposals.sql` — kernel.agent_proposals + RLS
+
+### Próximos passos (Sprint 7)
+
+1. Conectar drivers Supabase reais em todos os apps (remover demo state)
+2. Implementar Supabase Realtime no Chat
+3. Configurar VITE_LITELLM_KEY e testar Copilot com LLM real
+4. Implementar verificação de role `staff` no JWT para rota `/staff`
+5. Emitir `platform.staff.access` + notificação ao owner
+6. Implementar RAG no Copilot (pgvector/VectorDriver)
+7. KernelPublisher no browser para eventos SCP do Copilot

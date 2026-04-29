@@ -12,6 +12,7 @@ import {
 } from "../components/NotificationBell.js";
 import { useWindowsStore } from "../stores/windows.js";
 import { APP_REGISTRY, getApp } from "../lib/app-registry.js";
+import { CopilotDrawer } from "../apps/copilot/index.js";
 
 export const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -38,6 +39,7 @@ function DesktopPage() {
   const [companyName, setCompanyName] = useState<string | null>(null);
   const [outboxCount, setOutboxCount] = useState<number | null>(null);
   const [showComercioDash, setShowComercioDash] = useState(false);
+  const [copilotOpen, setCopilotOpen] = useState(false);
 
   const dashboardsFlag = useFeatureFlag("feature.experimental.dashboards");
   const { setFlag } = useFeatureFlagsContext();
@@ -72,6 +74,20 @@ function DesktopPage() {
       void navigate({ to: "/login" });
     }
   }, [userId, navigate]);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setCopilotOpen((prev) => !prev);
+      }
+      if (e.key === "Escape" && copilotOpen) {
+        setCopilotOpen(false);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [copilotOpen]);
 
   useEffect(() => {
     if (drivers === null || activeCompanyId === null) return;
@@ -126,6 +142,21 @@ function DesktopPage() {
               notifications={notifications}
               onMarkRead={handleMarkRead}
             />
+            <button
+              type="button"
+              onClick={() => setCopilotOpen((prev) => !prev)}
+              title="AI Copilot (Cmd+K)"
+              className={[
+                "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors",
+                copilotOpen
+                  ? "border-violet-500 bg-violet-600/20 text-violet-300"
+                  : "border-zinc-700 text-zinc-300 hover:border-zinc-500",
+              ].join(" ")}
+            >
+              <span>🤖</span>
+              <span>Copilot</span>
+              <span className="text-zinc-600">⌘K</span>
+            </button>
             <span className="text-sm text-zinc-400">{email ?? userId}</span>
             <button
               onClick={handleSignOut}
@@ -250,6 +281,19 @@ function DesktopPage() {
           </div>
         )}
       </main>
+
+      {/* AI Copilot Drawer — global, não está no Dock */}
+      {drivers !== null && (
+        <CopilotDrawer
+          open={copilotOpen}
+          onClose={() => setCopilotOpen(false)}
+          llm={drivers.llm}
+          obs={drivers.obs}
+          userId={userId}
+          companyId={activeCompanyId}
+          correlationId={crypto.randomUUID()}
+        />
+      )}
     </div>
   );
 }

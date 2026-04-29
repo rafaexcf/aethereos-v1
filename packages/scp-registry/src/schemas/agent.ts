@@ -37,8 +37,78 @@ export const AgentActionApprovedPayloadSchema = z.object({
   action_correlation_id: z.string().uuid(),
 });
 
+// ---------------------------------------------------------------------------
+// Copilot — interação assistiva (M45)
+// ---------------------------------------------------------------------------
+
+export const AgentCopilotMessageSentPayloadSchema = z.object({
+  message_id: z.string().uuid(),
+  conversation_id: z.string().uuid(),
+  company_id: z.string().uuid(),
+  agent_id: z.string().uuid(),
+  supervising_user_id: z.string().uuid(),
+  role: z.enum(["user", "assistant"]),
+  prompt_tokens: z.number().int().nonnegative().optional(),
+  completion_tokens: z.number().int().nonnegative().optional(),
+  model: z.string().optional(),
+  correlation_id: z.string().uuid().optional(),
+});
+export type AgentCopilotMessageSentPayload = z.infer<
+  typeof AgentCopilotMessageSentPayloadSchema
+>;
+
+// ---------------------------------------------------------------------------
+// Action Intents — Shadow Mode (M46 prep)
+// ---------------------------------------------------------------------------
+
+export const AgentCopilotActionProposedPayloadSchema = z.object({
+  proposal_id: z.string().uuid(),
+  conversation_id: z.string().uuid(),
+  company_id: z.string().uuid(),
+  agent_id: z.string().uuid(),
+  supervising_user_id: z.string().uuid(),
+  intent_type: z.enum([
+    "create_person",
+    "create_file",
+    "send_notification",
+    "update_settings",
+    "create_channel",
+  ]),
+  payload_preview: z.record(z.unknown()),
+  correlation_id: z.string().uuid().optional(),
+});
+export type AgentCopilotActionProposedPayload = z.infer<
+  typeof AgentCopilotActionProposedPayloadSchema
+>;
+
+export const AgentCopilotActionApprovedPayloadSchema = z.object({
+  proposal_id: z.string().uuid(),
+  company_id: z.string().uuid(),
+  approved_by: z.string().uuid(),
+  approved_at: z.string().datetime(),
+  correlation_id: z.string().uuid().optional(),
+});
+export type AgentCopilotActionApprovedPayload = z.infer<
+  typeof AgentCopilotActionApprovedPayloadSchema
+>;
+
+export const AgentCopilotActionRejectedPayloadSchema = z.object({
+  proposal_id: z.string().uuid(),
+  company_id: z.string().uuid(),
+  rejected_by: z.string().uuid(),
+  reason: z.string().optional(),
+  correlation_id: z.string().uuid().optional(),
+});
+export type AgentCopilotActionRejectedPayload = z.infer<
+  typeof AgentCopilotActionRejectedPayloadSchema
+>;
+
 export const AGENT_EVENT_SCHEMAS = {
   "agent.registered": AgentRegisteredPayloadSchema,
   "agent.action.requested": AgentActionRequestedPayloadSchema,
   "agent.action.approved": AgentActionApprovedPayloadSchema,
+  "agent.copilot.message_sent": AgentCopilotMessageSentPayloadSchema,
+  "agent.copilot.action_proposed": AgentCopilotActionProposedPayloadSchema,
+  "agent.copilot.action_approved": AgentCopilotActionApprovedPayloadSchema,
+  "agent.copilot.action_rejected": AgentCopilotActionRejectedPayloadSchema,
 } as const satisfies Record<string, z.ZodSchema>;

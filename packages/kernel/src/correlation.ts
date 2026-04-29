@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { trace, isSpanContextValid } from "@opentelemetry/api";
 
 /**
@@ -13,5 +12,5 @@ export function getCurrentCorrelationId(): string {
       return ctx.traceId;
     }
   }
-  return randomUUID();
+  return crypto.randomUUID();
 }

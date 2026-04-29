@@ -9,6 +9,7 @@ import { selectCompanyRoute } from "./routes/select-company";
 import { indexRoute } from "./routes/index";
 import { aboutRoute } from "./routes/settings/about";
 import { opsRoute } from "./routes/settings/ops";
+import { staffRoute } from "./routes/staff";
 import { boot } from "./lib/boot";
 import "./styles/globals.css";
 
@@ -19,6 +20,7 @@ const routeTree = rootRoute.addChildren([
   selectCompanyRoute,
   aboutRoute,
   opsRoute,
+  staffRoute,
 ]);
 
 const router = createRouter({ routeTree });

@@ -265,6 +265,125 @@ export const chatMessages = kernelSchema.table(
   ],
 );
 
+// ---------------------------------------------------------------------------
+// Copilot — M45
+// ---------------------------------------------------------------------------
+
+export const agentCapabilities = kernelSchema.table(
+  "agent_capabilities",
+  {
+    agentId: uuid("agent_id")
+      .notNull()
+      .references(() => agents.id, { onDelete: "cascade" }),
+    capability: text("capability").notNull(),
+    grantedBy: uuid("granted_by")
+      .notNull()
+      .references(() => users.id),
+    grantedAt: timestamp("granted_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("kernel_agent_capabilities_agent_idx").on(t.agentId)],
+);
+
+export const copilotConversations = kernelSchema.table(
+  "copilot_conversations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    agentId: uuid("agent_id")
+      .notNull()
+      .references(() => agents.id),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    title: text("title"),
+    correlationId: uuid("correlation_id"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("kernel_copilot_conversations_company_user_idx").on(
+      t.companyId,
+      t.userId,
+      t.createdAt,
+    ),
+  ],
+);
+
+export const copilotMessages = kernelSchema.table(
+  "copilot_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    conversationId: uuid("conversation_id")
+      .notNull()
+      .references(() => copilotConversations.id, { onDelete: "cascade" }),
+    role: text("role").notNull(),
+    content: text("content").notNull(),
+    model: text("model"),
+    promptTokens: integer("prompt_tokens"),
+    completionTokens: integer("completion_tokens"),
+    correlationId: uuid("correlation_id"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("kernel_copilot_messages_conversation_idx").on(
+      t.conversationId,
+      t.createdAt,
+    ),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// Shadow Mode — M46
+// ---------------------------------------------------------------------------
+
+export const agentProposals = kernelSchema.table(
+  "agent_proposals",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    agentId: uuid("agent_id")
+      .notNull()
+      .references(() => agents.id),
+    conversationId: uuid("conversation_id").references(
+      () => copilotConversations.id,
+    ),
+    supervisingUserId: uuid("supervising_user_id")
+      .notNull()
+      .references(() => users.id),
+    intentType: text("intent_type").notNull(),
+    payload: jsonb("payload").notNull(),
+    status: text("status").notNull().default("pending"),
+    correlationId: uuid("correlation_id"),
+    reviewedBy: uuid("reviewed_by").references(() => users.id),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    rejectionReason: text("rejection_reason"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    index("kernel_agent_proposals_company_status_idx").on(
+      t.companyId,
+      t.status,
+      t.createdAt,
+    ),
+    index("kernel_agent_proposals_conversation_idx").on(t.conversationId),
+  ],
+);
+
 export const fileVersions = kernelSchema.table(
   "file_versions",
   {

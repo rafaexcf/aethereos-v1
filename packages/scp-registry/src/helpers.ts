@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import type { EventEnvelope, PartialEnvelope } from "./schemas/envelope.js";
 import { EventEnvelopeSchema } from "./schemas/envelope.js";
 import { validate } from "./registry.js";
@@ -19,7 +18,7 @@ export function buildEnvelope(
   }
 
   const envelope = {
-    id: randomUUID(),
+    id: crypto.randomUUID(),
     version: "1",
     schema_version: "1",
     occurred_at: new Date().toISOString(),

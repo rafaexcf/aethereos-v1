@@ -29,6 +29,18 @@ const ConfiguracoesApp = lazy(() =>
   })),
 );
 
+const GovernancaApp = lazy(() =>
+  import("../apps/governanca/index.js").then((m) => ({
+    default: m.GovernancaApp,
+  })),
+);
+
+const AuditoriaApp = lazy(() =>
+  import("../apps/auditoria/index.js").then((m) => ({
+    default: m.AuditoriaApp,
+  })),
+);
+
 export const APP_REGISTRY: AppDefinition[] = [
   {
     id: "drive",
@@ -57,6 +69,20 @@ export const APP_REGISTRY: AppDefinition[] = [
     icon: "⚙️",
     minRole: "member",
     component: ConfiguracoesApp,
+  },
+  {
+    id: "governanca",
+    label: "Governança",
+    icon: "🛡️",
+    minRole: "admin",
+    component: GovernancaApp,
+  },
+  {
+    id: "auditoria",
+    label: "Auditoria",
+    icon: "📋",
+    minRole: "admin",
+    component: AuditoriaApp,
   },
 ];
 

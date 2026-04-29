@@ -226,6 +226,9 @@ importers:
       "@aethereos/drivers":
         specifier: workspace:*
         version: link:../../packages/drivers
+      "@aethereos/drivers-litellm":
+        specifier: workspace:*
+        version: link:../../packages/drivers-litellm
       "@aethereos/drivers-supabase":
         specifier: workspace:*
         version: link:../../packages/drivers-supabase
