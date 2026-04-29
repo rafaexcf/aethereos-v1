@@ -1,6 +1,7 @@
 import { createRoute, useNavigate } from "@tanstack/react-router";
 import { rootRoute } from "./__root";
 import { useSessionStore } from "../stores/session";
+import { isEmbedMode } from "../lib/embed";
 import { useEffect, useState } from "react";
 
 export const indexRoute = createRoute({
@@ -58,35 +59,37 @@ function DesktopPage() {
 
   return (
     <div className="flex h-screen flex-col bg-zinc-950 text-zinc-100">
-      {/* Header */}
-      <header className="flex items-center justify-between border-b border-zinc-800 px-6 py-3">
-        <div className="flex items-center gap-3">
-          <span className="font-bold tracking-tight text-violet-400">
-            Aethereos
-          </span>
-          {companies.length > 1 ? (
-            <CompanySwitcher
-              companies={companies}
-              activeCompanyId={activeCompanyId}
-              onSwitch={handleSwitchCompany}
-            />
-          ) : (
-            <span className="rounded-md bg-zinc-800 px-2 py-1 font-mono text-xs text-zinc-400">
-              {companyName ?? activeCompanyId}
+      {/* Header — oculto em modo embed */}
+      {!isEmbedMode && (
+        <header className="flex items-center justify-between border-b border-zinc-800 px-6 py-3">
+          <div className="flex items-center gap-3">
+            <span className="font-bold tracking-tight text-violet-400">
+              Aethereos
             </span>
-          )}
-        </div>
+            {companies.length > 1 ? (
+              <CompanySwitcher
+                companies={companies}
+                activeCompanyId={activeCompanyId}
+                onSwitch={handleSwitchCompany}
+              />
+            ) : (
+              <span className="rounded-md bg-zinc-800 px-2 py-1 font-mono text-xs text-zinc-400">
+                {companyName ?? activeCompanyId}
+              </span>
+            )}
+          </div>
 
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-zinc-400">{email ?? userId}</span>
-          <button
-            onClick={handleSignOut}
-            className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 transition-colors hover:border-zinc-500"
-          >
-            Sair
-          </button>
-        </div>
-      </header>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-zinc-400">{email ?? userId}</span>
+            <button
+              onClick={handleSignOut}
+              className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 transition-colors hover:border-zinc-500"
+            >
+              Sair
+            </button>
+          </div>
+        </header>
+      )}
 
       {/* Desktop area (ui-shell WindowManager entra aqui em M22+) */}
       <main className="flex flex-1 items-center justify-center">

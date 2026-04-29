@@ -1,5 +1,7 @@
 import { createRootRoute, Outlet, redirect } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useSessionStore } from "../stores/session";
+import { isEmbedMode, postEmbedMessage } from "../lib/embed";
 
 export const rootRoute = createRootRoute({
   // beforeLoad: verifica sessão antes de renderizar qualquer rota
@@ -33,7 +35,7 @@ export const rootRoute = createRootRoute({
     }
   },
 
-  component: () => <Outlet />,
+  component: RootComponent,
 
   notFoundComponent: () => (
     <main className="flex h-full items-center justify-center">
@@ -41,3 +43,23 @@ export const rootRoute = createRootRoute({
     </main>
   ),
 });
+
+function RootComponent() {
+  useEffect(() => {
+    if (isEmbedMode) {
+      // Sinaliza para o host que o shell está pronto (protocolo embed v1)
+      postEmbedMessage({ type: "embed.ready", version: "1" });
+    }
+  }, []);
+
+  if (isEmbedMode) {
+    // Em modo embed: sem header/dock, apenas a área de conteúdo
+    return (
+      <div className="h-full w-full overflow-hidden">
+        <Outlet />
+      </div>
+    );
+  }
+
+  return <Outlet />;
+}

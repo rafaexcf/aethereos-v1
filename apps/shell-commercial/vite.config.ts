@@ -3,7 +3,16 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 
+// CSP frame-ancestors: permite iframing apenas da mesma origem (embed protocol).
+// Em produção: restringir a domínios SaaS standalone específicos.
+const cspHeaders = {
+  "Content-Security-Policy":
+    "frame-ancestors 'self' http://localhost:* http://127.0.0.1:*",
+};
+
 export default defineConfig({
+  server: { headers: cspHeaders },
+  preview: { headers: cspHeaders },
   plugins: [
     react(),
     tailwindcss(),
