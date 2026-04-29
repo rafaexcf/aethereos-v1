@@ -1646,14 +1646,14 @@ Modelo: Claude Code (claude-sonnet-4-6, Sprint 8 N=1)
 
 ## Histórico de milestones (Sprint 8)
 
-| Milestone | Descrição                                             | Status  | Commit   |
-| --------- | ----------------------------------------------------- | ------- | -------- |
-| MX13      | Diagnóstico e fix dos 3 containers em loop            | DONE    | pendente |
-| MX14      | Staff panel com dados reais via Edge Function         | PENDING |          |
-| MX15      | pgvector + VectorDriver concreto + embedder           | PENDING |          |
-| MX16      | Integração RAG com Copilot (cega, sem LLM real)       | PENDING |          |
-| MX17      | Playwright E2E: pipeline SCP completo no browser real | PENDING |          |
-| MX18      | Encerramento Sprint 8                                 | PENDING |          |
+| Milestone | Descrição                                             | Status  | Commit    |
+| --------- | ----------------------------------------------------- | ------- | --------- |
+| MX13      | Diagnóstico e fix dos 3 containers em loop            | DONE    | `331b081` |
+| MX14      | Staff panel com dados reais via Edge Function         | PENDING |           |
+| MX15      | pgvector + VectorDriver concreto + embedder           | PENDING |           |
+| MX16      | Integração RAG com Copilot (cega, sem LLM real)       | PENDING |           |
+| MX17      | Playwright E2E: pipeline SCP completo no browser real | PENDING |           |
+| MX18      | Encerramento Sprint 8                                 | PENDING |           |
 
 ### MX13 — Diagnóstico e fix dos 3 containers em loop
 
