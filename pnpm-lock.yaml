@@ -92,6 +92,9 @@ importers:
       "@aethereos/drivers-local":
         specifier: workspace:*
         version: link:../../packages/drivers-local
+      "@aethereos/ui-shell":
+        specifier: workspace:*
+        version: link:../../packages/ui-shell
       "@tanstack/react-router":
         specifier: ^1.114.0
         version: 1.168.25(react-dom@19.2.5(react@19.2.5))(react@19.2.5)

@@ -317,6 +317,30 @@ OPFS (Origin Private File System) provê acesso a arquivos binários por origem,
 ## Milestone M14 — Shell visual mínimo: Window Manager + Dock + Mesa
 
 - Iniciada: 2026-04-29T10:35:00Z
+- Concluída: 2026-04-29T11:00:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm --filter=@aethereos/shell-base typecheck` → ok
+  - `pnpm --filter=@aethereos/shell-base build` → ok (bundle inicial ~113 KB gzip) ✓
+- Arquivos criados/modificados:
+  - `apps/shell-base/package.json` (+ @aethereos/ui-shell workspace)
+  - `apps/shell-base/tsconfig.json` (+ @aethereos/ui-shell path alias)
+  - `apps/shell-base/src/stores/windows.ts` (Zustand: openWindow, closeWindow, focusWindow com Z-index)
+  - `apps/shell-base/src/components/notepad/index.tsx` (Bloco de Notas: textarea, contador de chars, close button)
+  - `apps/shell-base/src/components/shell-layout.tsx` (Dock + Mesa + WindowManager + applyTheme + dark mode)
+  - `apps/shell-base/src/routes/index.tsx` (usa ShellLayout)
+- Decisões tomadas:
+  - Dock items: Bloco de Notas (📝), Configurações (⚙️), Sobre (ℹ️)
+  - Mesa widgets: WelcomeWidget (col 1-4) + QuickTipWidget (col 5-8) — sem `title: undefined` (exactOptionalPropertyTypes: true)
+  - `applyTheme()` + `document.documentElement.classList.add("dark")` em useEffect no ShellLayout
+  - Janelas como posicionamento CSS absoluto (`inset: 10%`) — sem react-rnd (mínimo M14)
+  - Notepad content: React useState apenas (sem persistência ainda)
+  - `isRunning` no Dock reflete `windows.some(w => w.appId === item.appId)`
+- Próximo: M15 — PWA + offline-first comprovado (Lighthouse audit)
+
+## Milestone M15 — PWA + offline-first
+
+- Iniciada: 2026-04-29T11:05:00Z
 - Status: IN_PROGRESS
 
 ---
