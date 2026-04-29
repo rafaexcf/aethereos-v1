@@ -519,3 +519,32 @@ Sprint 2 construiu a Camada 0 completa do Aethereos: o shell local-first que rod
 **Próximo sprint:** Sprint 3 — Camada 1 (`apps/shell-commercial/`): substituir drivers locais por `drivers-supabase` + `drivers-nats`, integrar OAuth 2.1 via Supabase Auth, multi-tenant RLS, AI Copilot (LiteLLM gateway).
 
 **Próxima fase (pós-sprint):** Implementar shell-base (Camada 0) com Vite + React + TanStack Router; conectar drivers ao shell via Context/DI; primeira tela funcional local-first (OPFS).
+
+---
+
+# Sprint 3 — Camada 1 (shell-commercial)
+
+Início: 2026-04-29T14:00:00Z
+Modelo: Claude Code (claude-sonnet-4-6, Sprint 3 N=1)
+
+## Calibração inicial (Sprint 3)
+
+**1. Domínio canônico da Camada 1:** `aethereos.io` — proprietária, multi-tenant, SCP ativo, AI Copilot, backend obrigatório.
+
+**2. Como Camada 1 estende Camada 0 sem reimplementar:**
+
+- Reusados: `@aethereos/ui-shell`, `@aethereos/kernel`, `@aethereos/scp-registry`, `@aethereos/drivers`
+- Novos/substituídos: `@aethereos/drivers-supabase` + `@aethereos/drivers-nats` substituem drivers locais; `apps/shell-commercial` é criado com boot cloud-first
+
+**3. Auth Camada 0 vs Camada 1:**
+
+- Camada 0: `LocalAuthDriver` — Ed25519 local, PBKDF2, AES-GCM, zero rede
+- Camada 1: `SupabaseAuthDriver` — IdP central OAuth 2.1 + OIDC + PKCE, JWT TTL 15min/24h, custom claims com `companies` + `active_company_id`
+
+**4. Outbox pattern:** atomicidade entre operação de domínio e publicação de evento — evento gravado em `kernel.scp_outbox` na mesma transação; `scp-worker` faz polling com `FOR UPDATE SKIP LOCKED` e publica no NATS JetStream. Já existe em `apps/scp-worker`.
+
+**5. `company_id` precede tudo:** RLS fail-closed — toda tabela multi-tenant tem `company_id NOT NULL` + policy filtrada por `current_setting('app.current_company_id')`. Sem `set_tenant_context()`, query retorna 0 rows. Bug de aplicação é seguro.
+
+**6. Agente vs humano no SCP (Interpretação A+):** `actor.type: "human"` (user_id, session_id) vs `"agent"` (agent_id, supervising_user_id). Agentes têm JWT TTL 15min, capability tokens sempre subconjunto do supervisor humano. 8 operações invariantes bloqueadas para agentes. Autonomia 0-1 no ano 1.
+
+## Histórico de milestones (Sprint 3)
