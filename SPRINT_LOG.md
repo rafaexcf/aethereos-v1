@@ -205,6 +205,40 @@ Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
 
 ---
 
+# Sprint 2 — Camada 0 (shell-base)
+
+Início: 2026-04-29T08:00:00Z
+Modelo: Claude Code (claude-sonnet-4-6, sessão Sprint 2 N=1)
+
+## Calibração inicial (Sprint 2)
+
+**1. Domínio canônico e licença da Camada 0:**
+`aethereos.org` — BUSL v1.1, Change Date 2030-04-29 → Apache 2.0. Código em `apps/shell-base/`.
+
+**2. Por que Camada 0 ANTES da Camada 1 (rationale arquitetural):**
+ADR-0014 item #13 `[INV]`. Se Camada 1 fosse construída primeiro, o Driver Model nunca seria testado contra dois backends reais — degeneraria em vazamento de implementação Supabase por todo o código de domínio. Camada 0 é a "prova-viva" do Driver Model: força que `packages/kernel/` funcione igualmente com LocalDrivers e CloudDrivers.
+
+**3. Como o Driver Model permite compartilhamento:**
+As interfaces em `packages/drivers/src/interfaces/` são o contrato compartilhado. Camada 0 injeta `packages/drivers-local/` (browser-only). Camada 1 injeta `packages/drivers-supabase/` + `packages/drivers-nats/`. O kernel e os apps consomem apenas as interfaces — agnósticos de implementação.
+
+**4. 3 invariantes da Camada 0 que diferem da Camada 1:**
+
+- Sem backend obrigatório: 100% local-first no navegador, offline após primeiro load
+- OPFS como storage primário via SQLite WASM (vs Supabase Postgres na Camada 1)
+- Bundle inicial < 500KB gzip (R11)
+
+**5. OPFS vs IndexedDB puro:**
+OPFS (Origin Private File System) provê acesso a arquivos binários por origem, essencial para SQLite WASM que precisa de um VFS para ler/escrever bytes arbitrários. Isso permite SQL completo (queries, JOINs, transações ACID) que IndexedDB não oferece. IndexedDB fica como fallback para metadados quando OPFS não está disponível.
+
+## Histórico de milestones (Sprint 2)
+
+## Milestone M11 — LocalDrivers: interfaces concretas para ambiente de navegador
+
+- Iniciada: 2026-04-29T08:05:00Z
+- Status: IN_PROGRESS
+
+---
+
 ## Decisões menores tomadas durante o sprint
 
 - `tsPreCompilationDeps: false` em dep-cruiser (sem arquivos .ts no início)
