@@ -190,7 +190,7 @@ services:
   # Grafana Tempo — distributed tracing backend
   # ---------------------------------------------------------------------------
   tempo:
-    image: grafana/tempo:latest
+    image: grafana/tempo:2.5.0
     container_name: aethereos-tempo-dev
     ports:
       - "3200:3200" # tempo HTTP API
