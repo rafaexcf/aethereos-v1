@@ -1,29 +1,34 @@
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Comércio Digital — Embed" };
+export const metadata: Metadata = { title: "Comércio Digital" };
 
-export default function EmbedPage() {
+export default function EmbedDashboardPage() {
   return (
     <div className="p-6">
-      <h1 className="text-xl font-semibold mb-4">Dashboard</h1>
-      <div className="grid grid-cols-2 gap-4">
-        <StatCard label="Produtos" value="—" />
-        <StatCard label="Pedidos" value="—" />
-      </div>
-    </div>
-  );
-}
+      <h1 className="text-xl font-semibold mb-1">Comércio Digital</h1>
+      <p className="text-[var(--muted-foreground)] text-sm mb-6">
+        Painel embedado
+      </p>
 
-interface StatCardProps {
-  label: string;
-  value: string;
-}
+      <nav className="grid grid-cols-2 gap-3">
+        <a
+          href="/embed/produtos"
+          className="border border-[var(--border)] rounded-[var(--radius)] p-4 hover:bg-[var(--muted)] transition-colors"
+        >
+          <p className="text-xs text-[var(--muted-foreground)] mb-1">
+            Catálogo
+          </p>
+          <p className="font-medium">Produtos</p>
+        </a>
 
-function StatCard({ label, value }: StatCardProps) {
-  return (
-    <div className="border border-[var(--border)] rounded-[var(--radius)] p-3">
-      <p className="text-xs text-[var(--muted-foreground)] mb-1">{label}</p>
-      <p className="text-xl font-bold">{value}</p>
+        <a
+          href="/embed/pedidos"
+          className="border border-[var(--border)] rounded-[var(--radius)] p-4 hover:bg-[var(--muted)] transition-colors"
+        >
+          <p className="text-xs text-[var(--muted-foreground)] mb-1">Vendas</p>
+          <p className="font-medium">Pedidos</p>
+        </a>
+      </nav>
     </div>
   );
 }

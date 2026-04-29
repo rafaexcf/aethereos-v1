@@ -69,6 +69,7 @@ function SelectCompanyPage() {
         userId: refreshed.value.user_id,
         email: refreshed.value.email,
         accessToken: refreshed.value.access_token,
+        refreshToken: refreshed.value.refresh_token,
         companies: claims.companies,
         activeCompanyId: companyId,
       });

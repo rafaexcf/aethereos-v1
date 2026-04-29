@@ -6,6 +6,7 @@ interface SessionState {
   userId: string | null;
   email: string | null;
   accessToken: string | null;
+  refreshToken: string | null;
   /** Companies do usuário (do JWT custom claim) */
   companies: string[];
   /** Company ativa para esta sessão */
@@ -19,6 +20,7 @@ interface SessionActions {
     userId: string;
     email: string | undefined;
     accessToken: string;
+    refreshToken: string | undefined;
     companies: string[];
     activeCompanyId: string | null;
   }) => void;
@@ -33,6 +35,7 @@ const initialState: SessionState = {
   userId: null,
   email: null,
   accessToken: null,
+  refreshToken: null,
   companies: [],
   activeCompanyId: null,
   drivers: null,
@@ -47,6 +50,7 @@ export const useSessionStore = create<SessionStore>((set) => ({
     userId,
     email,
     accessToken,
+    refreshToken,
     companies,
     activeCompanyId,
   }) =>
@@ -56,6 +60,7 @@ export const useSessionStore = create<SessionStore>((set) => ({
       companies,
       activeCompanyId,
       ...(email !== undefined ? { email } : {}),
+      ...(refreshToken !== undefined ? { refreshToken } : {}),
     }),
 
   setActiveCompany: (activeCompanyId) =>

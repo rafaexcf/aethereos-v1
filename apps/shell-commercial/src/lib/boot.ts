@@ -33,6 +33,7 @@ export async function boot(): Promise<void> {
     userId: session.user_id,
     email: session.email,
     accessToken: session.access_token,
+    refreshToken: session.refresh_token,
     companies: claims.companies,
     activeCompanyId: claims.activeCompanyId,
   });

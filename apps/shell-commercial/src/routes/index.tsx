@@ -3,6 +3,7 @@ import { rootRoute } from "./__root";
 import { useSessionStore } from "../stores/session";
 import { isEmbedMode } from "../lib/embed";
 import { useEffect, useState } from "react";
+import { EmbeddedApp } from "../components/EmbeddedApp";
 
 export const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -17,6 +18,8 @@ function DesktopPage() {
     userId,
     email,
     activeCompanyId,
+    accessToken,
+    refreshToken,
     companies,
     setActiveCompany,
     clearSession,
@@ -24,6 +27,7 @@ function DesktopPage() {
 
   const [companyName, setCompanyName] = useState<string | null>(null);
   const [outboxCount, setOutboxCount] = useState<number | null>(null);
+  const [showComercioDash, setShowComercioDash] = useState(false);
 
   useEffect(() => {
     if (userId === null) {
@@ -92,27 +96,61 @@ function DesktopPage() {
       )}
 
       {/* Desktop area (ui-shell WindowManager entra aqui em M22+) */}
-      <main className="flex flex-1 items-center justify-center">
-        <div className="space-y-4 text-center">
-          <h1 className="text-4xl font-bold text-zinc-100">
-            {companyName ?? "Aethereos"}
-          </h1>
-          <p className="text-zinc-400">
-            Cloud multi-tenant. Empresa ativa:{" "}
-            <code className="rounded bg-zinc-800 px-2 py-0.5 text-sm font-mono text-violet-400">
-              {companyName ?? activeCompanyId}
-            </code>
-          </p>
-          {outboxCount !== null && (
-            <p className="text-sm text-zinc-500">
-              Eventos SCP publicados:{" "}
-              <span className="font-mono text-zinc-300">{outboxCount}</span>
-            </p>
-          )}
-          <p className="text-xs text-zinc-600">
-            Driver Model validado: mesmo kernel, drivers cloud.
-          </p>
-        </div>
+      <main className="flex flex-1 overflow-hidden">
+        {showComercioDash && accessToken !== null && refreshToken !== null ? (
+          <div className="flex flex-1 flex-col">
+            <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
+              <span className="text-sm font-medium text-zinc-300">
+                Comércio Digital
+              </span>
+              <button
+                onClick={() => setShowComercioDash(false)}
+                className="text-xs text-zinc-500 hover:text-zinc-300"
+              >
+                Fechar ×
+              </button>
+            </div>
+            <div className="flex-1">
+              <EmbeddedApp
+                src={
+                  import.meta.env["VITE_COMERCIO_EMBED_URL"] ??
+                  "http://localhost:3000/embed"
+                }
+                accessToken={accessToken}
+                refreshToken={refreshToken}
+                title="Comércio Digital"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-1 items-center justify-center">
+            <div className="space-y-4 text-center">
+              <h1 className="text-4xl font-bold text-zinc-100">
+                {companyName ?? "Aethereos"}
+              </h1>
+              <p className="text-zinc-400">
+                Cloud multi-tenant. Empresa ativa:{" "}
+                <code className="rounded bg-zinc-800 px-2 py-0.5 text-sm font-mono text-violet-400">
+                  {companyName ?? activeCompanyId}
+                </code>
+              </p>
+              {outboxCount !== null && (
+                <p className="text-sm text-zinc-500">
+                  Eventos SCP publicados:{" "}
+                  <span className="font-mono text-zinc-300">{outboxCount}</span>
+                </p>
+              )}
+              <div className="pt-4">
+                <button
+                  onClick={() => setShowComercioDash(true)}
+                  className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-violet-500"
+                >
+                  Abrir Comércio Digital
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
