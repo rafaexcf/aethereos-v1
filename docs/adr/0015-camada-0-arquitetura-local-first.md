@@ -167,3 +167,13 @@ Para PRs em `apps/shell-base/` ou `packages/drivers-local/`:
 - [ ] Crypto apenas via `crypto.subtle.*` ou `crypto.randomUUID()`
 - [ ] Testes unitários para qualquer novo driver ou função de boot
 - [ ] `pnpm typecheck && pnpm lint && pnpm deps:check && pnpm test` verdes localmente
+
+---
+
+## Validação empírica do Driver Model (adicionado Sprint 3 / M24)
+
+A agnósticidade do kernel foi provada empiricamente em `packages/kernel/__tests__/driver-agnostic.test.ts`.
+Os mesmos métodos `KernelPublisher.publish()` e `auditLog()` operam sobre mocks "local-like" e "cloud-like"
+produzindo resultados estruturalmente idênticos.
+
+Detalhes: [DRIVER_MODEL_VALIDATION.md](../architecture/DRIVER_MODEL_VALIDATION.md)
