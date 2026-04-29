@@ -4,15 +4,20 @@
   "private": true,
   "description": "Driver Model interfaces — toda dependência externa via interface tipada (Fundamentação 4.7 [INV])",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./interfaces/*": "./src/interfaces/*.ts",
-    "./types/*": "./src/types/*.ts",
-    "./errors": "./src/errors.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
   },
   "scripts": {
+    "build": "tsc --build tsconfig.build.json",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "clean": "rm -rf dist"
   },
   "devDependencies": {
     "@aethereos/config-ts": "workspace:*",

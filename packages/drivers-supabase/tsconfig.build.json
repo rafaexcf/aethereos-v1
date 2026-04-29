@@ -2,10 +2,12 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "extends": "@aethereos/config-ts/library-build",
   "compilerOptions": {
+    "composite": true,
     "lib": ["ES2022"],
     "outDir": "./dist",
     "rootDir": "./src"
   },
+  "references": [{ "path": "../drivers/tsconfig.build.json" }],
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
 }

@@ -52,5 +52,13 @@ docs/architecture/dependency-graph.svg
 *.generated.ts
 *.generated.tsx
 
+# Stale tsc emit outside outDir (src/**/*.d.ts are generated, never committed)
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.d.ts.map
+packages/*/src/**/*.js
+packages/*/src/**/*.js.map
+apps/*/src/**/*.d.ts
+apps/*/src/**/*.d.ts.map
+
 # OS
 Thumbs.db

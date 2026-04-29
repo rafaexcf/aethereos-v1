@@ -67,6 +67,9 @@ importers:
       "@aethereos/drivers-supabase":
         specifier: workspace:*
         version: link:../../packages/drivers-supabase
+      "@aethereos/kernel":
+        specifier: workspace:*
+        version: link:../../packages/kernel
       postgres:
         specifier: ^3.4.5
         version: 3.4.9

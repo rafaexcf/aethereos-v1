@@ -4,17 +4,20 @@
   "private": true,
   "description": "Kernel do Aethereos — núcleo agnóstico de implementação (Driver Model, SCP, audit, permissions)",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./tenant": "./src/tenant/index.ts",
-    "./scp": "./src/scp/index.ts",
-    "./audit": "./src/audit/logger.ts",
-    "./permissions": "./src/permissions/index.ts",
-    "./invariants": "./src/invariants/operations.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
   },
   "scripts": {
+    "build": "tsc --build tsconfig.build.json",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "clean": "rm -rf dist"
   },
   "devDependencies": {
     "@aethereos/config-ts": "workspace:*",

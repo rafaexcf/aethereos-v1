@@ -1,15 +1,12 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "extends": "@aethereos/config-ts/react-library",
+  "extends": "@aethereos/config-ts/library-build",
   "compilerOptions": {
     "composite": true,
-    "noEmit": false,
-    "declaration": true,
-    "declarationMap": true,
-    "emitDeclarationOnly": true,
     "outDir": "./dist",
     "rootDir": "./src"
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "references": [{ "path": "../drivers/tsconfig.build.json" }],
+  "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
 }

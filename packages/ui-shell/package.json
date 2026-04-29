@@ -4,17 +4,35 @@
   "private": true,
   "description": "Componentes de UI compartilhados entre Camada 0 e Camada 1 do shell Aethereos",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./components/*": "./src/components/*/index.ts",
-    "./primitives": "./src/primitives/index.ts",
-    "./theme": "./src/theme/tokens.ts",
-    "./hooks": "./src/hooks/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./src/index.ts"
+    },
+    "./components/*": {
+      "types": "./dist/components/*/index.d.ts",
+      "default": "./src/components/*/index.tsx"
+    },
+    "./primitives": {
+      "types": "./dist/primitives/index.d.ts",
+      "default": "./src/primitives/index.ts"
+    },
+    "./theme": {
+      "types": "./dist/theme/tokens.d.ts",
+      "default": "./src/theme/tokens.ts"
+    },
+    "./hooks": {
+      "types": "./dist/hooks/index.d.ts",
+      "default": "./src/hooks/index.ts"
+    }
   },
   "scripts": {
+    "build": "tsc --project tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
-    "build": "tsc --project tsconfig.build.json"
+    "clean": "rm -rf dist"
   },
   "peerDependencies": {
     "react": "^19.0.0",

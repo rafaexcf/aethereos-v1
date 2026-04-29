@@ -5,15 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "node --watch --experimental-specifier-resolution=node dist/main.js",
-    "build": "tsc --project tsconfig.build.json",
+    "build": "tsc --build tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
-    "start": "node dist/main.js"
+    "start": "node dist/main.js",
+    "clean": "rm -rf dist"
   },
   "dependencies": {
     "@aethereos/drivers": "workspace:*",
     "@aethereos/drivers-supabase": "workspace:*",
     "@aethereos/drivers-nats": "workspace:*",
+    "@aethereos/kernel": "workspace:*",
     "postgres": "^3.4.5"
   },
   "devDependencies": {
