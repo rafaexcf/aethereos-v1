@@ -1528,3 +1528,33 @@ Objetivo: substituir todo código demo/stub do Sprint 6 por implementações rea
 - `pnpm typecheck`: EXIT 0
 - `pnpm lint`: EXIT 0
 - `pnpm ci:full`: EXIT 0
+
+---
+
+# Sprint 7 (REVISADO) — Fechamento de dívida arquitetural
+
+Início: 2026-04-29T00:00:00Z
+Modelo: Claude Code (claude-sonnet-4-6, Sprint 7 revisado N=1)
+
+## Origem
+
+Sprint 6.5 / MX1 expôs dívida arquitetural: Driver Model bifurcou (server vs browser),
+Outbox SCP só funciona server-side via KernelPublisher + NATS + Node.js, e os 5 apps
+(Drive, Pessoas, Chat, Configurações, Staff) escrevem dados sem emitir eventos SCP.
+Decisão humana: Sprint 7 original (hardening + IaC) adiado para Sprint 9.
+Sprint 8 cobrirá dívidas externas (LLM real, Staff service_role, RAG, fix containers).
+
+## Calibração inicial (6 pontos respondidos)
+
+1. **SupabaseDatabaseDriver vs SupabaseBrowserDataDriver**: server usa `postgres` Node.js nativo + Drizzle + `SET LOCAL` para tenant context + `transaction()` real; browser usa `@supabase/supabase-js` + RLS via JWT + Realtime, sem `transaction()`.
+2. **Browser não escreve no Outbox diretamente**: RLS em `kernel.scp_outbox` bloqueia `authenticated` users; `SET LOCAL` + transação PostgreSQL são impossíveis via supabase-js; transações distribuídas browser↔server são frágeis sem rollback.
+3. **Edge Function = caminho certo**: TypeScript Deno no edge Supabase, acesso a `SUPABASE_SERVICE_ROLE_KEY`, executa escrita de domínio + outbox INSERT em transação atômica PostgreSQL; browser faz POST HTTP com JWT.
+4. **correlation_id propagado**: browser envia no body do POST → Edge Function extrai e propaga para `kernel.scp_outbox.correlation_id` → scp-worker → NATS → consumer.
+5. **test:isolation vs test**: `test` usa mocks sem banco real; `test:isolation` requer Supabase local, cria tenants reais e valida RLS mecanicamente — M19 criou mocks, nunca testou RLS real.
+6. **5 apps sem emissão SCP**: Drive (file._), Pessoas (person._), Chat (chat.\*), Configurações (settings.updated), Staff (staff.access).
+
+## Histórico de milestones (Sprint 7 revisado)
+
+### MX7 — ADR-0020: retificação Driver Model bifurcado
+
+- Status: EM ANDAMENTO
