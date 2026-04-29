@@ -1557,4 +1557,56 @@ Sprint 8 cobrirá dívidas externas (LLM real, Staff service_role, RAG, fix cont
 
 ### MX7 — ADR-0020: retificação Driver Model bifurcado
 
-- Status: EM ANDAMENTO
+- Iniciada: 2026-04-29T00:10:00Z
+- Concluída: 2026-04-29T00:40:00Z
+- Status: SUCCESS
+- Commit: `c0473b6` `docs(adr): adr-0020 retificacao driver model bifurcacao server/browser (MX7)`
+- Arquivos criados: `docs/adr/0020-driver-model-bifurcacao-server-browser.md`
+- Arquivos modificados: `docs/adr/0016-camada-1-arquitetura-cloud-first.md`, `CLAUDE.md` (seções 4 e 5), `packages/drivers/src/interfaces/database.ts` (JSDoc bifurcação)
+
+### MX8 — Edge Function `scp-publish` como outbox writer atômico
+
+- Iniciada: 2026-04-29T00:45:00Z
+- Concluída: 2026-04-29T01:30:00Z
+- Status: SUCCESS
+- Commit: `535ef81` `feat(scp): edge function scp-publish como outbox writer atomico (MX8)`
+- Arquivos criados: `supabase/functions/scp-publish/index.ts`, `apps/shell-commercial/src/lib/scp-publisher-browser.ts`, `supabase/migrations/20260430000009_scp_outbox_audit.sql`
+- Arquivos modificados: `eslint.config.mjs` (ignora supabase/functions — Deno)
+- Decisões: console.warn removido do browser wrapper (P14 degraded retorna event_id local); non-null assertions substituídas por `as string` pós-validação isUuid; `supabase/functions/**` ignorado no ESLint (Deno legítimo)
+
+### MX9 — Emissão SCP em todos os apps do shell-commercial
+
+- Iniciada: 2026-04-29T01:35:00Z
+- Concluída: 2026-04-29T02:15:00Z
+- Status: SUCCESS
+- Commit: `d51b1e3` `feat(apps): emissao scp via edge function em todos os apps shell-commercial (MX9)`
+- Padrão adotado: escrita → fire-and-forget publishEvent() (eventual consistency, ADR-0020)
+- Apps atualizados: Drive (file.uploaded, folder.created, file.deleted), Pessoas (person.created, person.updated, person.deactivated), Chat (chat.message_sent, chat.channel_created), Configurações (settings.updated scope=user e scope=company), Staff (staff.access)
+- Decisão documentada: ScpPublisherBrowser adicionado ao CloudDrivers como driver `scp`
+
+### MX10 — Testes de isolamento RLS reais (`pnpm test:isolation`)
+
+- Status: SUCCESS
+- Arquivo: `apps/scp-worker/__tests__/rls-isolation.test.ts`
+- 7 describe blocks: kernel.files (3), kernel.people (3), kernel.chat_channels (3), kernel.settings (2), kernel.is_invariant_operation (6), kernel.audit_log (1), kernel.staff_access_log (1)
+- Helpers asUser() e asUserNoTenant() validam fail-closed e isolamento por company_id
+- Skip automático se TEST_DATABASE_URL não definida
+- typecheck + lint passam; commit c352654
+
+### MX11 — Validação E2E do pipeline SCP
+
+- Status: SUCCESS
+- Arquivo: `apps/scp-worker/__tests__/scp-pipeline.test.ts`
+- 12 testes: escrita outbox (3), transições status (3), falha max tentativas (1), invariantes trigger (3), isolamento cross-tenant (2)
+- Documentação: `docs/architecture/SCP_PIPELINE_E2E.md` — mapa completo do pipeline com lacunas honestas
+- Limitação honesta: JWT real + HTTP Edge Function + NATS requerem runtime; documentados como Sprint 8
+- typecheck + lint passam; commit 1c7f372
+
+### MX12 — Encerramento do Sprint 7 Revisado
+
+- Status: SUCCESS
+- `pnpm ci:full` EXIT 0: typecheck ✓ lint ✓ build ✓ test ✓
+- Relatório: `docs/SPRINT_7_REVISADO_REPORT_2026-04-29.md`
+- Total de commits Sprint 7 Revisado: 6 (MX7–MX12)
+- 38 testes de isolamento/pipeline (skip automático sem TEST_DATABASE_URL)
+- Aguardando revisão humana. Sprint 8 não iniciado.
