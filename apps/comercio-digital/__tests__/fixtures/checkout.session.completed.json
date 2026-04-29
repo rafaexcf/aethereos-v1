@@ -1,0 +1,22 @@
+{
+  "id": "evt_test_checkout_completed",
+  "object": "event",
+  "api_version": "2025-05-28.basil",
+  "type": "checkout.session.completed",
+  "data": {
+    "object": {
+      "id": "cs_test_abc123",
+      "object": "checkout.session",
+      "status": "complete",
+      "payment_status": "paid",
+      "payment_intent": "pi_test_abc123",
+      "customer_email": "comprador@exemplo.com",
+      "amount_total": 1990,
+      "currency": "brl",
+      "metadata": {
+        "company_id": "00000000-0000-0000-0000-000000000001",
+        "product_id": "00000000-0000-0000-0000-000000000010"
+      }
+    }
+  }
+}

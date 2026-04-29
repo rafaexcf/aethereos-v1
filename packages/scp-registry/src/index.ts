@@ -42,5 +42,15 @@ export type {
   CommerceProductArchivedPayload,
 } from "./schemas/commerce.js";
 
+// Commerce checkout events
+export { COMMERCE_CHECKOUT_EVENT_SCHEMAS } from "./schemas/commerce-checkout.js";
+export type {
+  CommerceCheckoutStartedPayload,
+  CommerceOrderPlacedPayload,
+  CommerceOrderPaidPayload,
+  CommerceOrderFailedPayload,
+  CommerceOrderRefundedPayload,
+} from "./schemas/commerce-checkout.js";
+
 // Helpers
 export { buildEnvelope, verifyEnvelope, signEnvelope } from "./helpers.js";
