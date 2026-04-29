@@ -141,6 +141,28 @@ export class SupabaseBrowserAuthDriver implements AuthDriver {
     }
   }
 
+  async setSession(tokens: {
+    access_token: string;
+    refresh_token: string;
+  }): Promise<Result<Session, AuthDriverError>> {
+    try {
+      const { data, error } = await this.#client.auth.setSession({
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+      });
+      if (error !== null || data.session === null) {
+        return err(new AuthError(error?.message ?? "set session failed"));
+      }
+      const session = this.#mapSession(data.session);
+      if (session === null) {
+        return err(new AuthError("empty session after set"));
+      }
+      return ok(session);
+    } catch (e) {
+      return err(new NetworkError(String(e)));
+    }
+  }
+
   async refreshSession(): Promise<Result<Session, AuthDriverError>> {
     try {
       const { data, error } = await this.#client.auth.refreshSession();

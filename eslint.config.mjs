@@ -18,6 +18,8 @@ export default tseslint.config(
       // Config files at root are CJS — ESLint won't lint them
       ".dependency-cruiser.cjs",
       "commitlint.config.cjs",
+      // PostCSS configs are CJS (no module type in package.json)
+      "**/postcss.config.js",
     ],
   },
 );

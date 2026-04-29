@@ -1,7 +1,7 @@
-export { SupabaseBrowserAuthDriver } from "./auth/index.js";
-export type { SupabaseBrowserAuthConfig } from "./auth/index.js";
+export { SupabaseBrowserAuthDriver } from "./auth/index";
+export type { SupabaseBrowserAuthConfig } from "./auth/index";
 
-export { SupabaseStorageDriver } from "./storage/index.js";
-export type { SupabaseStorageConfig } from "./storage/index.js";
+export { SupabaseStorageDriver } from "./storage/index";
+export type { SupabaseStorageConfig } from "./storage/index";
 
-export * from "./schema/index.js";
+export * from "./schema/index";
