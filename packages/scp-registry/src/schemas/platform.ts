@@ -138,6 +138,32 @@ export type PlatformPersonDeactivatedPayload = z.infer<
   typeof PlatformPersonDeactivatedPayloadSchema
 >;
 
+// ---------------------------------------------------------------------------
+// Eventos de chat (M43)
+// ---------------------------------------------------------------------------
+
+export const PlatformChatMessageSentPayloadSchema = z.object({
+  message_id: z.string().uuid(),
+  channel_id: z.string().uuid(),
+  company_id: z.string().uuid(),
+  sender_user_id: z.string().uuid(),
+  body_length: z.number().int().nonnegative(),
+});
+export type PlatformChatMessageSentPayload = z.infer<
+  typeof PlatformChatMessageSentPayloadSchema
+>;
+
+export const PlatformChatChannelCreatedPayloadSchema = z.object({
+  channel_id: z.string().uuid(),
+  company_id: z.string().uuid(),
+  kind: z.enum(["channel", "dm"]),
+  name: z.string().optional(),
+  created_by: z.string().uuid(),
+});
+export type PlatformChatChannelCreatedPayload = z.infer<
+  typeof PlatformChatChannelCreatedPayloadSchema
+>;
+
 /** Mapa de tipo de evento → schema de payload para eventos platform.* */
 export const PLATFORM_EVENT_SCHEMAS = {
   "platform.tenant.created": PlatformTenantCreatedPayloadSchema,
@@ -152,4 +178,6 @@ export const PLATFORM_EVENT_SCHEMAS = {
   "platform.person.created": PlatformPersonCreatedPayloadSchema,
   "platform.person.updated": PlatformPersonUpdatedPayloadSchema,
   "platform.person.deactivated": PlatformPersonDeactivatedPayloadSchema,
+  "platform.chat.message_sent": PlatformChatMessageSentPayloadSchema,
+  "platform.chat.channel_created": PlatformChatChannelCreatedPayloadSchema,
 } as const satisfies Record<string, z.ZodSchema>;

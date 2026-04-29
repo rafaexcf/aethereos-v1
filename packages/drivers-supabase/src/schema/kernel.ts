@@ -193,6 +193,60 @@ export const people = kernelSchema.table(
   ],
 );
 
+// ---------------------------------------------------------------------------
+// Chat — M43
+// ---------------------------------------------------------------------------
+
+export const chatChannels = kernelSchema.table(
+  "chat_channels",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    name: text("name"),
+    kind: text("kind").notNull().default("channel"),
+    createdBy: uuid("created_by").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("kernel_chat_channels_company_idx").on(t.companyId, t.kind)],
+);
+
+export const chatChannelMembers = kernelSchema.table(
+  "chat_channel_members",
+  {
+    channelId: uuid("channel_id")
+      .notNull()
+      .references(() => chatChannels.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull(),
+    joinedAt: timestamp("joined_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("kernel_chat_members_user_idx").on(t.userId)],
+);
+
+export const chatMessages = kernelSchema.table(
+  "chat_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    channelId: uuid("channel_id")
+      .notNull()
+      .references(() => chatChannels.id, { onDelete: "cascade" }),
+    senderUserId: uuid("sender_user_id").notNull(),
+    body: text("body").notNull(),
+    metadata: jsonb("metadata").notNull().default({}),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("kernel_chat_messages_channel_idx").on(t.channelId, t.createdAt),
+  ],
+);
+
 export const fileVersions = kernelSchema.table(
   "file_versions",
   {
