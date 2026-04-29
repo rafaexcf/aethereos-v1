@@ -20,6 +20,8 @@ export default tseslint.config(
       "commitlint.config.cjs",
       // PostCSS configs are CJS (no module type in package.json)
       "**/postcss.config.js",
+      // Edge Functions rodam em Deno — não são Node.js e usam console legitimamente
+      "supabase/functions/**",
     ],
   },
 );
