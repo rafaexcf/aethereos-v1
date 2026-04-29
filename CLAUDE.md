@@ -44,31 +44,32 @@ Em dúvida, prefira preservar o que tem maior peso de rigidez.
 
 ## 4. Stack cravada (resumo executável)
 
-Detalhe completo em `docs/adr/0014-resolucao-stack-vs-analise-externa.md`.
+Detalhe completo em `docs/adr/0014-resolucao-stack-vs-analise-externa.md`.  
+Camada 0 especificamente: ver `docs/adr/0015-camada-0-arquitetura-local-first.md`.
 
-| Camada | Tecnologia | Tipo |
-|---|---|---|
-| Frontend shell OS (Camadas 0 e 1) | Vite 8+ / React 19 / TanStack Router / Zustand / Tailwind v4 / shadcn/ui | [INV] |
-| Frontend SaaS standalone | Next.js 15 App Router (cada SaaS é projeto independente) | [DEC] |
-| Frontend sites institucionais | Astro | [DEC] |
-| Linguagem | TypeScript strict | [INV] |
-| Runtime backend | Node.js 20.19+/22.12+ | [DEC] |
-| ORM | Drizzle | [INV] |
-| Banco | Supabase Postgres 16 + RLS por `company_id` | [INV] |
-| Auth/IdP | Supabase Auth como IdP central (OAuth 2.1 + OIDC + PKCE) em `idp.aethereos.com` | [INV] |
-| Auth federada (F3+ se SAML) | Zitadel / Keycloak | [HIP] |
-| Validação | Zod em toda borda | [INV] |
-| Event bus | NATS JetStream + Outbox PostgreSQL desde dia 1 | [DEC] |
-| Workflow engine | Temporal (a partir da Fase 2) | [DEC] |
-| LLM gateway | LiteLLM | [DEC] |
-| LLM observability | Langfuse self-hosted | [DEC] |
-| Vector | pgvector F1-2 atrás de VectorDriver; Qdrant F3 | [DEC] |
-| Feature flags | Unleash | [DEC] |
-| Billing | Lago (F2) + Stripe como gateway de pagamento | [DEC] |
-| Observabilidade | OpenTelemetry + Grafana stack (Tempo, Loki, Prometheus) | [DEC] |
-| IaC | Pulumi TypeScript | [DEC] |
-| CI | GitHub Actions | [DEC] |
-| Driver Model | Toda dependência externa via interface | [INV] |
+| Camada                            | Tecnologia                                                                      | Tipo  |
+| --------------------------------- | ------------------------------------------------------------------------------- | ----- |
+| Frontend shell OS (Camadas 0 e 1) | Vite 8+ / React 19 / TanStack Router / Zustand / Tailwind v4 / shadcn/ui        | [INV] |
+| Frontend SaaS standalone          | Next.js 15 App Router (cada SaaS é projeto independente)                        | [DEC] |
+| Frontend sites institucionais     | Astro                                                                           | [DEC] |
+| Linguagem                         | TypeScript strict                                                               | [INV] |
+| Runtime backend                   | Node.js 20.19+/22.12+                                                           | [DEC] |
+| ORM                               | Drizzle                                                                         | [INV] |
+| Banco                             | Supabase Postgres 16 + RLS por `company_id`                                     | [INV] |
+| Auth/IdP                          | Supabase Auth como IdP central (OAuth 2.1 + OIDC + PKCE) em `idp.aethereos.com` | [INV] |
+| Auth federada (F3+ se SAML)       | Zitadel / Keycloak                                                              | [HIP] |
+| Validação                         | Zod em toda borda                                                               | [INV] |
+| Event bus                         | NATS JetStream + Outbox PostgreSQL desde dia 1                                  | [DEC] |
+| Workflow engine                   | Temporal (a partir da Fase 2)                                                   | [DEC] |
+| LLM gateway                       | LiteLLM                                                                         | [DEC] |
+| LLM observability                 | Langfuse self-hosted                                                            | [DEC] |
+| Vector                            | pgvector F1-2 atrás de VectorDriver; Qdrant F3                                  | [DEC] |
+| Feature flags                     | Unleash                                                                         | [DEC] |
+| Billing                           | Lago (F2) + Stripe como gateway de pagamento                                    | [DEC] |
+| Observabilidade                   | OpenTelemetry + Grafana stack (Tempo, Loki, Prometheus)                         | [DEC] |
+| IaC                               | Pulumi TypeScript                                                               | [DEC] |
+| CI                                | GitHub Actions                                                                  | [DEC] |
+| Driver Model                      | Toda dependência externa via interface                                          | [INV] |
 
 ---
 
