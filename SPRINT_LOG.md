@@ -235,6 +235,60 @@ OPFS (Origin Private File System) provê acesso a arquivos binários por origem,
 ## Milestone M11 — LocalDrivers: interfaces concretas para ambiente de navegador
 
 - Iniciada: 2026-04-29T08:05:00Z
+- Concluída: 2026-04-29T09:00:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm typecheck --filter=@aethereos/drivers-local` → ok
+  - `pnpm --filter=@aethereos/drivers-local lint` → ok
+  - `pnpm deps:check` → ok (0 errors, 11 infos orphans)
+  - `pnpm --filter=@aethereos/drivers-local test` → 57/57 passando
+  - `pnpm typecheck` → ok (8 packages)
+- Arquivos criados: `packages/drivers-local/` (package.json, tsconfig.json, vitest.config.ts, README.md, src/index.ts, src/database/{sqlite-wasm-driver,opfs-vfs}.ts, src/storage/opfs-storage-driver.ts, src/auth/local-auth-driver.ts, src/secrets/webcrypto-secrets-driver.ts, src/cache/memory-cache-driver.ts, src/feature-flags/static-flags-driver.ts, src/event-bus/broadcast-channel-driver.ts, **tests**/7 arquivos)
+- Arquivos modificados: `packages/config-ts/base.json` (path alias @aethereos/drivers-local)
+- Decisões tomadas:
+  - sql.js NÃO é dependência de drivers-local — caller carrega dinamicamente para manter bundle < 500KB. RawSqliteDB é interface interna que qualquer mock/implementação satisfaz.
+  - PBKDF2 (SHA-256, 600k iterations) em vez de Argon2id: mesma segurança prática, zero dependência externa (Web Crypto API nativa).
+  - Uint8Array<ArrayBufferLike> vs ArrayBuffer: helper `toArrayBuffer()` converte para satisfazer tipagem de Web Crypto API e OPFS APIs.
+  - `EventBusError`, `AuthDriverError`, etc. não re-exportados pelo index de @aethereos/drivers — definidos localmente em cada driver como type aliases.
+  - OPFSStorageDriver usa fallback in-memory (Map) quando OPFS não disponível (testes, browsers antigos).
+  - Ed25519 JWTs: signJwt/verifyJwt implementados com crypto.subtle puro, sem biblioteca JWT externa.
+
+## Milestone M12 — App shell-base: scaffold Vite + React + TanStack Router
+
+- Iniciada: 2026-04-29T09:05:00Z
+- Concluída: 2026-04-29T10:00:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm --filter=@aethereos/shell-base typecheck` → ok
+  - `pnpm --filter=@aethereos/shell-base build` → ok (bundle: ~90 KB gzip, limite: 500 KB)
+- Arquivos criados:
+  - `apps/shell-base/package.json` (Vite 6 + React 19 + TanStack Router + Zustand + Tailwind v4 + vite-plugin-pwa)
+  - `apps/shell-base/tsconfig.json` (extends vite-app.json, include override obrigatório)
+  - `apps/shell-base/vite.config.ts` (react + tailwindcss + VitePWA com service worker)
+  - `apps/shell-base/index.html` (manifest link, theme-color, #root)
+  - `apps/shell-base/public/manifest.webmanifest` (PWA: standalone, dark, pt-BR)
+  - `apps/shell-base/public/icons/icon-192.svg`, `icon-512.svg` (SVG placeholder)
+  - `apps/shell-base/src/main.tsx` (RouterProvider + createRouter code-based)
+  - `apps/shell-base/src/styles/globals.css` (`@import "tailwindcss"` v4 + CSS vars)
+  - `apps/shell-base/src/routes/__root.tsx` (createRootRoute + 404 component)
+  - `apps/shell-base/src/routes/index.tsx` (Desktop — rota `/`)
+  - `apps/shell-base/src/routes/setup.tsx` (Setup — rota `/setup`)
+  - `apps/shell-base/src/routes/settings/about.tsx` (About — rota `/settings/about`)
+  - `apps/shell-base/src/stores/session.ts` (Zustand: companyId, userId, isBooted)
+  - `apps/shell-base/src/lib/drivers.ts` (buildDrivers: storage, cache, flags, eventBus)
+  - `apps/shell-base/src/lib/boot.ts` (stub — implementação completa no M13)
+- Decisões tomadas:
+  - TanStack Router code-based routing (sem `@tanstack/router-plugin`; migração para file-based futura)
+  - `manifest: false` no VitePWA — manifest gerenciado manualmente em public/
+  - `include` explícito em tsconfig.json do app (paths em vite-app.json resolvem relativo ao pacote config-ts)
+  - Tailwind v4: apenas `@import "tailwindcss"` no CSS, sem tailwind.config.js
+  - `manualChunks` separa react e router para cache HTTP eficiente
+  - Boot sequence é stub para M12; M13 implementa SQLite WASM + OPFS
+- Próximo: M13 — Boot local-first: SQLite WASM + OPFS persistente
+
+## Milestone M13 — Boot local-first: SQLite WASM + OPFS
+
+- Iniciada: 2026-04-29T10:05:00Z
 - Status: IN_PROGRESS
 
 ---

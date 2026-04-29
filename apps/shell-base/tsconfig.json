@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../../packages/config-ts/vite-app.json",
+  "compilerOptions": {
+    "paths": {
+      "@aethereos/drivers": ["../../packages/drivers/src/index.ts"],
+      "@aethereos/drivers-local": ["../../packages/drivers-local/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+:root {
+  --ae-bg: #09090b;
+  --ae-fg: #fafafa;
+  --ae-surface: #18181b;
+  --ae-border: #27272a;
+  --ae-accent: #7c3aed;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  background-color: var(--ae-bg);
+  color: var(--ae-fg);
+  font-family: system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
