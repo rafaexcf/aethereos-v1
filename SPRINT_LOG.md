@@ -341,6 +341,26 @@ OPFS (Origin Private File System) provê acesso a arquivos binários por origem,
 ## Milestone M15 — PWA + offline-first
 
 - Iniciada: 2026-04-29T11:05:00Z
+- Concluída: 2026-04-29T11:20:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm --filter=@aethereos/shell-base build` → ok
+  - SW precache: 11 entries (1048.98 KiB) — inclui WASM ✓
+  - Precache verificado: index.html, registerSW.js, manifest.webmanifest, icons/icon-192.svg, icons/icon-512.svg, sql-wasm-browser-_.js, sql-wasm-_.wasm, router-_.js, react-_.js, index-_.js, index-_.css
+- Arquivos modificados:
+  - `apps/shell-base/vite.config.ts` (globPatterns inclui `wasm`, maximumFileSizeToCacheInBytes=5MB, cleanupOutdatedCaches=true)
+- Decisões tomadas:
+  - WASM (~660 KB) incluído no precache — após primeiro carregamento o app é 100% offline
+  - `maximumFileSizeToCacheInBytes: 5 * 1024 * 1024` para permitir WASM (>2 MB default)
+  - `cleanupOutdatedCaches: true` — remove caches antigos na ativação do SW
+  - `navigateFallback: "index.html"` — SPA routing funciona offline
+  - `runtimeCaching: []` — sem cache dinâmico adicional (Camada 0 sem backend)
+  - Bundle inicial (JS+CSS sem sql.js lazy) mantido em ~113 KB gzip
+- Próximo: M16 — Empacotamento da Camada 0 sob BUSL-1.1
+
+## Milestone M16 — Empacotamento Camada 0 sob BUSL-1.1
+
+- Iniciada: 2026-04-29T11:25:00Z
 - Status: IN_PROGRESS
 
 ---

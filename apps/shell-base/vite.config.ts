@@ -11,9 +11,16 @@ export default defineConfig({
       registerType: "autoUpdate",
       manifest: false,
       workbox: {
-        globPatterns: ["**/*.{js,css,html,svg,webmanifest}"],
+        // Precache all app assets including WASM (sql.js ~660 KB)
+        globPatterns: ["**/*.{js,css,html,svg,webmanifest,wasm}"],
+        // Allow WASM up to 5 MB
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         navigateFallback: "index.html",
         navigateFallbackDenylist: [/^\/api\//],
+        // Clean up old caches on SW activation
+        cleanupOutdatedCaches: true,
+        // Cache first for all precached assets
+        runtimeCaching: [],
       },
       devOptions: { enabled: false },
     }),
