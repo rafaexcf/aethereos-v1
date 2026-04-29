@@ -1,0 +1,123 @@
+import { createRoute, useNavigate } from "@tanstack/react-router";
+import { rootRoute } from "./__root";
+import { useSessionStore } from "../stores/session";
+import { useEffect } from "react";
+
+export const indexRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/",
+  component: DesktopPage,
+});
+
+function DesktopPage() {
+  const navigate = useNavigate();
+  const {
+    drivers,
+    userId,
+    email,
+    activeCompanyId,
+    companies,
+    setActiveCompany,
+    clearSession,
+  } = useSessionStore();
+
+  useEffect(() => {
+    if (userId === null) {
+      void navigate({ to: "/login" });
+    }
+  }, [userId, navigate]);
+
+  async function handleSignOut() {
+    if (drivers === null) return;
+    await drivers.auth.signOut();
+    clearSession();
+    await navigate({ to: "/login" });
+  }
+
+  async function handleSwitchCompany(companyId: string) {
+    setActiveCompany(companyId);
+    if (drivers !== null) {
+      drivers.auth.withCompanyContext(companyId);
+    }
+  }
+
+  if (userId === null || activeCompanyId === null) return null;
+
+  return (
+    <div className="flex h-screen flex-col bg-zinc-950 text-zinc-100">
+      {/* Header */}
+      <header className="flex items-center justify-between border-b border-zinc-800 px-6 py-3">
+        <div className="flex items-center gap-3">
+          <span className="font-bold tracking-tight text-violet-400">
+            Aethereos
+          </span>
+          {companies.length > 1 ? (
+            <CompanySwitcher
+              companies={companies}
+              activeCompanyId={activeCompanyId}
+              onSwitch={handleSwitchCompany}
+            />
+          ) : (
+            <span className="rounded-md bg-zinc-800 px-2 py-1 font-mono text-xs text-zinc-400">
+              {activeCompanyId}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-zinc-400">{email ?? userId}</span>
+          <button
+            onClick={handleSignOut}
+            className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 transition-colors hover:border-zinc-500"
+          >
+            Sair
+          </button>
+        </div>
+      </header>
+
+      {/* Desktop area (ui-shell WindowManager entra aqui em M22+) */}
+      <main className="flex flex-1 items-center justify-center">
+        <div className="space-y-4 text-center">
+          <h1 className="text-4xl font-bold text-zinc-100">
+            Aethereos — Camada 1
+          </h1>
+          <p className="text-zinc-400">
+            Cloud multi-tenant. Empresa ativa:{" "}
+            <code className="rounded bg-zinc-800 px-2 py-0.5 text-sm font-mono text-violet-400">
+              {activeCompanyId}
+            </code>
+          </p>
+          <p className="text-sm text-zinc-600">
+            Driver Model validado: mesmo kernel, drivers cloud.
+          </p>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+interface CompanySwitcherProps {
+  companies: string[];
+  activeCompanyId: string;
+  onSwitch: (companyId: string) => Promise<void>;
+}
+
+function CompanySwitcher({
+  companies,
+  activeCompanyId,
+  onSwitch,
+}: CompanySwitcherProps) {
+  return (
+    <select
+      value={activeCompanyId}
+      onChange={(e) => void onSwitch(e.target.value)}
+      className="rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 font-mono text-xs text-zinc-300 outline-none focus:border-violet-500"
+    >
+      {companies.map((id) => (
+        <option key={id} value={id}>
+          {id}
+        </option>
+      ))}
+    </select>
+  );
+}

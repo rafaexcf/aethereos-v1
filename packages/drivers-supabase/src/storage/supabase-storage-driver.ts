@@ -46,7 +46,8 @@ export class SupabaseStorageDriver implements StorageDriver {
       const prefixedPath = this.#prefixPath(path);
       // Supabase Storage accepts Blob/ArrayBuffer; convert Uint8Array directly.
       // ReadableStream is passed as-is (Supabase JS v2 accepts it via fetch).
-      const uploadData = data instanceof Uint8Array ? new Blob([data]) : data;
+      const uploadData =
+        data instanceof Uint8Array ? new Blob([new Uint8Array(data)]) : data;
       const uploadOptions: Record<string, unknown> = {
         upsert: options?.upsert ?? false,
       };

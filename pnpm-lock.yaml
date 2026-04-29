@@ -148,6 +148,67 @@ importers:
         specifier: ^0.21.0
         version: 0.21.2(vite@6.4.2(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.2)(yaml@2.8.3))(workbox-build@7.4.0(@types/babel__core@7.20.5))(workbox-window@7.4.0)
 
+  apps/shell-commercial:
+    dependencies:
+      "@aethereos/drivers":
+        specifier: workspace:*
+        version: link:../../packages/drivers
+      "@aethereos/drivers-supabase":
+        specifier: workspace:*
+        version: link:../../packages/drivers-supabase
+      "@aethereos/kernel":
+        specifier: workspace:*
+        version: link:../../packages/kernel
+      "@aethereos/scp-registry":
+        specifier: workspace:*
+        version: link:../../packages/scp-registry
+      "@aethereos/ui-shell":
+        specifier: workspace:*
+        version: link:../../packages/ui-shell
+      "@tanstack/react-router":
+        specifier: ^1.114.0
+        version: 1.168.25(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.5
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.2.5(react@19.2.5)
+      zustand:
+        specifier: ^5.0.0
+        version: 5.0.12(@types/react@19.2.14)(react@19.2.5)(use-sync-external-store@1.6.0(react@19.2.5))
+    devDependencies:
+      "@aethereos/config-eslint":
+        specifier: workspace:*
+        version: link:../../packages/config-eslint
+      "@aethereos/config-ts":
+        specifier: workspace:*
+        version: link:../../packages/config-ts
+      "@tailwindcss/vite":
+        specifier: ^4.0.0
+        version: 4.2.4(vite@6.4.2(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.2)(yaml@2.8.3))
+      "@types/react":
+        specifier: ^19.0.0
+        version: 19.2.14
+      "@types/react-dom":
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
+      "@vitejs/plugin-react":
+        specifier: ^4.0.0
+        version: 4.7.0(vite@6.4.2(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.2)(yaml@2.8.3))
+      tailwindcss:
+        specifier: ^4.0.0
+        version: 4.2.4
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.2(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.2)(yaml@2.8.3)
+      vite-plugin-pwa:
+        specifier: ^0.21.0
+        version: 0.21.2(vite@6.4.2(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.2)(yaml@2.8.3))(workbox-build@7.4.0(@types/babel__core@7.20.5))(workbox-window@7.4.0)
+
   packages/config-eslint:
     dependencies:
       "@eslint/js":
