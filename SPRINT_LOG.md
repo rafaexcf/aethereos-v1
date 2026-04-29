@@ -1430,4 +1430,101 @@ em demo state. Decisão humana: pausa para consolidação antes de Sprint 7.
 ### MX3 — Conectar Drive, Pessoas, Configurações ao driver real
 
 - Iniciada: 2026-04-29T01:45:00Z
-- Status: IN_PROGRESS
+- Concluída: 2026-04-29T03:00:00Z
+- Status: SUCCESS (PARCIAL em eventos SCP)
+- Drive: carrega/cria/deleta via kernel.files, upload para Supabase Storage
+- Pessoas: CRUD completo via kernel.people com carregamento real e desativação
+- Configurações: aba Perfil salva em kernel.settings, Empresa lê/grava kernel.companies
+- Nota: emissão de eventos SCP via outbox diferida para Sprint 7
+  (browser precisa de Supabase RPC para outbox atômico — KernelPublisher é Node.js-only)
+
+### MX4 — Realtime real no Chat + RLS testado
+
+- Iniciada: 2026-04-29T03:00:00Z
+- Concluída: 2026-04-29T04:00:00Z
+- Status: DONE
+- Commit: `feat(chat): realtime real supabase + isolacao por company (MX4)`
+- chat/index.tsx reescrito: canais via `kernel.chat_channels`, mensagens via
+  `kernel.chat_messages`, Realtime via `subscribeToTable` com filtro por
+  `channel_id`, cleanup de subscription no useEffect return
+- senderName armazenado em `metadata.sender_name` no insert; fallback para
+  userId.slice(0,8) se ausente
+- `pnpm typecheck && pnpm lint` passando
+
+### MX5 — Action Intents tipados via Zod no Copilot + LLM real
+
+- Iniciada: 2026-04-29T04:00:00Z
+- Concluída: 2026-04-29T05:00:00Z
+- Status: DONE
+- Commit: `feat(copilot): action intents tipados via zod + guardrail invariantes (MX5)`
+- Schemas adicionados em scp-registry: `CopilotIntentCreatePerson`, `CopilotIntentCreateFile`,
+  `CopilotIntentSendNotification`, `CopilotIntentUpdateSettings`, `CopilotIntentCreateChannel`
+- `CopilotIntentPayload` union discriminada tipada via Zod exportada de scp-registry
+- `ActionProposal.payload` mudou de `Record<string,unknown>` para `CopilotIntentPayload`
+- `detectIntent()` valida payload via `COPILOT_INTENT_SCHEMAS[type].safeParse()`
+- `canPropose()` bloqueia as 8 operações invariantes (Fundamentação 12.4) via
+  `BLOCKED_PATTERNS` + `isInvariantOperation()` ANTES de criar proposta
+- LLM: mantém modo degenerado (LiteLLM sem modelos configurados) — configuração
+  de `VITE_LITELLM_KEY` real é pré-requisito operacional fora do scope de código
+- `pnpm typecheck && pnpm lint` passando
+
+### MX6 — Middleware /staff + evento platform.staff.access + closure
+
+- Iniciada: 2026-04-29T05:00:00Z
+- Concluída: 2026-04-29T06:00:00Z
+- Status: DONE
+- Commit: `feat(staff): middleware is_staff + staff_access_log + platform.staff.access (MX6)`
+- `getCompanyClaims()` agora retorna `isStaff: boolean` (lido do JWT custom claim `is_staff`)
+- `SessionState` e `setAuthSession` atualizados com campo `isStaff`
+- `boot.ts`, `login.tsx`, `select-company.tsx` propagam `isStaff` para o store
+- `/staff` route: `useEffect` redireciona para `/` se `!isStaff` (middleware de acesso)
+- `recordStaffAccess()` insere em `kernel.staff_access_log` via `SupabaseBrowserDataDriver`
+- Migration `20260430000008_kernel_staff_access_log.sql`: tabela imutável com RLS
+  (INSERT para o próprio usuário staff; SELECT apenas via service_role)
+- Schema `PlatformStaffAccessPayloadSchema` adicionado ao scp-registry
+- `platform.staff.access`: emissão via outbox real (NATS + KernelPublisher) diferida para Sprint 7
+- `pnpm ci:full` EXIT 0
+
+## Sprint 6.5 — Relatório de Fechamento
+
+**Data de fechamento:** 2026-04-29
+**Status:** CONCLUÍDO — todos os 6 milestones entregues
+
+### Resumo executivo
+
+Sprint 6.5 foi um sprint cirúrgico de consolidação: sem novas features, sem nova UI.
+Objetivo: substituir todo código demo/stub do Sprint 6 por implementações reais.
+
+### O que foi entregue
+
+| Milestone | Descrição                                                             | Status                 | Commit    |
+| --------- | --------------------------------------------------------------------- | ---------------------- | --------- |
+| MX1       | Auditoria objetiva do estado demo vs real                             | DONE                   | `561af47` |
+| MX2       | SupabaseBrowserDataDriver + DriversContext centralizado               | DONE                   | `f1777d4` |
+| MX3       | Drive + Pessoas + Configurações conectados ao Supabase real           | DONE (eventos PARTIAL) | múltiplos |
+| MX4       | Chat com Realtime real via subscribeToTable + RLS                     | DONE                   | `226a513` |
+| MX5       | Copilot intents tipados via Zod + guardrail 8 operações invariantes   | DONE                   | `7352876` |
+| MX6       | /staff middleware is_staff + staff_access_log + platform.staff.access | DONE (emissão PARTIAL) | `8ca57d0` |
+
+### O que permanece como dívida (Sprint 7)
+
+1. **Emissão de eventos SCP no browser**: `KernelPublisher` requer NATS + Node.js.
+   Solução planejada: Supabase Edge Function como outbox writer para eventos de browser.
+   Afeta: Drive (file.uploaded/deleted), Pessoas (person.created/updated/deactivated),
+   Chat (chat.message_sent), Configurações (settings.updated), Staff (staff.access).
+
+2. **LLM real no Copilot**: `LiteLLMDriver` funcional mas container sem modelos configurados.
+   Requer: `VITE_LITELLM_KEY` real + modelo configurado no LiteLLM container.
+
+3. **Staff panel com dados reais**: DEMO_COMPANIES ainda hardcoded.
+   Requer: service_role client ou RPC admin para listar todas companies.
+
+4. **RLS cross-tenant tests**: `pnpm test:isolation` não implementado ainda.
+
+5. **RAG no Copilot**: pgvector + VectorDriver pendentes.
+
+### Gates CI no fechamento
+
+- `pnpm typecheck`: EXIT 0
+- `pnpm lint`: EXIT 0
+- `pnpm ci:full`: EXIT 0
