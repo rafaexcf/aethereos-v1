@@ -1043,3 +1043,42 @@ Plano-mestre: ver CAMADA_1_PLANO_MESTRE.md
   - `apps/shell-commercial/src/main.tsx` — registra opsRoute em /settings/ops
 - Decisão: readyz usa fetch direto sem drivers para evitar cold-start pesado em startup; não autentica pois healthz/readyz são endpoints públicos (sem dados sensíveis)
 - Fix: exactOptionalPropertyTypes exige `error?: string | undefined` (não `error?: string`) para compatibilidade com object literal
+
+### Milestone M40 — ADR-0018 + sprint 5 closure
+
+- Iniciada: 2026-04-30T02:35:00Z
+- Concluída: 2026-04-30T03:00:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm typecheck` → 22 packages, 22 successful ✅
+  - `pnpm lint` → 22 packages, 22 successful ✅
+  - `pnpm deps:check` → 0 errors, 0 warnings ✅
+  - `pnpm test` → 15 test suites, todos passed ✅
+  - `pnpm build` → 11 tasks, 11 successful ✅
+- Arquivos criados:
+  - `docs/adr/0018-fundacao-operacional-sprint5.md` — ADR com D1-D8 documentando decisões de LiteLLM, Langfuse, Unleash, OTel, correlation ID, P14, notificações e readyz
+- Arquivos modificados:
+  - `apps/comercio-digital/middleware.ts` — substituído `randomUUID()` de node:crypto por `crypto.randomUUID()` (Web Crypto API, compatível com Next.js Edge Runtime)
+  - `SPRINT_LOG.md` — sprint 5 encerrado com 9 milestones (M32-M40)
+- Bug encontrado e corrigido: node:crypto não é suportado em Next.js Edge Runtime (middleware); Web Crypto API (`crypto.randomUUID()`) é a alternativa correta
+
+## Encerramento Sprint 5
+
+**Sprint 5 concluído com sucesso.**
+
+Milestones entregues: M32 (LiteLLM), M33 (Langfuse), M34 (Unleash + FeatureFlags React), M35 (OTel + observability pkg + Grafana), M36 (correlation ID end-to-end), M37 (notificações), M38 (Modo Degenerado P14), M39 (health probes + ops dashboard), M40 (ADR-0018 + closure).
+
+**Novos pacotes criados neste sprint:**
+
+- packages/drivers-litellm
+- packages/drivers-langfuse
+- packages/drivers-unleash
+- packages/observability
+
+**Infraestrutura local completa:**
+
+- `infra/local/docker-compose.dev.yml` — NATS, LiteLLM, Langfuse, Unleash, OTel Collector, Tempo, Loki, Prometheus, Grafana (R13: tudo em um único compose)
+
+**Testes acumulados após Sprint 5:** 50+ testes unitários cobrindo todos os drivers e utilitários do kernel.
+
+Próximo passo: revisão humana dos ADRs e das decisões arquiteturais antes de iniciar Sprint 6.

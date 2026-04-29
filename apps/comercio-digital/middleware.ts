@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { randomUUID } from "node:crypto";
 
 export function middleware(request: NextRequest): NextResponse {
   const { pathname, searchParams } = request.nextUrl;
@@ -29,7 +28,8 @@ export function middleware(request: NextRequest): NextResponse {
   }
 
   // Propagate or generate correlation ID for every request
-  const correlationId = request.headers.get("x-correlation-id") ?? randomUUID();
+  const correlationId =
+    request.headers.get("x-correlation-id") ?? crypto.randomUUID();
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-correlation-id", correlationId);
