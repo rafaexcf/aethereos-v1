@@ -572,3 +572,30 @@ Modelo: Claude Code (claude-sonnet-4-6, Sprint 3 N=1)
   - `set_config('app.current_company_id', ..., true)` — terceiro parâmetro `true` = transaction-local (equivale a SET LOCAL)
   - Outbox tests: authenticated não tem SELECT na scp_outbox (apenas INSERT) — validado que service_role vê cross-tenant
   - Vitest 2.1 (não 3.x): compatível com NodeNext moduleResolution já usado pelo scp-worker
+
+## Milestone M20 — Auth: Supabase Auth como IdP central (PKCE)
+
+- Iniciada: 2026-04-29T14:35:00Z
+- Concluída: 2026-04-29T15:10:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm typecheck` → ok (16 packages)
+  - `pnpm lint` → ok
+  - `pnpm --filter=@aethereos/drivers-supabase test` → 17/17 passando
+- Arquivos criados:
+  - `supabase/migrations/20260429000002_tenant_memberships.sql` — `kernel.tenant_memberships` (PK composta, RLS por `user_id = auth.uid()`), `kernel.custom_access_token_hook` (JWT claims: companies[], active_company_id), `kernel.set_tenant_context_from_jwt` (db-pre-request hook PostgREST)
+  - `packages/drivers-supabase/src/auth/supabase-browser-auth-driver.ts` — driver browser-side com anon key, PKCE, `signIn`, `signUp`, `signInWithMagicLink`, `signOut`, `refreshSession`, `withCompanyContext`, `getCompanyClaims`
+  - `packages/drivers-supabase/vitest.config.ts` — vitest config com node environment
+  - `packages/drivers-supabase/__tests__/browser-auth-driver.test.ts` — 17 testes unitários com mock do Supabase JS
+- Arquivos modificados:
+  - `packages/drivers-supabase/src/auth/index.ts` — exporta `SupabaseBrowserAuthDriver`
+  - `packages/drivers-supabase/src/index.ts` — re-exporta browser driver
+  - `packages/drivers-supabase/package.json` — `+ test`, `+ vitest ^2.1.0`
+  - `supabase/config.toml` — `jwt_expiry = 900` (15min), `site_url` para porta 5174 (shell-commercial), hook `[auth.hook.custom_access_token]` ativado
+- Decisões tomadas:
+  - `SupabaseAuthDriver` (service key) = server-side para workers. `SupabaseBrowserAuthDriver` (anon key) = browser-side para shell-commercial
+  - `flowType: "pkce"` no cliente browser: Supabase JS habilita PKCE automaticamente quando detecta browser
+  - `withCompanyContext(companyId)` armazena no estado do driver; Zustand store do shell-commercial usa `getActiveCompanyId()` para queries de banco
+  - `getCompanyClaims()` lê `app_metadata` do JWT (injetado pelo hook): companies[] e active_company_id
+  - Testes unitários com `vi.mock('@supabase/supabase-js')` — sem rede, sem Docker
+  - `_AssertFn` type utility no final do arquivo de teste: prefixo `_` inibe ESLint no-unused-vars

@@ -7,6 +7,9 @@ export type {
 export { SupabaseAuthDriver } from "./auth/index.js";
 export type { SupabaseAuthConfig } from "./auth/index.js";
 
+export { SupabaseBrowserAuthDriver } from "./auth/index.js";
+export type { SupabaseBrowserAuthConfig } from "./auth/index.js";
+
 export { SupabaseStorageDriver } from "./storage/index.js";
 export type { SupabaseStorageConfig } from "./storage/index.js";
 
