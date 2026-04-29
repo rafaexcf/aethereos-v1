@@ -24,6 +24,11 @@
     "clean": "turbo run clean && rm -rf node_modules .turbo",
     "ci:audit": "pnpm audit --audit-level=high",
     "ci:full": "pnpm typecheck && pnpm lint && pnpm deps:check && pnpm test && pnpm test:isolation && pnpm build",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset",
+    "db:diff": "supabase db diff",
+    "db:migration": "supabase migration new",
     "prepare": "husky"
   },
   "devDependencies": {

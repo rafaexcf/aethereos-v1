@@ -67,6 +67,68 @@ Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
   - vite-app.json usa `allowImportingTsExtensions: true` (necessário com Vite)
 - Próximas dependências desbloqueadas: M3 (drivers interfaces)
 
+## Milestone M3 — Driver Model interfaces (packages/drivers)
+
+- Iniciada: 2026-04-29T01:00:00Z
+- Concluída: 2026-04-29T01:30:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm typecheck` → ok
+  - `pnpm lint` → ok
+  - `pnpm deps:check` → ok (0 errors)
+- Arquivos criados: `packages/drivers/src/types/{result.ts,tenant-context.ts,platform-event.ts}`, `src/errors.ts`, `src/interfaces/{database,event-bus,vector,storage,auth,secrets,cache,feature-flags,llm,observability}.ts`, `src/index.ts`
+- Decisões tomadas:
+  - `exactOptionalPropertyTypes: true` exige `if (x !== undefined)` antes de atribuir em construtor (sem `this.x = x` direto)
+  - Result<T,E> como union discriminada (sem classe nem exceção); ok()/err() como helpers de construção
+
+## Milestone M4 — SCP Registry (packages/scp-registry)
+
+- Iniciada: 2026-04-29T01:30:00Z
+- Concluída: 2026-04-29T02:15:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm typecheck` → ok
+  - `pnpm lint` → ok
+  - `pnpm deps:check` → ok
+- Arquivos criados: `packages/scp-registry/src/schemas/{actor,envelope,platform,agent,context,integration}.ts`, `src/{registry,helpers,index}.ts`
+- Decisões tomadas:
+  - `library.json` simplificado para apenas `noEmit: true`; rootDir nunca em configs compartilhados (resolve relativo ao config-ts, não ao pacote consumidor)
+  - `library-build.json` criado separadamente com composite/emitDeclarationOnly/outDir/rootDir para build de produção
+  - `CryptoKey` indisponível sem DOM lib; tipagem WebCrypto via `Parameters<typeof crypto.subtle.verify>[1]`
+
+## Milestone M5 — Kernel (packages/kernel)
+
+- Iniciada: 2026-04-29T02:15:00Z
+- Concluída: 2026-04-29T02:45:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm typecheck` → ok
+  - `pnpm lint` → ok
+  - `pnpm deps:check` → ok
+- Arquivos criados: `packages/kernel/src/invariants/operations.ts`, `src/tenant/{context,membership}.ts`, `src/scp/{outbox,publisher,consumer}.ts`, `src/audit/logger.ts`, `src/permissions/{capability,engine}.ts`, `src/index.ts`
+- Decisões tomadas:
+  - PermissionEngine bloqueia agentes em operações invariantes antes de checar capabilities (Fundamentação 12.4 [INV])
+  - auditLog() falha alto (nunca silencia erros de auditoria)
+  - BaseConsumer usa abstract class com eventTypes[] e handle() abstratos
+
+## Milestone M6 — ui-shell skeleton (packages/ui-shell)
+
+- Iniciada: 2026-04-29T02:45:00Z
+- Concluída: 2026-04-29T03:15:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm typecheck` → ok (4 packages)
+  - `pnpm lint` → ok
+  - `pnpm deps:check` → ok (0 errors)
+  - `pnpm build --filter=@aethereos/ui-shell` → ok (dist/ com .d.ts gerados)
+- Arquivos criados: `packages/ui-shell/{package.json,tsconfig.json,tsconfig.build.json}`, `src/theme/{tokens,theming}.ts`, `src/components/{window-manager,dock,tabs,desktop,mesa}/index.tsx`, `src/primitives/button.tsx`, `src/hooks/use-theme.ts`, `src/index.ts`
+- Arquivos modificados: `packages/config-ts/react-library.json` (removido rootDir/composite — mesma fix do library.json no M4), `packages/scp-registry/src/registry.ts` (import type z)
+- Decisões tomadas:
+  - Componentes são stubs com API definida; sem lógica real ainda (camadas superiores implementam)
+  - Button usa CSS transitions apenas, sem framer-motion (ADR-0014 #5)
+  - tsconfig.build.json override `noEmit: false` + `emitDeclarationOnly: true` para emitir .d.ts sem .js
+  - oklch como espaço de cor para design tokens (P3 gamut, CSS nativo)
+
 ---
 
 ## Decisões menores tomadas durante o sprint
