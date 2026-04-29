@@ -46,7 +46,8 @@ Em dúvida, prefira preservar o que tem maior peso de rigidez.
 
 Detalhe completo em `docs/adr/0014-resolucao-stack-vs-analise-externa.md`.  
 Camada 0 especificamente: ver `docs/adr/0015-camada-0-arquitetura-local-first.md`.  
-Camada 1 especificamente: ver `docs/adr/0016-camada-1-arquitetura-cloud-first.md`.
+Camada 1 especificamente: ver `docs/adr/0016-camada-1-arquitetura-cloud-first.md`.  
+SaaS standalone (comercio.digital et al.): ver `docs/adr/0017-comercio-digital-primeiro-saas-standalone.md`.
 
 | Camada                            | Tecnologia                                                                      | Tipo  |
 | --------------------------------- | ------------------------------------------------------------------------------- | ----- |
@@ -148,6 +149,10 @@ Domínios reservados pelo kernel (apps comuns NÃO podem emitir):
 - `integration.*`
 - `financial.*` (consumido pelo framework financeiro pluggable)
 - `fiscal.*` (consumido pelo framework fiscal pluggable)
+
+Domínios reservados por vertical (somente apps da vertical podem emitir):
+
+- `commerce.*` — reservado para apps comercio.digital e módulos comerciais do OS (ADR-0017)
 
 Todo `event_type` tem schema Zod registrado em `packages/scp-registry/`. CI bloqueia emissão sem schema registrado.
 

@@ -799,4 +799,61 @@ Cloud + produção ficam para humano após este sprint.
 ### M27 — Catálogo de produtos: schema + CRUD básico
 
 - Iniciada: 2026-04-29T19:05:00Z
-- Status: EM ANDAMENTO
+- Concluída: 2026-04-29T20:00:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm --filter=@aethereos/comercio-digital typecheck` → EXIT 0
+  - `pnpm --filter=@aethereos/comercio-digital test` → 5/5 ✅
+  - `pnpm --filter=@aethereos/comercio-digital build` → EXIT 0
+- Arquivos criados: migration SQL, Drizzle schema comercio, SCP commerce events, domain service lib/products.ts, Server Actions, pages CRUD produtos, vitest.config.ts, 5 unit tests
+
+### M28 — Checkout Stripe + webhook + outbox idempotente
+
+- Iniciada: 2026-04-29T20:05:00Z
+- Concluída: 2026-04-29T21:00:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm --filter=@aethereos/comercio-digital typecheck` → EXIT 0
+  - `pnpm --filter=@aethereos/comercio-digital test` → 8/8 ✅
+  - `pnpm --filter=@aethereos/comercio-digital build` → EXIT 0
+- Arquivos criados: migration orders, Drizzle schema orders, SCP commerce-checkout events, lib/orders.ts, lib/stripe.ts, /api/checkout/route.ts, /api/webhooks/stripe/route.ts, product detail page, orders list page, 3 unit tests
+
+### M29 — Modo embed dentro de shell-commercial
+
+- Iniciada: 2026-04-29T21:05:00Z
+- Concluída: 2026-04-29T21:45:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm --filter=@aethereos/comercio-digital typecheck` → EXIT 0
+  - `pnpm --filter=@aethereos/shell-commercial typecheck` → EXIT 0
+  - `pnpm --filter=@aethereos/comercio-digital build` → EXIT 0
+  - `pnpm --filter=@aethereos/shell-commercial build` → EXIT 0
+- Arquivos criados: EmbeddedApp.tsx, EMBED.md, embed pages atualizadas, refreshToken adicionado ao session store
+
+### M30 — Landing pública SEO + preços + sobre
+
+- Iniciada: 2026-04-29T21:50:00Z
+- Concluída: 2026-04-29T22:00:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm --filter=@aethereos/comercio-digital typecheck` → EXIT 0
+  - `pnpm --filter=@aethereos/comercio-digital build` → EXIT 0, /robots.txt e /sitemap.xml estáticos
+- Arquivos criados: sitemap.ts, robots.ts; root layout com metadataBase + Twitter cards + OG completo
+
+### M31 — ADR-0017 + encerramento Sprint 4
+
+- Iniciada: 2026-04-29T22:05:00Z
+- Concluída: 2026-04-29T22:30:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm ci:full` → EXIT 0 ✅
+- Arquivos criados: docs/adr/0017-comercio-digital-primeiro-saas-standalone.md, docs/SPRINT_4_REPORT_2026-04-29.md
+- CLAUDE.md atualizado: seção 4 (referência ADR-0017), seção 9 (domínio commerce.\* reservado)
+
+## Encerramento Sprint 4
+
+- Data: 2026-04-29
+- Status: **SPRINT 4 ENCERRADO**
+- CI final: `pnpm ci:full` → EXIT 0
+- Commits do sprint: M26 → M27 → M28 → M29 → M30 → M31
+- Próximo passo: aguardar revisão humana antes de iniciar Sprint 5
