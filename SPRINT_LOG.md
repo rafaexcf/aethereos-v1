@@ -925,3 +925,24 @@ Plano-mestre: ver CAMADA_1_PLANO_MESTRE.md
   - `const self = this` → `const enqueue = (e) => this.#enqueue(e)` para evitar no-this-alias
   - `LLMDriverError` não exportado → return type como `Awaited<ReturnType<LLMDriver["complete"]>>`
   - LiteLLM-Langfuse callback configurado via `success_callback/failure_callback` no config.yaml (LLM-specific tracing gratuito sem código extra)
+
+### Milestone M34 — Unleash self-hosted local + FeatureFlagDriver + FeatureFlagsProvider React
+
+- Iniciada: 2026-04-30T00:15:00Z
+- Concluída: 2026-04-30T00:45:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm test --filter=@aethereos/drivers-unleash` → 11/11 ✅
+  - `pnpm typecheck --filter=@aethereos/drivers-unleash --filter=@aethereos/shell-commercial --filter=@aethereos/ui-shell` → ok
+  - `pnpm lint --filter=@aethereos/drivers-unleash --filter=@aethereos/shell-commercial --filter=@aethereos/ui-shell` → ok
+- Arquivos criados:
+  - `packages/drivers-unleash/` — UnleashFeatureFlagDriver: cache local com TTL (60s padrão), modo degradado (false conservativo), estratégias default/userWithId/remoteAddress/flexibleRollout, polling opcional via setInterval
+  - `packages/ui-shell/src/feature-flags/index.tsx` — FeatureFlagsProvider (React Context), useFeatureFlag, useFeatureFlagsContext; SSR-safe via prop initial
+- Arquivos modificados:
+  - `packages/ui-shell/src/index.ts` — exporta FeatureFlagsProvider, useFeatureFlag, useFeatureFlagsContext e tipos
+  - `packages/config-ts/base.json` — path alias @aethereos/drivers-unleash
+  - `apps/shell-commercial/src/main.tsx` — wrapa RouterProvider com FeatureFlagsProvider
+  - `apps/shell-commercial/src/routes/index.tsx` — demo: botão "Dashboards (Experimental)" condicionado a feature.experimental.dashboards + painel de toggle para demonstrar o Provider em ação
+- Estratégias de segmentação suportadas: default (todos), userWithId (whitelist por user_id), remoteAddress (whitelist por IP), flexibleRollout (hash determinístico % por tenant)
+- Degraded mode: quando Unleash offline, isEnabled() retorna false conservativo; isDegraded getter expõe estado ao caller
+- Decisão: variante resolvida por primeiro variant.enabled=true na lista (Unleash padrão de avaliação client-side)

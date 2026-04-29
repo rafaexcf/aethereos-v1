@@ -1,6 +1,7 @@
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
+import { FeatureFlagsProvider } from "@aethereos/ui-shell";
 import { rootRoute } from "./routes/__root";
 import { loginRoute } from "./routes/login";
 import { signupRoute } from "./routes/signup";
@@ -56,7 +57,11 @@ function App() {
     );
   }
 
-  return <RouterProvider router={router} />;
+  return (
+    <FeatureFlagsProvider>
+      <RouterProvider router={router} />
+    </FeatureFlagsProvider>
+  );
 }
 
 const container = document.getElementById("root");

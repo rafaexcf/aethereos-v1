@@ -25,3 +25,15 @@ export type { DistributionTheme } from "./theme/theming.js";
 
 // Hooks
 export { useTheme } from "./hooks/use-theme.js";
+
+// Feature Flags
+export {
+  FeatureFlagsProvider,
+  useFeatureFlag,
+  useFeatureFlagsContext,
+} from "./feature-flags/index.js";
+export type {
+  FeatureFlagState,
+  FeatureFlagsProviderProps,
+  FeatureFlagsContextValue,
+} from "./feature-flags/index.js";

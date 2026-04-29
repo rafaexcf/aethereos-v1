@@ -4,6 +4,7 @@ import { useSessionStore } from "../stores/session";
 import { isEmbedMode } from "../lib/embed";
 import { useEffect, useState } from "react";
 import { EmbeddedApp } from "../components/EmbeddedApp";
+import { useFeatureFlag, useFeatureFlagsContext } from "@aethereos/ui-shell";
 
 export const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -28,6 +29,9 @@ function DesktopPage() {
   const [companyName, setCompanyName] = useState<string | null>(null);
   const [outboxCount, setOutboxCount] = useState<number | null>(null);
   const [showComercioDash, setShowComercioDash] = useState(false);
+
+  const dashboardsFlag = useFeatureFlag("feature.experimental.dashboards");
+  const { setFlag } = useFeatureFlagsContext();
 
   useEffect(() => {
     if (userId === null) {
@@ -140,13 +144,47 @@ function DesktopPage() {
                   <span className="font-mono text-zinc-300">{outboxCount}</span>
                 </p>
               )}
-              <div className="pt-4">
+              <div className="flex flex-wrap justify-center gap-3 pt-4">
                 <button
                   onClick={() => setShowComercioDash(true)}
                   className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-violet-500"
                 >
                   Abrir Comércio Digital
                 </button>
+                {dashboardsFlag.enabled && (
+                  <button className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-500">
+                    Dashboards (Experimental)
+                  </button>
+                )}
+              </div>
+
+              {/* Feature flag demo toggle */}
+              <div className="mt-6 rounded-lg border border-zinc-700 p-3 text-left">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                  Feature flags (demo Unleash M34)
+                </p>
+                <label className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={dashboardsFlag.enabled}
+                    onChange={(e) =>
+                      setFlag("feature.experimental.dashboards", {
+                        enabled: e.target.checked,
+                        loading: false,
+                        variant: e.target.checked ? "v2-layout" : "disabled",
+                      })
+                    }
+                    className="h-4 w-4 accent-violet-500"
+                  />
+                  <span className="text-xs text-zinc-400">
+                    feature.experimental.dashboards
+                    {dashboardsFlag.enabled && (
+                      <span className="ml-2 rounded bg-violet-900 px-1.5 py-0.5 text-violet-300">
+                        {dashboardsFlag.variant}
+                      </span>
+                    )}
+                  </span>
+                </label>
               </div>
             </div>
           </div>
