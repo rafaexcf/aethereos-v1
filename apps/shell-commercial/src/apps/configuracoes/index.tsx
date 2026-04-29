@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppShell } from "@aethereos/ui-shell";
 import { useSessionStore } from "../../stores/session.js";
+import { useDrivers } from "../../lib/drivers-context.js";
 
 // ---------------------------------------------------------------------------
 // Tipos de abas
@@ -22,20 +23,59 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
 
 function TabPerfil() {
   const { email, userId } = useSessionStore();
-  const [name, setName] = useState("Usuário Demo");
+  const drivers = useDrivers();
+  const [name, setName] = useState("");
   const [lang, setLang] = useState("pt-BR");
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  function handleSave() {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-    // TODO: persistir em kernel.settings scope=user + emitir platform.settings.updated
+  // Carrega settings do usuário
+  useEffect(() => {
+    if (drivers === null || userId === null) return;
+    drivers.data
+      .from("settings")
+      .select("key,value")
+      .eq("scope", "user")
+      .eq("scope_id", userId)
+      .then(({ data }) => {
+        if (data === null) return;
+        for (const row of data as { key: string; value: unknown }[]) {
+          if (row.key === "display_name" && typeof row.value === "string")
+            setName(row.value);
+          if (row.key === "lang" && typeof row.value === "string")
+            setLang(row.value);
+          if (
+            row.key === "theme" &&
+            (row.value === "dark" || row.value === "light")
+          )
+            setTheme(row.value);
+        }
+      });
+  }, [drivers, userId]);
+
+  async function handleSave() {
+    setSaving(true);
+    if (drivers !== null && userId !== null) {
+      const settings = [
+        { scope: "user", scope_id: userId, key: "display_name", value: name },
+        { scope: "user", scope_id: userId, key: "lang", value: lang },
+        { scope: "user", scope_id: userId, key: "theme", value: theme },
+      ];
+      for (const s of settings) {
+        await drivers.data
+          .from("settings")
+          .upsert(s, { onConflict: "scope,scope_id,key" });
+      }
+    }
     if (theme === "light") {
       document.documentElement.classList.remove("dark");
     } else {
       document.documentElement.classList.add("dark");
     }
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   }
 
   return (
@@ -100,10 +140,11 @@ function TabPerfil() {
       </div>
       <button
         type="button"
-        onClick={handleSave}
-        className="self-start rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500"
+        onClick={() => void handleSave()}
+        disabled={saving}
+        className="self-start rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500 disabled:opacity-50"
       >
-        {saved ? "Salvo!" : "Salvar"}
+        {saved ? "Salvo!" : saving ? "Salvando…" : "Salvar"}
       </button>
     </div>
   );
@@ -115,14 +156,38 @@ function TabPerfil() {
 
 function TabEmpresa() {
   const { activeCompanyId } = useSessionStore();
-  const [name, setName] = useState("Demo Company");
-  const [slug, setSlug] = useState("demo-company");
+  const drivers = useDrivers();
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  function handleSave() {
+  // Carrega dados da empresa do banco
+  useEffect(() => {
+    if (drivers === null || activeCompanyId === null) return;
+    drivers.data
+      .from("companies")
+      .select("name,slug")
+      .eq("id", activeCompanyId)
+      .single()
+      .then(({ data }) => {
+        if (data === null) return;
+        const row = data as { name: string; slug: string };
+        setName(row.name);
+        setSlug(row.slug);
+      });
+  }, [drivers, activeCompanyId]);
+
+  async function handleSave() {
+    if (drivers === null || activeCompanyId === null) return;
+    setSaving(true);
+    await drivers.data
+      .from("companies")
+      .update({ name, slug })
+      .eq("id", activeCompanyId);
+    setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
-    // TODO: persistir em kernel.settings scope=company + emitir platform.settings.updated
   }
 
   return (
@@ -175,10 +240,11 @@ function TabEmpresa() {
       </div>
       <button
         type="button"
-        onClick={handleSave}
-        className="self-start rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500"
+        onClick={() => void handleSave()}
+        disabled={saving || drivers === null || activeCompanyId === null}
+        className="self-start rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500 disabled:opacity-50"
       >
-        {saved ? "Salvo!" : "Salvar"}
+        {saved ? "Salvo!" : saving ? "Salvando…" : "Salvar"}
       </button>
     </div>
   );

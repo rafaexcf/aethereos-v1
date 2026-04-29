@@ -1,6 +1,7 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { AppShell } from "@aethereos/ui-shell";
 import { useSessionStore } from "../../stores/session.js";
+import { useDrivers } from "../../lib/drivers-context.js";
 
 // ---------------------------------------------------------------------------
 // Tipos de domínio (espelham kernel.people)
@@ -20,43 +21,6 @@ interface Person {
   status: PersonStatus;
   createdAt: Date;
 }
-
-// ---------------------------------------------------------------------------
-// Demo state
-// ---------------------------------------------------------------------------
-
-const DEMO_PEOPLE: Person[] = [
-  {
-    id: "p1",
-    companyId: "demo",
-    fullName: "Ana Silva",
-    email: "ana@demo.com",
-    roleLabel: "CTO",
-    department: "Tecnologia",
-    status: "active",
-    createdAt: new Date(Date.now() - 86_400_000 * 30),
-  },
-  {
-    id: "p2",
-    companyId: "demo",
-    fullName: "Carlos Mendes",
-    email: "carlos@demo.com",
-    roleLabel: "Analista",
-    department: "Financeiro",
-    status: "active",
-    createdAt: new Date(Date.now() - 86_400_000 * 15),
-  },
-  {
-    id: "p3",
-    companyId: "demo",
-    fullName: "Beatriz Costa",
-    email: "beatriz@demo.com",
-    roleLabel: "Designer",
-    department: "Produto",
-    status: "onboarding",
-    createdAt: new Date(Date.now() - 86_400_000 * 2),
-  },
-];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -81,6 +45,27 @@ function initials(name: string): string {
     .map((w) => w[0] ?? "")
     .join("")
     .toUpperCase();
+}
+
+function mapRow(row: Record<string, unknown>): Person {
+  const person: Person = {
+    id: row["id"] as string,
+    companyId: row["company_id"] as string,
+    fullName: row["full_name"] as string,
+    status: row["status"] as PersonStatus,
+    createdAt: new Date(row["created_at"] as string),
+  };
+  const uid = row["user_id"];
+  if (typeof uid === "string") person.userId = uid;
+  const email = row["email"];
+  if (typeof email === "string") person.email = email;
+  const phone = row["phone"];
+  if (typeof phone === "string") person.phone = phone;
+  const role = row["role_label"];
+  if (typeof role === "string") person.roleLabel = role;
+  const dept = row["department"];
+  if (typeof dept === "string") person.department = dept;
+  return person;
 }
 
 // ---------------------------------------------------------------------------
@@ -283,14 +268,41 @@ type FilterStatus = "all" | PersonStatus;
 
 export function PessoasApp() {
   const { activeCompanyId } = useSessionStore();
+  const drivers = useDrivers();
 
-  const [people, setPeople] = useState<Person[]>(DEMO_PEOPLE);
+  const [people, setPeople] = useState<Person[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [filterDept, setFilterDept] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingPerson, setEditingPerson] = useState<Person | null>(null);
   const [deactivating, setDeactivating] = useState<Person | null>(null);
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
+
+  // Carrega pessoas do Supabase
+  useEffect(() => {
+    if (drivers === null || activeCompanyId === null) return;
+    setLoading(true);
+    setError(null);
+
+    drivers.data
+      .from("people")
+      .select(
+        "id,company_id,user_id,full_name,email,phone,role_label,department,status,created_at",
+      )
+      .order("full_name")
+      .then(({ data, error: dbErr }) => {
+        setLoading(false);
+        if (dbErr !== null) {
+          setError(dbErr.message);
+          return;
+        }
+        setPeople(
+          (data ?? []).map((row) => mapRow(row as Record<string, unknown>)),
+        );
+      });
+  }, [drivers, activeCompanyId]);
 
   const departments = [
     ...new Set(people.map((p) => p.department).filter(Boolean)),
@@ -303,68 +315,109 @@ export function PessoasApp() {
   });
 
   const handleCreate = useCallback(
-    (data: PersonFormData) => {
-      const newPerson: Person = {
-        id: crypto.randomUUID(),
-        companyId: activeCompanyId ?? "demo",
-        fullName: data.fullName,
+    async (data: PersonFormData) => {
+      if (drivers === null || activeCompanyId === null) return;
+
+      const payload: Record<string, unknown> = {
+        full_name: data.fullName,
         status: data.status,
-        createdAt: new Date(),
       };
-      if (data.email.length > 0) newPerson.email = data.email;
-      if (data.phone.length > 0) newPerson.phone = data.phone;
-      if (data.roleLabel.length > 0) newPerson.roleLabel = data.roleLabel;
-      if (data.department.length > 0) newPerson.department = data.department;
-      setPeople((prev) => [...prev, newPerson]);
+      if (data.email.length > 0) payload["email"] = data.email;
+      if (data.phone.length > 0) payload["phone"] = data.phone;
+      if (data.roleLabel.length > 0) payload["role_label"] = data.roleLabel;
+      if (data.department.length > 0) payload["department"] = data.department;
+
+      const { data: inserted, error: dbErr } = await drivers.data
+        .from("people")
+        .insert(payload)
+        .select(
+          "id,company_id,user_id,full_name,email,phone,role_label,department,status,created_at",
+        )
+        .single();
+
+      if (dbErr !== null) {
+        setError(`Erro ao cadastrar: ${dbErr.message}`);
+        return;
+      }
+
+      if (inserted !== null) {
+        setPeople((prev) => [
+          ...prev,
+          mapRow(inserted as Record<string, unknown>),
+        ]);
+      }
       setShowForm(false);
-      // TODO: inserir em kernel.people + emitir platform.person.created
     },
-    [activeCompanyId],
+    [drivers, activeCompanyId],
   );
 
   const handleUpdate = useCallback(
-    (data: PersonFormData) => {
-      if (editingPerson === null) return;
-      setPeople((prev) =>
-        prev.map((p) => {
-          if (p.id !== editingPerson.id) return p;
-          const updated: Person = {
-            ...p,
-            fullName: data.fullName,
-            status: data.status,
-          };
-          if (data.email.length > 0) updated.email = data.email;
-          if (data.phone.length > 0) updated.phone = data.phone;
-          if (data.roleLabel.length > 0) updated.roleLabel = data.roleLabel;
-          if (data.department.length > 0) updated.department = data.department;
-          return updated;
-        }),
-      );
+    async (data: PersonFormData) => {
+      if (editingPerson === null || drivers === null) return;
+
+      const payload: Record<string, unknown> = {
+        full_name: data.fullName,
+        status: data.status,
+        email: data.email.length > 0 ? data.email : null,
+        phone: data.phone.length > 0 ? data.phone : null,
+        role_label: data.roleLabel.length > 0 ? data.roleLabel : null,
+        department: data.department.length > 0 ? data.department : null,
+      };
+
+      const { data: updated, error: dbErr } = await drivers.data
+        .from("people")
+        .update(payload)
+        .eq("id", editingPerson.id)
+        .select(
+          "id,company_id,user_id,full_name,email,phone,role_label,department,status,created_at",
+        )
+        .single();
+
+      if (dbErr !== null) {
+        setError(`Erro ao atualizar: ${dbErr.message}`);
+        return;
+      }
+
+      if (updated !== null) {
+        const updatedPerson = mapRow(updated as Record<string, unknown>);
+        setPeople((prev) =>
+          prev.map((p) => (p.id === editingPerson.id ? updatedPerson : p)),
+        );
+      }
       setEditingPerson(null);
-      // TODO: atualizar em kernel.people + emitir platform.person.updated
     },
-    [editingPerson],
+    [editingPerson, drivers],
   );
 
-  function handleDeactivate(person: Person) {
-    setDeactivating(person);
-  }
+  const confirmDeactivate = useCallback(async () => {
+    if (deactivating === null || drivers === null) return;
 
-  function confirmDeactivate() {
-    if (deactivating === null) return;
-    setPeople((prev) =>
-      prev.map((p) =>
-        p.id === deactivating.id ? { ...p, status: "inactive" as const } : p,
-      ),
-    );
-    setDeactivating(null);
-    if (selectedPerson?.id === deactivating.id) {
-      setSelectedPerson((prev) =>
-        prev !== null ? { ...prev, status: "inactive" } : null,
-      );
+    const { data: updated, error: dbErr } = await drivers.data
+      .from("people")
+      .update({ status: "inactive" })
+      .eq("id", deactivating.id)
+      .select(
+        "id,company_id,user_id,full_name,email,phone,role_label,department,status,created_at",
+      )
+      .single();
+
+    if (dbErr !== null) {
+      setError(`Erro ao desativar: ${dbErr.message}`);
+      setDeactivating(null);
+      return;
     }
-    // TODO: emitir platform.person.deactivated (bloqueado para agentes via PermissionEngine)
-  }
+
+    if (updated !== null) {
+      const updatedPerson = mapRow(updated as Record<string, unknown>);
+      setPeople((prev) =>
+        prev.map((p) => (p.id === deactivating.id ? updatedPerson : p)),
+      );
+      if (selectedPerson?.id === deactivating.id) {
+        setSelectedPerson(updatedPerson);
+      }
+    }
+    setDeactivating(null);
+  }, [deactivating, drivers, selectedPerson]);
 
   const totalActive = people.filter((p) => p.status === "active").length;
 
@@ -411,7 +464,8 @@ export function PessoasApp() {
               setEditingPerson(null);
               setShowForm(true);
             }}
-            className="rounded-md bg-violet-600 px-3 py-1 text-xs font-medium text-white hover:bg-violet-500"
+            disabled={drivers === null || activeCompanyId === null}
+            className="rounded-md bg-violet-600 px-3 py-1 text-xs font-medium text-white hover:bg-violet-500 disabled:opacity-40"
           >
             + Cadastrar
           </button>
@@ -424,7 +478,7 @@ export function PessoasApp() {
           {deactivating !== null ? (
             <DeactivateDialog
               person={deactivating}
-              onConfirm={confirmDeactivate}
+              onConfirm={() => void confirmDeactivate()}
               onCancel={() => setDeactivating(null)}
             />
           ) : (
@@ -441,7 +495,11 @@ export function PessoasApp() {
                     }
                   : emptyForm
               }
-              onSave={editingPerson !== null ? handleUpdate : handleCreate}
+              onSave={
+                editingPerson !== null
+                  ? (d) => void handleUpdate(d)
+                  : (d) => void handleCreate(d)
+              }
               onCancel={() => {
                 setShowForm(false);
                 setEditingPerson(null);
@@ -451,11 +509,24 @@ export function PessoasApp() {
         </div>
       )}
 
+      {/* Erro */}
+      {error !== null && (
+        <div className="shrink-0 border-b border-red-900/40 bg-red-950/20 px-4 py-2 text-xs text-red-400">
+          {error}
+        </div>
+      )}
+
       {/* Lista de pessoas */}
       <div className="flex flex-1 flex-col overflow-y-auto divide-y divide-zinc-800">
-        {filtered.length === 0 ? (
+        {loading ? (
           <div className="flex flex-1 items-center justify-center text-sm text-zinc-600">
-            Nenhuma pessoa encontrada
+            Carregando…
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="flex flex-1 items-center justify-center text-sm text-zinc-600">
+            {drivers === null || activeCompanyId === null
+              ? "Aguardando sessão…"
+              : "Nenhuma pessoa encontrada"}
           </div>
         ) : (
           filtered.map((person) => (
@@ -520,7 +591,7 @@ export function PessoasApp() {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDeactivate(person);
+                      setDeactivating(person);
                     }}
                     className="rounded p-1 text-xs text-zinc-500 hover:text-red-400"
                     title="Desativar"

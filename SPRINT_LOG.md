@@ -1415,4 +1415,19 @@ em demo state. Decisão humana: pausa para consolidação antes de Sprint 7.
 ### MX1 — Auditoria objetiva do estado atual
 
 - Iniciada: 2026-04-29T00:30:00Z
+- Concluída: 2026-04-29T01:00:00Z
+- Status: SUCCESS — 336 linhas, typecheck EXIT 0, commit `561af47`
+
+### MX2 — SupabaseBrowserDataDriver + DriversContext
+
+- Iniciada: 2026-04-29T01:00:00Z
+- Concluída: 2026-04-29T01:45:00Z
+- Status: SUCCESS — typecheck + lint EXIT 0, commit `f1777d4`
+- Criados: `SupabaseBrowserDataDriver`, `DriversContext`, `useDrivers()` hook
+- `CloudDrivers` agora inclui `data: SupabaseBrowserDataDriver`
+- `DriversProvider` em `main.tsx` envolve toda a árvore
+
+### MX3 — Conectar Drive, Pessoas, Configurações ao driver real
+
+- Iniciada: 2026-04-29T01:45:00Z
 - Status: IN_PROGRESS

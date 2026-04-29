@@ -1,6 +1,7 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { AppShell } from "@aethereos/ui-shell";
 import { useSessionStore } from "../../stores/session.js";
+import { useDrivers } from "../../lib/drivers-context.js";
 
 // ---------------------------------------------------------------------------
 // Tipos de domínio (espelham kernel.files)
@@ -16,47 +17,6 @@ interface FileEntry {
   storagePath?: string;
   createdAt: Date;
 }
-
-// ---------------------------------------------------------------------------
-// Estado demo (substitui por driver real quando Supabase local configurado)
-// ---------------------------------------------------------------------------
-
-const DEMO_FILES: FileEntry[] = [
-  {
-    id: "root-docs",
-    parentId: null,
-    kind: "folder",
-    name: "Documentos",
-    createdAt: new Date(Date.now() - 86_400_000 * 7),
-  },
-  {
-    id: "root-imgs",
-    parentId: null,
-    kind: "folder",
-    name: "Imagens",
-    createdAt: new Date(Date.now() - 86_400_000 * 3),
-  },
-  {
-    id: "readme",
-    parentId: null,
-    kind: "file",
-    name: "README.md",
-    mimeType: "text/markdown",
-    sizeBytes: 2048,
-    storagePath: "demo/readme.md",
-    createdAt: new Date(Date.now() - 86_400_000),
-  },
-  {
-    id: "ata-reuniao",
-    parentId: "root-docs",
-    kind: "file",
-    name: "ata-reuniao-2026-04.md",
-    mimeType: "text/markdown",
-    sizeBytes: 4096,
-    storagePath: "demo/ata.md",
-    createdAt: new Date(Date.now() - 3_600_000),
-  },
-];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -75,6 +35,23 @@ function fileIcon(entry: FileEntry): string {
   if (mime === "application/pdf") return "📄";
   if (mime.includes("text") || mime.includes("markdown")) return "📝";
   return "📎";
+}
+
+function mapRow(row: Record<string, unknown>): FileEntry {
+  const entry: FileEntry = {
+    id: row["id"] as string,
+    parentId: (row["parent_id"] as string | null) ?? null,
+    kind: row["kind"] as "folder" | "file",
+    name: row["name"] as string,
+    createdAt: new Date(row["created_at"] as string),
+  };
+  const mime = row["mime_type"];
+  if (typeof mime === "string") entry.mimeType = mime;
+  const size = row["size_bytes"];
+  if (typeof size === "number") entry.sizeBytes = size;
+  const path = row["storage_path"];
+  if (typeof path === "string") entry.storagePath = path;
+  return entry;
 }
 
 // ---------------------------------------------------------------------------
@@ -195,18 +172,45 @@ function FileGrid({ entries, onOpenFolder, onDelete }: FileGridProps) {
 // ---------------------------------------------------------------------------
 
 export function DriveApp() {
-  const { activeCompanyId } = useSessionStore();
+  const { activeCompanyId, userId } = useSessionStore();
+  const drivers = useDrivers();
 
-  const [files, setFiles] = useState<FileEntry[]>(DEMO_FILES);
+  const [files, setFiles] = useState<FileEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [showNewFolder, setShowNewFolder] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Carrega arquivos do Supabase
+  useEffect(() => {
+    if (drivers === null || activeCompanyId === null) return;
+    setLoading(true);
+    setError(null);
+
+    drivers.data
+      .from("files")
+      .select(
+        "id,parent_id,kind,name,mime_type,size_bytes,storage_path,created_at",
+      )
+      .order("kind", { ascending: false })
+      .order("name")
+      .then(({ data, error: dbErr }) => {
+        setLoading(false);
+        if (dbErr !== null) {
+          setError(dbErr.message);
+          return;
+        }
+        setFiles(
+          (data ?? []).map((row) => mapRow(row as Record<string, unknown>)),
+        );
+      });
+  }, [drivers, activeCompanyId]);
+
   const currentEntries = files.filter((f) => f.parentId === currentFolderId);
 
-  // Breadcrumb path
   const buildBreadcrumb = useCallback(
     (folderId: string | null): FileEntry[] => {
       if (folderId === null) return [];
@@ -218,45 +222,91 @@ export function DriveApp() {
   );
   const breadcrumb = buildBreadcrumb(currentFolderId);
 
-  function handleUpload(uploadedFiles: FileList) {
-    const newEntries: FileEntry[] = Array.from(uploadedFiles).map((f) => {
-      const entry: FileEntry = {
-        id: crypto.randomUUID(),
-        parentId: currentFolderId,
-        kind: "file",
-        name: f.name,
-        sizeBytes: f.size,
-        storagePath: `${activeCompanyId ?? "demo"}/${f.name}`,
-        createdAt: new Date(),
-      };
-      if (f.type.length > 0) entry.mimeType = f.type;
-      return entry;
-    });
+  async function handleUpload(uploadedFiles: FileList) {
+    if (drivers === null || activeCompanyId === null || userId === null) return;
 
-    setFiles((prev) => [...prev, ...newEntries]);
-    // TODO: chamar SupabaseStorageDriver.upload() + inserir em kernel.files
-    // + emitir platform.file.uploaded via KernelPublisher
-    // quando drivers disponíveis (activeCompanyId !== null && userId !== null)
+    const client = drivers.data.getClient();
+
+    for (const f of Array.from(uploadedFiles)) {
+      const storagePath = `${activeCompanyId}/${currentFolderId ?? "root"}/${crypto.randomUUID()}-${f.name}`;
+
+      // Upload físico para Supabase Storage
+      const { error: uploadErr } = await client.storage
+        .from("kernel-files")
+        .upload(storagePath, f, { upsert: false });
+
+      if (uploadErr !== null) {
+        setError(`Upload falhou: ${uploadErr.message}`);
+        continue;
+      }
+
+      // Registra metadados em kernel.files
+      const { data: inserted, error: dbErr } = await drivers.data
+        .from("files")
+        .insert({
+          parent_id: currentFolderId,
+          kind: "file",
+          name: f.name,
+          mime_type: f.type.length > 0 ? f.type : null,
+          size_bytes: f.size,
+          storage_path: storagePath,
+          created_by: userId,
+        })
+        .select(
+          "id,parent_id,kind,name,mime_type,size_bytes,storage_path,created_at",
+        )
+        .single();
+
+      if (dbErr !== null) {
+        setError(`Erro ao registrar arquivo: ${dbErr.message}`);
+        continue;
+      }
+
+      if (inserted !== null) {
+        setFiles((prev) => [
+          ...prev,
+          mapRow(inserted as Record<string, unknown>),
+        ]);
+      }
+    }
   }
 
-  function handleCreateFolder() {
+  async function handleCreateFolder() {
+    if (drivers === null || activeCompanyId === null || userId === null) return;
     const name = newFolderName.trim();
     if (name.length === 0) return;
-    const newFolder: FileEntry = {
-      id: crypto.randomUUID(),
-      parentId: currentFolderId,
-      kind: "folder",
-      name,
-      createdAt: new Date(),
-    };
-    setFiles((prev) => [...prev, newFolder]);
+
+    const { data: inserted, error: dbErr } = await drivers.data
+      .from("files")
+      .insert({
+        parent_id: currentFolderId,
+        kind: "folder",
+        name,
+        created_by: userId,
+      })
+      .select(
+        "id,parent_id,kind,name,mime_type,size_bytes,storage_path,created_at",
+      )
+      .single();
+
+    if (dbErr !== null) {
+      setError(`Erro ao criar pasta: ${dbErr.message}`);
+      return;
+    }
+
+    if (inserted !== null) {
+      setFiles((prev) => [
+        ...prev,
+        mapRow(inserted as Record<string, unknown>),
+      ]);
+    }
     setNewFolderName("");
     setShowNewFolder(false);
-    // TODO: inserir em kernel.files + emitir platform.folder.created
   }
 
-  function handleDelete(id: string) {
-    // Remove recursivamente pastas e conteúdo
+  async function handleDelete(id: string) {
+    if (drivers === null) return;
+
     const toDelete = new Set<string>();
     const queue = [id];
     while (queue.length > 0) {
@@ -267,14 +317,28 @@ export function DriveApp() {
         .filter((f) => f.parentId === cur)
         .forEach((child) => queue.push(child.id));
     }
+
+    const { error: dbErr } = await drivers.data
+      .from("files")
+      .delete()
+      .in("id", Array.from(toDelete));
+
+    if (dbErr !== null) {
+      setError(`Erro ao excluir: ${dbErr.message}`);
+      return;
+    }
+
     setFiles((prev) => prev.filter((f) => !toDelete.has(f.id)));
-    // TODO: chamar SupabaseStorageDriver.delete() + emitir platform.file.deleted
   }
 
-  const statusText =
-    activeCompanyId !== null
-      ? `${currentEntries.length} item(s) · ${activeCompanyId.slice(0, 8)}…`
-      : `${currentEntries.length} item(s) · modo demo`;
+  const isConnected = drivers !== null && activeCompanyId !== null;
+  const statusText = loading
+    ? "Carregando…"
+    : error !== null
+      ? `Erro: ${error}`
+      : isConnected
+        ? `${currentEntries.length} item(s) · ${activeCompanyId.slice(0, 8)}…`
+        : `${currentEntries.length} item(s) · aguardando sessão`;
 
   return (
     <AppShell
@@ -289,7 +353,7 @@ export function DriveApp() {
                 value={newFolderName}
                 onChange={(e) => setNewFolderName(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") handleCreateFolder();
+                  if (e.key === "Enter") void handleCreateFolder();
                   if (e.key === "Escape") setShowNewFolder(false);
                 }}
                 placeholder="Nome da pasta"
@@ -298,7 +362,7 @@ export function DriveApp() {
               />
               <button
                 type="button"
-                onClick={handleCreateFolder}
+                onClick={() => void handleCreateFolder()}
                 className="rounded-md bg-zinc-700 px-2 py-1 text-xs text-zinc-200 hover:bg-zinc-600"
               >
                 Criar
@@ -315,7 +379,8 @@ export function DriveApp() {
             <button
               type="button"
               onClick={() => setShowNewFolder(true)}
-              className="rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-300 hover:border-zinc-500"
+              disabled={!isConnected}
+              className="rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-300 hover:border-zinc-500 disabled:opacity-40"
             >
               Nova pasta
             </button>
@@ -323,7 +388,8 @@ export function DriveApp() {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="rounded-md bg-violet-600 px-3 py-1 text-xs font-medium text-white hover:bg-violet-500"
+            disabled={!isConnected}
+            className="rounded-md bg-violet-600 px-3 py-1 text-xs font-medium text-white hover:bg-violet-500 disabled:opacity-40"
           >
             Upload
           </button>
@@ -333,7 +399,7 @@ export function DriveApp() {
             multiple
             className="hidden"
             onChange={(e) => {
-              if (e.target.files !== null) handleUpload(e.target.files);
+              if (e.target.files !== null) void handleUpload(e.target.files);
             }}
           />
         </div>
@@ -361,11 +427,7 @@ export function DriveApp() {
             <span>/</span>
             <button
               type="button"
-              onClick={() =>
-                setCurrentFolderId(
-                  i === breadcrumb.length - 1 ? crumb.id : crumb.id,
-                )
-              }
+              onClick={() => setCurrentFolderId(crumb.id)}
               className={
                 i === breadcrumb.length - 1
                   ? "text-zinc-300"
@@ -393,7 +455,7 @@ export function DriveApp() {
           e.preventDefault();
           setIsDragging(false);
           if (e.dataTransfer.files.length > 0) {
-            handleUpload(e.dataTransfer.files);
+            void handleUpload(e.dataTransfer.files);
           }
         }}
       >
@@ -402,11 +464,17 @@ export function DriveApp() {
             Solte para fazer upload
           </div>
         )}
-        <FileGrid
-          entries={currentEntries}
-          onOpenFolder={setCurrentFolderId}
-          onDelete={handleDelete}
-        />
+        {loading ? (
+          <div className="flex flex-1 items-center justify-center text-sm text-zinc-600">
+            Carregando arquivos…
+          </div>
+        ) : (
+          <FileGrid
+            entries={currentEntries}
+            onOpenFolder={setCurrentFolderId}
+            onDelete={(id) => void handleDelete(id)}
+          />
+        )}
       </div>
     </AppShell>
   );
