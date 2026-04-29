@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { AppShell } from "@aethereos/ui-shell";
 import { useSessionStore } from "../../stores/session.js";
+import { useDrivers } from "../../lib/drivers-context.js";
+import type { RealtimeSubscription } from "@aethereos/drivers-supabase/browser";
 
 // ---------------------------------------------------------------------------
 // Tipos de domínio
@@ -22,41 +24,31 @@ interface Message {
 }
 
 // ---------------------------------------------------------------------------
-// Demo state
+// Helpers
 // ---------------------------------------------------------------------------
 
-const DEMO_CHANNELS: Channel[] = [
-  { id: "ch-geral", name: "geral", kind: "channel" },
-  { id: "ch-tech", name: "tecnologia", kind: "channel" },
-  { id: "ch-random", name: "random", kind: "channel" },
-];
+function mapChannel(row: Record<string, unknown>): Channel {
+  return {
+    id: row["id"] as string,
+    name: (row["name"] as string | null) ?? "(sem nome)",
+    kind: (row["kind"] as "channel" | "dm") ?? "channel",
+  };
+}
 
-const DEMO_MESSAGES: Message[] = [
-  {
-    id: "m1",
-    channelId: "ch-geral",
-    senderUserId: "u1",
-    senderName: "Ana Silva",
-    body: "Bom dia a todos! Sprint 6 começando 🚀",
-    createdAt: new Date(Date.now() - 3_600_000),
-  },
-  {
-    id: "m2",
-    channelId: "ch-geral",
-    senderUserId: "u2",
-    senderName: "Carlos Mendes",
-    body: "Bom dia! Tudo pronto para o dia.",
-    createdAt: new Date(Date.now() - 3_200_000),
-  },
-  {
-    id: "m3",
-    channelId: "ch-tech",
-    senderUserId: "u1",
-    senderName: "Ana Silva",
-    body: "Alguém revisou o ADR-0018? Precisamos discutir as métricas OTel.",
-    createdAt: new Date(Date.now() - 1_800_000),
-  },
-];
+function mapMessage(row: Record<string, unknown>): Message {
+  const meta = (row["metadata"] ?? {}) as Record<string, unknown>;
+  return {
+    id: row["id"] as string,
+    channelId: row["channel_id"] as string,
+    senderUserId: row["sender_user_id"] as string,
+    senderName:
+      typeof meta["sender_name"] === "string"
+        ? meta["sender_name"]
+        : (row["sender_user_id"] as string).slice(0, 8),
+    body: row["body"] as string,
+    createdAt: new Date(row["created_at"] as string),
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Sub-componente: ChannelList
@@ -147,7 +139,7 @@ function MessageList({ messages, currentUserId }: MessageListProps) {
                   isOwn ? "text-violet-400" : "text-zinc-300",
                 ].join(" ")}
               >
-                {msg.senderName}
+                {isOwn ? "Você" : msg.senderName}
               </span>
               <span className="text-xs text-zinc-700">
                 {msg.createdAt.toLocaleTimeString("pt-BR", {
@@ -156,7 +148,7 @@ function MessageList({ messages, currentUserId }: MessageListProps) {
                 })}
               </span>
             </div>
-            <p className="text-sm text-zinc-200 pl-0">{msg.body}</p>
+            <p className="text-sm text-zinc-200">{msg.body}</p>
           </div>
         );
       })}
@@ -170,70 +162,146 @@ function MessageList({ messages, currentUserId }: MessageListProps) {
 // ---------------------------------------------------------------------------
 
 export function ChatApp() {
-  const { userId } = useSessionStore();
+  const { userId, email } = useSessionStore();
+  const drivers = useDrivers();
 
-  const [channels, setChannels] = useState<Channel[]>(DEMO_CHANNELS);
-  const [messages, setMessages] = useState<Message[]>(DEMO_MESSAGES);
-  const [activeChannelId, setActiveChannelId] = useState<string | null>(
-    DEMO_CHANNELS[0]?.id ?? null,
-  );
+  const [channels, setChannels] = useState<Channel[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [activeChannelId, setActiveChannelId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const [draft, setDraft] = useState("");
   const [showNewChannel, setShowNewChannel] = useState(false);
   const [newChannelName, setNewChannelName] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const realtimeRef = useRef<RealtimeSubscription | null>(null);
+
+  // Carrega canais do usuário
+  useEffect(() => {
+    if (drivers === null || userId === null) return;
+    setLoading(true);
+
+    drivers.data
+      .from("chat_channels")
+      .select("id,name,kind")
+      .order("name")
+      .then(({ data }) => {
+        setLoading(false);
+        const chs = (data ?? []).map((r) =>
+          mapChannel(r as Record<string, unknown>),
+        );
+        setChannels(chs);
+        if (chs.length > 0 && activeChannelId === null) {
+          setActiveChannelId(chs[0]?.id ?? null);
+        }
+      });
+  }, [drivers, userId]);
+
+  // Carrega mensagens do canal ativo + subscreve Realtime
+  useEffect(() => {
+    if (drivers === null || activeChannelId === null) return;
+
+    // Cancela subscription anterior
+    realtimeRef.current?.unsubscribe();
+    realtimeRef.current = null;
+    setMessages([]);
+
+    // Carrega histórico
+    drivers.data
+      .from("chat_messages")
+      .select("id,channel_id,sender_user_id,body,metadata,created_at")
+      .eq("channel_id", activeChannelId)
+      .order("created_at")
+      .limit(100)
+      .then(({ data }) => {
+        setMessages(
+          (data ?? []).map((r) => mapMessage(r as Record<string, unknown>)),
+        );
+      });
+
+    // Realtime: escuta novas mensagens neste canal
+    realtimeRef.current = drivers.data.subscribeToTable({
+      table: "chat_messages",
+      event: "INSERT",
+      filter: `channel_id=eq.${activeChannelId}`,
+      onData: (payload) => {
+        const newRow = payload.new as Record<string, unknown> | null;
+        if (newRow === null) return;
+        setMessages((prev) => {
+          // Evita duplicar se o insert já chegou via query inicial
+          if (prev.some((m) => m.id === (newRow["id"] as string))) return prev;
+          return [...prev, mapMessage(newRow)];
+        });
+      },
+    });
+
+    return () => {
+      realtimeRef.current?.unsubscribe();
+      realtimeRef.current = null;
+    };
+  }, [drivers, activeChannelId]);
+
+  const displayName = email?.split("@")[0] ?? "Usuário";
+
+  const handleSend = useCallback(async () => {
+    const body = draft.trim();
+    if (
+      body.length === 0 ||
+      activeChannelId === null ||
+      drivers === null ||
+      userId === null
+    )
+      return;
+
+    setDraft("");
+
+    await drivers.data.from("chat_messages").insert({
+      channel_id: activeChannelId,
+      sender_user_id: userId,
+      body,
+      metadata: { sender_name: displayName },
+    });
+    // Realtime traz a mensagem de volta via subscription
+  }, [draft, activeChannelId, drivers, userId, displayName]);
+
+  const handleCreateChannel = useCallback(async () => {
+    if (drivers === null || userId === null) return;
+    const name = newChannelName.trim().toLowerCase().replace(/\s+/g, "-");
+    if (name.length === 0) return;
+
+    const { data: inserted } = await drivers.data
+      .from("chat_channels")
+      .insert({ name, kind: "channel", created_by: userId })
+      .select("id,name,kind")
+      .single();
+
+    if (inserted !== null) {
+      const ch = mapChannel(inserted as Record<string, unknown>);
+
+      // Adiciona o criador como membro
+      await drivers.data
+        .from("chat_channel_members")
+        .insert({ channel_id: ch.id, user_id: userId });
+
+      setChannels((prev) => [...prev, ch]);
+      setActiveChannelId(ch.id);
+    }
+
+    setNewChannelName("");
+    setShowNewChannel(false);
+  }, [drivers, userId, newChannelName]);
 
   const activeChannel = channels.find((c) => c.id === activeChannelId);
   const activeMessages = messages.filter(
     (m) => m.channelId === activeChannelId,
   );
 
-  const handleSend = useCallback(() => {
-    const body = draft.trim();
-    if (body.length === 0 || activeChannelId === null) return;
-
-    const newMsg: Message = {
-      id: crypto.randomUUID(),
-      channelId: activeChannelId,
-      senderUserId: userId ?? "me",
-      senderName: "Você",
-      body,
-      createdAt: new Date(),
-    };
-    setMessages((prev) => [...prev, newMsg]);
-    setDraft("");
-    // TODO: inserir em kernel.chat_messages via SupabaseDatabaseDriver
-    // + emitir platform.chat.message_sent
-    // + Supabase Realtime .channel().on('postgres_changes') para receber em tempo real
-  }, [draft, activeChannelId, userId]);
-
-  function handleCreateChannel() {
-    const name = newChannelName.trim().toLowerCase().replace(/\s+/g, "-");
-    if (name.length === 0) return;
-    const newChannel: Channel = {
-      id: crypto.randomUUID(),
-      name,
-      kind: "channel",
-    };
-    setChannels((prev) => [...prev, newChannel]);
-    setActiveChannelId(newChannel.id);
-    setNewChannelName("");
-    setShowNewChannel(false);
-    // TODO: inserir em kernel.chat_channels + kernel.chat_channel_members
-    // + emitir platform.chat.channel_created
-  }
-
-  const unreadByChannel = new Map<string, number>();
-  channels.forEach((ch) => {
-    if (ch.id !== activeChannelId) {
-      const count = messages.filter((m) => m.channelId === ch.id).length;
-      if (count > 0) unreadByChannel.set(ch.id, count % 3); // demo: simula alguns não lidos
-    }
-  });
-
   return (
     <AppShell
       title={activeChannel !== undefined ? `#${activeChannel.name}` : "Chat"}
-      subtitle={`${activeMessages.length} mensagem(s)`}
+      subtitle={
+        loading ? "Carregando…" : `${activeMessages.length} mensagem(s)`
+      }
       sidebar={
         <ChannelList
           channels={channels}
@@ -257,7 +325,7 @@ export function ChatApp() {
               value={newChannelName}
               onChange={(e) => setNewChannelName(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") handleCreateChannel();
+                if (e.key === "Enter") void handleCreateChannel();
                 if (e.key === "Escape") setShowNewChannel(false);
               }}
               placeholder="nome-do-canal"
@@ -266,7 +334,7 @@ export function ChatApp() {
             />
             <button
               type="button"
-              onClick={handleCreateChannel}
+              onClick={() => void handleCreateChannel()}
               className="rounded-md bg-zinc-700 px-2 py-1 text-xs text-zinc-200 hover:bg-zinc-600"
             >
               Criar
@@ -296,28 +364,34 @@ export function ChatApp() {
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                handleSend();
+                void handleSend();
               }
             }}
             placeholder={
               activeChannel !== undefined
                 ? `Mensagem em #${activeChannel.name}`
-                : "Selecione um canal"
+                : drivers === null
+                  ? "Aguardando sessão…"
+                  : "Selecione um canal"
             }
-            disabled={activeChannelId === null}
+            disabled={activeChannelId === null || drivers === null}
             className="flex-1 bg-transparent text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none"
           />
           <button
             type="button"
-            onClick={handleSend}
-            disabled={draft.trim().length === 0 || activeChannelId === null}
+            onClick={() => void handleSend()}
+            disabled={
+              draft.trim().length === 0 ||
+              activeChannelId === null ||
+              drivers === null
+            }
             className="shrink-0 rounded-md bg-violet-600 px-3 py-1 text-xs font-medium text-white hover:bg-violet-500 disabled:opacity-40"
           >
             Enviar
           </button>
         </div>
         <p className="mt-1 text-xs text-zinc-700">
-          Enter para enviar · Realtime habilitado quando Supabase configurado
+          Enter para enviar · Realtime ativo via Supabase
         </p>
       </div>
     </AppShell>
