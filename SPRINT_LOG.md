@@ -599,3 +599,157 @@ Modelo: Claude Code (claude-sonnet-4-6, Sprint 3 N=1)
   - `getCompanyClaims()` lê `app_metadata` do JWT (injetado pelo hook): companies[] e active_company_id
   - Testes unitários com `vi.mock('@supabase/supabase-js')` — sem rede, sem Docker
   - `_AssertFn` type utility no final do arquivo de teste: prefixo `_` inibe ESLint no-unused-vars
+
+## Milestone M21 — Scaffold shell-commercial: Vite + auth flow + PWA
+
+- Iniciada: 2026-04-29T15:15:00Z
+- Concluída: 2026-04-29T15:45:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm --filter=@aethereos/shell-commercial typecheck` → ok
+  - `pnpm --filter=@aethereos/shell-commercial build` → ok (bundle: ~128 KB gzip principal + 32 KB router + 3 KB CSS)
+- Arquivos criados:
+  - `apps/shell-commercial/package.json` (Vite 6 + React 19 + TanStack Router + Zustand + Tailwind v4 + vite-plugin-pwa + @aethereos/drivers-supabase)
+  - `apps/shell-commercial/vite.config.ts` (CSP frame-ancestors para embed, manualChunks react+router, VitePWA generateSW)
+  - `apps/shell-commercial/index.html` (manifest link, theme-color, #root)
+  - `apps/shell-commercial/public/manifest.webmanifest` (standalone, dark, pt-BR, name "Aethereos")
+  - `apps/shell-commercial/src/main.tsx` (RouterProvider, SupabaseBrowserAuthDriver, Zustand session store)
+  - `apps/shell-commercial/src/styles/globals.css` (`@import "tailwindcss"` v4 + CSS vars)
+  - `apps/shell-commercial/src/routes/__root.tsx` (createRootRoute + embed detection + embed.ready postMessage)
+  - `apps/shell-commercial/src/routes/index.tsx` (rota `/` — dashboard principal com company context)
+  - `apps/shell-commercial/src/routes/login.tsx` (rota `/login` — auth flow PKCE)
+  - `apps/shell-commercial/src/stores/session.ts` (Zustand: userId, companyId, isBooted)
+  - `apps/shell-commercial/src/lib/drivers.ts` (buildDrivers: SupabaseBrowserAuthDriver com anon key)
+  - `apps/shell-commercial/src/lib/boot.ts` (boot cloud-first: auth state listener, session restore)
+  - `apps/shell-commercial/tsconfig.json` (extends vite-app.json)
+- Arquivos modificados:
+  - `packages/drivers-supabase/package.json` — `+ sideEffects: false`, `+ ./browser` export
+  - `packages/drivers-supabase/src/browser.ts` — barrel browser-safe (exclui postgres Node.js driver)
+  - `apps/shell-commercial/src/lib/drivers.ts` — import via `@aethereos/drivers-supabase/browser`
+- Decisões tomadas:
+  - `./browser` export em drivers-supabase criado para excluir postgres (Node.js) do bundle do browser; root cause de falha do Rollup ao tentar processar `pg` em contexto browser
+  - CSP `frame-ancestors 'self' http://localhost:* http://127.0.0.1:*` configurada via `server.headers` e `preview.headers` no Vite
+  - `@supabase/supabase-js` removido do `manualChunks` — dependency indireta, não direta no shell
+  - Boot cloud-first: `onAuthStateChange` escuta mudanças de sessão e atualiza Zustand store
+  - TanStack Router code-based routing (consistente com shell-base)
+
+## Milestone M22 — Onboarding de company + primeiro evento SCP cloud
+
+- Iniciada: 2026-04-29T15:50:00Z
+- Concluída: 2026-04-29T16:25:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm --filter=@aethereos/shell-commercial typecheck` → ok
+  - `pnpm --filter=@aethereos/shell-commercial build` → ok
+  - `pnpm --filter=@aethereos/drivers-supabase test` → 17/17 passando
+- Arquivos criados:
+  - `supabase/migrations/20260429000003_m22_create_company_fn.sql` — `kernel.scp_outbox` SELECT policy para service_role, `ALTER ROLE authenticator SET pgrst.db_pre_request TO 'kernel.set_tenant_context_from_jwt'`, `public.create_company_for_user()` SECURITY DEFINER com company + membership + outbox insert atômico
+  - `supabase/functions/create-company/index.ts` — Deno Edge Function: valida JWT via `auth.getUser()`, chama `create_company_for_user`, retorna 201 com dados da empresa
+- Arquivos modificados:
+  - `packages/drivers-supabase/src/auth/supabase-browser-auth-driver.ts` — `getCompanyClaims()` corrigido para decodificar JWT diretamente via `atob()` (hook injeta no root do JWT, não em `app_metadata`); adicionados `getCompanyName()` e `getOutboxCount()`
+  - `packages/drivers-supabase/__tests__/browser-auth-driver.test.ts` — helper `makeJwt()` com Base64url encoding correto para simular tokens reais; atualizado test de getCompanyClaims
+  - `apps/shell-commercial/src/routes/index.tsx` — exibe `companyName`, `activeCompanyId`, contador de eventos SCP publicados no outbox
+- Decisões tomadas:
+  - JWT custom hook injeta `companies[]` e `active_company_id` no root do payload JWT (não em `app_metadata`) — correto conforme documentação Supabase v2
+  - `SECURITY DEFINER` na função `create_company_for_user` para garantir atomicidade mesmo sem permissão direta de INSERT em `kernel.companies` via RLS
+  - `db-pre-request` hook em `authenticator` role = automático para todo request PostgREST (sem necessidade de SET explícito em cada query)
+  - `makeJwt()` em testes: `Buffer.from().toString("base64")` + replace `+/-`, `///_`, `=//` para Base64url válido
+
+## Milestone M23 — Modo embed + protocolo postMessage documentado
+
+- Iniciada: 2026-04-29T16:30:00Z
+- Concluída: 2026-04-29T16:50:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm --filter=@aethereos/shell-commercial typecheck` → ok
+  - `pnpm --filter=@aethereos/shell-commercial build` → ok
+  - `ls apps/shell-commercial/public/embed-test.html` → ok
+  - `ls docs/architecture/EMBED_PROTOCOL.md` → ok
+- Arquivos criados:
+  - `apps/shell-commercial/src/lib/embed.ts` — `isEmbedMode` (detecta `?embed=true`), `postEmbedMessage()` (envia para `window.parent`)
+  - `apps/shell-commercial/public/embed-test.html` — página de teste estática com iframe `/?embed=true`, sidebar de log de eventos postMessage, badge `embed.ready`
+  - `docs/architecture/EMBED_PROTOCOL.md` — tabela canônica de eventos (embed.ready, embed.navigate, embed.theme), orientações de segurança (frame-ancestors, verificação de origin), roadmap
+- Arquivos modificados:
+  - `apps/shell-commercial/src/routes/__root.tsx` — `RootComponent` com `useEffect` que envia `embed.ready` ao montar; wrapper `<div class="h-full w-full overflow-hidden">` em modo embed; `<Outlet />` padrão fora do modo embed
+  - `apps/shell-commercial/src/routes/index.tsx` — `{!isEmbedMode && <header>...</header>}` oculta header em modo embed
+- Decisões tomadas:
+  - Protocolo v1 documentado antes de qualquer consumidor externo — garante estabilidade de contrato
+  - `window.parent.postMessage(payload, "*")` em dev/local; produção restringirá origin via `VITE_EMBED_ALLOWED_ORIGINS`
+  - CSP `frame-ancestors` já configurada no vite.config.ts (M21) — embed-test.html valida na prática
+
+## Milestone M24 — Testes driver-agnostic: prova empírica do Driver Model
+
+- Iniciada: 2026-04-29T16:55:00Z
+- Concluída: 2026-04-29T17:20:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm --filter=@aethereos/kernel test` → 8/8 passando
+  - `grep -r "if.*camada\|cloud\|supabase\|local\|sqlite" packages/kernel/src/` → zero resultados ✓
+- Arquivos criados:
+  - `packages/kernel/__tests__/driver-agnostic.test.ts` — 8 testes: KernelPublisher com LocalDriver mock, KernelPublisher com CloudDriver mock, resultado estruturalmente idêntico, rejeição de evento sem schema, propagação de erro de withTenant; auditLog Camada 0, Camada 1, fail-loud
+  - `packages/kernel/vitest.config.ts` — vitest node environment, `include: ["__tests__/**/*.test.ts"]`
+  - `docs/architecture/DRIVER_MODEL_VALIDATION.md` — feature × LocalDriver × CloudDriver × kernel touch point; grep proof zero if(camada); mapeamento Camada 0 ↔ Camada 1
+- Arquivos modificados:
+  - `packages/kernel/package.json` — `+ "test": "vitest run"`, `+ vitest ^2.1.0` devDependency
+  - `docs/adr/0015-camada-0-arquitetura-local-first.md` — link para DRIVER_MODEL_VALIDATION.md adicionado
+- Decisões tomadas:
+  - `VALID_EVENT_TYPE = "platform.tenant.created"` e `plan: "starter"` — correspondem ao enum Zod em `PlatformTenantCreatedPayloadSchema`; `"trial"` não está no enum (erro encontrado e corrigido)
+  - Labels `"local"` e `"cloud"` nos helpers `makeMockDb()` e `makeMockBus()` são puramente documentais — o kernel não inspeciona o label (prova de agnoscismo)
+  - `makeTx.execute` recebe fn callback e a executa, simulando transação real sem banco
+
+## Milestone M25 — ADR-0016 + encerramento Sprint 3
+
+- Iniciada: 2026-04-29T17:25:00Z
+- Concluída: 2026-04-29T17:45:00Z
+- Status: SUCCESS
+- Arquivos criados:
+  - `docs/adr/0016-camada-1-arquitetura-cloud-first.md` — ADR-0016 Aceito: stack simétrica, Supabase Auth PKCE, RLS multi-tenant fail-closed, Outbox desde dia 1, Embed Protocol v1, alternativas rejeitadas, mapeamento Camada 0 ↔ Camada 1
+  - `docs/SPRINT_3_REPORT_2026-04-29.md` — relatório executivo Sprint 3
+- Arquivos modificados:
+  - `CLAUDE.md` — referência ao ADR-0016 adicionada na seção 4
+  - `SPRINT_LOG.md` — M21–M25 registrados; seção de encerramento do Sprint 3
+
+---
+
+## Sumário do Sprint 3 (M19–M25) — Camada 1
+
+**Sprint 3 concluído em: 2026-04-29**
+
+Sprint 3 construiu a Camada 1 completa do Aethereos: o shell cloud-first multi-tenant proprietário, usando o mesmo kernel da Camada 0 com drivers Supabase + NATS.
+
+### Entregáveis do Sprint 3
+
+| Milestone | Entregável                                                                                                          | Status  |
+| --------- | ------------------------------------------------------------------------------------------------------------------- | ------- |
+| M19       | Testes de isolação RLS (`apps/scp-worker/__tests__/rls.test.ts`), runbook local-dev-shell-commercial                | SUCCESS |
+| M20       | `SupabaseBrowserAuthDriver` + `kernel.custom_access_token_hook` + `kernel.tenant_memberships` + 17 testes unitários | SUCCESS |
+| M21       | `apps/shell-commercial` scaffold — Vite + PWA + auth flow PKCE + `./browser` entry em drivers-supabase              | SUCCESS |
+| M22       | `create_company_for_user()` SECURITY DEFINER + Edge Function + outbox + dashboard com métricas SCP                  | SUCCESS |
+| M23       | Embed Protocol v1 (`isEmbedMode`, `postEmbedMessage`, `embed-test.html`, `EMBED_PROTOCOL.md`)                       | SUCCESS |
+| M24       | Testes driver-agnostic (8 testes kernel × 2 camadas), `DRIVER_MODEL_VALIDATION.md`                                  | SUCCESS |
+| M25       | ADR-0016, encerramento Sprint 3                                                                                     | SUCCESS |
+
+### Métricas finais
+
+- **Bundle shell-commercial (gzip):** 128.49 KB principal + 31.87 KB router + 3.20 KB CSS
+- **Precache SW:** 562.93 KiB raw (10 entradas)
+- **Testes totais:** 82 (kernel: 8, drivers-supabase: 17, drivers-local: 57)
+- **Commits Sprint 3:** 6 commits de feature (M19–M24) + 1 commit de encerramento (M25)
+- **Driver Model:** provado empiricamente — zero `if(camada)` em `packages/kernel/src/`
+
+### Validação da hipótese central (Sprint 3)
+
+> "O mesmo kernel opera sobre drivers cloud (Camada 1) com comportamento idêntico ao da Camada 0 — sem qualquer branch por camada no código do kernel."
+
+**Confirmado.** `packages/kernel/__tests__/driver-agnostic.test.ts` passa 8/8 com mocks rotulados "local" e "cloud". A pesquisa grep em `packages/kernel/src/**` retorna zero resultados para qualquer referência a driver específico.
+
+### Pendências para revisão humana
+
+1. **Supabase cloud project:** criar projeto em `supabase.com`, aplicar migrations, configurar `db-pre-request` hook no PostgREST
+2. **JWT custom hook:** habilitar `[auth.hook.custom_access_token]` no painel Supabase (requer Edge Function `custom-access-token` deployada)
+3. **NATS JetStream:** configurar namespace e credentials em produção (variáveis de ambiente `NATS_URL`, `NATS_USER`, `NATS_PASS`)
+4. **Domínio:** apontar `aethereos.io` para deploy da Camada 1
+5. **CSP produção:** restringir `frame-ancestors` para domínios autorizados (atualmente permissivo em dev)
+6. **scp-worker produção:** criar Deployment com réplicas, health checks e alertas de backlog NATS
+
+**Próximo sprint:** Sprint 4 — `apps/comercio-digital/` (primeiro SaaS standalone, Next.js 15 App Router).

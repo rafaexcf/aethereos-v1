@@ -45,7 +45,8 @@ Em dúvida, prefira preservar o que tem maior peso de rigidez.
 ## 4. Stack cravada (resumo executável)
 
 Detalhe completo em `docs/adr/0014-resolucao-stack-vs-analise-externa.md`.  
-Camada 0 especificamente: ver `docs/adr/0015-camada-0-arquitetura-local-first.md`.
+Camada 0 especificamente: ver `docs/adr/0015-camada-0-arquitetura-local-first.md`.  
+Camada 1 especificamente: ver `docs/adr/0016-camada-1-arquitetura-cloud-first.md`.
 
 | Camada                            | Tecnologia                                                                      | Tipo  |
 | --------------------------------- | ------------------------------------------------------------------------------- | ----- |
