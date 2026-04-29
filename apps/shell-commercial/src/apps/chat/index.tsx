@@ -162,7 +162,7 @@ function MessageList({ messages, currentUserId }: MessageListProps) {
 // ---------------------------------------------------------------------------
 
 export function ChatApp() {
-  const { userId, email } = useSessionStore();
+  const { userId, email, activeCompanyId } = useSessionStore();
   const drivers = useDrivers();
 
   const [channels, setChannels] = useState<Channel[]>([]);
@@ -255,14 +255,29 @@ export function ChatApp() {
 
     setDraft("");
 
-    await drivers.data.from("chat_messages").insert({
-      channel_id: activeChannelId,
-      sender_user_id: userId,
-      body,
-      metadata: { sender_name: displayName },
-    });
+    const { data: inserted } = await drivers.data
+      .from("chat_messages")
+      .insert({
+        channel_id: activeChannelId,
+        sender_user_id: userId,
+        body,
+        metadata: { sender_name: displayName },
+      })
+      .select("id")
+      .single();
     // Realtime traz a mensagem de volta via subscription
-  }, [draft, activeChannelId, drivers, userId, displayName]);
+
+    if (inserted !== null && activeCompanyId !== null) {
+      const msgId = (inserted as { id: string }).id;
+      void drivers.scp.publishEvent("platform.chat.message_sent", {
+        message_id: msgId,
+        channel_id: activeChannelId,
+        company_id: activeCompanyId,
+        sender_user_id: userId,
+        body_length: body.length,
+      });
+    }
+  }, [draft, activeChannelId, drivers, userId, displayName, activeCompanyId]);
 
   const handleCreateChannel = useCallback(async () => {
     if (drivers === null || userId === null) return;
@@ -285,11 +300,21 @@ export function ChatApp() {
 
       setChannels((prev) => [...prev, ch]);
       setActiveChannelId(ch.id);
+
+      if (activeCompanyId !== null) {
+        void drivers.scp.publishEvent("platform.chat.channel_created", {
+          channel_id: ch.id,
+          company_id: activeCompanyId,
+          kind: "channel",
+          name: ch.name,
+          created_by: userId,
+        });
+      }
     }
 
     setNewChannelName("");
     setShowNewChannel(false);
-  }, [drivers, userId, newChannelName]);
+  }, [drivers, userId, newChannelName, activeCompanyId]);
 
   const activeChannel = channels.find((c) => c.id === activeChannelId);
   const activeMessages = messages.filter(

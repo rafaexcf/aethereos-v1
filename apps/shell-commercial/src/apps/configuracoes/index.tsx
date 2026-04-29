@@ -68,6 +68,14 @@ function TabPerfil() {
           .upsert(s, { onConflict: "scope,scope_id,key" });
       }
     }
+    if (drivers !== null && userId !== null) {
+      void drivers.scp.publishEvent("platform.settings.updated", {
+        scope: "user",
+        scope_id: userId,
+        key: "profile",
+        updated_by: userId,
+      });
+    }
     if (theme === "light") {
       document.documentElement.classList.remove("dark");
     } else {
@@ -155,7 +163,7 @@ function TabPerfil() {
 // ---------------------------------------------------------------------------
 
 function TabEmpresa() {
-  const { activeCompanyId } = useSessionStore();
+  const { activeCompanyId, userId } = useSessionStore();
   const drivers = useDrivers();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -185,6 +193,14 @@ function TabEmpresa() {
       .from("companies")
       .update({ name, slug })
       .eq("id", activeCompanyId);
+    if (userId !== null) {
+      void drivers.scp.publishEvent("platform.settings.updated", {
+        scope: "company",
+        scope_id: activeCompanyId,
+        key: "company_profile",
+        updated_by: userId,
+      });
+    }
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);

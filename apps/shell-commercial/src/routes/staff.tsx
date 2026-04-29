@@ -109,13 +109,18 @@ function StaffPage() {
     }
   }, [userId, isStaff, navigate]);
 
-  // Registra acesso staff em kernel.staff_access_log (browser outbox para platform.staff.access)
+  // Registra acesso staff em kernel.staff_access_log + emite platform.staff.access via SCP
   const recordStaffAccess = useCallback(
     async (companyId: string, action: string) => {
       if (drivers === null || userId === null) return;
       await drivers.data
         .from("staff_access_log")
         .insert({ staff_user_id: userId, company_id: companyId, action });
+      void drivers.scp.publishEvent("platform.staff.access", {
+        staff_user_id: userId,
+        company_id: companyId,
+        action,
+      });
     },
     [drivers, userId],
   );

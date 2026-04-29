@@ -267,7 +267,7 @@ function DeactivateDialog({
 type FilterStatus = "all" | PersonStatus;
 
 export function PessoasApp() {
-  const { activeCompanyId } = useSessionStore();
+  const { activeCompanyId, userId } = useSessionStore();
   const drivers = useDrivers();
 
   const [people, setPeople] = useState<Person[]>([]);
@@ -341,14 +341,21 @@ export function PessoasApp() {
       }
 
       if (inserted !== null) {
-        setPeople((prev) => [
-          ...prev,
-          mapRow(inserted as Record<string, unknown>),
-        ]);
+        const person = mapRow(inserted as Record<string, unknown>);
+        setPeople((prev) => [...prev, person]);
+        if (userId !== null) {
+          void drivers.scp.publishEvent("platform.person.created", {
+            person_id: person.id,
+            company_id: activeCompanyId,
+            full_name: data.fullName,
+            email: data.email.length > 0 ? data.email : undefined,
+            created_by: userId,
+          });
+        }
       }
       setShowForm(false);
     },
-    [drivers, activeCompanyId],
+    [drivers, activeCompanyId, userId],
   );
 
   const handleUpdate = useCallback(
@@ -383,10 +390,18 @@ export function PessoasApp() {
         setPeople((prev) =>
           prev.map((p) => (p.id === editingPerson.id ? updatedPerson : p)),
         );
+        if (activeCompanyId !== null && userId !== null) {
+          void drivers.scp.publishEvent("platform.person.updated", {
+            person_id: editingPerson.id,
+            company_id: activeCompanyId,
+            fields_changed: Object.keys(payload),
+            updated_by: userId,
+          });
+        }
       }
       setEditingPerson(null);
     },
-    [editingPerson, drivers],
+    [editingPerson, drivers, activeCompanyId, userId],
   );
 
   const confirmDeactivate = useCallback(async () => {
@@ -415,9 +430,18 @@ export function PessoasApp() {
       if (selectedPerson?.id === deactivating.id) {
         setSelectedPerson(updatedPerson);
       }
+      if (activeCompanyId !== null && userId !== null) {
+        void drivers.scp.publishEvent("platform.person.deactivated", {
+          person_id: deactivating.id,
+          company_id: activeCompanyId,
+          full_name: deactivating.fullName,
+          deactivated_by: userId,
+          approval_token: crypto.randomUUID(),
+        });
+      }
     }
     setDeactivating(null);
-  }, [deactivating, drivers, selectedPerson]);
+  }, [deactivating, drivers, selectedPerson, activeCompanyId, userId]);
 
   const totalActive = people.filter((p) => p.status === "active").length;
 

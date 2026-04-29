@@ -263,10 +263,18 @@ export function DriveApp() {
       }
 
       if (inserted !== null) {
-        setFiles((prev) => [
-          ...prev,
-          mapRow(inserted as Record<string, unknown>),
-        ]);
+        const entry = mapRow(inserted as Record<string, unknown>);
+        setFiles((prev) => [...prev, entry]);
+        void drivers.scp.publishEvent("platform.file.uploaded", {
+          file_id: entry.id,
+          company_id: activeCompanyId,
+          parent_id: currentFolderId,
+          name: f.name,
+          mime_type: f.type.length > 0 ? f.type : undefined,
+          size_bytes: f.size,
+          storage_path: storagePath,
+          uploaded_by: userId,
+        });
       }
     }
   }
@@ -295,10 +303,15 @@ export function DriveApp() {
     }
 
     if (inserted !== null) {
-      setFiles((prev) => [
-        ...prev,
-        mapRow(inserted as Record<string, unknown>),
-      ]);
+      const entry = mapRow(inserted as Record<string, unknown>);
+      setFiles((prev) => [...prev, entry]);
+      void drivers.scp.publishEvent("platform.folder.created", {
+        folder_id: entry.id,
+        company_id: activeCompanyId,
+        parent_id: currentFolderId,
+        name,
+        created_by: userId,
+      });
     }
     setNewFolderName("");
     setShowNewFolder(false);
@@ -326,6 +339,20 @@ export function DriveApp() {
     if (dbErr !== null) {
       setError(`Erro ao excluir: ${dbErr.message}`);
       return;
+    }
+
+    const deletedEntry = files.find((f) => f.id === id);
+    if (
+      deletedEntry !== undefined &&
+      activeCompanyId !== null &&
+      userId !== null
+    ) {
+      void drivers.scp.publishEvent("platform.file.deleted", {
+        file_id: id,
+        company_id: activeCompanyId,
+        name: deletedEntry.name,
+        deleted_by: userId,
+      });
     }
 
     setFiles((prev) => prev.filter((f) => !toDelete.has(f.id)));

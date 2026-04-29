@@ -9,12 +9,14 @@ import {
   withDegradedObservability,
   DegradedObservabilityDriver,
 } from "@aethereos/kernel";
+import { ScpPublisherBrowser } from "./scp-publisher-browser.js";
 
 export interface CloudDrivers {
   auth: SupabaseBrowserAuthDriver;
   data: SupabaseBrowserDataDriver;
   llm: LLMDriver;
   obs: ObservabilityDriver;
+  scp: ScpPublisherBrowser;
 }
 
 export function buildDrivers(): CloudDrivers {
@@ -31,10 +33,13 @@ export function buildDrivers(): CloudDrivers {
     timeoutMs: 30_000,
   });
 
+  const auth = new SupabaseBrowserAuthDriver({ supabaseUrl, supabaseAnonKey });
+
   return {
-    auth: new SupabaseBrowserAuthDriver({ supabaseUrl, supabaseAnonKey }),
+    auth,
     data: new SupabaseBrowserDataDriver({ supabaseUrl, supabaseAnonKey }),
     llm: withDegradedLLM(primaryLLM),
     obs: withDegradedObservability(new DegradedObservabilityDriver()),
+    scp: new ScpPublisherBrowser(supabaseUrl, auth),
   };
 }
