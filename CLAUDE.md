@@ -47,7 +47,8 @@ Em dúvida, prefira preservar o que tem maior peso de rigidez.
 Detalhe completo em `docs/adr/0014-resolucao-stack-vs-analise-externa.md`.  
 Camada 0 especificamente: ver `docs/adr/0015-camada-0-arquitetura-local-first.md`.  
 Camada 1 especificamente: ver `docs/adr/0016-camada-1-arquitetura-cloud-first.md`.  
-SaaS standalone (comercio.digital et al.): ver `docs/adr/0017-comercio-digital-primeiro-saas-standalone.md`.
+SaaS standalone (comercio.digital et al.): ver `docs/adr/0017-comercio-digital-primeiro-saas-standalone.md`.  
+Driver Model bifurcado server/browser (ADR-0020): ver `docs/adr/0020-driver-model-bifurcacao-server-browser.md`.
 
 | Camada                            | Tecnologia                                                                      | Tipo  |
 | --------------------------------- | ------------------------------------------------------------------------------- | ----- |
@@ -72,6 +73,8 @@ SaaS standalone (comercio.digital et al.): ver `docs/adr/0017-comercio-digital-p
 | IaC                               | Pulumi TypeScript                                                               | [DEC] |
 | CI                                | GitHub Actions                                                                  | [DEC] |
 | Driver Model                      | Toda dependência externa via interface                                          | [INV] |
+| Driver DB — ramo server           | `SupabaseDatabaseDriver` (`postgres` Node.js + Drizzle) — scp-worker, Edge Fn   | [DEC] |
+| Driver DB — ramo browser          | `SupabaseBrowserDataDriver` (`@supabase/supabase-js`) — shells Vite             | [DEC] |
 
 ---
 
@@ -89,6 +92,10 @@ Quando agente detectar uso de tecnologia bloqueada, **não merge**. Lista canôn
 - Cobrança usage-based escrita à mão sobre Stripe → bloquear (usar Lago)
 - `console.log` em código de produção → bloquear (logs estruturados via OTel/pino)
 - `terraform` ou `aws-cdk` em `infra/` → bloquear (IaC é Pulumi TS)
+- `import postgres` ou `import { drizzle }` em `apps/shell-base/` ou `apps/shell-commercial/` → bloquear (browser usa SupabaseBrowserDataDriver)
+- `import { SupabaseDatabaseDriver }` em código browser (shells Vite) → bloquear (usar entry `/browser`)
+- `KernelPublisher` instanciado em código browser → bloquear (publisher server-only; browser usa Edge Function scp-publish)
+- Escrita em `kernel.scp_outbox` direta de código browser → bloquear (outbox só via Edge Function com service_role)
 
 ---
 

@@ -10,10 +10,24 @@ import type { DatabaseError, NotFoundError, ConflictError } from "../errors.js";
  * - withTenant() é fail-closed: sem contexto, queries retornam zero rows (Fundamentação 10.1 [INV])
  * - Transações atômicas via transaction() garantem consistência entre domínio e outbox
  *
- * Implementações concretas: SupabaseDatabaseDriver (packages/drivers-supabase)
- * LocalDatabaseDriver a implementar para Camada 0 (SQLite WASM / IndexedDB)
+ * ## Dois ramos de implementação (ADR-0020)
  *
- * Ref: Fundamentação 4.7 [INV], ADR-0014 #5
+ * **Ramo Server (Node.js / Deno Edge Functions):**
+ * - `SupabaseDatabaseDriver` em `packages/drivers-supabase/src/database/`
+ * - transaction() real com atomicidade PostgreSQL
+ * - withTenant() via SET LOCAL — RLS enforçado na sessão
+ * - Pode escrever em kernel.scp_outbox diretamente (service_role)
+ *
+ * **Ramo Browser (Vite SPA — Camadas 0 e 1):**
+ * - `SupabaseBrowserDataDriver` em `packages/drivers-supabase/src/data/`
+ * - transaction() NÃO disponível — operações atômicas exigem Edge Function
+ * - withTenant() armazena contexto local; RLS enforçado via JWT do usuário
+ * - NÃO pode escrever em kernel.scp_outbox (RLS bloqueia authenticated users)
+ * - Suporta Realtime via subscribeToTable()
+ *
+ * Emissão SCP do browser: via Edge Function `scp-publish` que executa domínio+outbox atomicamente.
+ *
+ * Ref: Fundamentação 4.7 [INV], ADR-0014 #5, ADR-0020
  */
 export interface DatabaseDriver {
   /**

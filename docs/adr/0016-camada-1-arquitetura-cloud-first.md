@@ -1,8 +1,9 @@
 # ADR-0016 — Arquitetura da Camada 1: Cloud-First com Simetria de Stack
 
-**Status:** Aceito  
-**Data:** 2026-04-29  
-**Autores:** Equipe Aethereos + Claude Sonnet 4.6 (assistido)  
+**Status:** Aceito (parcialmente revisado por ADR-0020)
+**Data:** 2026-04-29
+**Revisão:** 2026-04-29 — ADR-0020 retifica a seção de simetria de drivers (Sprint 7 revisado)
+**Autores:** Equipe Aethereos + Claude Sonnet 4.6 (assistido)
 **Subordinado a:** ADR-0001, ADR-0014, ADR-0015
 
 ---
