@@ -1,0 +1,21 @@
+// @ts-check
+import baseConfig from "@aethereos/config-eslint/base";
+import tseslint from "typescript-eslint";
+
+export default tseslint.config(
+  ...baseConfig,
+  {
+    ignores: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/build/**",
+      "**/.next/**",
+      "**/coverage/**",
+      "**/.turbo/**",
+      "pnpm-lock.yaml",
+      // Config files at root are CJS — ESLint won't lint them
+      ".dependency-cruiser.cjs",
+      "commitlint.config.cjs",
+    ],
+  },
+);

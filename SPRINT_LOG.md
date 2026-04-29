@@ -1,29 +1,41 @@
-# Sprint Log — Aethereos Bootstrap
+# Sprint Log — Aethereos Bootstrap Fase 1
 
-Bootstrap inicial: gerado por script bootstrap.sh em 2026-04-29
-Modelo de bootstrap: caminho B (rápido, ADR-0001 sintetizada por IA)
-Justificativa: decisão consciente do humano fundador para acelerar início
-do desenvolvimento. Aviso de origem registrado em docs/adr/0001-fundacao.md.
-Revisão humana de ADR-0001 sugerida em 30 dias.
+Início do sprint: 2026-04-29T00:00:00Z
+Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
 
-## Ações tomadas pelo bootstrap automatizado
+## Calibração inicial
 
-1. Estrutura de diretórios criada (apps/, packages/, tooling/, infra/, docs/)
-2. CLAUDE.md, README.md, package.json, pnpm-workspace.yaml, turbo.json,
-   tsconfig.base.json, .gitignore, .nvmrc, .editorconfig, LICENSE materializados
-3. Corpus documental copiado para docs/ (8 arquivos)
-4. ADR-0001 (gerada por IA, com aviso) e ADR-0014 (resolução de stack)
-   materializadas em docs/adr/
-5. SPRINT_PROMPT.md materializado na raiz
-6. pnpm install executado
-7. git init -b main + primeiro commit
+**Ordem de construção:** Camada 0 (shell-base, local-first, BUSL v1.1) → Camada 1 (shell-commercial, proprietária, multi-tenant) → comercio.digital → logitix → kwix → autergon.
 
-## Próximas ações (humano + Claude Code)
+**Por que Next.js está bloqueado nos shells:** Shells são PWA/OS no navegador — apps totalmente autenticados sem necessidade de SSR. Vite 8+ + TanStack Router atendem o modelo híbrido URL+estado da Fundamentação 4.4. Next.js apenas para SaaS standalone com SEO. ADR-0014 item #1.
 
-- [ ] Revisar ADR-0001 e ajustar tom autoral em até 30 dias
-- [ ] Iniciar Sprint Longo Fase 1 colando SPRINT_PROMPT.md no Claude Code
-- [ ] Configurar remote Git (GitHub) e fazer primeiro push
+**Freio agêntico do primeiro ano:** Autonomia 0-1 (sugerir, humano executa). Ações irreversíveis sempre exigem aprovação humana explícita. As 8 operações invariantes nunca executam autonomamente em circunstância alguma.
 
-## Histórico de milestones do sprint
+**8 operações invariantes que agentes NUNCA executam (Fundamentação 12.4):**
 
-(preenchido conforme sprint avança)
+1. Demissão de colaborador
+2. Alteração estrutural de cadastro de fornecedores/clientes (bloqueio, remoção)
+3. Alteração de plano de contas
+4. Transferência financeira acima de limite configurado
+5. Alteração de políticas de governança
+6. Concessão ou revogação de acesso privilegiado
+7. Exclusão de dados
+8. Alteração de informações fiscais (regime tributário, cadastros SEFAZ)
+
+---
+
+## Histórico de milestones
+
+<!-- Preenchido conforme milestones são concluídas -->
+
+---
+
+## Decisões menores tomadas durante o sprint
+
+<!-- Justificativas que não viram ADR mas precisam ser rastreáveis -->
+
+---
+
+## Bloqueios encontrados
+
+<!-- Preenchido se houver bloqueios -->

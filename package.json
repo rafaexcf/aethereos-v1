@@ -12,7 +12,7 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
-    "lint": "turbo run lint",
+    "lint": "eslint . && turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "test:isolation": "turbo run test:isolation",
@@ -27,13 +27,22 @@
     "prepare": "husky"
   },
   "devDependencies": {
+    "@aethereos/config-eslint": "workspace:*",
+    "@commitlint/cli": "^20.5.2",
+    "@commitlint/config-conventional": "^20.5.0",
+    "@eslint/js": "^10.0.1",
     "@types/node": "^22.10.0",
     "dependency-cruiser": "^16.5.0",
+    "eslint": "^10.2.1",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.5.0",
     "husky": "^9.1.0",
     "lint-staged": "^15.2.0",
     "prettier": "^3.4.0",
     "turbo": "^2.3.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.59.1"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
