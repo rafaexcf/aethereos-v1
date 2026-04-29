@@ -48,10 +48,69 @@ export const PlatformCompanyCreatedPayloadSchema =
   PlatformTenantCreatedPayloadSchema;
 export type PlatformCompanyCreatedPayload = PlatformTenantCreatedPayload;
 
+// ---------------------------------------------------------------------------
+// Eventos de arquivos (Drive — M41)
+// ---------------------------------------------------------------------------
+
+export const PlatformFileUploadedPayloadSchema = z.object({
+  file_id: z.string().uuid(),
+  company_id: z.string().uuid(),
+  parent_id: z.string().uuid().nullable(),
+  name: z.string().min(1),
+  mime_type: z.string().optional(),
+  size_bytes: z.number().int().nonnegative(),
+  storage_path: z.string().min(1),
+  uploaded_by: z.string().uuid(),
+});
+export type PlatformFileUploadedPayload = z.infer<
+  typeof PlatformFileUploadedPayloadSchema
+>;
+
+export const PlatformFileDeletedPayloadSchema = z.object({
+  file_id: z.string().uuid(),
+  company_id: z.string().uuid(),
+  name: z.string().min(1),
+  deleted_by: z.string().uuid(),
+});
+export type PlatformFileDeletedPayload = z.infer<
+  typeof PlatformFileDeletedPayloadSchema
+>;
+
+export const PlatformFolderCreatedPayloadSchema = z.object({
+  folder_id: z.string().uuid(),
+  company_id: z.string().uuid(),
+  parent_id: z.string().uuid().nullable(),
+  name: z.string().min(1),
+  created_by: z.string().uuid(),
+});
+export type PlatformFolderCreatedPayload = z.infer<
+  typeof PlatformFolderCreatedPayloadSchema
+>;
+
+// ---------------------------------------------------------------------------
+// Eventos de notificação (M37)
+// ---------------------------------------------------------------------------
+
+export const PlatformNotificationDispatchedPayloadSchema = z.object({
+  notification_id: z.string().uuid(),
+  company_id: z.string().uuid(),
+  user_id: z.string().uuid(),
+  type: z.string().min(1),
+  title: z.string().min(1),
+});
+export type PlatformNotificationDispatchedPayload = z.infer<
+  typeof PlatformNotificationDispatchedPayloadSchema
+>;
+
 /** Mapa de tipo de evento → schema de payload para eventos platform.* */
 export const PLATFORM_EVENT_SCHEMAS = {
   "platform.tenant.created": PlatformTenantCreatedPayloadSchema,
   "platform.company.created": PlatformCompanyCreatedPayloadSchema,
   "platform.tenant.suspended": PlatformTenantSuspendedPayloadSchema,
   "platform.user.created": PlatformUserCreatedPayloadSchema,
+  "platform.file.uploaded": PlatformFileUploadedPayloadSchema,
+  "platform.file.deleted": PlatformFileDeletedPayloadSchema,
+  "platform.folder.created": PlatformFolderCreatedPayloadSchema,
+  "platform.notification.dispatched":
+    PlatformNotificationDispatchedPayloadSchema,
 } as const satisfies Record<string, z.ZodSchema>;

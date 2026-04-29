@@ -1,4 +1,6 @@
 // Components
+export { AppShell } from "./components/app-shell/index.js";
+export type { AppShellProps } from "./components/app-shell/index.js";
 export { WindowManager } from "./components/window-manager/index.js";
 export type {
   WindowConfig,

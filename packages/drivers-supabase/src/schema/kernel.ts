@@ -5,6 +5,7 @@ import {
   timestamp,
   jsonb,
   bigserial,
+  bigint,
   integer,
   index,
   uniqueIndex,
@@ -121,4 +122,58 @@ export const scpOutbox = kernelSchema.table(
     publishedAt: timestamp("published_at", { withTimezone: true }),
   },
   (t) => [index("kernel_scp_outbox_company_idx").on(t.companyId, t.createdAt)],
+);
+
+// ---------------------------------------------------------------------------
+// Drive — M41
+// ---------------------------------------------------------------------------
+
+export const files = kernelSchema.table(
+  "files",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    parentId: uuid("parent_id"),
+    kind: text("kind").notNull(),
+    name: text("name").notNull(),
+    mimeType: text("mime_type"),
+    sizeBytes: bigint("size_bytes", { mode: "number" }),
+    storagePath: text("storage_path"),
+    createdBy: uuid("created_by").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("kernel_files_company_parent_idx").on(t.companyId, t.parentId),
+    index("kernel_files_company_kind_idx").on(t.companyId, t.kind),
+    uniqueIndex("kernel_files_unique_name_idx").on(
+      t.companyId,
+      t.parentId,
+      t.name,
+    ),
+  ],
+);
+
+export const fileVersions = kernelSchema.table(
+  "file_versions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    fileId: uuid("file_id")
+      .notNull()
+      .references(() => files.id, { onDelete: "cascade" }),
+    version: integer("version").notNull(),
+    storagePath: text("storage_path").notNull(),
+    sizeBytes: bigint("size_bytes", { mode: "number" }),
+    createdBy: uuid("created_by").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("kernel_file_versions_file_idx").on(t.fileId, t.version)],
 );

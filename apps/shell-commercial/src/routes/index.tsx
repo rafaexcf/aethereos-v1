@@ -1,14 +1,17 @@
 import { createRoute, useNavigate } from "@tanstack/react-router";
-import { rootRoute } from "./__root";
-import { useSessionStore } from "../stores/session";
-import { isEmbedMode } from "../lib/embed";
+import { Suspense } from "react";
+import { rootRoute } from "./__root.js";
+import { useSessionStore } from "../stores/session.js";
+import { isEmbedMode } from "../lib/embed.js";
 import { useEffect, useState, useCallback } from "react";
-import { EmbeddedApp } from "../components/EmbeddedApp";
+import { EmbeddedApp } from "../components/EmbeddedApp.js";
 import { useFeatureFlag, useFeatureFlagsContext } from "@aethereos/ui-shell";
 import {
   NotificationBell,
   type NotificationItem,
-} from "../components/NotificationBell";
+} from "../components/NotificationBell.js";
+import { useWindowsStore } from "../stores/windows.js";
+import { APP_REGISTRY, getApp } from "../lib/app-registry.js";
 
 export const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -29,6 +32,8 @@ function DesktopPage() {
     setActiveCompany,
     clearSession,
   } = useSessionStore();
+
+  const { windows, toggleApp, closeApp, focusApp } = useWindowsStore();
 
   const [companyName, setCompanyName] = useState<string | null>(null);
   const [outboxCount, setOutboxCount] = useState<number | null>(null);
@@ -132,97 +137,209 @@ function DesktopPage() {
         </header>
       )}
 
-      {/* Desktop area (ui-shell WindowManager entra aqui em M22+) */}
-      <main className="flex flex-1 overflow-hidden">
-        {showComercioDash && accessToken !== null && refreshToken !== null ? (
-          <div className="flex flex-1 flex-col">
-            <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
-              <span className="text-sm font-medium text-zinc-300">
-                Comércio Digital
-              </span>
-              <button
-                onClick={() => setShowComercioDash(false)}
-                className="text-xs text-zinc-500 hover:text-zinc-300"
-              >
-                Fechar ×
-              </button>
-            </div>
-            <div className="flex-1">
-              <EmbeddedApp
-                src={
-                  import.meta.env["VITE_COMERCIO_EMBED_URL"] ??
-                  "http://localhost:3000/embed"
-                }
-                accessToken={accessToken}
-                refreshToken={refreshToken}
-                title="Comércio Digital"
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-1 items-center justify-center">
-            <div className="space-y-4 text-center">
-              <h1 className="text-4xl font-bold text-zinc-100">
+      {/* Desktop — apps + Dock */}
+      <main className="relative flex flex-1 flex-col overflow-hidden">
+        {/* App area: renderiza o app mais focado (maior zIndex) */}
+        <div className="flex flex-1 overflow-hidden">
+          {windows.length === 0 && !showComercioDash ? (
+            /* Desktop vazio — placeholder com atalhos */
+            <div className="flex flex-1 flex-col items-center justify-center gap-4">
+              <h1 className="text-3xl font-bold text-zinc-100">
                 {companyName ?? "Aethereos"}
               </h1>
-              <p className="text-zinc-400">
-                Cloud multi-tenant. Empresa ativa:{" "}
-                <code className="rounded bg-zinc-800 px-2 py-0.5 text-sm font-mono text-violet-400">
+              <p className="text-sm text-zinc-500">
+                Empresa:{" "}
+                <code className="rounded bg-zinc-800 px-1.5 py-0.5 font-mono text-violet-400">
                   {companyName ?? activeCompanyId}
                 </code>
               </p>
               {outboxCount !== null && (
-                <p className="text-sm text-zinc-500">
+                <p className="text-xs text-zinc-600">
                   Eventos SCP publicados:{" "}
-                  <span className="font-mono text-zinc-300">{outboxCount}</span>
+                  <span className="font-mono">{outboxCount}</span>
                 </p>
               )}
-              <div className="flex flex-wrap justify-center gap-3 pt-4">
+              <div className="flex flex-wrap justify-center gap-2 pt-2">
                 <button
                   onClick={() => setShowComercioDash(true)}
-                  className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-violet-500"
+                  className="rounded-lg border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 transition-colors hover:border-zinc-500"
                 >
-                  Abrir Comércio Digital
+                  Comércio Digital (embed)
                 </button>
                 {dashboardsFlag.enabled && (
-                  <button className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-500">
+                  <button className="rounded-lg border border-indigo-700 px-3 py-1.5 text-xs text-indigo-300">
                     Dashboards (Experimental)
                   </button>
                 )}
               </div>
-
               {/* Feature flag demo toggle */}
-              <div className="mt-6 rounded-lg border border-zinc-700 p-3 text-left">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                  Feature flags (demo Unleash M34)
-                </p>
-                <label className="flex cursor-pointer items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={dashboardsFlag.enabled}
-                    onChange={(e) =>
-                      setFlag("feature.experimental.dashboards", {
-                        enabled: e.target.checked,
-                        loading: false,
-                        variant: e.target.checked ? "v2-layout" : "disabled",
-                      })
-                    }
-                    className="h-4 w-4 accent-violet-500"
-                  />
-                  <span className="text-xs text-zinc-400">
-                    feature.experimental.dashboards
-                    {dashboardsFlag.enabled && (
-                      <span className="ml-2 rounded bg-violet-900 px-1.5 py-0.5 text-violet-300">
-                        {dashboardsFlag.variant}
-                      </span>
-                    )}
-                  </span>
-                </label>
+              <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs text-zinc-600">
+                <input
+                  type="checkbox"
+                  checked={dashboardsFlag.enabled}
+                  onChange={(e) =>
+                    setFlag("feature.experimental.dashboards", {
+                      enabled: e.target.checked,
+                      loading: false,
+                      variant: e.target.checked ? "v2-layout" : "disabled",
+                    })
+                  }
+                  className="h-3.5 w-3.5 accent-violet-500"
+                />
+                feature.experimental.dashboards
+              </label>
+            </div>
+          ) : showComercioDash &&
+            accessToken !== null &&
+            refreshToken !== null ? (
+            /* Comércio Digital embed */
+            <div className="flex flex-1 flex-col">
+              <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
+                <span className="text-sm font-medium text-zinc-300">
+                  Comércio Digital
+                </span>
+                <button
+                  onClick={() => setShowComercioDash(false)}
+                  className="text-xs text-zinc-500 hover:text-zinc-300"
+                >
+                  Fechar ×
+                </button>
+              </div>
+              <div className="flex-1">
+                <EmbeddedApp
+                  src={
+                    import.meta.env["VITE_COMERCIO_EMBED_URL"] ??
+                    "http://localhost:3000/embed"
+                  }
+                  accessToken={accessToken}
+                  refreshToken={refreshToken}
+                  title="Comércio Digital"
+                />
               </div>
             </div>
+          ) : (
+            /* App interno aberto (renderiza o de maior zIndex) */
+            <AppWindowLayer
+              windows={windows}
+              onClose={closeApp}
+              onFocus={focusApp}
+            />
+          )}
+        </div>
+
+        {/* Dock — sempre visível no rodapé */}
+        {!isEmbedMode && (
+          <div className="flex shrink-0 items-center justify-center gap-2 border-t border-zinc-800 bg-zinc-900 px-4 py-2">
+            {APP_REGISTRY.map((app) => {
+              const isOpen = windows.some((w) => w.appId === app.id);
+              return (
+                <button
+                  key={app.id}
+                  type="button"
+                  title={app.label}
+                  onClick={() => toggleApp(app.id, app.label)}
+                  className="relative flex h-12 w-12 items-center justify-center rounded-xl transition-transform hover:scale-110 active:scale-95"
+                >
+                  <span className="text-2xl select-none">{app.icon}</span>
+                  {isOpen && (
+                    <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-violet-400" />
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
       </main>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// AppWindowLayer — renderiza o app com maior zIndex
+// ---------------------------------------------------------------------------
+
+import type { AppWindow } from "../stores/windows.js";
+
+interface AppWindowLayerProps {
+  windows: AppWindow[];
+  onClose: (appId: string) => void;
+  onFocus: (appId: string) => void;
+}
+
+function AppWindowLayer({ windows, onClose, onFocus }: AppWindowLayerProps) {
+  const sorted = [...windows].sort((a, b) => b.zIndex - a.zIndex);
+  const topWindow = sorted[0];
+  if (topWindow === undefined) return null;
+
+  const app = getApp(topWindow.appId);
+  if (app === undefined) return null;
+
+  const AppComponent = app.component;
+
+  return (
+    <div className="relative flex flex-1 flex-col overflow-hidden">
+      {/* Tab bar quando há mais de um app aberto */}
+      {windows.length > 1 && (
+        <div className="flex shrink-0 items-center gap-1 border-b border-zinc-800 bg-zinc-900 px-2 py-1">
+          {sorted.map((w) => {
+            const wApp = getApp(w.appId);
+            return (
+              <button
+                key={w.appId}
+                type="button"
+                onClick={() => onFocus(w.appId)}
+                className={[
+                  "flex items-center gap-1.5 rounded-md px-3 py-1 text-xs transition-colors",
+                  w.appId === topWindow.appId
+                    ? "bg-zinc-700 text-zinc-100"
+                    : "text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300",
+                ].join(" ")}
+              >
+                <span>{wApp?.icon}</span>
+                <span>{w.title}</span>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClose(w.appId);
+                  }}
+                  className="ml-1 text-zinc-600 hover:text-zinc-300"
+                >
+                  ×
+                </button>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {/* Header do app com botão fechar */}
+      {windows.length === 1 && (
+        <div className="flex shrink-0 items-center justify-between border-b border-zinc-800 bg-zinc-900 px-4 py-2">
+          <span className="flex items-center gap-2 text-sm font-medium text-zinc-300">
+            <span>{app.icon}</span>
+            <span>{app.label}</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => onClose(topWindow.appId)}
+            className="text-xs text-zinc-500 hover:text-zinc-300"
+          >
+            Fechar ×
+          </button>
+        </div>
+      )}
+      {/* Conteúdo do app */}
+      <div className="flex flex-1 overflow-hidden">
+        <Suspense
+          fallback={
+            <div className="flex flex-1 items-center justify-center text-sm text-zinc-600">
+              Carregando…
+            </div>
+          }
+        >
+          <AppComponent />
+        </Suspense>
+      </div>
     </div>
   );
 }
