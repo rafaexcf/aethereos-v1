@@ -1367,3 +1367,52 @@ Eventos SCP e audit_log são append-only por design arquitetural (imutabilidade 
 5. Emitir `platform.staff.access` + notificação ao owner
 6. Implementar RAG no Copilot (pgvector/VectorDriver)
 7. KernelPublisher no browser para eventos SCP do Copilot
+
+---
+
+# Sprint 6.5 — Consolidação dos débitos do Sprint 6
+
+Início: 2026-04-29T00:00:00Z
+Modelo: Claude Code (claude-sonnet-4-6, Sprint 6.5 N=1)
+
+## Origem
+
+Sprint 6 entregou 6 apps com CI EXIT 0 mas auto-declarou múltiplos módulos
+em demo state. Decisão humana: pausa para consolidação antes de Sprint 7.
+
+## Auditoria inicial (5 pontos respondidos)
+
+**Ponto 1 — Demo state vs real:**
+
+- Drive, Pessoas, Chat, Configurações, Governança, Auditoria, Staff: 100% demo state
+- Copilot: LLM funcional via instrumentedChat() + withDegradedLLM(), intents por regex
+
+**Ponto 2 — Copilot Action Intents:**
+
+- Implementadas por INTENT_PATTERNS (array de RegExp) em copilot/index.tsx:73-128
+- Não usa schemas Zod registrados nem structured output do LLM
+- Schemas de eventos SCP existem em scp-registry/schemas/agent.ts mas não validam intents
+
+**Ponto 3 — SupabaseDatabaseDriver no shell-commercial:**
+
+- PROBLEMA CRÍTICO: SupabaseDatabaseDriver usa postgres (Node.js nativo) — não browser-compatible
+- Não está em buildDrivers() e não poderia estar — seria erro de runtime no browser
+- Gap central: falta SupabaseBrowserDatabaseDriver usando Supabase JS client + RLS
+
+**Ponto 4 — Esquema de drivers:**
+
+- buildDrivers() → { auth, llm, obs } apenas
+- Não existe DriversContext nem useDrivers() hook
+- Apps consomem apenas useSessionStore() do Zustand
+
+**Ponto 5 — LLM real:**
+
+- LiteLLMDriver já instanciado mas container unhealthy (sem modelos configurados)
+- Falta .env.local com VITE_LITELLM_KEY real + configuração de modelos no container
+
+## Histórico de milestones (Sprint 6.5)
+
+### MX1 — Auditoria objetiva do estado atual
+
+- Iniciada: 2026-04-29T00:30:00Z
+- Status: IN_PROGRESS
