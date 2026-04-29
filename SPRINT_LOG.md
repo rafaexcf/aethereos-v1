@@ -857,3 +857,25 @@ Cloud + produção ficam para humano após este sprint.
 - CI final: `pnpm ci:full` → EXIT 0
 - Commits do sprint: M26 → M27 → M28 → M29 → M30 → M31
 - Próximo passo: aguardar revisão humana antes de iniciar Sprint 5
+
+---
+
+# Sprint 5 — Fundação operacional (LiteLLM, Langfuse, Unleash, OTel, Notificações, P14, Health)
+
+Início: 2026-04-29T23:00:00Z
+Modelo: Claude Code (claude-sonnet-4-6, Sprint 5 N=1)
+Plano-mestre: ver CAMADA_1_PLANO_MESTRE.md
+
+## Calibração inicial (Sprint 5)
+
+1. **LiteLLM em vez de SDK direto:** gateway centraliza rate limiting, fallback multi-provider, custo por tenant e roteamento adaptativo. SDK direto viola Driver Model [INV] e ADR-0014 #6 (bloqueio de CI).
+2. **P15 — 6 campos obrigatórios antes de merge de feature LLM:** custo estimado por operação, latência esperada (p95), estratégia de fallback, kill switch (Unleash flag), quota por tenant, métricas de qualidade.
+3. **Unleash obrigatório vs tabela ad-hoc:** tabela ad-hoc não tem auditoria, rollout gradual por segmento nem kill switch operacional. Unleash entrega tudo + UI de gestão. CLAUDE.md seção 5 bloqueia tabela ad-hoc em CI.
+4. **Traces vs Logs vs Métricas:** Traces (Tempo) = rastreio causal por requisição específica. Logs (Loki) = eventos textuais estruturados por ponto de código. Métricas (Prometheus) = séries temporais agregadas para SLOs e alertas.
+5. **correlation_id end-to-end:** nasce no middleware HTTP → OTel context → KernelPublisher outbox.metadata → NATS JetStream headers → consumer → instrumentedChat tag Langfuse.
+6. **Modo Degenerado (P14):** comportamento definido quando serviço primário falha. Resposta conservadora + log warn + evento platform.degraded.activated. Obrigatório para não violar SLO por falha de dependência.
+7. **healthz vs readyz:** /healthz = processo vivo (200 sempre). /readyz = dependências prontas (503 se drivers críticos offline). healthz reinicia; readyz remove do balanceamento.
+
+## Histórico de milestones (Sprint 5)
+
+[preenchido conforme avança]
