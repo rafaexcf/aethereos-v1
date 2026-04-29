@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@aethereos/drivers": ["../../packages/drivers/src/index.ts"],
+      "@aethereos/drivers-supabase": [
+        "../../packages/drivers-supabase/src/index.ts"
+      ],
+      "@aethereos/kernel": ["../../packages/kernel/src/index.ts"],
+      "@aethereos/scp-registry": ["../../packages/scp-registry/src/index.ts"],
+      "@aethereos/ui-shell": ["../../packages/ui-shell/src/index.ts"],
+      "@aethereos/config-ts/*": ["../../packages/config-ts/*"],
+      "@aethereos/config-eslint/*": ["../../packages/config-eslint/*"]
+    }
+  }
+}
