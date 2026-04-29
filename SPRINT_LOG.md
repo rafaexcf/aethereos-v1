@@ -26,7 +26,46 @@ Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
 
 ## Histórico de milestones
 
-<!-- Preenchido conforme milestones são concluídas -->
+## Milestone M1 — Guardrails mecânicos
+
+- Iniciada: 2026-04-29T00:10:00Z
+- Concluída: 2026-04-29T00:45:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm install` → ok
+  - `pnpm deps:check` → ok (8 módulos, 0 violações)
+  - `pnpm exec eslint .` → ok
+  - `pnpm typecheck` → ok
+  - `echo "test bad message" | pnpm exec commitlint` → falha (correto)
+  - `echo "chore: test" | pnpm exec commitlint` → ok
+- Arquivos criados/modificados:
+  - `.dependency-cruiser.cjs` (regras: next/clerk/inngest/prisma bloqueados, supabase fora de drivers, cross-app, kernel/drivers sem apps)
+  - `packages/config-eslint/{package.json,base.js,react.js,node.js}` (ESLint v10 flat config)
+  - `eslint.config.mjs` (config raiz)
+  - `commitlint.config.cjs`
+  - `.husky/pre-commit` (lint-staged) + `.husky/commit-msg` (commitlint)
+  - `.github/workflows/ci.yml` (jobs: typecheck, lint, deps-check, audit, test, build)
+  - `turbo.json` (globalDependencies: `.eslintrc.cjs` → `eslint.config.mjs`)
+  - `package.json` (+ @aethereos/config-eslint workspace:\*, ESLint deps)
+- Decisões tomadas:
+  - ESLint v10 (instalado automaticamente, eslint-plugin-react tem peer dep warning ignorável)
+  - `tsPreCompilationDeps: false` em dep-cruiser pois não há arquivos .ts ainda
+  - Sem `dependencyTypes: ["workspace"]` (valor inválido em dep-cruiser v16); cross-app usa `["npm","npm-dev","npm-peer","npm-optional","aliased-workspace"]`
+  - ESM (eslint.config.mjs) no lugar de `.eslintrc.cjs` para compatibilidade com @eslint/js ESM-only
+- Próximas dependências desbloqueadas: M2 (config-ts)
+
+## Milestone M2 — Pacote de configuração TypeScript compartilhada
+
+- Iniciada: 2026-04-29T00:45:00Z
+- Concluída: 2026-04-29T00:55:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm typecheck` → ok (2 packages in scope, sem tasks = ok)
+- Arquivos criados: `packages/config-ts/{package.json,base.json,library.json,react-library.json,vite-app.json,next-app.json}`
+- Decisões tomadas:
+  - Path aliases no base.json para todos os pacotes canônicos planejados
+  - vite-app.json usa `allowImportingTsExtensions: true` (necessário com Vite)
+- Próximas dependências desbloqueadas: M3 (drivers interfaces)
 
 ---
 
