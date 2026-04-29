@@ -1,4 +1,7 @@
-import { SupabaseBrowserAuthDriver } from "@aethereos/drivers-supabase/browser";
+import {
+  SupabaseBrowserAuthDriver,
+  SupabaseBrowserDataDriver,
+} from "@aethereos/drivers-supabase/browser";
 import { LiteLLMDriver } from "@aethereos/drivers-litellm";
 import type { LLMDriver, ObservabilityDriver } from "@aethereos/drivers";
 import {
@@ -9,6 +12,7 @@ import {
 
 export interface CloudDrivers {
   auth: SupabaseBrowserAuthDriver;
+  data: SupabaseBrowserDataDriver;
   llm: LLMDriver;
   obs: ObservabilityDriver;
 }
@@ -29,6 +33,7 @@ export function buildDrivers(): CloudDrivers {
 
   return {
     auth: new SupabaseBrowserAuthDriver({ supabaseUrl, supabaseAnonKey }),
+    data: new SupabaseBrowserDataDriver({ supabaseUrl, supabaseAnonKey }),
     llm: withDegradedLLM(primaryLLM),
     obs: withDegradedObservability(new DegradedObservabilityDriver()),
   };

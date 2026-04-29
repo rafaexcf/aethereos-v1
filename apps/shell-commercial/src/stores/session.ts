@@ -65,8 +65,12 @@ export const useSessionStore = create<SessionStore>((set) => ({
 
   setActiveCompany: (activeCompanyId) =>
     set((state) => {
-      if (state.drivers !== null) {
+      if (state.drivers !== null && state.userId !== null) {
         state.drivers.auth.withCompanyContext(activeCompanyId);
+        state.drivers.data.withTenant({
+          company_id: activeCompanyId,
+          actor: { type: "human", user_id: state.userId },
+        });
       }
       return { activeCompanyId };
     }),

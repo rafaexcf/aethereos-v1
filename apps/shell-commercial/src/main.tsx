@@ -11,6 +11,7 @@ import { aboutRoute } from "./routes/settings/about";
 import { opsRoute } from "./routes/settings/ops";
 import { staffRoute } from "./routes/staff";
 import { boot } from "./lib/boot";
+import { DriversProvider } from "./lib/drivers-context";
 import "./styles/globals.css";
 
 const routeTree = rootRoute.addChildren([
@@ -62,9 +63,11 @@ function App() {
   }
 
   return (
-    <FeatureFlagsProvider>
-      <RouterProvider router={router} />
-    </FeatureFlagsProvider>
+    <DriversProvider>
+      <FeatureFlagsProvider>
+        <RouterProvider router={router} />
+      </FeatureFlagsProvider>
+    </DriversProvider>
   );
 }
 

@@ -38,8 +38,12 @@ export async function boot(): Promise<void> {
     activeCompanyId: claims.activeCompanyId,
   });
 
-  // Define company context no driver se já tem uma ativa
+  // Define company context nos drivers se já tem uma company ativa
   if (claims.activeCompanyId !== null) {
     drivers.auth.withCompanyContext(claims.activeCompanyId);
+    drivers.data.withTenant({
+      company_id: claims.activeCompanyId,
+      actor: { type: "human", user_id: session.user_id },
+    });
   }
 }
