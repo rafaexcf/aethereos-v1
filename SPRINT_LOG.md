@@ -1026,3 +1026,20 @@ Plano-mestre: ver CAMADA_1_PLANO_MESTRE.md
   - `packages/kernel/src/index.ts` — exporta DegradedLLMDriver, DegradedObservabilityDriver, withDegradedLLM, withDegradedObservability, DegradedCallback
 - P14 cobre: LLM e Observabilidade; FeatureFlagDriver já tem degraded mode nativo (isDegraded); EventBusDriver não precisa pois outbox garante durabilidade
 - Decisão: withDegraded usa tryPrimary()/trySync() internos (sem Proxy — Proxy em TypeScript é frágil com private fields); fallback ativado somente quando primary lança; onDegrade() chamado uma vez por sequência de falhas
+
+### Milestone M39 — health/readiness probes + painel de operações
+
+- Iniciada: 2026-04-30T02:15:00Z
+- Concluída: 2026-04-30T02:35:00Z
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm typecheck --filter=@aethereos/shell-commercial --filter=@aethereos/comercio-digital` → ok
+  - `pnpm lint --filter=@aethereos/shell-commercial --filter=@aethereos/comercio-digital` → ok
+- Arquivos criados:
+  - `apps/comercio-digital/app/api/readyz/route.ts` — readiness probe: pinga supabase/litellm/unleash/otel-collector em paralelo (AbortSignal.timeout 3s); retorna 200 se tudo ok ou 503 com checks detalhados
+  - `apps/shell-commercial/src/routes/settings/ops.tsx` — painel de operações: tabela de status por serviço com latência, badge ok/degraded, botão de refresh; consome /api/readyz do comercio-digital
+- Arquivos modificados:
+  - `apps/comercio-digital/app/api/healthz/route.ts` — adicionados ts e version ao response body
+  - `apps/shell-commercial/src/main.tsx` — registra opsRoute em /settings/ops
+- Decisão: readyz usa fetch direto sem drivers para evitar cold-start pesado em startup; não autentica pois healthz/readyz são endpoints públicos (sem dados sensíveis)
+- Fix: exactOptionalPropertyTypes exige `error?: string | undefined` (não `error?: string`) para compatibilidade com object literal
