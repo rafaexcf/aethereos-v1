@@ -1751,3 +1751,73 @@ Modelo: Claude Code (claude-sonnet-4-6, Sprint 8 N=1)
 3. `kernel.agent_proposals` — tabela para propostas Shadow Mode ainda não criada (TODO em copilot/index.tsx)
 4. `agent.copilot.action_proposed` / `.action_approved` / `.action_rejected` — eventos SCP não emitidos ainda
 5. `kernel.copilot_messages` — persistência de histórico de conversa não implementada
+
+---
+
+# Sprint 9 — Camada 1 pronta para testes (não-deploy)
+
+Início: 2026-04-29T20:00:00Z
+Modelo: Claude Code (claude-sonnet-4-6, Sprint 9 N=1)
+
+## Decisão humana registrada
+
+Sprint 9 NÃO é hardening + IaC + deploy real. Esse vira Sprint 10.
+Sprint 9 deixa Camada 1 testável local + via ngrok, sem custo recorrente.
+
+## Calibração inicial (6 pontos respondidos)
+
+1. **Camada 1 pronta para testes vs em produção**: "pronta para testes" = stack sobe local em ~30s, seed data, smoke test documentado, ngrok temporário, zero custo. "Em produção" = deploy aethereos.io via Pulumi, Supabase cloud, domínio registrado, Stripe live, SLOs monitorados — Sprint 10.
+
+2. **4 dívidas residuais do Sprint 8**: (A) `kernel.agent_proposals` — migration existe mas UI usava useState; (B) `kernel.copilot_messages` — migration existe mas sem persistência; (C) eventos SCP do Copilot — schemas existiam mas nenhum publishEvent() chamado; (D) Tempo recorrente — container Up mas erros `keepalive ping failed` em all-in-one mode.
+
+3. **Por que Tempo voltou a errar após pin 2.5.0**: fix MX13 corrigiu port conflict (9095→9096) e parou restarts. Novo erro é diferente: `frontend_processor.go:84 keepalive ping failed to receive ACK` — querier conecta ao query frontend via gRPC loopback; com zero tráfego de traces, conexão idle não responde pings no timeout padrão. Fix: `grpc_server_ping_without_stream_allowed: true`.
+
+4. **Up (unhealthy) vs Restarting**: "Up (unhealthy)" = processo roda mas healthcheck retorna falha; serviço funciona parcialmente. "Restarting" = processo crashou, Docker relança em loop (era o estado pré-MX13).
+
+5. **Como ngrok tunneliza sem DNS**: abre conexão TCP outbound para servidores ngrok; eles atribuem URL pública, terminam TLS, encaminham HTTP pelo túnel para localhost. DNS resolve para IPs da ngrok, não do usuário. Túnel cai quando terminal fecha.
+
+6. **Por que seed data é pré-requisito**: banco vazio → tester encontra tela em branco, não consegue exercitar listagem, RLS cross-tenant, paginação, Copilot com documentos. Seed cria 3 companies distintas com users/pessoas/arquivos/mensagens para validar isolamento e dar experiência realista.
+
+## Histórico de milestones (Sprint 9)
+
+| Milestone | Descrição                                 | Status | Commit   |
+| --------- | ----------------------------------------- | ------ | -------- |
+| MX19      | Fechar 4 dívidas residuais críticas       | DONE   | pendente |
+| MX20      | Seed data realista                        | -      |          |
+| MX21      | Smoke test manual scriptado               | -      |          |
+| MX22      | Tunneling via ngrok                       | -      |          |
+| MX23      | Dashboard Usage During Testing no Grafana | -      |          |
+| MX24      | Documento de limitações conhecidas        | -      |          |
+| MX25      | ADR-0021 + encerramento Sprint 9          | -      |          |
+
+### MX19 — Fechar 4 dívidas residuais críticas
+
+- Iniciada: 2026-04-29T20:00:00Z
+- Concluída: 2026-04-29T20:55:00Z
+- Status: SUCCESS
+- Dívida A — `kernel.agent_proposals` INSERT real:
+  - Migration `20260430000007` já tinha SELECT+UPDATE; faltava INSERT policy
+  - Nova migration `20260430000013_agent_proposals_insert_policy.sql` adicionada
+  - CopilotDrawer: useState de proposals → persistência via SupabaseBrowserDataDriver
+  - Fluxo: initConversation() cria agent + conversa no DB na primeira abertura, carrega histórico de proposals pendentes
+- Dívida B — `kernel.copilot_messages` persistência:
+  - Migration `20260430000006` já criava a tabela com RLS; faltava só a UI usar o DB
+  - CopilotDrawer: toda mensagem (user + assistant) persistida via `data.from('copilot_messages').insert()`
+  - Histórico carregado do DB ao abrir o drawer (últimas 50 mensagens)
+- Dívida C — Eventos SCP do Copilot:
+  - Todos 4 schemas já existiam em `packages/scp-registry/src/schemas/agent.ts` e no AGENT_EVENT_SCHEMAS
+  - `agent.copilot.message_sent` emitido após cada resposta do assistant
+  - `agent.copilot.action_proposed` emitido ao detectar intent e criar proposta
+  - `agent.copilot.action_approved` emitido ao aprovar proposta
+  - `agent.copilot.action_rejected` emitido ao rejeitar proposta
+- Dívida D — Tempo fix:
+  - Causa: all-in-one mode, querier pinga frontend via gRPC loopback sem streams ativos → timeout
+  - Fix: `grpc_server_ping_without_stream_allowed: true` + `grpc_server_min_time_between_pings: 10s`
+  - Recreate via `docker compose up -d --force-recreate tempo` (WSL bind mount exigia recreate)
+  - Resultado: Tempo Up, zero erros keepalive nos logs pós-boot
+- Arquivos criados/modificados:
+  - `supabase/migrations/20260430000013_agent_proposals_insert_policy.sql`
+  - `infra/otel/tempo-config.yaml`
+  - `apps/shell-commercial/src/apps/copilot/index.tsx` (persistência DB + SCP events + historyLoaded)
+  - `apps/shell-commercial/src/routes/index.tsx` (passa data+scp ao CopilotDrawer)
+- Validadores: `pnpm typecheck` 22/22 ✅ · `pnpm lint` 22/22 ✅

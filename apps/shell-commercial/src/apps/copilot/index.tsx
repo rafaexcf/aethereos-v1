@@ -9,6 +9,8 @@
  * MX5: intents validados via Zod (COPILOT_INTENT_SCHEMAS); operações invariantes
  *       (Fundamentação 12.4) bloqueadas por canPropose() antes de criar proposta.
  * MX16: RAG retrieval (cego — roda mesmo em degradado; NÃO VALIDADO E2E com LLM real)
+ * MX19: persistência real em kernel.copilot_messages, kernel.agent_proposals,
+ *        kernel.copilot_conversations + emissão SCP (agent.copilot.*)
  */
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { instrumentedChat } from "@aethereos/kernel";
@@ -17,6 +19,8 @@ import { COPILOT_INTENT_SCHEMAS } from "@aethereos/scp-registry";
 import type { CopilotIntentPayload } from "@aethereos/scp-registry";
 import type { LLMDriver, ObservabilityDriver } from "@aethereos/drivers";
 import { SupabaseBrowserVectorDriver } from "@aethereos/drivers-supabase/browser";
+import type { SupabaseBrowserDataDriver } from "@aethereos/drivers-supabase/browser";
+import type { ScpPublisherBrowser } from "../../lib/scp-publisher-browser.js";
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -55,6 +59,8 @@ interface CopilotDrawerProps {
   onClose: () => void;
   llm: LLMDriver;
   obs: ObservabilityDriver;
+  data: SupabaseBrowserDataDriver;
+  scp: ScpPublisherBrowser;
   userId: string;
   companyId: string;
   correlationId?: string;
@@ -361,6 +367,8 @@ export function CopilotDrawer({
   onClose,
   llm,
   obs,
+  data,
+  scp,
   userId,
   companyId,
   correlationId,
@@ -370,9 +378,156 @@ export function CopilotDrawer({
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(false);
   const [isDegraded, setIsDegraded] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const conversationId = useRef(crypto.randomUUID());
+  const conversationId = useRef<string | null>(null);
+  const agentId = useRef<string | null>(null);
+
+  const initConversation = useCallback(async () => {
+    if (conversationId.current !== null) return;
+    try {
+      type AgentRow = { id: string };
+      type ConvRow = { id: string };
+      type MsgRow = {
+        id: string;
+        role: string;
+        content: string;
+        model: string | null;
+        created_at: string;
+      };
+      type PropRow = {
+        id: string;
+        intent_type: string;
+        payload: CopilotIntentPayload;
+        status: string;
+        created_at: string;
+      };
+
+      // 1. Find or create copilot agent for this company
+      const agentRes = await (data
+        .from("agents")
+        .select("id")
+        .eq("company_id", companyId)
+        .eq("name", "Copilot")
+        .limit(1)
+        .maybeSingle() as unknown as Promise<{
+        data: AgentRow | null;
+        error: unknown;
+      }>);
+      let agtId: string;
+      if (agentRes.data !== null) {
+        agtId = agentRes.data.id;
+      } else {
+        const insertRes = await (data
+          .from("agents")
+          .insert({
+            company_id: companyId,
+            supervising_user_id: userId,
+            name: "Copilot",
+            description: "AI Copilot assistivo (Shadow Mode, autonomia 0-1)",
+            capabilities: ["read", "propose"],
+            kind: "copilot",
+            autonomy_level: 0,
+          })
+          .select("id")
+          .single() as unknown as Promise<{
+          data: AgentRow | null;
+          error: unknown;
+        }>);
+        if (insertRes.data === null) {
+          conversationId.current = crypto.randomUUID();
+          agentId.current = DEMO_AGENT_ID;
+          setHistoryLoaded(true);
+          return;
+        }
+        agtId = insertRes.data.id;
+      }
+      agentId.current = agtId;
+
+      // 2. Find most recent conversation for this user+agent or create new
+      const convRes = await (data
+        .from("copilot_conversations")
+        .select("id")
+        .eq("company_id", companyId)
+        .eq("user_id", userId)
+        .eq("agent_id", agtId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle() as unknown as Promise<{
+        data: ConvRow | null;
+        error: unknown;
+      }>);
+      let convId: string;
+      if (convRes.data !== null) {
+        convId = convRes.data.id;
+      } else {
+        convId = crypto.randomUUID();
+        await data.from("copilot_conversations").insert({
+          id: convId,
+          company_id: companyId,
+          agent_id: agtId,
+          user_id: userId,
+          title: "Conversa com Copilot",
+        });
+      }
+      conversationId.current = convId;
+
+      // 3. Load message history
+      const msgsRes = await (data
+        .from("copilot_messages")
+        .select("id, role, content, model, created_at")
+        .eq("conversation_id", convId)
+        .order("created_at", { ascending: true })
+        .limit(50) as unknown as Promise<{
+        data: MsgRow[] | null;
+        error: unknown;
+      }>);
+      if (msgsRes.data !== null && msgsRes.data.length > 0) {
+        setMessages(
+          msgsRes.data.map((m) => {
+            const msg: CopilotMessage = {
+              id: m.id,
+              role: m.role as "user" | "assistant",
+              content: m.content,
+              isDegraded: m.model === "degraded",
+              createdAt: new Date(m.created_at),
+            };
+            if (m.model !== null) msg.model = m.model;
+            return msg;
+          }),
+        );
+      }
+
+      // 4. Load pending proposals
+      const propsRes = await (data
+        .from("agent_proposals")
+        .select("id, intent_type, payload, status, created_at")
+        .eq("conversation_id", convId)
+        .in("status", [
+          "pending",
+          "approved",
+          "rejected",
+        ]) as unknown as Promise<{ data: PropRow[] | null; error: unknown }>);
+      if (propsRes.data !== null && propsRes.data.length > 0) {
+        setProposals(
+          propsRes.data.map((p) => ({
+            id: p.id,
+            intentType: p.intent_type as IntentType,
+            payload: p.payload,
+            status: p.status as ProposalStatus,
+            conversationId: convId,
+            createdAt: new Date(p.created_at),
+          })),
+        );
+      }
+    } catch {
+      conversationId.current = crypto.randomUUID();
+      agentId.current = DEMO_AGENT_ID;
+    } finally {
+      setHistoryLoaded(true);
+    }
+  }, [data, companyId, userId]);
 
   const vectorDriver = useMemo(() => {
     const supabaseUrl = import.meta.env["VITE_SUPABASE_URL"] ?? "";
@@ -386,32 +541,83 @@ export function CopilotDrawer({
 
   useEffect(() => {
     if (open) {
+      void initConversation();
       setTimeout(() => inputRef.current?.focus(), 50);
     }
-  }, [open]);
+  }, [open, initConversation]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, proposals]);
 
-  const handleApprove = useCallback((proposalId: string) => {
-    setProposals((prev) =>
-      prev.map((p) =>
-        p.id === proposalId ? { ...p, status: "executed" as const } : p,
-      ),
-    );
-    // TODO: executar ação real via driver correspondente
-    // TODO: emitir agent.copilot.action_approved via KernelPublisher
-  }, []);
+  const handleApprove = useCallback(
+    (proposalId: string) => {
+      setProposals((prev) =>
+        prev.map((p) =>
+          p.id === proposalId ? { ...p, status: "approved" as const } : p,
+        ),
+      );
+      void data
+        .from("agent_proposals")
+        .update({
+          status: "approved",
+          reviewed_by: userId,
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq("id", proposalId);
+      void scp.publishEvent(
+        "agent.copilot.action_approved",
+        {
+          proposal_id: proposalId,
+          company_id: companyId,
+          approved_by: userId,
+          approved_at: new Date().toISOString(),
+        },
+        {
+          actor: {
+            type: "agent",
+            agent_id: agentId.current ?? DEMO_AGENT_ID,
+            supervising_user_id: userId,
+          },
+        },
+      );
+    },
+    [data, scp, userId, companyId],
+  );
 
-  const handleReject = useCallback((proposalId: string) => {
-    setProposals((prev) =>
-      prev.map((p) =>
-        p.id === proposalId ? { ...p, status: "rejected" as const } : p,
-      ),
-    );
-    // TODO: emitir agent.copilot.action_rejected via KernelPublisher
-  }, []);
+  const handleReject = useCallback(
+    (proposalId: string) => {
+      setProposals((prev) =>
+        prev.map((p) =>
+          p.id === proposalId ? { ...p, status: "rejected" as const } : p,
+        ),
+      );
+      void data
+        .from("agent_proposals")
+        .update({
+          status: "rejected",
+          reviewed_by: userId,
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq("id", proposalId);
+      void scp.publishEvent(
+        "agent.copilot.action_rejected",
+        {
+          proposal_id: proposalId,
+          company_id: companyId,
+          rejected_by: userId,
+        },
+        {
+          actor: {
+            type: "agent",
+            agent_id: agentId.current ?? DEMO_AGENT_ID,
+            supervising_user_id: userId,
+          },
+        },
+      );
+    },
+    [data, scp, userId, companyId],
+  );
 
   const handleSend = useCallback(async () => {
     const body = draft.trim();
@@ -428,6 +634,19 @@ export function CopilotDrawer({
     setMessages((prev) => [...prev, userMsg]);
     setDraft("");
     setLoading(true);
+
+    // Persist user message fire-and-forget
+    if (conversationId.current !== null) {
+      void data.from("copilot_messages").insert({
+        id: userMsg.id,
+        conversation_id: conversationId.current,
+        role: "user",
+        content: body,
+        ...(correlationId !== undefined
+          ? { correlation_id: correlationId }
+          : {}),
+      });
+    }
 
     // Verifica operações invariantes ANTES de chamar LLM (Fundamentação 12.4)
     const permission = canPropose(body);
@@ -534,14 +753,46 @@ export function CopilotDrawer({
 
       let proposalId: string | undefined;
       if (detected !== null) {
+        const convId = conversationId.current ?? crypto.randomUUID();
         const proposal: ActionProposal = {
           ...detected,
-          conversationId: conversationId.current,
+          conversationId: convId,
         };
         proposalId = proposal.id;
         setProposals((prev) => [...prev, proposal]);
-        // TODO: inserir em kernel.agent_proposals via SupabaseBrowserDataDriver
-        // TODO: emitir agent.copilot.action_proposed via KernelPublisher (Sprint 7)
+        // Persist proposal to DB
+        void data.from("agent_proposals").insert({
+          id: proposal.id,
+          company_id: companyId,
+          agent_id: agentId.current ?? DEMO_AGENT_ID,
+          conversation_id: convId,
+          supervising_user_id: userId,
+          intent_type: proposal.intentType,
+          payload: proposal.payload,
+          ...(correlationId !== undefined
+            ? { correlation_id: correlationId }
+            : {}),
+        });
+        // Emit SCP event
+        void scp.publishEvent(
+          "agent.copilot.action_proposed",
+          {
+            proposal_id: proposal.id,
+            conversation_id: convId,
+            company_id: companyId,
+            agent_id: agentId.current ?? DEMO_AGENT_ID,
+            supervising_user_id: userId,
+            intent_type: proposal.intentType,
+            payload_preview: proposal.payload,
+          },
+          {
+            actor: {
+              type: "agent",
+              agent_id: agentId.current ?? DEMO_AGENT_ID,
+              supervising_user_id: userId,
+            },
+          },
+        );
       }
 
       const assistantMsg: CopilotMessage = {
@@ -555,8 +806,38 @@ export function CopilotDrawer({
       if (proposalId !== undefined) assistantMsg.proposalId = proposalId;
       setMessages((prev) => [...prev, assistantMsg]);
 
-      // TODO: persistir em kernel.copilot_messages via SupabaseBrowserDataDriver
-      // TODO: emitir agent.copilot.message_sent via KernelPublisher (Sprint 7)
+      // Persist assistant message + emit SCP event
+      if (conversationId.current !== null) {
+        void data.from("copilot_messages").insert({
+          id: assistantMsg.id,
+          conversation_id: conversationId.current,
+          role: "assistant",
+          content: content,
+          model: result.value.model,
+          ...(correlationId !== undefined
+            ? { correlation_id: correlationId }
+            : {}),
+        });
+        void scp.publishEvent(
+          "agent.copilot.message_sent",
+          {
+            message_id: assistantMsg.id,
+            conversation_id: conversationId.current,
+            company_id: companyId,
+            agent_id: agentId.current ?? DEMO_AGENT_ID,
+            supervising_user_id: userId,
+            role: "assistant",
+            model: result.value.model,
+          },
+          {
+            actor: {
+              type: "agent",
+              agent_id: agentId.current ?? DEMO_AGENT_ID,
+              supervising_user_id: userId,
+            },
+          },
+        );
+      }
     } else {
       const errMsg: CopilotMessage = {
         id: crypto.randomUUID(),
@@ -573,6 +854,8 @@ export function CopilotDrawer({
     messages,
     llm,
     obs,
+    data,
+    scp,
     userId,
     companyId,
     correlationId,
@@ -627,7 +910,7 @@ export function CopilotDrawer({
           <p className="text-xs text-zinc-600">
             Budget: 2 000 in / 1 000 out · actor: agent · autonomy: 0 (shadow) ·{" "}
             <span className="font-mono text-zinc-700">
-              {conversationId.current.slice(0, 8)}
+              {(conversationId.current ?? "carregando").slice(0, 8)}
             </span>
           </p>
         </div>
@@ -735,14 +1018,18 @@ export function CopilotDrawer({
                   void handleSend();
                 }
               }}
-              placeholder="Pergunte ou peça uma ação ao Copilot…"
-              disabled={loading}
+              placeholder={
+                historyLoaded
+                  ? "Pergunte ou peça uma ação ao Copilot…"
+                  : "Carregando histórico…"
+              }
+              disabled={loading || !historyLoaded}
               className="flex-1 bg-transparent text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none"
             />
             <button
               type="button"
               onClick={() => void handleSend()}
-              disabled={draft.trim().length === 0 || loading}
+              disabled={draft.trim().length === 0 || loading || !historyLoaded}
               className="shrink-0 rounded-md bg-violet-600 px-3 py-1 text-xs font-medium text-white hover:bg-violet-500 disabled:opacity-40"
             >
               Enviar

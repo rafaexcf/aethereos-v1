@@ -289,6 +289,8 @@ function DesktopPage() {
           onClose={() => setCopilotOpen(false)}
           llm={drivers.llm}
           obs={drivers.obs}
+          data={drivers.data}
+          scp={drivers.scp}
           userId={userId}
           companyId={activeCompanyId}
           correlationId={crypto.randomUUID()}
