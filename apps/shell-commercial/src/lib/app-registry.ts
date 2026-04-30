@@ -12,31 +12,31 @@ export interface AppDefinition {
 
 // Lazy loading para code splitting por app
 const DriveApp = lazy(() =>
-  import("../apps/drive/index.js").then((m) => ({ default: m.DriveApp })),
+  import("../apps/drive/index").then((m) => ({ default: m.DriveApp })),
 );
 
 const PessoasApp = lazy(() =>
-  import("../apps/pessoas/index.js").then((m) => ({ default: m.PessoasApp })),
+  import("../apps/pessoas/index").then((m) => ({ default: m.PessoasApp })),
 );
 
 const ChatApp = lazy(() =>
-  import("../apps/chat/index.js").then((m) => ({ default: m.ChatApp })),
+  import("../apps/chat/index").then((m) => ({ default: m.ChatApp })),
 );
 
 const ConfiguracoesApp = lazy(() =>
-  import("../apps/configuracoes/index.js").then((m) => ({
+  import("../apps/configuracoes/index").then((m) => ({
     default: m.ConfiguracoesApp,
   })),
 );
 
 const GovernancaApp = lazy(() =>
-  import("../apps/governanca/index.js").then((m) => ({
+  import("../apps/governanca/index").then((m) => ({
     default: m.GovernancaApp,
   })),
 );
 
 const AuditoriaApp = lazy(() =>
-  import("../apps/auditoria/index.js").then((m) => ({
+  import("../apps/auditoria/index").then((m) => ({
     default: m.AuditoriaApp,
   })),
 );
