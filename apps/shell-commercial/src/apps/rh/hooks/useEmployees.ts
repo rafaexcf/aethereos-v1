@@ -24,7 +24,7 @@ export function useEmployees(opts: UseEmployeesOptions = {}) {
       let q = drivers.data
         .from("employees")
         .select("*", { count: "exact" })
-        .eq("deleted_at", null)
+        .is("deleted_at", null)
         .order("full_name", { ascending: true })
         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
@@ -69,7 +69,7 @@ export function useDepartments(): string[] {
     void drivers.data
       .from("employees")
       .select("department")
-      .eq("deleted_at", null)
+      .is("deleted_at", null)
       .not("department", "is", null)
       .then(({ data }) => {
         const unique = [
