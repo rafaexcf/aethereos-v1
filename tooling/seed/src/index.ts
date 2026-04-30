@@ -50,28 +50,31 @@ async function main(): Promise<void> {
   }
 
   const { seedCompanies } = await import("./companies.js");
-  const { seedUsers } = await import("./users.js");
+  const { seedUsers, seedStaffAdmin } = await import("./users.js");
   const { seedPeople } = await import("./people.js");
   const { seedFiles } = await import("./files.js");
   const { seedChat } = await import("./chat.js");
   const { seedProposals } = await import("./proposals.js");
 
-  console.log("Passo 1: Companies");
+  console.log("Passo 1: Companies + modules");
   await seedCompanies();
 
-  console.log("\nPasso 2: Users + memberships");
+  console.log("\nPasso 2: Staff admin");
+  await seedStaffAdmin();
+
+  console.log("\nPasso 3: Users + profiles + memberships + employees");
   const users = await seedUsers();
 
-  console.log("\nPasso 3: People");
+  console.log("\nPasso 4: People");
   await seedPeople(users);
 
-  console.log("\nPasso 4: Files");
+  console.log("\nPasso 5: Files");
   await seedFiles(users);
 
-  console.log("\nPasso 5: Chat");
+  console.log("\nPasso 6: Chat");
   await seedChat(users);
 
-  console.log("\nPasso 6: Copilot proposals");
+  console.log("\nPasso 7: Copilot proposals");
   await seedProposals(users);
 
   // Validação pós-seed: conta registros reais no banco
@@ -79,8 +82,11 @@ async function main(): Promise<void> {
   const { supabase: sb } = await import("./client.js");
   const tables = [
     "companies",
-    "users",
+    "profiles",
+    "employees",
     "tenant_memberships",
+    "company_modules",
+    "users",
     "people",
     "files",
     "chat_channels",
@@ -100,12 +106,10 @@ async function main(): Promise<void> {
 
   console.log("\n✅ Seed completo!\n");
   console.log("Usuários de teste (senha: Aethereos@2026!):");
+  console.log("  Platform:  staff@aethereos.test (is_platform_admin=true)");
   console.log("  Meridian:  ana.lima@meridian.test (owner)");
   console.log("  Atalaia:   rafael.costa@atalaia.test (owner)");
   console.log("  Solaris:   patricia.rodrigues@solaris.test (owner)");
-  console.log(
-    "\nTeste de RLS: logar com user de company diferente não deve ver os dados.",
-  );
 }
 
 main().catch((err: unknown) => {

@@ -5,32 +5,59 @@ export interface SeedCompany {
   name: string;
   slug: string;
   plan: string;
+  cnpj: string;
+  trade_name: string;
   primary_color: string;
 }
 
+// CNPJs fictícios estruturalmente válidos para seed (não são CNPJs reais ativos)
 export const COMPANIES: SeedCompany[] = [
   {
     id: "10000000-0000-0000-0000-000000000001",
-    name: "Meridian Tecnologia",
+    name: "Meridian Tecnologia LTDA",
     slug: "meridian",
-    plan: "growth",
+    plan: "pro",
+    cnpj: "12345678000195",
+    trade_name: "Meridian Tech",
     primary_color: "#6366f1",
   },
   {
     id: "10000000-0000-0000-0000-000000000002",
-    name: "Atalaia Consultoria",
+    name: "Atalaia Consultoria S/A",
     slug: "atalaia",
     plan: "starter",
+    cnpj: "23456789000108",
+    trade_name: "Atalaia Consultoria",
     primary_color: "#10b981",
   },
   {
     id: "10000000-0000-0000-0000-000000000003",
-    name: "Solaris Engenharia",
+    name: "Solaris Engenharia EIRELI",
     slug: "solaris",
     plan: "enterprise",
+    cnpj: "34567890000145",
+    trade_name: "Solaris Engenharia",
     primary_color: "#f59e0b",
   },
 ];
+
+const FAKE_CNPJ_DATA = (c: SeedCompany) => ({
+  cnpj: c.cnpj,
+  razao_social: c.name,
+  nome_fantasia: c.trade_name,
+  situacao: "ATIVA",
+  atividade_principal: "Atividades de desenvolvimento de software",
+  logradouro: "Avenida Paulista",
+  numero: "1000",
+  complemento: "Sala 100",
+  bairro: "Bela Vista",
+  municipio: "São Paulo",
+  uf: "SP",
+  cep: "01310100",
+  telefone: "11999999999",
+  email: null,
+  _seeded: true,
+});
 
 export async function seedCompanies(): Promise<void> {
   console.log("  → Seeding companies...");
@@ -41,6 +68,11 @@ export async function seedCompanies(): Promise<void> {
         name: company.name,
         slug: company.slug,
         plan: company.plan,
+        status: "active",
+        cnpj: company.cnpj,
+        trade_name: company.trade_name,
+        cnpj_data: FAKE_CNPJ_DATA(company),
+        onboarding_completed: true,
         metadata: { primary_color: company.primary_color, seeded: true },
       },
       { onConflict: "id", ignoreDuplicates: false },
@@ -51,10 +83,28 @@ export async function seedCompanies(): Promise<void> {
       );
     }
   }
+
+  // Ativar módulos padrão para cada empresa
+  for (const company of COMPANIES) {
+    for (const module of ["comercio_digital", "logitix", "erp"]) {
+      const { error } = await supabase
+        .from("company_modules")
+        .upsert(
+          { company_id: company.id, module, status: "active" },
+          { onConflict: "company_id,module", ignoreDuplicates: true },
+        );
+      if (error !== null && !ignoreConflict(error)) {
+        throw new Error(
+          `seed company_modules.upsert(${company.slug}/${module}): ${error.message}`,
+        );
+      }
+    }
+  }
+
   const { count } = await supabase
     .from("companies")
     .select("id", { count: "exact", head: true });
   console.log(
-    `  ✓ ${COMPANIES.length} companies seeded (DB total: ${count ?? "?"}`,
+    `  ✓ ${COMPANIES.length} companies seeded (DB total: ${count ?? "?"})`,
   );
 }
