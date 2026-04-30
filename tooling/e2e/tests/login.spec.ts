@@ -16,8 +16,9 @@ test.describe("login", () => {
     await page.goto("/login");
     await expect(page.locator("#email")).toBeVisible();
     await expect(page.locator("#password")).toBeVisible();
+    // Bug #15 fix: use exact match — "Entrar com link mágico" also contains "Entrar"
     await expect(
-      page.locator('button[type="submit"]').filter({ hasText: "Entrar" }),
+      page.getByRole("button", { name: "Entrar", exact: true }),
     ).toBeVisible();
   });
 
@@ -27,10 +28,7 @@ test.describe("login", () => {
     await page.goto("/login");
     await page.locator("#email").fill(EMAIL);
     await page.locator("#password").fill(PASSWORD);
-    await page
-      .locator('button[type="submit"]')
-      .filter({ hasText: "Entrar" })
-      .click();
+    await page.getByRole("button", { name: "Entrar", exact: true }).click();
 
     // Should navigate to /select-company (multiple companies) or / (single company)
     await expect(page).toHaveURL(/\/(select-company)?$/, { timeout: 15_000 });
@@ -40,10 +38,7 @@ test.describe("login", () => {
     await page.goto("/login");
     await page.locator("#email").fill(EMAIL);
     await page.locator("#password").fill("wrong-password-xyz-invalid");
-    await page
-      .locator('button[type="submit"]')
-      .filter({ hasText: "Entrar" })
-      .click();
+    await page.getByRole("button", { name: "Entrar", exact: true }).click();
 
     // Error paragraph should appear
     await expect(page.locator("p.text-red-400")).toBeVisible({

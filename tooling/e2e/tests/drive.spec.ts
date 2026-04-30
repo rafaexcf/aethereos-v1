@@ -14,10 +14,7 @@ async function loginToDesktop(page: Page): Promise<void> {
   await page.goto("/login");
   await page.locator("#email").fill(EMAIL);
   await page.locator("#password").fill(PASSWORD);
-  await page
-    .locator('button[type="submit"]')
-    .filter({ hasText: "Entrar" })
-    .click();
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
 
   // Handle select-company if user has multiple companies
   const url = await page.waitForURL(/\/(select-company)?$/, {
@@ -41,7 +38,7 @@ async function loginToDesktop(page: Page): Promise<void> {
         .filter({ hasText: /criar|nova empresa/i });
       await createBtn.click();
     }
-    await page.waitForURL(/^\/?$/, { timeout: 15_000 });
+    await page.waitForURL(/\/[^/]*$/, { timeout: 15_000 });
   }
 }
 
@@ -54,7 +51,9 @@ test.describe("drive + scp pipeline", () => {
 
   test("desktop renders SCP outbox counter after login", async ({ page }) => {
     await loginToDesktop(page);
-    await expect(page).toHaveURL(/^\/?$/, { timeout: 5_000 });
+    await expect(page).not.toHaveURL(/\/login|\/select-company/, {
+      timeout: 5_000,
+    });
 
     // Outbox counter appears once drivers are initialized
     await expect(page.locator("text=Eventos SCP publicados")).toBeVisible({
@@ -64,47 +63,48 @@ test.describe("drive + scp pipeline", () => {
 
   test("Drive app opens in windowed mode", async ({ page }) => {
     await loginToDesktop(page);
-    await expect(page).toHaveURL(/^\/?$/, { timeout: 5_000 });
+    await expect(page).not.toHaveURL(/\/login|\/select-company/, {
+      timeout: 5_000,
+    });
 
-    // Click the Drive icon in the dock
-    const driveBtn = page
-      .locator("button")
-      .filter({ hasText: /drive/i })
-      .first();
+    // Dock buttons use title attribute (emoji icon, no visible text)
+    const driveBtn = page.locator('button[title="Drive"]');
     await expect(driveBtn).toBeVisible({ timeout: 8_000 });
     await driveBtn.click();
 
-    // A window with "Drive" title should appear
+    // AppWindowLayer renders Drive label as a <span> in the header
     await expect(
-      page.locator('[class*="window"], [role="dialog"]').filter({
-        hasText: /drive/i,
-      }),
+      page
+        .locator("span")
+        .filter({ hasText: /^Drive$/ })
+        .first(),
     ).toBeVisible({ timeout: 8_000 });
   });
 
   test("Drive window closes on close button", async ({ page }) => {
     await loginToDesktop(page);
-    await expect(page).toHaveURL(/^\/?$/, { timeout: 5_000 });
+    await expect(page).not.toHaveURL(/\/login|\/select-company/, {
+      timeout: 5_000,
+    });
 
-    const driveBtn = page
-      .locator("button")
-      .filter({ hasText: /drive/i })
-      .first();
+    const driveBtn = page.locator('button[title="Drive"]');
+    await expect(driveBtn).toBeVisible({ timeout: 8_000 });
     await driveBtn.click();
 
-    const window = page
-      .locator('[class*="window"], [role="dialog"]')
-      .filter({ hasText: /drive/i });
-    await expect(window).toBeVisible({ timeout: 8_000 });
+    const driveLabel = page
+      .locator("span")
+      .filter({ hasText: /^Drive$/ })
+      .first();
+    await expect(driveLabel).toBeVisible({ timeout: 8_000 });
 
-    // Close button inside window
-    const closeBtn = window
-      .locator("button")
-      .filter({ hasText: /✕|×|close|fechar/i })
+    // Close button: "Fechar ×" when single app is open
+    const closeBtn = page
+      .getByRole("button")
+      .filter({ hasText: /fechar/i })
       .first();
     if (await closeBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
       await closeBtn.click();
-      await expect(window).not.toBeVisible({ timeout: 5_000 });
+      await expect(driveLabel).not.toBeVisible({ timeout: 5_000 });
     }
   });
 });

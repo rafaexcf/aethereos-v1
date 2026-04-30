@@ -17,6 +17,7 @@
     "test": "turbo run test",
     "test:isolation": "turbo run test:isolation",
     "test:e2e": "turbo run test:e2e",
+    "test:e2e:full": "pnpm --filter @aethereos/e2e test:e2e",
     "deps:check": "depcruise --config .dependency-cruiser.cjs packages apps tooling",
     "deps:graph": "depcruise --config .dependency-cruiser.cjs --output-type dot packages apps | dot -T svg > docs/architecture/dependency-graph.svg",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,md,json,yaml,yml}\"",

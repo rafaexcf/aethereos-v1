@@ -7,10 +7,7 @@ async function loginAndGoToSelectCompany(page: Page): Promise<void> {
   await page.goto("/login");
   await page.locator("#email").fill(EMAIL);
   await page.locator("#password").fill(PASSWORD);
-  await page
-    .locator('button[type="submit"]')
-    .filter({ hasText: "Entrar" })
-    .click();
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await page.waitForURL(/\/(select-company)?$/, { timeout: 15_000 });
 
   if (!page.url().includes("select-company")) {

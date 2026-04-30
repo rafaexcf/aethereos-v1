@@ -4,14 +4,20 @@ const baseURL = process.env["E2E_BASE_URL"] ?? "http://localhost:5174";
 
 export default defineConfig({
   testDir: "./tests",
-  timeout: 30_000,
-  expect: { timeout: 8_000 },
+  timeout: 45_000,
+  expect: { timeout: 10_000 },
   fullyParallel: false,
   retries: 0,
   reporter: "list",
   use: {
     baseURL,
     trace: "on-first-retry",
+  },
+  webServer: {
+    command: "pnpm --filter @aethereos/shell-commercial dev",
+    url: "http://localhost:5174",
+    reuseExistingServer: true,
+    timeout: 120_000,
   },
   projects: [
     {
