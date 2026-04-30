@@ -1,6 +1,9 @@
 import React from "react";
 import type { OSApp } from "../types/os";
 
+// ADR-0024: Camada 1 é OS B2B genérico. Apps verticais (Comércio, LOGITIX, ERP)
+// são Camada 2 standalone — não vivem aqui. Magic Store é o launcher deles.
+
 function makePlaceholder(appName: string, sprintTarget?: string) {
   return React.lazy(() =>
     import("../components/AppPlaceholder").then((m) => ({
@@ -42,7 +45,7 @@ export const APP_REGISTRY: OSApp[] = [
   {
     id: "pessoas",
     name: "Pessoas",
-    icon: "Users",
+    icon: "Contact",
     color: "#8b5cf6",
     component: React.lazy(() =>
       import("./pessoas/index").then((m) => ({ default: m.PessoasApp })),
@@ -62,6 +65,31 @@ export const APP_REGISTRY: OSApp[] = [
     showInDock: true,
     closeable: true,
     hasInternalNav: false,
+  },
+  {
+    id: "rh",
+    name: "RH",
+    icon: "Users",
+    color: "#10b981",
+    component: React.lazy(() =>
+      import("./rh/index").then((m) => ({ default: m.RHApp })),
+    ),
+    showInDock: true,
+    closeable: true,
+    hasInternalNav: true,
+  },
+  {
+    id: "magic-store",
+    name: "Magic Store",
+    icon: "Store",
+    color: "#0ea5e9",
+    component: React.lazy(() =>
+      import("./magic-store/index").then((m) => ({ default: m.MagicStoreApp })),
+    ),
+    showInDock: true,
+    closeable: true,
+    hasInternalNav: false,
+    alwaysEnabled: true,
   },
   {
     id: "settings",
@@ -114,60 +142,6 @@ export const APP_REGISTRY: OSApp[] = [
     closeable: true,
     hasInternalNav: true,
     requiresAdmin: true,
-  },
-  {
-    id: "comercio",
-    name: "Comércio Digital",
-    icon: "ShoppingCart",
-    color: "#f0fc05",
-    component: makePlaceholder("Comércio Digital", "Sprint 12"),
-    showInDock: true,
-    closeable: true,
-    hasInternalNav: true,
-    requiresCompany: true,
-  },
-  {
-    id: "logitix",
-    name: "LOGITIX",
-    icon: "Truck",
-    color: "#059669",
-    component: makePlaceholder("LOGITIX", "Sprint 12"),
-    showInDock: true,
-    closeable: true,
-    hasInternalNav: true,
-    requiresCompany: true,
-  },
-  {
-    id: "erp",
-    name: "ERP",
-    icon: "BarChart3",
-    color: "#7c3aed",
-    component: makePlaceholder("ERP", "Sprint 13"),
-    showInDock: true,
-    closeable: true,
-    hasInternalNav: true,
-    requiresCompany: true,
-  },
-  {
-    id: "crm",
-    name: "CRM Vendas",
-    icon: "TrendingUp",
-    color: "#f97316",
-    component: makePlaceholder("CRM Vendas", "Sprint 13"),
-    showInDock: false,
-    closeable: true,
-    hasInternalNav: true,
-    requiresCompany: true,
-  },
-  {
-    id: "magic-store",
-    name: "Magic Store",
-    icon: "Store",
-    color: "#0ea5e9",
-    component: makePlaceholder("Magic Store", "Sprint 11"),
-    showInDock: true,
-    closeable: true,
-    hasInternalNav: false,
   },
 ];
 

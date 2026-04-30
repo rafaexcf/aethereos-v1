@@ -5,6 +5,37 @@ Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
 
 ---
 
+# Sprint 12 — Completar Camada 1 pura
+
+Início: 2026-04-30T00:00:00Z
+Modelo: Claude Code (claude-sonnet-4-6, Sprint 12 N=1)
+
+## Origem
+
+Decisão arquitetural em 2026-04-30: Camada 1 é OS B2B genérico, não tem
+verticais. Comércio/LOGITIX/ERP saem do registry — viram Camada 2 standalone.
+Camada 1 ganha RH navegável + Magic Store launcher + Onboarding genérico.
+
+## 5 pontos de calibração respondidos
+
+1. **Registry:** manter mesa, drive, pessoas, chat, settings, ae-ai, governanca, auditoria. Remover comercio/logitix/erp/crm. Adicionar rh + magic-store reais.
+2. **`pessoas` vs `rh`:** coexistem. pessoas = clientes/contatos externos. rh = employees internos. Não fundir.
+3. **Magic Store:** catálogo hardcoded (magic-store-catalog.ts). Camada 2 abre window.open. Módulos opcionais upsert company_modules sem UI real.
+4. **Onboarding:** 3 steps genéricos. Trigger em OSDesktop quando onboarding_completed=false. Sem NCM/produtos/fornecedores.
+5. **Shared components:** criar PhoneInput + CEPInput mínimos em MX57. CPFInput/CNPJInput adiados.
+
+## Histórico de milestones (Sprint 12)
+
+| Milestone | Descrição                                                                       | Status | Commit |
+| --------- | ------------------------------------------------------------------------------- | ------ | ------ |
+| MX56      | ADR-0024 + limpeza registry (verticais removidos, rh + magic-store adicionados) | DONE   | —      |
+| MX57      | Onboarding genérico 3 steps + edge function complete-onboarding                 | —      | —      |
+| MX58      | App RH navegável com CRUD employees enxuto                                      | —      | —      |
+| MX59      | Magic Store catálogo + launcher Camada 2 + edge function activate-module        | —      | —      |
+| MX60      | E2E Playwright + encerramento + gates triplos                                   | —      | —      |
+
+---
+
 # Sprint 11 — Schemas multi-tenant + cadastro CNPJ + aprovação
 
 Início: 2026-04-30T18:00:00Z

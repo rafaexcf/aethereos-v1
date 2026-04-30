@@ -1,0 +1,1 @@
+export { MagicStoreApp } from "./MagicStoreApp";
