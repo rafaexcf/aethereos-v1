@@ -13,23 +13,12 @@ const PASSWORD = process.env["E2E_USER_PASSWORD"] ?? "";
 async function openMagicStore(page: Page) {
   await loginToDesktop(page);
 
-  // Find Magic Store in dock
-  const storeBtn = page
-    .locator('[data-testid="dock"]')
-    .getByRole("button", { name: /magic store|store/i });
+  // Click Magic Store icon in the dock using data-testid
+  const storeBtn = page.locator('[data-testid="dock-app-magic-store"]');
+  await expect(storeBtn).toBeVisible({ timeout: 8_000 });
+  await storeBtn.click();
 
-  if (await storeBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
-    await storeBtn.click();
-  } else {
-    // Try mesa
-    const mesaBtn = page
-      .locator('[data-testid="mesa-app"]')
-      .getByText(/magic store/i)
-      .first();
-    await expect(mesaBtn).toBeVisible({ timeout: 5_000 });
-    await mesaBtn.click();
-  }
-
+  // Wait for Magic Store app to render
   await expect(
     page
       .locator('[data-testid="magic-store-app"]')

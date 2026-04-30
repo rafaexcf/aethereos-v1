@@ -13,22 +13,10 @@ const PASSWORD = process.env["E2E_USER_PASSWORD"] ?? "";
 async function openRHApp(page: Page) {
   await loginToDesktop(page);
 
-  // Open RH app from dock or mesa
-  const rhBtn = page
-    .locator('[data-testid="dock"]')
-    .getByRole("button", { name: /rh|pessoas|colaboradores/i });
-
-  if (await rhBtn.isVisible({ timeout: 5_000 }).catch(() => false)) {
-    await rhBtn.click();
-  } else {
-    // Try finding it in the mesa grid
-    const mesaBtn = page
-      .locator('[data-testid="mesa-app"]')
-      .getByText(/rh/i)
-      .first();
-    await expect(mesaBtn).toBeVisible({ timeout: 5_000 });
-    await mesaBtn.click();
-  }
+  // Click RH icon in the dock using data-testid
+  const rhBtn = page.locator('[data-testid="dock-app-rh"]');
+  await expect(rhBtn).toBeVisible({ timeout: 8_000 });
+  await rhBtn.click();
 
   // Wait for RH app to render
   await expect(
