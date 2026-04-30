@@ -68,6 +68,7 @@ export function MesaApp() {
 
   return (
     <div
+      data-testid="mesa-app"
       className="h-full w-full relative overflow-hidden"
       style={wallpaperStyle}
     >

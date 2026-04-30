@@ -30,8 +30,10 @@ test.describe("login", () => {
     await page.locator("#password").fill(PASSWORD);
     await page.getByRole("button", { name: "Entrar", exact: true }).click();
 
-    // Should navigate to /select-company (multiple companies) or / (single company)
-    await expect(page).toHaveURL(/\/(select-company)?$/, { timeout: 15_000 });
+    // Should navigate to /select-company (multiple companies) or /desktop (single company)
+    await expect(page).toHaveURL(/\/(select-company|desktop)?$/, {
+      timeout: 15_000,
+    });
   });
 
   test("invalid credentials shows error message", async ({ page }) => {

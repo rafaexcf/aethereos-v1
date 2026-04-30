@@ -25,17 +25,17 @@ Sprint 10 porta paradigma OS de V2 (TopBar/TabBar/Dock/Mesa/AppFrame) para V1.
 
 ## Histórico de milestones (Sprint 10)
 
-| Milestone | Descrição                                          | Status | Commit |
-| --------- | -------------------------------------------------- | ------ | ------ |
-| MX38      | Design tokens + deps fundação visual + ADR-0023    | -      | -      |
-| MX39      | Tipos os.ts + osStore Zustand                      | -      | -      |
-| MX40      | App registry + AppPlaceholder + reorganização apps | -      | -      |
-| MX41      | TopBar + AppFrame + AppLoader                      | -      | -      |
-| MX42      | Mesa store + tabela mesa_layouts + Mesa app        | -      | -      |
-| MX43      | TabBar com drag-drop                               | -      | -      |
-| MX44      | Dock com magnification framer-motion               | -      | -      |
-| MX45      | OSDesktop integrado + roteamento atualizado        | -      | -      |
-| MX46      | E2E Playwright atualizado + encerramento           | -      | -      |
+| Milestone | Descrição                                          | Status | Commit  |
+| --------- | -------------------------------------------------- | ------ | ------- |
+| MX38      | Design tokens + deps fundação visual + ADR-0023    | DONE   | b7a846a |
+| MX39      | Tipos os.ts + osStore Zustand                      | DONE   | 01a6d69 |
+| MX40      | App registry + AppPlaceholder + reorganização apps | DONE   | 33e8624 |
+| MX41      | TopBar + AppFrame + AppLoader                      | DONE   | 78f9b6f |
+| MX42      | Mesa store + tabela mesa_layouts + Mesa app        | DONE   | 3242a37 |
+| MX43      | TabBar com drag-drop                               | DONE   | f6be817 |
+| MX44      | Dock com magnification framer-motion               | DONE   | 6dfc5e3 |
+| MX45      | OSDesktop integrado + roteamento atualizado        | DONE   | b6d3aac |
+| MX46      | E2E Playwright atualizado + encerramento           | DONE   | —       |
 
 ## Calibração inicial
 
@@ -55,6 +55,30 @@ Sprint 10 porta paradigma OS de V2 (TopBar/TabBar/Dock/Mesa/AppFrame) para V1.
 6. Concessão ou revogação de acesso privilegiado
 7. Exclusão de dados
 8. Alteração de informações fiscais (regime tributário, cadastros SEFAZ)
+
+---
+
+## Encerramento Sprint 10
+
+**Data:** 2026-04-30
+
+**Triple gate:** ci:full EXIT 0 ✅ | test:smoke 5/5 ✅ | test:e2e:full 17 passed + 1 skipped (EXIT 0) ✅
+
+**Causa raiz dos falhas de E2E (resolvida):**
+
+1. Servidor dev Vite estava rodando com código antigo (antes das mudanças Sprint 10) — resolvido via kill + restart
+2. Usuários de teste não existiam no Supabase local — resolvido via `pnpm seed:dev`
+3. Seletor E2E `[data-testid="os-desktop"] button` capturava botões do TopBar antes dos ícones da Mesa — resolvido adicionando `data-testid="mesa-app"` ao MesaApp e atualizando seletores
+
+**Pré-requisito para E2E:** `pnpm seed:dev` deve ser executado ao iniciar ambiente local. Os usuários `ana.lima@meridian.test` e `patricia.rodrigues@solaris.test` com senha `Aethereos@2026!` são necessários.
+
+**Dívidas para Sprint 11:**
+
+1. Mesa drag-drop: `@dnd-kit` está instalado mas MesaApp não implementa drag. Deferred.
+2. Mesa wallpaper picker: UI para mudar wallpaper não existe ainda.
+3. TabBar drag-drop entre abas: implementado em `TabBar.tsx` mas não testado via E2E.
+
+**Status:** SPRINT 10 ENCERRADO — paradigma OS V2 → V1 migrado com sucesso.
 
 ---
 

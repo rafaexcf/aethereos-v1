@@ -8,10 +8,10 @@ async function loginAndGoToSelectCompany(page: Page): Promise<void> {
   await page.locator("#email").fill(EMAIL);
   await page.locator("#password").fill(PASSWORD);
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
-  await page.waitForURL(/\/(select-company)?$/, { timeout: 15_000 });
+  await page.waitForURL(/\/(select-company|desktop)?$/, { timeout: 15_000 });
 
   if (!page.url().includes("select-company")) {
-    // Already on desktop — navigate to select-company for company creation test
+    // Already on /desktop — navigate to select-company for company creation test
     await page.goto("/select-company");
   }
 }
