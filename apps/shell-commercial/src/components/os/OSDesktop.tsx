@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { TopBar } from "./TopBar";
+import { TabBar } from "./TabBar";
 import { AppFrame } from "./AppFrame";
 import { useSessionStore } from "../../stores/session";
 import { useOSStore } from "../../stores/osStore";
@@ -43,8 +44,7 @@ export function OSDesktop() {
     >
       <TopBar companyName={companyName} onSignOut={handleSignOut} />
 
-      {/* TabBar placeholder — MX43 */}
-      <div id="tabbar-slot" style={{ background: "var(--bg-base)" }} />
+      <TabBar />
 
       <div className="flex-1 overflow-hidden relative">
         <AppFrame />
