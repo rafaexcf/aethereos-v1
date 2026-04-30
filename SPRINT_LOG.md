@@ -20,7 +20,7 @@ Sprint 11 traz fundação multi-tenant rica + cadastro CNPJ funcional.
 
 1. **Migrations existentes:** 21 arquivos de 20260429000001 até 20260430000021_mesa_layouts.
 2. **Reconciliação tenant_memberships → Opção A:** Manter nome `kernel.tenant_memberships`, adicionar colunas `status`, `module_access`, `invited_by`, `blocked_reason`, `blocked_at`, `removed_at`, `last_login_at`, `login_count`. JWT hook filtra `status = 'active'`. Dívida arquitetural documentada.
-3. **Employees enxuto:** ~75 campos HR puro conforme R11. Excluídos: commission*\*, sell*_, buy\__, monthly/quarterly/yearly_target, commissionRate, salesTarget, sellerCode.
+3. **Employees enxuto:** ~75 campos HR puro conforme R11. Excluídos: commission*\*, sell*\_, buy\_\_, monthly/quarterly/yearly_target, commissionRate, salesTarget, sellerCode.
 4. **Edge Functions:** `cnpj-lookup` (GET público sem auth) + `register-company` (POST com JWT → RPC PL/pgSQL atômica). `create-company` marcada deprecated.
 5. **Seed:** 3 companies (status=active, cnpj_data preenchido) + 1 staff@aethereos.test (is_platform_admin=true) + 3 owners com profile+employee + 6 employees adicionais. Throw em erros, SELECT COUNT validação.
 
@@ -33,17 +33,39 @@ Sprint 11 traz fundação multi-tenant rica + cadastro CNPJ funcional.
 
 ## Histórico de milestones (Sprint 11)
 
-| Milestone | Descrição                                                                      | Status  | Commit |
-| --------- | ------------------------------------------------------------------------------ | ------- | ------ |
-| MX47      | Migrations: profiles + companies extend + tenant_memberships + company_modules | PENDING | —      |
-| MX48      | Migrations: employees + company_addresses + company_contacts                   | PENDING | —      |
-| MX49      | JWT hook is_platform_admin + Drizzle types completos                           | PENDING | —      |
-| MX50      | Edge Function cnpj-lookup (BrasilAPI + ReceitaWS fallback)                     | PENDING | —      |
-| MX51      | Edge Function register-company (fluxo A+B atomico)                             | PENDING | —      |
-| MX52      | Seed refatorado com novo schema + super admin                                  | PENDING | —      |
-| MX53      | UI: /register com lookup CNPJ + preview                                        | PENDING | —      |
-| MX54      | UI: /staff/companies aprovação inline + edge function                          | PENDING | —      |
-| MX55      | E2E Playwright atualizado + encerramento                                       | PENDING | —      |
+| Milestone | Descrição                                                                      | Status | Commit  |
+| --------- | ------------------------------------------------------------------------------ | ------ | ------- |
+| MX47      | Migrations: profiles + companies extend + tenant_memberships + company_modules | DONE   | 842ddce |
+| MX48      | Migrations: employees + company_addresses + company_contacts                   | DONE   | b0ccbbb |
+| MX49      | JWT hook is_platform_admin + Drizzle types completos                           | DONE   | c5105f2 |
+| MX50      | Edge Function cnpj-lookup (BrasilAPI + ReceitaWS fallback)                     | DONE   | 3c01239 |
+| MX51      | Edge Function register-company (fluxo A+B atomico)                             | DONE   | 14ca087 |
+| MX52      | Seed refatorado com novo schema + super admin                                  | DONE   | 6917ca8 |
+| MX53      | UI: /register com lookup CNPJ + preview                                        | DONE   | 142e85f |
+| MX54      | UI: /staff/companies aprovação inline + edge function                          | DONE   | d99859a |
+| MX55      | E2E Playwright atualizado + encerramento                                       | DONE   | —       |
+
+## Gate de encerramento (Sprint 11)
+
+- `pnpm ci:full` → ✅ 11 tasks OK (2026-04-30)
+- `pnpm test:smoke` → ✅ 5/5 OK (JWT claims, RLS, login) (2026-04-30)
+- `pnpm test:e2e:full` → pendente infra CI (sem server Supabase local no runner)
+
+## Entregáveis Sprint 11
+
+- 8 migrations SQL (profiles, companies_extend, tenant_memberships_extend, company_modules, employees ~75 cols, company_addresses, company_contacts, employees_unique_index + register_company_fn + public wrapper)
+- 2 novas Edge Functions (cnpj-lookup, register-company) + 1 nova (staff-approve-company) + create-company deprecated
+- Drizzle types completos para todos os novos schemas
+- Seed refatorado: 3 companies ativas com cnpj_data + 1 staff + 9 users com profiles+employees
+- UI /register com CNPJ mask + auto-lookup preview + fluxos A/B
+- UI /staff com seção aprovações pendentes inline (is_platform_admin)
+- JWT companies[] normalizado para string[] no browser driver (handle objetos {id,role,status})
+
+## Dívidas técnicas identificadas
+
+- `create-company` legacy ainda ativa (deprecated, remover no próximo sprint)
+- `select-company` ainda usa `create-company` legacy — migrar para `register-company`
+- companies[] em JWT retorna objetos; normalização feita no driver mas store ainda tipada como string[]
 
 ---
 
