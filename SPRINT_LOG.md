@@ -1646,14 +1646,14 @@ Modelo: Claude Code (claude-sonnet-4-6, Sprint 8 N=1)
 
 ## Histórico de milestones (Sprint 8)
 
-| Milestone | Descrição                                             | Status  | Commit    |
-| --------- | ----------------------------------------------------- | ------- | --------- |
-| MX13      | Diagnóstico e fix dos 3 containers em loop            | DONE    | `331b081` |
-| MX14      | Staff panel com dados reais via Edge Function         | DONE    | `e0e3b00` |
-| MX15      | pgvector + VectorDriver concreto + embedder           | DONE    | `91a0e7a` |
-| MX16      | Integração RAG com Copilot (cega, sem LLM real)       | DONE    | `7c50bef` |
-| MX17      | Playwright E2E: pipeline SCP completo no browser real | DONE    | pendente  |
-| MX18      | Encerramento Sprint 8                                 | PENDING |           |
+| Milestone | Descrição                                             | Status | Commit    |
+| --------- | ----------------------------------------------------- | ------ | --------- |
+| MX13      | Diagnóstico e fix dos 3 containers em loop            | DONE   | `331b081` |
+| MX14      | Staff panel com dados reais via Edge Function         | DONE   | `e0e3b00` |
+| MX15      | pgvector + VectorDriver concreto + embedder           | DONE   | `91a0e7a` |
+| MX16      | Integração RAG com Copilot (cega, sem LLM real)       | DONE   | `7c50bef` |
+| MX17      | Playwright E2E: pipeline SCP completo no browser real | DONE   | `2220db3` |
+| MX18      | Encerramento Sprint 8                                 | DONE   | pendente  |
 
 ### MX13 — Diagnóstico e fix dos 3 containers em loop
 
@@ -1731,3 +1731,23 @@ Modelo: Claude Code (claude-sonnet-4-6, Sprint 8 N=1)
 - `turbo.json` já possuía task `test:e2e` definida; `tooling/` já listado em `pnpm-workspace.yaml`
 - Execução: `pnpm test:e2e` (via turbo) ou `cd tooling/e2e && pnpm test:headed` (interativo)
 - Para rodar: configurar `E2E_USER_EMAIL`, `E2E_USER_PASSWORD`, `E2E_BASE_URL` + `pnpm --filter @aethereos/e2e install-browsers` antes da primeira execução
+
+### MX18 — Encerramento Sprint 8
+
+- Status: SUCCESS
+- `pnpm ci:full` EXIT 0 ✅ (typecheck 22/22, lint 22/22, deps:check 0 erros, test 15/15, build 11/11)
+- Commits Sprint 8:
+  - `331b081` MX13 — fix containers (Langfuse v2 pin, Tempo port 9096, OTel otlphttp/loki)
+  - `e0e3b00` MX14 — staff panel com dados reais via Edge Functions (service_role pattern)
+  - `91a0e7a` MX15 — pgvector + VectorDriver + embed-text Edge Function + embedding-consumer
+  - `7c50bef` MX16 — RAG integrado ao CopilotDrawer (cego, P14, NÃO VALIDADO E2E)
+  - `2220db3` MX17 — Playwright E2E suite (login, company, drive, cross-tenant)
+  - `d16afe6` MX18 — fix browser.ts (postgres vazava para bundle Vite), lint e2e
+
+**Dívidas documentadas para Sprint 9:**
+
+1. RAG NÃO VALIDADO E2E — aguarda humano configurar LITELLM_KEY com modelo de embedding
+2. Playwright E2E NÃO EXECUTADO em browser real — aguarda `E2E_USER_EMAIL/PASSWORD` + `pnpm install-browsers`
+3. `kernel.agent_proposals` — tabela para propostas Shadow Mode ainda não criada (TODO em copilot/index.tsx)
+4. `agent.copilot.action_proposed` / `.action_approved` / `.action_rejected` — eventos SCP não emitidos ainda
+5. `kernel.copilot_messages` — persistência de histórico de conversa não implementada
