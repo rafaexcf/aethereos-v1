@@ -3,6 +3,40 @@
 Início do sprint: 2026-04-29T00:00:00Z
 Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
 
+---
+
+# Sprint 10 — Foundation visual: paradigma OS V2 → V1
+
+Início: 2026-04-30T00:00:00Z
+Modelo: Claude Code (claude-sonnet-4-6, Sprint 10 N=1)
+
+## Origem
+
+Decisão estratégica do humano em 2026-04-30: V2 é spec visual, V1 é destino arquitetural.
+Sprint 10 porta paradigma OS de V2 (TopBar/TabBar/Dock/Mesa/AppFrame) para V1.
+
+## Confirmação inicial
+
+1. **Deps necessárias:** framer-motion, @dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities, lucide-react
+2. **Reconciliações de stack:** useAuthStore→useSessionStore; api REST→SupabaseBrowserDataDriver; Wouter→TanStack Router (rota /desktop); getVisibleDockApps simplificado (sem módulos ainda); sem react-query (company name via sessionStore)
+3. **Tradução osStore:** direta, crypto.randomUUID()+localStorage são browser-native; remove magicStoreInitialTab; mantém aiModalOpen para Copilot
+4. **Mesa persistência:** tabela kernel.mesa_layouts (user_id, company_id, layout jsonb, wallpaper text); SupabaseBrowserDataDriver com upsert+debounce 1s; wallpaper padrão=default (sem aether PNG)
+5. **framer-motion (R5):** violação intencional justificada — Dock magnification requer spring physics cursor-based impossíveis em CSS puro; ADR-0023 registra formalmente; escopo limitado a shell-commercial
+
+## Histórico de milestones (Sprint 10)
+
+| Milestone | Descrição                                          | Status | Commit |
+| --------- | -------------------------------------------------- | ------ | ------ |
+| MX38      | Design tokens + deps fundação visual + ADR-0023    | -      | -      |
+| MX39      | Tipos os.ts + osStore Zustand                      | -      | -      |
+| MX40      | App registry + AppPlaceholder + reorganização apps | -      | -      |
+| MX41      | TopBar + AppFrame + AppLoader                      | -      | -      |
+| MX42      | Mesa store + tabela mesa_layouts + Mesa app        | -      | -      |
+| MX43      | TabBar com drag-drop                               | -      | -      |
+| MX44      | Dock com magnification framer-motion               | -      | -      |
+| MX45      | OSDesktop integrado + roteamento atualizado        | -      | -      |
+| MX46      | E2E Playwright atualizado + encerramento           | -      | -      |
+
 ## Calibração inicial
 
 **Ordem de construção:** Camada 0 (shell-base, local-first, BUSL v1.1) → Camada 1 (shell-commercial, proprietária, multi-tenant) → comercio.digital → logitix → kwix → autergon.
