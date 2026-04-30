@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ActorSchema } from "./actor";
+import { ActorSchema } from "./actor.js";
 
 const UUID_V4_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

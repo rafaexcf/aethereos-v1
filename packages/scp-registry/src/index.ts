@@ -1,20 +1,23 @@
 // Schemas
-export type { EventEnvelope, PartialEnvelope } from "./schemas/envelope";
-export { EventEnvelopeSchema } from "./schemas/envelope";
-export type { Actor } from "./schemas/actor";
-export { ActorSchema } from "./schemas/actor";
+export type { EventEnvelope, PartialEnvelope } from "./schemas/envelope.js";
+export { EventEnvelopeSchema } from "./schemas/envelope.js";
+export type { Actor } from "./schemas/actor.js";
+export { ActorSchema } from "./schemas/actor.js";
 
 // Platform events
-export { PLATFORM_EVENT_SCHEMAS } from "./schemas/platform";
+export { PLATFORM_EVENT_SCHEMAS } from "./schemas/platform.js";
 export type {
   PlatformTenantCreatedPayload,
   PlatformTenantSuspendedPayload,
   PlatformUserCreatedPayload,
   PlatformStaffAccessPayload,
-} from "./schemas/platform";
+} from "./schemas/platform.js";
 
 // Agent events
-export { AGENT_EVENT_SCHEMAS, COPILOT_INTENT_SCHEMAS } from "./schemas/agent";
+export {
+  AGENT_EVENT_SCHEMAS,
+  COPILOT_INTENT_SCHEMAS,
+} from "./schemas/agent.js";
 export type {
   AgentRegisteredPayload,
   AgentActionRequestedPayload,
@@ -24,13 +27,13 @@ export type {
   CopilotIntentSendNotification,
   CopilotIntentUpdateSettings,
   CopilotIntentCreateChannel,
-} from "./schemas/agent";
+} from "./schemas/agent.js";
 
 // Context events
-export { CONTEXT_EVENT_SCHEMAS } from "./schemas/context";
+export { CONTEXT_EVENT_SCHEMAS } from "./schemas/context.js";
 
 // Integration events
-export { INTEGRATION_EVENT_SCHEMAS } from "./schemas/integration";
+export { INTEGRATION_EVENT_SCHEMAS } from "./schemas/integration.js";
 
 // Registry
 export {
@@ -39,25 +42,25 @@ export {
   getSchema,
   validate,
   listRegistered,
-} from "./registry";
+} from "./registry.js";
 
 // Commerce events
-export { COMMERCE_EVENT_SCHEMAS } from "./schemas/commerce";
+export { COMMERCE_EVENT_SCHEMAS } from "./schemas/commerce.js";
 export type {
   CommerceProductCreatedPayload,
   CommerceProductUpdatedPayload,
   CommerceProductArchivedPayload,
-} from "./schemas/commerce";
+} from "./schemas/commerce.js";
 
 // Commerce checkout events
-export { COMMERCE_CHECKOUT_EVENT_SCHEMAS } from "./schemas/commerce-checkout";
+export { COMMERCE_CHECKOUT_EVENT_SCHEMAS } from "./schemas/commerce-checkout.js";
 export type {
   CommerceCheckoutStartedPayload,
   CommerceOrderPlacedPayload,
   CommerceOrderPaidPayload,
   CommerceOrderFailedPayload,
   CommerceOrderRefundedPayload,
-} from "./schemas/commerce-checkout";
+} from "./schemas/commerce-checkout.js";
 
 // Helpers
-export { buildEnvelope, verifyEnvelope, signEnvelope } from "./helpers";
+export { buildEnvelope, verifyEnvelope, signEnvelope } from "./helpers.js";

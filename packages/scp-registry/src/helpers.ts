@@ -1,6 +1,6 @@
-import type { EventEnvelope, PartialEnvelope } from "./schemas/envelope";
-import { EventEnvelopeSchema } from "./schemas/envelope";
-import { validate } from "./registry";
+import type { EventEnvelope, PartialEnvelope } from "./schemas/envelope.js";
+import { EventEnvelopeSchema } from "./schemas/envelope.js";
+import { validate } from "./registry.js";
 import type { Result } from "@aethereos/drivers";
 import { ok, err, ValidationError } from "@aethereos/drivers";
 
