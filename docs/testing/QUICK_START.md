@@ -1,5 +1,7 @@
 # Quick Start — Camada 1 Local
 
+**Versão:** Sprint 9.6 (2026-04-30)
+
 Sobe o Aethereos do zero em menos de 5 minutos.
 
 ## Pré-requisitos
@@ -88,6 +90,28 @@ pnpm seed:dev     # re-popula dados
 - Langfuse: http://127.0.0.1:3001
 - Unleash: http://127.0.0.1:4242 (admin/unleash4all)
 
+## Testes E2E (Playwright)
+
+```bash
+# Rodar suite completa (13 testes: login, company, drive, cross-tenant, SCP pipeline)
+LD_LIBRARY_PATH=/tmp/playwright-libs/usr/lib/x86_64-linux-gnu \
+  E2E_USER_EMAIL="ana.lima@meridian.test" \
+  E2E_USER_PASSWORD="Aethereos@2026!" \
+  E2E_USER_B_EMAIL="rafael.costa@atalaia.test" \
+  E2E_USER_B_PASSWORD="Aethereos@2026!" \
+  E2E_SUPABASE_URL="http://127.0.0.1:54321" \
+  E2E_SUPABASE_ANON_KEY="<anon_key>" \
+  E2E_SUPABASE_SERVICE_KEY="<service_role_key>" \
+  pnpm test:e2e:full
+
+# Só o pipeline SCP
+pnpm test:e2e:scp-pipeline
+```
+
+> **WSL2 sem libs de sistema:** `LD_LIBRARY_PATH` aponta para libs extraídas manualmente.
+> Ver `docs/testing/KNOWN_LIMITATIONS.md#L11` para o workaround completo.
+> Em CI (Ubuntu runner padrão), as libs já estão instaladas e `LD_LIBRARY_PATH` não é necessário.
+
 ## Troubleshooting
 
 | Problema                                       | Solução                                                                   |
@@ -100,3 +124,4 @@ pnpm seed:dev     # re-popula dados
 | Copilot mostra "modo degenerado"               | Normal — configure LiteLLM para ativar (ver KNOWN_LIMITATIONS.md)         |
 | Login retorna 500 no Supabase Studio           | Execute `pnpm dev:db` para re-aplicar migrations (incluindo GRANTS)       |
 | CORS bloqueado no browser                      | Confirme que URL do app é `http://127.0.0.1:5174` (não localhost)         |
+| Playwright: `libnspr4.so.0` not found          | Seguir workaround L11 em KNOWN_LIMITATIONS.md (WSL2 sem libs de sistema)  |

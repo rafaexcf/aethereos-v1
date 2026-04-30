@@ -5,6 +5,7 @@
   "description": "Playwright E2E tests — real browser SCP pipeline validation",
   "scripts": {
     "test:e2e": "playwright test",
+    "test:e2e:scp-pipeline": "playwright test tests/scp-pipeline.spec.ts",
     "test:headed": "playwright test --headed",
     "install-browsers": "playwright install chromium"
   },

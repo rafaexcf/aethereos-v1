@@ -1,6 +1,6 @@
-# Known Limitations — Camada 1 Sprint 9
+# Known Limitations — Camada 1 Sprint 9.6
 
-**Versão:** Sprint 9 (2026-04-29)  
+**Versão:** Sprint 9.6 (2026-04-30)  
 **Audiência:** Testers externos e internos fazendo validação manual da Camada 1.
 
 Estas limitações são **esperadas e documentadas**. Não são bugs a reportar — a menos que o comportamento observado contradiga o descrito aqui.
@@ -176,15 +176,44 @@ pnpm seed:dev    # repopula dados base
 
 ## Resumo Rápido
 
-| Limitação                            | Impacto       | Workaround                         |
-| ------------------------------------ | ------------- | ---------------------------------- |
-| L1. Copilot sem LLM                  | Médio         | Configurar LiteLLM (opcional)      |
-| L2. Email transacional ausente       | Baixo         | Confirmar usuário no Studio        |
-| L3. Staff requer claim JWT           | Baixo         | SQL no Studio para adicionar claim |
-| L4. RAG sem embeddings               | Médio         | Configurar LiteLLM                 |
-| L5. Billing desativado               | Informacional | Esperado — fora do escopo Sprint 9 |
-| L6. Auditoria/Governança placeholder | Baixo         | Verificar via Studio diretamente   |
-| L7. PWA offline apenas em produção   | Baixo         | Usar `pnpm build && pnpm preview`  |
-| L8. Latência ngrok                   | Baixo         | Testar via localhost para comparar |
-| L9. Realtime instável via ngrok      | Baixo         | Testar via localhost               |
-| L10. Seed apagado no dev:db          | Médio         | Rodar `pnpm seed:dev` após dev:db  |
+| Limitação                            | Impacto       | Workaround                                 |
+| ------------------------------------ | ------------- | ------------------------------------------ |
+| L1. Copilot sem LLM                  | Médio         | Configurar LiteLLM (opcional)              |
+| L2. Email transacional ausente       | Baixo         | Confirmar usuário no Studio                |
+| L3. Staff requer claim JWT           | Baixo         | SQL no Studio para adicionar claim         |
+| L4. RAG sem embeddings               | Médio         | Configurar LiteLLM                         |
+| L5. Billing desativado               | Informacional | Esperado — fora do escopo Sprint 9         |
+| L6. Auditoria/Governança placeholder | Baixo         | Verificar via Studio diretamente           |
+| L7. PWA offline apenas em produção   | Baixo         | Usar `pnpm build && pnpm preview`          |
+| L8. Latência ngrok                   | Baixo         | Testar via localhost para comparar         |
+| L9. Realtime instável via ngrok      | Baixo         | Testar via localhost                       |
+| L10. Seed apagado no dev:db          | Médio         | Rodar `pnpm seed:dev` após dev:db          |
+| L11. Libs Chromium no WSL2           | Baixo         | `LD_LIBRARY_PATH=/tmp/playwright-libs/...` |
+
+---
+
+## L11. Playwright no WSL2 — Libs de Sistema Ausentes
+
+**Status:** Afeta apenas WSL2 sem pacotes de sistema instalados.
+
+**O que acontece:**
+
+- `playwright test` falha com `libnspr4.so.0: cannot open shared object file`.
+- O Chromium Headless Shell requer `libnspr4`, `libnss3`, `libasound2` do sistema operacional.
+- Em CI (Ubuntu runner padrão) essas libs estão presentes — não é problema em produção.
+
+**Workaround local (sem sudo):**
+
+```bash
+cd tooling/e2e
+apt-get download libnspr4 libnss3 libasound2t64
+dpkg-deb -x libnspr4*.deb /tmp/playwright-libs
+dpkg-deb -x libnss3*.deb /tmp/playwright-libs
+dpkg-deb -x libasound2t64*.deb /tmp/playwright-libs
+
+LD_LIBRARY_PATH=/tmp/playwright-libs/usr/lib/x86_64-linux-gnu \
+  E2E_USER_EMAIL=... E2E_USER_PASSWORD=... \
+  pnpm test:e2e:full
+```
+
+**Não reportar:** Falha de libs em WSL2 sem a variável `LD_LIBRARY_PATH`. É limitação de ambiente, não bug do produto.
