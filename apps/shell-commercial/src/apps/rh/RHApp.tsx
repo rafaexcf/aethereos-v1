@@ -101,7 +101,7 @@ export function RHApp() {
 
   return (
     <AppShell title="RH" subtitle="Colaboradores internos">
-      <div className="flex h-full overflow-hidden">
+      <div data-testid="rh-app" className="flex h-full overflow-hidden">
         {/* Main content */}
         <div className="flex-1 overflow-hidden">
           {isFormOpen ? (

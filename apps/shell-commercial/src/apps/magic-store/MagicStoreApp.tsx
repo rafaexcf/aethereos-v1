@@ -255,7 +255,10 @@ export function MagicStoreApp() {
       title="Magic Store"
       subtitle="Apps e módulos para expandir o Aethereos"
     >
-      <div className="flex flex-col h-full overflow-hidden">
+      <div
+        data-testid="magic-store-app"
+        className="flex flex-col h-full overflow-hidden"
+      >
         {/* Category filter */}
         <div className="flex items-center gap-1 px-5 py-3 border-b border-zinc-800 shrink-0 overflow-x-auto">
           {CATEGORIES.map(({ id, label }) => (

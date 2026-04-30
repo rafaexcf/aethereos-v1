@@ -138,6 +138,9 @@ function DockIcon({
         onMouseLeave={handleMouseLeave}
         className="relative flex items-center justify-center rounded-xl cursor-pointer transition-colors"
         whileTap={{ scale: 0.9 }}
+        role="button"
+        aria-label={app.name}
+        data-testid={`dock-app-${app.id}`}
       >
         <motion.div
           style={{ width: iconSize, height: iconSize }}
