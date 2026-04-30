@@ -10,8 +10,22 @@ const cspHeaders = {
     "frame-ancestors 'self' http://localhost:* http://127.0.0.1:*",
 };
 
+// ngrok tunneling: VITE_ALLOWED_ORIGINS aceita origem do túnel para evitar
+// "Invalid Host header" quando tester acessa via URL pública ngrok.
+const allowedHosts: string[] = ["localhost", "127.0.0.1"];
+const extraOrigins = process.env["VITE_ALLOWED_ORIGINS"];
+if (extraOrigins) {
+  for (const o of extraOrigins.split(",")) {
+    const trimmed = o.trim().replace(/^https?:\/\//, "");
+    if (trimmed) allowedHosts.push(trimmed);
+  }
+}
+
 export default defineConfig({
-  server: { headers: cspHeaders },
+  server: {
+    headers: cspHeaders,
+    allowedHosts,
+  },
   preview: { headers: cspHeaders },
   plugins: [
     react(),
