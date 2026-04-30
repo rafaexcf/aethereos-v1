@@ -74,6 +74,30 @@ async function main(): Promise<void> {
   console.log("\nPasso 6: Copilot proposals");
   await seedProposals(users);
 
+  // Validação pós-seed: conta registros reais no banco
+  console.log("\nValidação pós-seed (contagem real no banco):");
+  const { supabase: sb } = await import("./client.js");
+  const tables = [
+    "companies",
+    "users",
+    "tenant_memberships",
+    "people",
+    "files",
+    "chat_channels",
+    "chat_messages",
+    "agent_proposals",
+  ];
+  for (const tbl of tables) {
+    const { count, error: ce } = await sb
+      .from(tbl)
+      .select("*", { count: "exact", head: true });
+    if (ce !== null) {
+      console.error(`  ✗ ${tbl}: erro na contagem — ${ce.message}`);
+      process.exit(1);
+    }
+    console.log(`  ${tbl}: ${count ?? 0} registros`);
+  }
+
   console.log("\n✅ Seed completo!\n");
   console.log("Usuários de teste (senha: Aethereos@2026!):");
   console.log("  Meridian:  ana.lima@meridian.test (owner)");

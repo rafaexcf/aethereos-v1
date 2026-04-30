@@ -1964,3 +1964,50 @@ RESULTADO: 5 ok, 0 falhas — EXIT 0
 3. Playwright E2E no browser
 4. Deploy em staging (Vercel preview + Supabase cloud)
 5. IaC Pulumi
+
+---
+
+# Sprint 9.6 — Cirúrgico: smoke test completo + bugs até produto funcionar
+
+Início: 2026-04-30T12:00:00Z
+Modelo: Claude Code (claude-sonnet-4-6, Sprint 9.6 N=1)
+
+## Origem
+
+Smoke test manual em 2026-04-30 descobriu 12 bugs ao usar o produto.
+Sprint 9.5 fixou 8. Restam 4 abertos (#7, #8, #10, #12) + número desconhecido
+de bugs no resto do fluxo (criar empresa, dashboard, Drive, etc).
+
+Decisão humana: Sprint 9.6 termina o smoke test, descobre todos os bugs,
+conserta cada um. Sprint só fecha com produto funcional end-to-end.
+
+## 5 pontos de calibração respondidos
+
+1. **4 bugs abertos com causa raiz:**
+   - Bug #7: `metadata` coluna ausente em `kernel.companies` + `plan: "pro"` viola CHECK. Fix: migration add metadata + seed plan→"growth".
+   - Bug #8: validação JS ausente no slug (pattern HTML não previne hífens leading/trailing). Fix: regex JS no onSubmit.
+   - Bug #10: `authenticated` sem GRANT em 14/20 tabelas kernel. Fix: GRANT ALL TABLES IN SCHEMA kernel TO authenticated.
+   - Bug #12: seed usa console.warn em erros e printa "✓ N" independente. Fix: throw em erros + SELECT COUNT() de validação.
+
+2. **Por que test:smoke não detectou:** usa service_role (BYPASSRLS), cria user inline sem seed, sem browser, sem Edge Functions → não exercita grants nem o fluxo real.
+
+3. **Diferença smoke vs E2E:** smoke = Node.js puro com service_key. E2E = browser Chromium real, usuário authenticated role, RLS ativo, UI navegada.
+
+4. **Como seed mente:** console.warn não interrompe; "✓ N items" sempre impresso mesmo com 0 inserts reais.
+
+5. **Plano E2E:** Playwright já configurado em tooling/e2e/. Sprint 9.6 expande para 11 cenários com script test:e2e:full.
+
+## Histórico de milestones (Sprint 9.6)
+
+| Milestone | Descrição                                      | Status | Commit   |
+| --------- | ---------------------------------------------- | ------ | -------- |
+| MX33      | Fix bugs #7/8/10/12 + constraint chat_channels | DONE   | pendente |
+| MX34      | Playwright E2E — 11 cenários completos         |        |          |
+| MX35      | Bugs adicionais descobertos durante MX34       |        |          |
+| MX36      | Pipeline SCP end-to-end validado               |        |          |
+| MX37      | Quick start + encerramento                     |        |          |
+
+## Bugs adicionais descobertos (Sprint 9.6 MX33)
+
+- **Bug #13** — `chat_channels` sem UNIQUE(company_id, name). **CORRIGIDO** em migration 20260430000020.
+- **Bug #14** — Seed users fallback via `schema("auth")` não funciona (schema() hack inválido no PostgREST). **CORRIGIDO** usando `admin.listUsers()`.

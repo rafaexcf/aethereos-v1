@@ -142,7 +142,7 @@ async function insertTree(
 
     if (error !== null) {
       if (!ignoreConflict(error)) {
-        console.warn(`    warn: files.upsert(${spec.name}):`, error.message);
+        throw new Error(`seed files.upsert(${spec.name}): ${error.message}`);
       }
       continue;
     }

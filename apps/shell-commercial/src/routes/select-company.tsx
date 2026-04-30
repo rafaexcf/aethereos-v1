@@ -32,6 +32,19 @@ function SelectCompanyPage() {
     setLoading(true);
     setError(null);
 
+    // Valida slug: apenas alnum + hifens internos, sem leading/trailing hifens, 3-63 chars
+    if (
+      newSlug.length < 3 ||
+      newSlug.length > 63 ||
+      !/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(newSlug)
+    ) {
+      setError(
+        "Slug inválido: apenas letras minúsculas, números e hífens, sem começar ou terminar com hífen (3-63 caracteres).",
+      );
+      setLoading(false);
+      return;
+    }
+
     // Chama a Edge Function create_company (implementada em M22)
     const session = await drivers.auth.getSession();
     if (!session.ok || session.value === null) {

@@ -87,19 +87,13 @@ async function getOrCreateAuthUser(
 
   if (created?.user) return created.user.id;
 
-  // Se conflito (já existe), busca via RPC ou auth.users
+  // Se conflito (já existe), busca via admin.listUsers (schema("auth") não funciona via PostgREST)
   if (error) {
-    // Busca o usuário existente pelo email na tabela auth.users via schema público
-    const { data: existing } = await (supabase
-      .schema("auth" as never)
-      .from("users")
-      .select("id")
-      .eq("email", email)
-      .single() as unknown as Promise<{
-      data: { id: string } | null;
-      error: unknown;
-    }>);
-    if (existing !== null) return existing.id;
+    const { data: list } = await supabase.auth.admin.listUsers({
+      perPage: 1000,
+    });
+    const existing = list?.users.find((u) => u.email === email);
+    if (existing) return existing.id;
     throw new Error(
       `Falha ao criar/encontrar usuário ${email}: ${error.message}`,
     );
@@ -135,7 +129,7 @@ export async function seedUsers(): Promise<SeedUser[]> {
       { onConflict: "id" },
     );
     if (ku !== null && !ignoreConflict(ku)) {
-      console.warn(`    warn: kernel.users.upsert(${def.email}):`, ku.message);
+      throw new Error(`seed kernel.users.upsert(${def.email}): ${ku.message}`);
     }
 
     // tenant_memberships
@@ -148,9 +142,8 @@ export async function seedUsers(): Promise<SeedUser[]> {
       { onConflict: "user_id,company_id" },
     );
     if (tm !== null && !ignoreConflict(tm)) {
-      console.warn(
-        `    warn: tenant_memberships.upsert(${def.email}):`,
-        tm.message,
+      throw new Error(
+        `seed tenant_memberships.upsert(${def.email}): ${tm.message}`,
       );
     }
 

@@ -13,7 +13,7 @@ export const COMPANIES: SeedCompany[] = [
     id: "10000000-0000-0000-0000-000000000001",
     name: "Meridian Tecnologia",
     slug: "meridian",
-    plan: "pro",
+    plan: "growth",
     primary_color: "#6366f1",
   },
   {
@@ -46,11 +46,15 @@ export async function seedCompanies(): Promise<void> {
       { onConflict: "id", ignoreDuplicates: false },
     );
     if (error !== null && !ignoreConflict(error)) {
-      console.warn(
-        `    warn: companies.upsert(${company.slug}):`,
-        error.message,
+      throw new Error(
+        `seed companies.upsert(${company.slug}): ${error.message}`,
       );
     }
   }
-  console.log(`  ✓ ${COMPANIES.length} companies`);
+  const { count } = await supabase
+    .from("companies")
+    .select("id", { count: "exact", head: true });
+  console.log(
+    `  ✓ ${COMPANIES.length} companies seeded (DB total: ${count ?? "?"}`,
+  );
 }

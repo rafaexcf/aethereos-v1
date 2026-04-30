@@ -53,9 +53,8 @@ export async function seedChat(users: SeedUser[]): Promise<void> {
 
       if (channelError !== null) {
         if (!ignoreConflict(channelError)) {
-          console.warn(
-            `    warn: chat_channels.upsert(${channelDef.name}):`,
-            channelError.message,
+          throw new Error(
+            `seed chat_channels.upsert(${channelDef.name}): ${channelError.message}`,
           );
         }
         continue;
@@ -92,7 +91,7 @@ export async function seedChat(users: SeedUser[]): Promise<void> {
           });
 
         if (msgError !== null) {
-          console.warn(`    warn: chat_messages.insert:`, msgError.message);
+          throw new Error(`seed chat_messages.insert: ${msgError.message}`);
         } else {
           totalMessages++;
         }

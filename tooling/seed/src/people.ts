@@ -193,7 +193,7 @@ export async function seedPeople(users: SeedUser[]): Promise<void> {
         { onConflict: "company_id,email" },
       );
       if (error !== null && !ignoreConflict(error)) {
-        console.warn(`    warn: people.upsert(${uniqueEmail}):`, error.message);
+        throw new Error(`seed people.upsert(${uniqueEmail}): ${error.message}`);
       }
       total++;
     }

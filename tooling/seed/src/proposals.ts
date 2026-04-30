@@ -129,9 +129,8 @@ export async function seedProposals(users: SeedUser[]): Promise<void> {
           : {}),
       });
       if (error !== null && !ignoreConflict(error)) {
-        console.warn(
-          `    warn: agent_proposals.insert(${tmpl.intent_type}):`,
-          error.message,
+        throw new Error(
+          `seed agent_proposals.insert(${tmpl.intent_type}): ${error.message}`,
         );
       } else {
         total++;
