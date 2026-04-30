@@ -1782,13 +1782,13 @@ Sprint 9 deixa Camada 1 testável local + via ngrok, sem custo recorrente.
 
 | Milestone | Descrição                                 | Status | Commit   |
 | --------- | ----------------------------------------- | ------ | -------- |
-| MX19      | Fechar 4 dívidas residuais críticas       | DONE   | pendente |
-| MX20      | Seed data realista                        | -      |          |
-| MX21      | Smoke test manual scriptado               | -      |          |
-| MX22      | Tunneling via ngrok                       | -      |          |
-| MX23      | Dashboard Usage During Testing no Grafana | -      |          |
-| MX24      | Documento de limitações conhecidas        | -      |          |
-| MX25      | ADR-0021 + encerramento Sprint 9          | -      |          |
+| MX19      | Fechar 4 dívidas residuais críticas       | DONE   | 3d7540c  |
+| MX20      | Seed data realista                        | DONE   | 3d7540c  |
+| MX21      | Smoke test manual scriptado               | DONE   | 3d7540c  |
+| MX22      | Tunneling via ngrok                       | DONE   | 92ee722  |
+| MX23      | Dashboard Usage During Testing no Grafana | DONE   | 3016547  |
+| MX24      | Documento de limitações conhecidas        | DONE   | 2568e67  |
+| MX25      | ADR-0021 + encerramento Sprint 9          | DONE   | pendente |
 
 ### MX19 — Fechar 4 dívidas residuais críticas
 
@@ -1821,3 +1821,72 @@ Sprint 9 deixa Camada 1 testável local + via ngrok, sem custo recorrente.
   - `apps/shell-commercial/src/apps/copilot/index.tsx` (persistência DB + SCP events + historyLoaded)
   - `apps/shell-commercial/src/routes/index.tsx` (passa data+scp ao CopilotDrawer)
 - Validadores: `pnpm typecheck` 22/22 ✅ · `pnpm lint` 22/22 ✅
+
+### MX22 — Tunneling via ngrok
+
+- Concluída: 2026-04-29
+- Status: SUCCESS
+- Arquivos criados/modificados:
+  - `apps/shell-commercial/vite.config.ts` — VITE_ALLOWED_ORIGINS popula allowedHosts
+  - `scripts/share-dev.sh` — sobe app + ngrok + imprime URL pública
+  - `package.json` — script `share:dev`
+  - `docs/runbooks/share-with-tester.md` — runbook completo de sessão ngrok
+
+### MX23 — Dashboard Usage During Testing
+
+- Concluída: 2026-04-29
+- Status: SUCCESS
+- Arquivo criado: `infra/otel/grafana/dashboards/usage-testing.json`
+- 9 painéis: logins, companies, SCP events, arquivos, mensagens (stat Loki/1h) + SCP por tipo + latência p50/p95/p99 + erros
+- Auto-provisionado via volume mount existente (refresh 15s)
+
+### MX24 — Limitações conhecidas
+
+- Concluída: 2026-04-29
+- Status: SUCCESS
+- Arquivo criado: `docs/testing/KNOWN_LIMITATIONS.md`
+- 10 limitações documentadas (L1-L10) com impacto, workaround e tabela de resumo
+
+### MX25 — Encerramento Sprint 9
+
+- Concluída: 2026-04-29
+- Status: SUCCESS
+- ADR-0021 emitido: `docs/adr/0021-criterios-prontidao-camada-1-testes.md`
+- 8 critérios objetivos de prontidão definidos e atingidos
+- `pnpm ci:full` → EXIT 0 (gate obrigatório)
+- Commit de encerramento: `chore: encerramento sprint 9 — camada 1 pronta para testes manuais`
+
+---
+
+## Encerramento Sprint 9
+
+**Data:** 2026-04-29  
+**Status:** SPRINT 9 ENCERRADO — EXIT 0 confirmado.
+
+### O que foi entregue
+
+- **4 dívidas técnicas críticas quitadas** (agent_proposals INSERT, copilot_messages persistência, SCP events Copilot, Tempo keepalive fix)
+- **Seed data realista**: 3 companies, 9 usuários auth, 20 pessoas/company, 5 pastas + arquivos/company, 3 canais + 7 mensagens/company, 5 proposals/company
+- **Smoke test documentado**: 41 passos em 11 seções (A-K) cobrindo todos os apps da Camada 1
+- **Quick Start em <5 minutos**: documentado em QUICK_START.md
+- **Compartilhamento via ngrok**: `pnpm share:dev` → URL pública impressa
+- **Dashboard de monitoramento**: 9 painéis Grafana auto-provisionados
+- **Limitações documentadas**: 10 limitações com workarounds claros
+- **ADR-0021**: critérios objetivos de prontidão para testes manuais
+
+### O que NÃO foi feito (conforme decisão humana)
+
+- Deploy em produção (Vercel, Supabase cloud, domínio)
+- IaC via Pulumi
+- Stripe live keys
+- NATS managed
+- Novas features de UI
+
+### Dívidas para Sprint 10
+
+1. Deploy em staging (Vercel preview + Supabase cloud branch) — pré-requisito para Sprint 10
+2. IaC Pulumi para infra cloud
+3. Hardening de segurança para exposição pública
+4. Playwright E2E com E2E_USER_EMAIL configurado
+5. RAG validado E2E com LLM key real
+6. Billing Lago + Stripe live (F2)
