@@ -5,6 +5,48 @@ Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
 
 ---
 
+# Sprint 11 — Schemas multi-tenant + cadastro CNPJ + aprovação
+
+Início: 2026-04-30T18:00:00Z
+Modelo: Claude Code (claude-sonnet-4-6, Sprint 11 N=1)
+
+## Origem
+
+Decisão estratégica em 2026-04-30: V2 vira spec, V1 é destino.
+Sprint 10 portou paradigma OS visual.
+Sprint 11 traz fundação multi-tenant rica + cadastro CNPJ funcional.
+
+## 5 pontos de calibração respondidos
+
+1. **Migrations existentes:** 21 arquivos de 20260429000001 até 20260430000021_mesa_layouts.
+2. **Reconciliação tenant_memberships → Opção A:** Manter nome `kernel.tenant_memberships`, adicionar colunas `status`, `module_access`, `invited_by`, `blocked_reason`, `blocked_at`, `removed_at`, `last_login_at`, `login_count`. JWT hook filtra `status = 'active'`. Dívida arquitetural documentada.
+3. **Employees enxuto:** ~75 campos HR puro conforme R11. Excluídos: commission*\*, sell*_, buy\__, monthly/quarterly/yearly_target, commissionRate, salesTarget, sellerCode.
+4. **Edge Functions:** `cnpj-lookup` (GET público sem auth) + `register-company` (POST com JWT → RPC PL/pgSQL atômica). `create-company` marcada deprecated.
+5. **Seed:** 3 companies (status=active, cnpj_data preenchido) + 1 staff@aethereos.test (is_platform_admin=true) + 3 owners com profile+employee + 6 employees adicionais. Throw em erros, SELECT COUNT validação.
+
+## Decisões neste sprint
+
+- `tenant_memberships` mantida (Opção A) — sem rename para company_users
+- Constraints de `plan` e `status` em companies serão recriadas para alinhar com V2
+- `is_platform_admin` em `kernel.profiles` (não em app_metadata) para separar de `is_staff`
+- `register-company` substitui `create-company` funcionalmente; legacy mantida mas deprecated
+
+## Histórico de milestones (Sprint 11)
+
+| Milestone | Descrição                                                                      | Status  | Commit |
+| --------- | ------------------------------------------------------------------------------ | ------- | ------ |
+| MX47      | Migrations: profiles + companies extend + tenant_memberships + company_modules | PENDING | —      |
+| MX48      | Migrations: employees + company_addresses + company_contacts                   | PENDING | —      |
+| MX49      | JWT hook is_platform_admin + Drizzle types completos                           | PENDING | —      |
+| MX50      | Edge Function cnpj-lookup (BrasilAPI + ReceitaWS fallback)                     | PENDING | —      |
+| MX51      | Edge Function register-company (fluxo A+B atomico)                             | PENDING | —      |
+| MX52      | Seed refatorado com novo schema + super admin                                  | PENDING | —      |
+| MX53      | UI: /register com lookup CNPJ + preview                                        | PENDING | —      |
+| MX54      | UI: /staff/companies aprovação inline + edge function                          | PENDING | —      |
+| MX55      | E2E Playwright atualizado + encerramento                                       | PENDING | —      |
+
+---
+
 # Sprint 10 — Foundation visual: paradigma OS V2 → V1
 
 Início: 2026-04-30T00:00:00Z
