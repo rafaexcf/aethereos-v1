@@ -1649,8 +1649,8 @@ Modelo: Claude Code (claude-sonnet-4-6, Sprint 8 N=1)
 | Milestone | Descrição                                             | Status  | Commit    |
 | --------- | ----------------------------------------------------- | ------- | --------- |
 | MX13      | Diagnóstico e fix dos 3 containers em loop            | DONE    | `331b081` |
-| MX14      | Staff panel com dados reais via Edge Function         | PENDING |           |
-| MX15      | pgvector + VectorDriver concreto + embedder           | PENDING |           |
+| MX14      | Staff panel com dados reais via Edge Function         | DONE    | `e0e3b00` |
+| MX15      | pgvector + VectorDriver concreto + embedder           | DONE    | pendente  |
 | MX16      | Integração RAG com Copilot (cega, sem LLM real)       | PENDING |           |
 | MX17      | Playwright E2E: pipeline SCP completo no browser real | PENDING |           |
 | MX18      | Encerramento Sprint 8                                 | PENDING |           |
@@ -1675,3 +1675,23 @@ Modelo: Claude Code (claude-sonnet-4-6, Sprint 8 N=1)
   - `infra/otel/otel-collector-config.yaml` — exporter `loki` → `otlphttp/loki`
 - Arquivos criados:
   - `docs/runbooks/operational-containers.md` — versões estáveis + guia de troubleshooting
+
+### MX15 — pgvector + VectorDriver concreto + embedder
+
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm typecheck` → 22/22 ✅
+  - `pnpm lint` → 22/22 ✅
+  - `pnpm test --filter=@aethereos/drivers-supabase` → 23/23 ✅
+- Arquivos criados:
+  - `supabase/migrations/20260430000012_pgvector_embeddings.sql` — pgvector extension, kernel.embeddings table com HNSW index, RLS, RPC search_embeddings
+  - `packages/drivers-supabase/src/vector/supabase-browser-vector-driver.ts` — SupabaseBrowserVectorDriver (search-only, RPC, RLS enforced)
+  - `supabase/functions/embed-text/index.ts` — Edge Function que chama LiteLLM /embeddings, modo degradado (503) se offline
+  - `apps/scp-worker/src/embedding-consumer.ts` — consumer NATS para platform.file.uploaded: fetch Storage → chunk → embed → insert em kernel.embeddings
+  - `packages/drivers-supabase/__tests__/vector-driver.test.ts` — 5 testes SupabaseBrowserVectorDriver
+- Arquivos modificados:
+  - `packages/drivers-supabase/src/vector/supabase-pgvector-driver.ts` — #tableName suporta schema-qualified e usa kernel.\* por default
+  - `packages/drivers-supabase/src/vector/index.ts` — exporta SupabaseBrowserVectorDriver
+  - `packages/drivers-supabase/src/browser.ts` — exporta SupabaseBrowserVectorDriver
+  - `apps/scp-worker/src/main.ts` — invoca setupEmbeddingConsumer após connect
+- **RAG infra implementada mas NÃO VALIDADA E2E** porque Copilot continua em degradado por decisão humana. Quando humano configurar `ANTHROPIC_API_KEY` ou `OPENAI_API_KEY` + LiteLLM com modelo configurado, validação E2E vira tarefa de sprint posterior.

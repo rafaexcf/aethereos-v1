@@ -1,6 +1,7 @@
 import postgres from "postgres";
 import { NatsEventBusDriver } from "@aethereos/drivers-nats";
 import type { EventEnvelope } from "@aethereos/drivers";
+import { setupEmbeddingConsumer } from "./embedding-consumer.js";
 
 const POLL_INTERVAL_MS = 500;
 const BATCH_SIZE = 50;
@@ -95,6 +96,9 @@ async function main(): Promise<void> {
 
   process.on("SIGTERM", () => void shutdown());
   process.on("SIGINT", () => void shutdown());
+
+  // RAG: subscribe to platform.file.uploaded — degraded if LiteLLM unavailable
+  await setupEmbeddingConsumer(bus, sql);
 
   while (true) {
     try {

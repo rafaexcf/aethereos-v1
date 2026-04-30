@@ -40,7 +40,10 @@ export class SupabasePgvectorDriver implements VectorDriver {
   }
 
   #tableName(collection: string): string {
-    return `vector.${collection.replace(/[^a-z0-9_]/g, "_")}`;
+    if (collection.includes(".")) {
+      return collection.replace(/[^a-z0-9_.]/g, "_");
+    }
+    return `kernel.${collection.replace(/[^a-z0-9_]/g, "_")}`;
   }
 
   async upsert(

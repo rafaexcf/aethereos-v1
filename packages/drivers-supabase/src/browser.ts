@@ -12,3 +12,6 @@ export type {
 } from "./data/index";
 
 export * from "./schema/index";
+
+export { SupabaseBrowserVectorDriver } from "./vector/index";
+export type { SupabaseBrowserVectorConfig } from "./vector/index";
