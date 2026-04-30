@@ -8,13 +8,15 @@
  * Shadow Mode: Copilot propõe ações tipadas; humano aprova/rejeita (autonomia 0-1)
  * MX5: intents validados via Zod (COPILOT_INTENT_SCHEMAS); operações invariantes
  *       (Fundamentação 12.4) bloqueadas por canPropose() antes de criar proposta.
+ * MX16: RAG retrieval (cego — roda mesmo em degradado; NÃO VALIDADO E2E com LLM real)
  */
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { instrumentedChat } from "@aethereos/kernel";
 import { isInvariantOperation } from "@aethereos/kernel";
 import { COPILOT_INTENT_SCHEMAS } from "@aethereos/scp-registry";
 import type { CopilotIntentPayload } from "@aethereos/scp-registry";
 import type { LLMDriver, ObservabilityDriver } from "@aethereos/drivers";
+import { SupabaseBrowserVectorDriver } from "@aethereos/drivers-supabase/browser";
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -69,6 +71,33 @@ Ajude o usuário com tarefas dentro da plataforma: Drive, Pessoas, Chat, Configu
 Seja conciso e direto. Responda sempre em português.
 Quando o usuário pedir uma ação (criar pessoa, enviar notificação, criar canal, etc.),
 diga o que você faria e que vai propor a ação para aprovação (Shadow Mode).`;
+
+// ---------------------------------------------------------------------------
+// RAG helpers (MX16)
+// ---------------------------------------------------------------------------
+
+async function fetchQueryEmbedding(
+  supabaseUrl: string,
+  anonKey: string,
+  text: string,
+): Promise<number[] | null> {
+  try {
+    const res = await fetch(`${supabaseUrl}/functions/v1/embed-text`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${anonKey}`,
+      },
+      body: JSON.stringify({ text }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { embedding?: number[] };
+    return body.embedding ?? null;
+  } catch {
+    return null;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Operações bloqueadas (Fundamentação 12.4 [INV])
@@ -345,6 +374,16 @@ export function CopilotDrawer({
   const bottomRef = useRef<HTMLDivElement>(null);
   const conversationId = useRef(crypto.randomUUID());
 
+  const vectorDriver = useMemo(() => {
+    const supabaseUrl = import.meta.env["VITE_SUPABASE_URL"] ?? "";
+    const anonKey = import.meta.env["VITE_SUPABASE_ANON_KEY"] ?? "";
+    if (!supabaseUrl || !anonKey) return null;
+    return new SupabaseBrowserVectorDriver({
+      supabaseUrl,
+      supabaseAnonKey: anonKey,
+    });
+  }, []);
+
   useEffect(() => {
     if (open) {
       setTimeout(() => inputRef.current?.focus(), 50);
@@ -405,6 +444,40 @@ export function CopilotDrawer({
       return;
     }
 
+    // RAG retrieval — runs even in degraded mode (MX16, P14)
+    let ragChunkCount = 0;
+    let ragContextText = "";
+    if (vectorDriver !== null) {
+      const supabaseUrl = import.meta.env["VITE_SUPABASE_URL"] ?? "";
+      const anonKey = import.meta.env["VITE_SUPABASE_ANON_KEY"] ?? "";
+      const embedding = await fetchQueryEmbedding(supabaseUrl, anonKey, body);
+      if (embedding !== null) {
+        vectorDriver.withTenant({
+          company_id: companyId,
+          actor: {
+            type: "agent",
+            agent_id: DEMO_AGENT_ID,
+            supervising_user_id: userId,
+          },
+        });
+        const searchResult = await vectorDriver.search(
+          "embeddings",
+          embedding,
+          {
+            topK: 5,
+            includeContent: true,
+          },
+        );
+        if (searchResult.ok && searchResult.value.length > 0) {
+          ragChunkCount = searchResult.value.length;
+          ragContextText = searchResult.value
+            .filter((r) => typeof r.content === "string")
+            .map((r) => r.content as string)
+            .join("\n---\n");
+        }
+      }
+    }
+
     llm.withTenant({
       company_id: companyId,
       actor: {
@@ -415,8 +488,12 @@ export function CopilotDrawer({
     });
 
     const history = [...messages, userMsg];
+    const systemContent =
+      ragContextText.length > 0
+        ? `${SYSTEM_PROMPT}\n\nContexto relevante dos documentos da empresa (use para embasar sua resposta):\n---\n${ragContextText}\n---`
+        : SYSTEM_PROMPT;
     const llmMessages = [
-      { role: "system" as const, content: SYSTEM_PROMPT },
+      { role: "system" as const, content: systemContent },
       ...history.map((m) => ({
         role: m.role as "user" | "assistant",
         content: m.content,
@@ -442,7 +519,10 @@ export function CopilotDrawer({
 
       let content: string;
       if (degraded) {
-        if (detected !== null) {
+        if (ragChunkCount > 0) {
+          const plural = ragChunkCount !== 1 ? "s" : "";
+          content = `📚 Encontrei ${ragChunkCount} trecho${plural} relevante${plural} em seus documentos. Copilot offline — habilite chave LLM para receber resposta sintetizada.`;
+        } else if (detected !== null) {
           content = `Identifico que você quer: **${INTENT_LABELS[detected.intentType]}**. Estou propondo a ação para sua aprovação (Shadow Mode). LiteLLM em modo degenerado — configure VITE_LITELLM_KEY para respostas mais detalhadas.`;
         } else {
           content =
@@ -487,7 +567,17 @@ export function CopilotDrawer({
       };
       setMessages((prev) => [...prev, errMsg]);
     }
-  }, [draft, loading, messages, llm, obs, userId, companyId, correlationId]);
+  }, [
+    draft,
+    loading,
+    messages,
+    llm,
+    obs,
+    userId,
+    companyId,
+    correlationId,
+    vectorDriver,
+  ]);
 
   const pendingProposals = proposals.filter((p) => p.status === "pending");
 

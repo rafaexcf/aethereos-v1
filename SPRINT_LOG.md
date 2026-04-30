@@ -1650,8 +1650,8 @@ Modelo: Claude Code (claude-sonnet-4-6, Sprint 8 N=1)
 | --------- | ----------------------------------------------------- | ------- | --------- |
 | MX13      | Diagnóstico e fix dos 3 containers em loop            | DONE    | `331b081` |
 | MX14      | Staff panel com dados reais via Edge Function         | DONE    | `e0e3b00` |
-| MX15      | pgvector + VectorDriver concreto + embedder           | DONE    | pendente  |
-| MX16      | Integração RAG com Copilot (cega, sem LLM real)       | PENDING |           |
+| MX15      | pgvector + VectorDriver concreto + embedder           | DONE    | `91a0e7a` |
+| MX16      | Integração RAG com Copilot (cega, sem LLM real)       | DONE    | pendente  |
 | MX17      | Playwright E2E: pipeline SCP completo no browser real | PENDING |           |
 | MX18      | Encerramento Sprint 8                                 | PENDING |           |
 
@@ -1695,3 +1695,20 @@ Modelo: Claude Code (claude-sonnet-4-6, Sprint 8 N=1)
   - `packages/drivers-supabase/src/browser.ts` — exporta SupabaseBrowserVectorDriver
   - `apps/scp-worker/src/main.ts` — invoca setupEmbeddingConsumer após connect
 - **RAG infra implementada mas NÃO VALIDADA E2E** porque Copilot continua em degradado por decisão humana. Quando humano configurar `ANTHROPIC_API_KEY` ou `OPENAI_API_KEY` + LiteLLM com modelo configurado, validação E2E vira tarefa de sprint posterior.
+
+### MX16 — Integração RAG com Copilot (cega, sem LLM real)
+
+- Status: SUCCESS
+- Comandos validadores:
+  - `pnpm --filter @aethereos/shell-commercial typecheck` → ok ✅
+  - `pnpm --filter @aethereos/shell-commercial lint` → ok ✅
+- Arquivos modificados:
+  - `apps/shell-commercial/src/apps/copilot/index.tsx` — RAG integrado ao handleSend
+- Integração implementada:
+  - `fetchQueryEmbedding()` — chama `/functions/v1/embed-text` via fetch; retorna null se 503/offline (degraded-safe)
+  - `vectorDriver` — `SupabaseBrowserVectorDriver` criado via `useMemo` a partir de `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY`
+  - RAG corre ANTES da chamada LLM, mesmo em modo degradado (P14 + P15)
+  - Se chunks encontrados: injetados no `systemContent` como contexto para o LLM
+  - Se LLM degradado + chunks > 0: mensagem "📚 Encontrei N trechos relevantes em seus documentos. Copilot offline — habilite chave LLM para receber resposta sintetizada."
+  - Se LLM degradado + 0 chunks: comportamento anterior preservado (Intent Detection banner)
+- **MX16 — UI de RAG integrada ao Copilot. NÃO VALIDADA E2E com LLM real.** Retrieval roda e retorna 0 chunks (sem arquivos indexados e sem LiteLLM ativo), mas o fluxo query→embed→search está completo e tipagem verificada.
