@@ -13,6 +13,8 @@ export const rootRoute = createRootRoute({
 
     const isAuthRoute =
       location.pathname === "/login" || location.pathname === "/signup";
+    const isDesktop = location.pathname === "/desktop";
+    const isIndexRedirect = location.pathname === "/";
 
     // Sem sessão → /login
     if (userId === null && !isAuthRoute) {
@@ -29,10 +31,17 @@ export const rootRoute = createRootRoute({
       throw redirect({ to: "/select-company", replace: true });
     }
 
-    // Sessão completa tentando acessar rota de auth → /
+    // Sessão completa tentando acessar rota de auth → /desktop
     if (userId !== null && activeCompanyId !== null && isAuthRoute) {
-      throw redirect({ to: "/", replace: true });
+      throw redirect({ to: "/desktop", replace: true });
     }
+
+    // Raiz / → /desktop se autenticado com company
+    if (userId !== null && activeCompanyId !== null && isIndexRedirect) {
+      throw redirect({ to: "/desktop", replace: true });
+    }
+
+    void isDesktop;
   },
 
   component: RootComponent,

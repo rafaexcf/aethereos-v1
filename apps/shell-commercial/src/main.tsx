@@ -7,6 +7,7 @@ import { loginRoute } from "./routes/login";
 import { signupRoute } from "./routes/signup";
 import { selectCompanyRoute } from "./routes/select-company";
 import { indexRoute } from "./routes/index";
+import { desktopRoute } from "./routes/desktop";
 import { aboutRoute } from "./routes/settings/about";
 import { opsRoute } from "./routes/settings/ops";
 import { staffRoute } from "./routes/staff";
@@ -19,6 +20,7 @@ const routeTree = rootRoute.addChildren([
   loginRoute,
   signupRoute,
   selectCompanyRoute,
+  desktopRoute,
   aboutRoute,
   opsRoute,
   staffRoute,
