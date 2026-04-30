@@ -1,11 +1,9 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
 const EMAIL = process.env["E2E_USER_EMAIL"] ?? "";
 const PASSWORD = process.env["E2E_USER_PASSWORD"] ?? "";
 
-async function loginAndGoToSelectCompany(
-  page: import("@playwright/test").Page,
-): Promise<void> {
+async function loginAndGoToSelectCompany(page: Page): Promise<void> {
   await page.goto("/login");
   await page.locator("#email").fill(EMAIL);
   await page.locator("#password").fill(PASSWORD);

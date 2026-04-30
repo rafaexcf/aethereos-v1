@@ -78,8 +78,8 @@ test.describe("cross-tenant RLS isolation", () => {
     expect(tokenA).not.toBeNull();
     expect(tokenB).not.toBeNull();
 
-    const companiesA = await queryCompanies(tokenA!);
-    const companiesB = await queryCompanies(tokenB!);
+    const companiesA = await queryCompanies(tokenA ?? "");
+    const companiesB = await queryCompanies(tokenB ?? "");
 
     const idsA = new Set(
       (companiesA as Array<{ id: string }>).map((c) => c.id),

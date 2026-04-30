@@ -5,14 +5,12 @@
  * The outbox counter on the desktop page reflects events published via scp-publish
  * Edge Function. An increment proves the full browser→Edge Function→outbox pipeline.
  */
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
 const EMAIL = process.env["E2E_USER_EMAIL"] ?? "";
 const PASSWORD = process.env["E2E_USER_PASSWORD"] ?? "";
 
-async function loginToDesktop(
-  page: import("@playwright/test").Page,
-): Promise<void> {
+async function loginToDesktop(page: Page): Promise<void> {
   await page.goto("/login");
   await page.locator("#email").fill(EMAIL);
   await page.locator("#password").fill(PASSWORD);
