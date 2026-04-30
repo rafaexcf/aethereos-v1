@@ -34,9 +34,10 @@ export function useEmployees(opts: UseEmployeesOptions = {}) {
 
       const { data, count, error } = await q;
       if (error !== null) return;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setEmployees(
-        (data ?? []).map((r: any) => rowToEmployee(r as Record<string, any>)),
+        (data ?? []).map((r: unknown) =>
+          rowToEmployee(r as Record<string, unknown>),
+        ),
       );
       setTotal(count ?? 0);
     } finally {
@@ -73,9 +74,11 @@ export function useDepartments(): string[] {
       .then(({ data }) => {
         const unique = [
           ...new Set(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (data ?? [])
-              .map((r: any) => r["department"] as string)
+              .map(
+                (r: unknown) =>
+                  (r as Record<string, unknown>)["department"] as string,
+              )
               .filter(Boolean),
           ),
         ].sort();
