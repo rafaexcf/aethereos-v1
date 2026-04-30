@@ -36,6 +36,8 @@
     "db:reset": "supabase db reset",
     "db:diff": "supabase db diff",
     "db:migration": "supabase migration new",
+    "seed:dev": "pnpm --filter=@aethereos/seed start",
+    "seed:reset": "pnpm --filter=@aethereos/seed start -- --reset",
     "prepare": "husky"
   },
   "devDependencies": {

@@ -22,6 +22,8 @@ export default tseslint.config(
       "**/postcss.config.js",
       // Edge Functions rodam em Deno — não são Node.js e usam console legitimamente
       "supabase/functions/**",
+      // Seed é CLI — console.log é intencionalmente o output do script
+      "tooling/seed/**",
     ],
   },
 );
