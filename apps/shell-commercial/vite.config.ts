@@ -44,6 +44,18 @@ export default defineConfig({
       devOptions: { enabled: false },
     }),
   ],
+  resolve: {
+    alias: {
+      "@aethereos/ui-shell": new URL(
+        "../../packages/ui-shell/src/index.ts",
+        import.meta.url,
+      ).pathname,
+      "@aethereos/scp-registry": new URL(
+        "../../packages/scp-registry/src/index.ts",
+        import.meta.url,
+      ).pathname,
+    },
+  },
   build: {
     target: "es2022",
     rollupOptions: {
