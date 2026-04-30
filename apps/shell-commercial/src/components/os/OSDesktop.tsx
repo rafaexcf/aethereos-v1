@@ -4,12 +4,14 @@ import { TopBar } from "./TopBar";
 import { AppFrame } from "./AppFrame";
 import { useSessionStore } from "../../stores/session";
 import { useOSStore } from "../../stores/osStore";
+import { useMesaStore } from "../../stores/mesaStore";
 import { CopilotDrawer } from "../../apps/copilot/index";
 
 export function OSDesktop() {
   const navigate = useNavigate();
   const { userId, activeCompanyId, drivers, clearSession } = useSessionStore();
   const { aiModalOpen, closeAIModal } = useOSStore();
+  const fetchLayout = useMesaStore((s) => s.fetchLayout);
   const [companyName, setCompanyName] = useState<string | null>(null);
 
   useEffect(() => {
@@ -21,7 +23,8 @@ export function OSDesktop() {
   useEffect(() => {
     if (drivers === null || activeCompanyId === null) return;
     void drivers.auth.getCompanyName(activeCompanyId).then(setCompanyName);
-  }, [drivers, activeCompanyId]);
+    void fetchLayout();
+  }, [drivers, activeCompanyId, fetchLayout]);
 
   const handleSignOut = useCallback(async () => {
     if (drivers === null) return;
