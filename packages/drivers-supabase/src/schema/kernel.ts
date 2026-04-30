@@ -7,6 +7,10 @@ import {
   bigserial,
   bigint,
   integer,
+  boolean,
+  date,
+  numeric,
+  doublePrecision,
   index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
@@ -19,17 +23,32 @@ export const companies = kernelSchema.table(
     id: uuid("id").primaryKey().defaultRandom(),
     slug: text("slug").notNull().unique(),
     name: text("name").notNull(),
-    plan: text("plan").notNull().default("trial"),
-    status: text("status").notNull().default("active"),
+    plan: text("plan").notNull().default("free"),
+    status: text("status").notNull().default("pending"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    metadata: jsonb("metadata").notNull().default({}),
+    cnpj: text("cnpj"),
+    tradeName: text("trade_name"),
+    email: text("email"),
+    phone: text("phone"),
+    logoUrl: text("logo_url"),
+    onboardingCompleted: boolean("onboarding_completed")
+      .notNull()
+      .default(false),
+    settings: jsonb("settings").notNull().default({}),
+    cnpjData: jsonb("cnpj_data"),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (t) => [uniqueIndex("kernel_companies_slug_idx").on(t.slug)],
 );
+
+export type Company = typeof companies.$inferSelect;
+export type NewCompany = typeof companies.$inferInsert;
 
 export const users = kernelSchema.table(
   "users",
@@ -401,3 +420,247 @@ export const fileVersions = kernelSchema.table(
   },
   (t) => [index("kernel_file_versions_file_idx").on(t.fileId, t.version)],
 );
+
+// ---------------------------------------------------------------------------
+// Sprint 11 — Multi-tenant schemas
+// ---------------------------------------------------------------------------
+
+export const profiles = kernelSchema.table("profiles", {
+  id: uuid("id").primaryKey(),
+  fullName: text("full_name").notNull(),
+  phone: text("phone"),
+  avatarUrl: text("avatar_url"),
+  position: text("position"),
+  department: text("department"),
+  isPlatformAdmin: boolean("is_platform_admin").notNull().default(false),
+  data: jsonb("data").default({}),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export type Profile = typeof profiles.$inferSelect;
+export type NewProfile = typeof profiles.$inferInsert;
+
+export const tenantMemberships = kernelSchema.table(
+  "tenant_memberships",
+  {
+    userId: uuid("user_id").notNull(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    role: text("role").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    status: text("status").notNull().default("active"),
+    moduleAccess: jsonb("module_access").default({}),
+    invitedBy: uuid("invited_by"),
+    blockedReason: text("blocked_reason"),
+    blockedAt: timestamp("blocked_at", { withTimezone: true }),
+    removedAt: timestamp("removed_at", { withTimezone: true }),
+    lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
+    loginCount: integer("login_count").notNull().default(0),
+  },
+  (t) => [
+    index("kernel_memberships_user_id_idx2").on(t.userId),
+    index("kernel_memberships_company_id_idx2").on(t.companyId),
+  ],
+);
+
+export type TenantMembership = typeof tenantMemberships.$inferSelect;
+export type NewTenantMembership = typeof tenantMemberships.$inferInsert;
+
+export const companyModules = kernelSchema.table(
+  "company_modules",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    module: text("module").notNull(),
+    status: text("status").notNull().default("active"),
+    activatedAt: timestamp("activated_at", { withTimezone: true }).defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("kernel_company_modules_company_idx").on(t.companyId)],
+);
+
+export type CompanyModule = typeof companyModules.$inferSelect;
+export type NewCompanyModule = typeof companyModules.$inferInsert;
+
+export const employees = kernelSchema.table(
+  "employees",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    userId: uuid("user_id"),
+    fullName: text("full_name").notNull(),
+    email: text("email"),
+    phone: text("phone"),
+    cpf: text("cpf"),
+    rg: text("rg"),
+    birthDate: date("birth_date"),
+    gender: text("gender"),
+    maritalStatus: text("marital_status"),
+    nationality: text("nationality"),
+    position: text("position"),
+    department: text("department"),
+    registrationNumber: text("registration_number"),
+    contractType: text("contract_type").notNull().default("CLT"),
+    workSchedule: text("work_schedule"),
+    salary: numeric("salary", { precision: 14, scale: 2 }),
+    hireDate: date("hire_date"),
+    terminationDate: date("termination_date"),
+    status: text("status").notNull().default("active"),
+    photoUrl: text("photo_url"),
+    coverUrl: text("cover_url"),
+    corporateEmail: text("corporate_email"),
+    corporatePhone: text("corporate_phone"),
+    areaTrabalho: text("area_trabalho"),
+    pisPasep: text("pis_pasep"),
+    ctpsNumber: text("ctps_number"),
+    ctpsSeries: text("ctps_series"),
+    ctpsUf: text("ctps_uf"),
+    voterTitle: text("voter_title"),
+    voterZone: text("voter_zone"),
+    voterSection: text("voter_section"),
+    addressCep: text("address_cep"),
+    addressStreet: text("address_street"),
+    addressNumber: text("address_number"),
+    addressComplement: text("address_complement"),
+    addressNeighborhood: text("address_neighborhood"),
+    addressCity: text("address_city"),
+    addressState: text("address_state"),
+    costCenter: text("cost_center"),
+    managerId: uuid("manager_id"),
+    workHours: text("work_hours"),
+    badgeNumber: text("badge_number"),
+    workStartTime: text("work_start_time"),
+    workEndTime: text("work_end_time"),
+    ramal: text("ramal"),
+    linkedin: text("linkedin"),
+    bio: text("bio"),
+    bloodType: text("blood_type"),
+    linkedinPublic: boolean("linkedin_public").notNull().default(false),
+    bioPublic: boolean("bio_public").notNull().default(false),
+    contractStatus: text("contract_status"),
+    contractEndDate: date("contract_end_date"),
+    workRegime: text("work_regime"),
+    paymentUnit: text("payment_unit"),
+    cboCode: text("cbo_code"),
+    cboDescription: text("cbo_description"),
+    customWorkSchedule: text("custom_work_schedule"),
+    contractTerm: text("contract_term"),
+    probationPeriod: text("probation_period"),
+    probationEndDate: date("probation_end_date"),
+    workLocationSameCompany: boolean("work_location_same_company")
+      .notNull()
+      .default(true),
+    workLocationCep: text("work_location_cep"),
+    workLocationStreet: text("work_location_street"),
+    workLocationNumber: text("work_location_number"),
+    workLocationComplement: text("work_location_complement"),
+    workLocationNeighborhood: text("work_location_neighborhood"),
+    workLocationCity: text("work_location_city"),
+    workLocationState: text("work_location_state"),
+    lastRaiseDate: date("last_raise_date"),
+    hazardPay: boolean("hazard_pay").notNull().default(false),
+    hazardPayPercent: numeric("hazard_pay_percent", { precision: 5, scale: 2 }),
+    dangerPay: boolean("danger_pay").notNull().default(false),
+    nightShiftPay: boolean("night_shift_pay").notNull().default(false),
+    overtimePercent: numeric("overtime_percent", { precision: 5, scale: 2 }),
+    unionName: text("union_name"),
+    fgtsAccount: text("fgts_account"),
+    asoAdmissionDate: date("aso_admission_date"),
+    asoNextPeriodic: date("aso_next_periodic"),
+    terminationReason: text("termination_reason"),
+    terminationType: text("termination_type"),
+    terminationNotes: text("termination_notes"),
+    data: jsonb("data").notNull().default({}),
+    createdBy: uuid("created_by"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("kernel_employees_company_id_idx").on(t.companyId),
+    index("kernel_employees_status_idx").on(t.companyId, t.status),
+  ],
+);
+
+export type Employee = typeof employees.$inferSelect;
+export type NewEmployee = typeof employees.$inferInsert;
+
+export const companyAddresses = kernelSchema.table(
+  "company_addresses",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    type: text("type").notNull().default("sede"),
+    zipCode: text("zip_code"),
+    street: text("street"),
+    number: text("number"),
+    complement: text("complement"),
+    neighborhood: text("neighborhood"),
+    city: text("city"),
+    state: text("state"),
+    country: text("country").notNull().default("BR"),
+    latitude: doublePrecision("latitude"),
+    longitude: doublePrecision("longitude"),
+    isPrimary: boolean("is_primary").notNull().default(false),
+    isBilling: boolean("is_billing").notNull().default(false),
+    isShipping: boolean("is_shipping").notNull().default(false),
+    label: text("label"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [index("kernel_company_addresses_company_idx").on(t.companyId)],
+);
+
+export type CompanyAddress = typeof companyAddresses.$inferSelect;
+export type NewCompanyAddress = typeof companyAddresses.$inferInsert;
+
+export const companyContacts = kernelSchema.table(
+  "company_contacts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    department: text("department").notNull(),
+    name: text("name"),
+    email: text("email"),
+    phone: text("phone"),
+    extension: text("extension"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (t) => [index("kernel_company_contacts_company_idx").on(t.companyId)],
+);
+
+export type CompanyContact = typeof companyContacts.$inferSelect;
+export type NewCompanyContact = typeof companyContacts.$inferInsert;
