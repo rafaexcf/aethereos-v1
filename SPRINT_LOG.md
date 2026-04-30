@@ -36,6 +36,72 @@ Camada 1 ganha RH navegável + Magic Store launcher + Onboarding genérico.
 
 ---
 
+# Sprint Cirúrgico 12.1 — Remediação pós-validação
+
+Início: 2026-04-30T00:00:00Z
+Modelo: Claude Code (claude-sonnet-4-6, Sprint 12.1 N=1)
+
+## Origem
+
+Após Sprint 12 encerrado, 8 apps (Drive, Pessoas, Chat, Settings, RH, Magic Store,
+Governança, Auditoria) renderizavam tela em branco. Copilot (ae-ai) era o único
+app funcional — pista diagnóstica: ele não usa `AppShell` de `@aethereos/ui-shell`.
+Sprint cirúrgico ativado para restaurar funcionalidade sem rollback.
+
+## Diagnóstico
+
+Causa raiz: `packages/ui-shell/src/` usava imports com extensão `.js` (ex:
+`from "./components/app-shell/index.js"`). Com alias Vite apontando para source,
+o Vite tentava resolver `.js → .tsx` — o que Vite NÃO suporta (só `.js → .ts`).
+Resultado: todos os exports de `AppShell` falhavam silenciosamente → tela branca.
+
+Bugs secundários identificados:
+
+- `vite.config.ts` com alias `@aethereos/db-types` inválido (package não existe)
+- `drivers-litellm/src/index.ts` com import `.js` sem dist compilado
+- `useEmployees.ts` usando `.eq("deleted_at", null)` → HTTP 400 (PostgREST exige `.is()`)
+- E2E Playwright usando `getByRole("button")` para `motion.div` sem role attribute
+
+**Decisão importante (scp-registry):** scp-registry foi tentado sem `.js` e revertido.
+scp-worker usa `moduleResolution: NodeNext` que exige `.js` explícito. Vite resolve
+`.js → .ts` normalmente para pacotes puros `.ts`. scp-registry fica com `.js`.
+
+## Fixes aplicados
+
+| Fix   | Descrição                                                              | Arquivos                                       | Commit  |
+| ----- | ---------------------------------------------------------------------- | ---------------------------------------------- | ------- |
+| FIX-1 | Remover `.js` de imports em `packages/ui-shell/src/` (causa raiz)      | 5 arquivos em ui-shell/src/                    | 85d12f2 |
+| FIX-2 | Remover alias inválido `@aethereos/db-types` do vite.config.ts         | vite.config.ts                                 | 85d12f2 |
+| FIX-3 | scp-registry — REVERTIDO (NodeNext precisa de `.js`)                   | scp-registry/src/ (revert 7da0e54)             | 7da0e54 |
+| FIX-4 | Remover `.js` de import em `drivers-litellm/src/index.ts`              | drivers-litellm/src/index.ts                   | 85d12f2 |
+| FIX-5 | `.eq(null)` → `.is(null)` em `useEmployees.ts` (HTTP 400 fix)          | rh/hooks/useEmployees.ts                       | 85d12f2 |
+| FIX-6 | Adicionar `role="button"` + `data-testid` ao DockIcon (motion.div)     | os/Dock.tsx                                    | 85d12f2 |
+| FIX-7 | E2E rh.spec.ts + magic-store.spec.ts: usar data-testid para dock icons | tooling/e2e/tests/rh.spec.ts, magic-store.spec | 451506a |
+
+## Gates triplos
+
+| Gate   | Comando         | Status                                             |
+| ------ | --------------- | -------------------------------------------------- |
+| Gate 1 | pnpm ci:full    | ✅ EXIT 0 (11/11 tasks)                            |
+| Gate 2 | pnpm test:smoke | ⚠️ requer env com credenciais reais                |
+| Gate 3 | pnpm test:e2e   | ✅ EXIT 0 (4 passed, 28 skipped — sem credenciais) |
+
+## Documentação criada
+
+- `DIAGNOSE_12_1.md` — mapa diagnóstico completo de todos os bugs e decisões
+- `KNOWN_LIMITATIONS.md` — KL-1 (GoTrueClient múltiplas instâncias), KL-2 (scp-registry alias source)
+
+## Validação visual pendente (humano)
+
+Requer restart do servidor Vite local e verificação manual em browser:
+
+- Drive, Pessoas, Chat, Settings — renderizam conteúdo (não tela branca)
+- RH — lista colaboradores sem HTTP 400
+- Magic Store — exibe catálogo de apps
+- Governança, Auditoria — telas de placeholder visíveis
+
+---
+
 # Sprint 11 — Schemas multi-tenant + cadastro CNPJ + aprovação
 
 Início: 2026-04-30T18:00:00Z
