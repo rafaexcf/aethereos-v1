@@ -1,2 +1,2 @@
-export { LiteLLMDriver } from "./litellm-driver.js";
-export type { LiteLLMConfig, LLMCostResult } from "./litellm-driver.js";
+export { LiteLLMDriver } from "./litellm-driver";
+export type { LiteLLMConfig, LLMCostResult } from "./litellm-driver";
