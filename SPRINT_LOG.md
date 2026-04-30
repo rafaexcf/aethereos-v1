@@ -1651,8 +1651,8 @@ Modelo: Claude Code (claude-sonnet-4-6, Sprint 8 N=1)
 | MX13      | Diagnóstico e fix dos 3 containers em loop            | DONE    | `331b081` |
 | MX14      | Staff panel com dados reais via Edge Function         | DONE    | `e0e3b00` |
 | MX15      | pgvector + VectorDriver concreto + embedder           | DONE    | `91a0e7a` |
-| MX16      | Integração RAG com Copilot (cega, sem LLM real)       | DONE    | pendente  |
-| MX17      | Playwright E2E: pipeline SCP completo no browser real | PENDING |           |
+| MX16      | Integração RAG com Copilot (cega, sem LLM real)       | DONE    | `7c50bef` |
+| MX17      | Playwright E2E: pipeline SCP completo no browser real | DONE    | pendente  |
 | MX18      | Encerramento Sprint 8                                 | PENDING |           |
 
 ### MX13 — Diagnóstico e fix dos 3 containers em loop
@@ -1712,3 +1712,22 @@ Modelo: Claude Code (claude-sonnet-4-6, Sprint 8 N=1)
   - Se LLM degradado + chunks > 0: mensagem "📚 Encontrei N trechos relevantes em seus documentos. Copilot offline — habilite chave LLM para receber resposta sintetizada."
   - Se LLM degradado + 0 chunks: comportamento anterior preservado (Intent Detection banner)
 - **MX16 — UI de RAG integrada ao Copilot. NÃO VALIDADA E2E com LLM real.** Retrieval roda e retorna 0 chunks (sem arquivos indexados e sem LiteLLM ativo), mas o fluxo query→embed→search está completo e tipagem verificada.
+
+### MX17 — Playwright E2E: pipeline SCP completo no browser real
+
+- Status: SUCCESS
+- Comandos validadores:
+  - `cd tooling/e2e && npx tsc --noEmit` → ok ✅
+- Pacote criado: `tooling/e2e/` (`@aethereos/e2e`)
+- Arquivos criados:
+  - `tooling/e2e/package.json` — @playwright/test 1.44+, scripts: test + test:e2e + install-browsers
+  - `tooling/e2e/playwright.config.ts` — usa E2E_BASE_URL (default http://localhost:5174), Chromium
+  - `tooling/e2e/tsconfig.json`
+  - `tooling/e2e/tests/login.spec.ts` — renderização form, login válido, login inválido (skip se E2E_USER_EMAIL não set)
+  - `tooling/e2e/tests/company-creation.spec.ts` — select-company page, criar empresa → navega para desktop
+  - `tooling/e2e/tests/drive.spec.ts` — desktop SCP outbox counter, Drive app abre em janela, fecha
+  - `tooling/e2e/tests/cross-tenant.spec.ts` — user A e user B vêem companies distintas (via Supabase REST + JWT), unauthenticated retorna vazio
+- Todos os testes usam `testInfo.skip()` quando env vars não estão configuradas
+- `turbo.json` já possuía task `test:e2e` definida; `tooling/` já listado em `pnpm-workspace.yaml`
+- Execução: `pnpm test:e2e` (via turbo) ou `cd tooling/e2e && pnpm test:headed` (interativo)
+- Para rodar: configurar `E2E_USER_EMAIL`, `E2E_USER_PASSWORD`, `E2E_BASE_URL` + `pnpm --filter @aethereos/e2e install-browsers` antes da primeira execução

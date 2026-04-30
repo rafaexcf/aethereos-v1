@@ -1,0 +1,16 @@
+{
+  "name": "@aethereos/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Playwright E2E tests — real browser SCP pipeline validation",
+  "scripts": {
+    "test": "playwright test",
+    "test:e2e": "playwright test",
+    "test:headed": "playwright test --headed",
+    "install-browsers": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0",
+    "typescript": "^5.4.0"
+  }
+}
