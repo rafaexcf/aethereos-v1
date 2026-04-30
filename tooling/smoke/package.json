@@ -1,0 +1,18 @@
+{
+  "name": "@aethereos/smoke",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Smoke test automatizado para validar fluxo de login + JWT claims + RLS",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.0"
+  },
+  "devDependencies": {
+    "@aethereos/config-ts": "workspace:*",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.0"
+  }
+}
