@@ -1,27 +1,15 @@
 import type { ReactNode } from "react";
 
 export interface AppShellProps {
-  /** Título exibido no header interno do app */
   title?: string;
-  /** Subtítulo ou breadcrumb */
   subtitle?: string;
-  /** Botões de ação no header (canto direito) */
   actions?: ReactNode;
-  /** Painel lateral esquerdo (árvore de navegação, filtros, etc.) */
   sidebar?: ReactNode;
-  /** Largura do sidebar em pixels — padrão 240 */
   sidebarWidth?: number;
-  /** Barra de status no rodapé */
   statusBar?: ReactNode;
-  /** Conteúdo principal do app */
   children: ReactNode;
 }
 
-/**
- * AppShell — wrapper de layout para apps internos da Camada 1.
- * Compartilhado por Drive, Pessoas, Chat, Configurações, etc.
- * Desktop-first (Camada 1 é desktop-first por design).
- */
 export function AppShell({
   title,
   subtitle,
@@ -34,17 +22,38 @@ export function AppShell({
   return (
     <div
       data-ae="app-shell"
-      className="flex h-full w-full flex-col overflow-hidden bg-zinc-950"
+      className="flex h-full w-full flex-col overflow-hidden"
+      style={{ background: "var(--bg-base)" }}
     >
-      {/* Header interno do app */}
+      {/* App header */}
       {(title !== undefined || actions !== undefined) && (
-        <div className="flex shrink-0 items-center justify-between border-b border-zinc-800 px-4 py-2">
+        <div
+          className="flex shrink-0 items-center justify-between px-5 py-2.5"
+          style={{
+            borderBottom: "1px solid var(--border-subtle)",
+            background: "rgba(6,9,18,0.6)",
+            backdropFilter: "blur(var(--blur-ui))",
+            WebkitBackdropFilter: "blur(var(--blur-ui))",
+            minHeight: 44,
+          }}
+        >
           <div className="flex flex-col gap-0.5">
             {title !== undefined && (
-              <h2 className="text-sm font-semibold text-zinc-100">{title}</h2>
+              <h2
+                style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: "var(--text-primary)",
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                {title}
+              </h2>
             )}
             {subtitle !== undefined && (
-              <p className="text-xs text-zinc-500">{subtitle}</p>
+              <p style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
+                {subtitle}
+              </p>
             )}
           </div>
           {actions !== undefined && (
@@ -53,12 +62,16 @@ export function AppShell({
         </div>
       )}
 
-      {/* Área principal: sidebar + content */}
+      {/* Main: sidebar + content */}
       <div className="flex flex-1 overflow-hidden">
         {sidebar !== undefined && (
           <aside
-            className="shrink-0 overflow-y-auto border-r border-zinc-800 bg-zinc-900"
-            style={{ width: sidebarWidth }}
+            className="shrink-0 overflow-y-auto"
+            style={{
+              width: sidebarWidth,
+              background: "rgba(6,9,18,0.45)",
+              borderRight: "1px solid var(--border-subtle)",
+            }}
           >
             {sidebar}
           </aside>
@@ -68,7 +81,15 @@ export function AppShell({
 
       {/* Status bar */}
       {statusBar !== undefined && (
-        <div className="shrink-0 border-t border-zinc-800 bg-zinc-900 px-4 py-1 text-xs text-zinc-500">
+        <div
+          className="shrink-0 px-4 py-1"
+          style={{
+            borderTop: "1px solid var(--border-subtle)",
+            background: "rgba(6,9,18,0.5)",
+            fontSize: 11,
+            color: "var(--text-tertiary)",
+          }}
+        >
           {statusBar}
         </div>
       )}

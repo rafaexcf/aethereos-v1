@@ -69,10 +69,26 @@ interface AppCardProps {
 }
 
 function AppCard({ app, onClick }: AppCardProps) {
+  const [hovered, setHovered] = useState(false);
+
   return (
     <button
       onClick={onClick}
-      className="flex flex-col gap-3 p-4 bg-zinc-900 border border-zinc-800 rounded-xl text-left hover:border-zinc-700 hover:bg-zinc-800/80 transition-all cursor-pointer"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 12,
+        padding: 16,
+        background: hovered ? "var(--glass-bg-hover)" : "var(--glass-bg)",
+        border: `1px solid ${hovered ? "var(--border-default)" : "var(--glass-border)"}`,
+        borderRadius: "var(--radius-lg)",
+        textAlign: "left",
+        cursor: "pointer",
+        transition: "var(--transition-default)",
+        boxShadow: "var(--glass-specular)",
+      }}
     >
       <div className="flex items-start justify-between">
         <div
@@ -90,8 +106,11 @@ function AppCard({ app, onClick }: AppCardProps) {
           <AppIcon name={app.icon} color={app.color} size={22} />
         </div>
         <span
-          className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
           style={{
+            fontSize: 10,
+            fontWeight: 600,
+            padding: "2px 8px",
+            borderRadius: 9999,
             background: `${STATUS_COLORS[app.status] ?? "#6b7280"}20`,
             color: STATUS_COLORS[app.status] ?? "#9ca3af",
           }}
@@ -100,16 +119,43 @@ function AppCard({ app, onClick }: AppCardProps) {
         </span>
       </div>
       <div>
-        <div className="text-sm font-semibold text-zinc-100">{app.name}</div>
-        <div className="text-xs text-zinc-500 mt-1 leading-relaxed line-clamp-2">
+        <div
+          style={{
+            fontSize: 14,
+            fontWeight: 600,
+            color: "var(--text-primary)",
+          }}
+        >
+          {app.name}
+        </div>
+        <div
+          style={{
+            fontSize: 12,
+            color: "var(--text-secondary)",
+            marginTop: 4,
+            lineHeight: 1.5,
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+          }}
+        >
           {app.description}
         </div>
       </div>
-      <div className="flex flex-wrap gap-1 mt-auto">
+      <div
+        style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: "auto" }}
+      >
         {app.tags.slice(0, 3).map((tag) => (
           <span
             key={tag}
-            className="text-[10px] px-1.5 py-0.5 bg-zinc-800 text-zinc-500 rounded"
+            style={{
+              fontSize: 10,
+              padding: "2px 6px",
+              background: "var(--glass-bg)",
+              color: "var(--text-secondary)",
+              borderRadius: 4,
+            }}
           >
             {tag}
           </span>
@@ -137,13 +183,41 @@ function AppDetailDrawer({ app, onClose }: AppDetailDrawerProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end" onClick={onClose}>
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 50,
+        display: "flex",
+        justifyContent: "flex-end",
+        background: "rgba(0,0,0,0.5)",
+      }}
+      onClick={onClose}
+    >
       <div
-        className="w-full max-w-sm h-full bg-zinc-950 border-l border-zinc-800 flex flex-col overflow-hidden"
+        style={{
+          width: "100%",
+          maxWidth: 384,
+          height: "100%",
+          background: "var(--bg-base)",
+          borderLeft: "1px solid var(--border-subtle)",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800 shrink-0">
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "16px 20px",
+            borderBottom: "1px solid var(--border-subtle)",
+            flexShrink: 0,
+          }}
+        >
           <div className="flex items-center gap-3">
             <div
               style={{
@@ -159,12 +233,21 @@ function AppDetailDrawer({ app, onClose }: AppDetailDrawerProps) {
               <AppIcon name={app.icon} color={app.color} size={18} />
             </div>
             <div>
-              <div className="text-sm font-semibold text-zinc-100">
+              <div
+                style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: "var(--text-primary)",
+                }}
+              >
                 {app.name}
               </div>
               <span
-                className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
                 style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  padding: "2px 6px",
+                  borderRadius: 9999,
                   background: `${STATUS_COLORS[app.status] ?? "#6b7280"}20`,
                   color: STATUS_COLORS[app.status] ?? "#9ca3af",
                 }}
@@ -175,7 +258,26 @@ function AppDetailDrawer({ app, onClose }: AppDetailDrawerProps) {
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded hover:bg-zinc-800 text-zinc-400"
+            style={{
+              padding: 4,
+              borderRadius: "var(--radius-sm)",
+              background: "transparent",
+              border: "none",
+              color: "var(--text-secondary)",
+              cursor: "pointer",
+              transition: "var(--transition-default)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--glass-bg-hover)";
+              e.currentTarget.style.color = "var(--text-primary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "var(--text-secondary)";
+            }}
             aria-label="Fechar"
           >
             <X size={16} />
@@ -183,25 +285,64 @@ function AppDetailDrawer({ app, onClose }: AppDetailDrawerProps) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+        <div
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: 20,
+            display: "flex",
+            flexDirection: "column",
+            gap: 20,
+          }}
+        >
           <div>
-            <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-2">
+            <h4
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: "var(--text-tertiary)",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                marginBottom: 8,
+              }}
+            >
               Sobre
             </h4>
-            <p className="text-sm text-zinc-400 leading-relaxed">
+            <p
+              style={{
+                fontSize: 14,
+                color: "var(--text-secondary)",
+                lineHeight: 1.6,
+              }}
+            >
               {app.longDescription}
             </p>
           </div>
 
           <div>
-            <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-2">
+            <h4
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: "var(--text-tertiary)",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                marginBottom: 8,
+              }}
+            >
               Tags
             </h4>
-            <div className="flex flex-wrap gap-1.5">
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {app.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="text-xs px-2 py-0.5 bg-zinc-800 text-zinc-400 rounded"
+                  style={{
+                    fontSize: 12,
+                    padding: "2px 8px",
+                    background: "var(--glass-bg)",
+                    color: "var(--text-secondary)",
+                    borderRadius: 4,
+                  }}
                 >
                   {tag}
                 </span>
@@ -210,10 +351,19 @@ function AppDetailDrawer({ app, onClose }: AppDetailDrawerProps) {
           </div>
 
           <div>
-            <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-2">
+            <h4
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: "var(--text-tertiary)",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                marginBottom: 8,
+              }}
+            >
               Tipo
             </h4>
-            <div className="text-sm text-zinc-400">
+            <div style={{ fontSize: 14, color: "var(--text-secondary)" }}>
               {app.type === "standalone"
                 ? "App Camada 2 standalone (subdomínio próprio)"
                 : "Módulo opcional Camada 1"}
@@ -222,17 +372,50 @@ function AppDetailDrawer({ app, onClose }: AppDetailDrawerProps) {
         </div>
 
         {/* Footer */}
-        <div className="p-5 border-t border-zinc-800 shrink-0">
+        <div
+          style={{
+            padding: 20,
+            borderTop: "1px solid var(--border-subtle)",
+            flexShrink: 0,
+          }}
+        >
           {app.status === "coming_soon" ? (
-            <div className="flex flex-col gap-2">
-              <div className="text-xs text-zinc-500 text-center">
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: "var(--text-secondary)",
+                  textAlign: "center",
+                }}
+              >
                 Em desenvolvimento — disponível em breve.
               </div>
             </div>
           ) : canOpen ? (
             <button
               onClick={handleOpen}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold rounded-lg transition-colors"
+              style={{
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                padding: "10px 16px",
+                background: "var(--accent)",
+                color: "#fff",
+                fontSize: 14,
+                fontWeight: 600,
+                borderRadius: "var(--radius-md)",
+                border: "none",
+                cursor: "pointer",
+                transition: "var(--transition-default)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "var(--accent-hover)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "var(--accent)";
+              }}
             >
               <ExternalLink size={15} />
               Abrir {app.name}
@@ -260,16 +443,45 @@ export function MagicStoreApp() {
         className="flex flex-col h-full overflow-hidden"
       >
         {/* Category filter */}
-        <div className="flex items-center gap-1 px-5 py-3 border-b border-zinc-800 shrink-0 overflow-x-auto">
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            padding: "12px 20px",
+            borderBottom: "1px solid var(--border-subtle)",
+            flexShrink: 0,
+            overflowX: "auto",
+          }}
+        >
           {CATEGORIES.map(({ id, label }) => (
             <button
               key={id}
               onClick={() => setCategory(id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
-                category === id
-                  ? "bg-violet-600 text-white"
-                  : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
-              }`}
+              style={{
+                padding: "6px 12px",
+                borderRadius: "var(--radius-sm)",
+                fontSize: 12,
+                fontWeight: 500,
+                whiteSpace: "nowrap",
+                border: "none",
+                cursor: "pointer",
+                transition: "var(--transition-default)",
+                background: category === id ? "var(--accent)" : "transparent",
+                color: category === id ? "#fff" : "var(--text-tertiary)",
+              }}
+              onMouseEnter={(e) => {
+                if (category !== id) {
+                  e.currentTarget.style.color = "var(--text-primary)";
+                  e.currentTarget.style.background = "var(--glass-bg-hover)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (category !== id) {
+                  e.currentTarget.style.color = "var(--text-tertiary)";
+                  e.currentTarget.style.background = "transparent";
+                }
+              }}
             >
               {label}
             </button>
@@ -277,15 +489,25 @@ export function MagicStoreApp() {
         </div>
 
         {/* Grid */}
-        <div className="flex-1 overflow-y-auto p-5">
+        <div style={{ flex: 1, overflowY: "auto", padding: 20 }}>
           {filtered.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-sm text-zinc-600">
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "100%",
+                fontSize: 14,
+                color: "var(--text-tertiary)",
+              }}
+            >
               Nenhum app nesta categoria ainda.
             </div>
           ) : (
             <div
-              className="grid gap-4"
               style={{
+                display: "grid",
+                gap: 16,
                 gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
               }}
             >
@@ -301,15 +523,40 @@ export function MagicStoreApp() {
         </div>
 
         {/* Footer info */}
-        <div className="px-5 py-3 border-t border-zinc-800 shrink-0 flex items-center justify-between">
-          <span className="text-xs text-zinc-600">
+        <div
+          style={{
+            padding: "12px 20px",
+            borderTop: "1px solid var(--border-subtle)",
+            flexShrink: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
             {MAGIC_STORE_CATALOG.length} apps disponíveis ou em breve
           </span>
           <a
             href="https://aethereos.io/marketplace"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              fontSize: 12,
+              color: "var(--text-tertiary)",
+              textDecoration: "none",
+              transition: "var(--transition-default)",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLAnchorElement).style.color =
+                "var(--text-secondary)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLAnchorElement).style.color =
+                "var(--text-tertiary)";
+            }}
           >
             Ver todos no marketplace <ChevronRight size={11} />
           </a>

@@ -72,12 +72,24 @@ function FolderTree({ files, currentFolderId, onSelect }: FolderTreeProps) {
       <button
         type="button"
         onClick={() => onSelect(null)}
-        className={[
-          "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors",
+        className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors"
+        style={
           currentFolderId === null
-            ? "bg-violet-600/20 text-violet-300"
-            : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200",
-        ].join(" ")}
+            ? { background: "var(--accent-dim)", color: "var(--accent-hover)" }
+            : { color: "var(--text-secondary)" }
+        }
+        onMouseEnter={(e) => {
+          if (currentFolderId !== null) {
+            e.currentTarget.style.background = "var(--glass-bg-hover)";
+            e.currentTarget.style.color = "var(--text-primary)";
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (currentFolderId !== null) {
+            e.currentTarget.style.background = "";
+            e.currentTarget.style.color = "var(--text-secondary)";
+          }
+        }}
       >
         <span>📂</span>
         <span>Raiz</span>
@@ -87,12 +99,27 @@ function FolderTree({ files, currentFolderId, onSelect }: FolderTreeProps) {
           key={folder.id}
           type="button"
           onClick={() => onSelect(folder.id)}
-          className={[
-            "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors",
+          className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors"
+          style={
             currentFolderId === folder.id
-              ? "bg-violet-600/20 text-violet-300"
-              : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200",
-          ].join(" ")}
+              ? {
+                  background: "var(--accent-dim)",
+                  color: "var(--accent-hover)",
+                }
+              : { color: "var(--text-secondary)" }
+          }
+          onMouseEnter={(e) => {
+            if (currentFolderId !== folder.id) {
+              e.currentTarget.style.background = "var(--glass-bg-hover)";
+              e.currentTarget.style.color = "var(--text-primary)";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (currentFolderId !== folder.id) {
+              e.currentTarget.style.background = "";
+              e.currentTarget.style.color = "var(--text-secondary)";
+            }
+          }}
         >
           <span>📁</span>
           <span className="truncate">{folder.name}</span>
@@ -115,7 +142,10 @@ interface FileGridProps {
 function FileGrid({ entries, onOpenFolder, onDelete }: FileGridProps) {
   if (entries.length === 0) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-2 text-zinc-600">
+      <div
+        className="flex flex-1 flex-col items-center justify-center gap-2"
+        style={{ color: "var(--text-tertiary)" }}
+      >
         <span className="text-4xl">📭</span>
         <p className="text-sm">Pasta vazia</p>
       </div>
@@ -123,11 +153,21 @@ function FileGrid({ entries, onOpenFolder, onDelete }: FileGridProps) {
   }
 
   return (
-    <div className="flex flex-col divide-y divide-zinc-800">
-      {entries.map((entry) => (
+    <div className="flex flex-col">
+      {entries.map((entry, index) => (
         <div
           key={entry.id}
-          className="group flex items-center gap-3 px-4 py-2.5 hover:bg-zinc-900"
+          className="group flex items-center gap-3 px-4 py-2.5"
+          style={{
+            borderTop: index === 0 ? "none" : "1px solid var(--border-subtle)",
+          }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLDivElement).style.background =
+              "var(--glass-bg)";
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLDivElement).style.background = "";
+          }}
         >
           <span className="shrink-0 text-xl">{fileIcon(entry)}</span>
           <div className="flex flex-1 flex-col gap-0.5 overflow-hidden">
@@ -136,16 +176,26 @@ function FileGrid({ entries, onOpenFolder, onDelete }: FileGridProps) {
               onClick={() => {
                 if (entry.kind === "folder") onOpenFolder(entry.id);
               }}
-              className={[
-                "truncate text-left text-sm",
-                entry.kind === "folder"
-                  ? "cursor-pointer font-medium text-zinc-100 hover:text-violet-300"
-                  : "cursor-default text-zinc-200",
-              ].join(" ")}
+              className="truncate text-left text-sm"
+              style={{
+                cursor: entry.kind === "folder" ? "pointer" : "default",
+                fontWeight: entry.kind === "folder" ? 500 : undefined,
+                color: "var(--text-primary)",
+              }}
+              onMouseEnter={(e) => {
+                if (entry.kind === "folder") {
+                  e.currentTarget.style.color = "var(--accent-hover)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (entry.kind === "folder") {
+                  e.currentTarget.style.color = "var(--text-primary)";
+                }
+              }}
             >
               {entry.name}
             </button>
-            <span className="text-xs text-zinc-600">
+            <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
               {entry.kind === "file" && entry.sizeBytes !== undefined
                 ? formatBytes(entry.sizeBytes)
                 : "Pasta"}
@@ -157,7 +207,14 @@ function FileGrid({ entries, onOpenFolder, onDelete }: FileGridProps) {
             type="button"
             onClick={() => onDelete(entry.id)}
             title="Excluir"
-            className="shrink-0 rounded p-1 text-xs text-zinc-600 opacity-0 transition-opacity hover:text-red-400 group-hover:opacity-100"
+            className="shrink-0 rounded p-1 text-xs opacity-0 transition-opacity group-hover:opacity-100"
+            style={{ color: "var(--text-tertiary)" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = "#f87171";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = "var(--text-tertiary)";
+            }}
           >
             ✕
           </button>
@@ -385,19 +442,54 @@ export function DriveApp() {
                 }}
                 placeholder="Nome da pasta"
                 autoFocus
-                className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500"
+                className="focus:outline-none"
+                style={{
+                  background: "var(--glass-bg)",
+                  border: "1px solid var(--border-default)",
+                  borderRadius: "var(--radius-md)",
+                  color: "var(--text-primary)",
+                  fontSize: 13,
+                  padding: "4px 8px",
+                }}
+                onFocus={(e) =>
+                  (e.currentTarget.style.borderColor = "var(--accent-border)")
+                }
+                onBlur={(e) =>
+                  (e.currentTarget.style.borderColor = "var(--border-default)")
+                }
               />
               <button
                 type="button"
                 onClick={() => void handleCreateFolder()}
-                className="rounded-md bg-zinc-700 px-2 py-1 text-xs text-zinc-200 hover:bg-zinc-600"
+                style={{
+                  background: "var(--glass-bg-hover)",
+                  border: "1px solid var(--border-subtle)",
+                  borderRadius: "var(--radius-md)",
+                  color: "var(--text-primary)",
+                  fontSize: 12,
+                  fontWeight: 500,
+                  padding: "4px 12px",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "var(--border-subtle)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "var(--glass-bg-hover)")
+                }
               >
                 Criar
               </button>
               <button
                 type="button"
                 onClick={() => setShowNewFolder(false)}
-                className="text-xs text-zinc-500 hover:text-zinc-300"
+                className="text-xs"
+                style={{ color: "var(--text-secondary)" }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.color = "var(--text-primary)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.color = "var(--text-secondary)")
+                }
               >
                 ✕
               </button>
@@ -407,7 +499,23 @@ export function DriveApp() {
               type="button"
               onClick={() => setShowNewFolder(true)}
               disabled={!isConnected}
-              className="rounded-md border border-zinc-700 px-2 py-1 text-xs text-zinc-300 hover:border-zinc-500 disabled:opacity-40"
+              className="disabled:opacity-40"
+              style={{
+                border: "1px solid var(--border-default)",
+                borderRadius: "var(--radius-md)",
+                color: "var(--text-secondary)",
+                fontSize: 12,
+                fontWeight: 500,
+                padding: "4px 12px",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "var(--border-default)";
+                e.currentTarget.style.color = "var(--text-primary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "var(--border-default)";
+                e.currentTarget.style.color = "var(--text-secondary)";
+              }}
             >
               Nova pasta
             </button>
@@ -416,7 +524,21 @@ export function DriveApp() {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={!isConnected}
-            className="rounded-md bg-violet-600 px-3 py-1 text-xs font-medium text-white hover:bg-violet-500 disabled:opacity-40"
+            className="disabled:opacity-40"
+            style={{
+              background: "var(--accent)",
+              color: "white",
+              borderRadius: "var(--radius-md)",
+              fontSize: 12,
+              fontWeight: 500,
+              padding: "4px 12px",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background = "var(--accent-hover)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background = "var(--accent)")
+            }
           >
             Upload
           </button>
@@ -441,11 +563,22 @@ export function DriveApp() {
       statusBar={statusText}
     >
       {/* Breadcrumb */}
-      <div className="flex shrink-0 items-center gap-1 border-b border-zinc-800 px-4 py-2 text-xs text-zinc-500">
+      <div
+        className="flex shrink-0 items-center gap-1 px-4 py-2 text-xs"
+        style={{
+          borderBottom: "1px solid var(--border-subtle)",
+          color: "var(--text-secondary)",
+        }}
+      >
         <button
           type="button"
           onClick={() => setCurrentFolderId(null)}
-          className="hover:text-zinc-300"
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.color = "var(--text-primary)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.color = "var(--text-secondary)")
+          }
         >
           Drive
         </button>
@@ -455,11 +588,21 @@ export function DriveApp() {
             <button
               type="button"
               onClick={() => setCurrentFolderId(crumb.id)}
-              className={
-                i === breadcrumb.length - 1
-                  ? "text-zinc-300"
-                  : "hover:text-zinc-300"
+              style={{
+                color:
+                  i === breadcrumb.length - 1
+                    ? "var(--text-primary)"
+                    : "var(--text-secondary)",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.color = "var(--text-primary)")
               }
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color =
+                  i === breadcrumb.length - 1
+                    ? "var(--text-primary)"
+                    : "var(--text-secondary)";
+              }}
             >
               {crumb.name}
             </button>
@@ -469,10 +612,15 @@ export function DriveApp() {
 
       {/* Drag-and-drop zone */}
       <div
-        className={[
-          "relative flex flex-1 flex-col overflow-y-auto",
-          isDragging ? "ring-2 ring-inset ring-violet-500/50" : "",
-        ].join(" ")}
+        className="relative flex flex-1 flex-col overflow-y-auto"
+        style={
+          isDragging
+            ? {
+                outline: "2px solid var(--accent-border)",
+                outlineOffset: "-2px",
+              }
+            : undefined
+        }
         onDragOver={(e) => {
           e.preventDefault();
           setIsDragging(true);
@@ -487,12 +635,22 @@ export function DriveApp() {
         }}
       >
         {isDragging && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-zinc-950/80 text-sm text-violet-300">
+          <div
+            className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm"
+            style={{
+              background: "var(--bg-base)",
+              opacity: 0.9,
+              color: "var(--accent-hover)",
+            }}
+          >
             Solte para fazer upload
           </div>
         )}
         {loading ? (
-          <div className="flex flex-1 items-center justify-center text-sm text-zinc-600">
+          <div
+            className="flex flex-1 items-center justify-center text-sm"
+            style={{ color: "var(--text-tertiary)" }}
+          >
             Carregando arquivos…
           </div>
         ) : (

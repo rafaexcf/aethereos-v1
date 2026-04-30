@@ -126,11 +126,17 @@ function toFormState(emp?: Employee | null): FormState {
   };
 }
 
-const inputCls =
-  "w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-sm text-zinc-100 placeholder:text-zinc-600 outline-none focus:border-violet-500/50";
-const labelCls = "text-xs text-zinc-500 block mb-1";
-const selectCls =
-  "w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-sm text-zinc-100 outline-none focus:border-violet-500/50";
+const inputStyle: React.CSSProperties = {
+  background: "var(--glass-bg)",
+  border: "1px solid var(--border-default)",
+  borderRadius: "var(--radius-md)",
+  color: "var(--text-primary)",
+  fontSize: 13,
+  padding: "8px 12px",
+  width: "100%",
+};
+
+const labelCls = "text-xs block mb-1";
 
 interface FieldProps {
   label: string;
@@ -141,7 +147,9 @@ interface FieldProps {
 function Field({ label, children, col = 1 }: FieldProps) {
   return (
     <div className={col === 2 ? "col-span-2" : ""}>
-      <label className={labelCls}>{label}</label>
+      <label className={labelCls} style={{ color: "var(--text-secondary)" }}>
+        {label}
+      </label>
       {children}
     </div>
   );
@@ -157,7 +165,10 @@ function Checkbox({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer select-none">
+    <label
+      className="flex items-center gap-2 text-sm cursor-pointer select-none"
+      style={{ color: "var(--text-secondary)" }}
+    >
       <input
         type="checkbox"
         checked={checked}
@@ -168,6 +179,21 @@ function Checkbox({
     </label>
   );
 }
+
+const handleFocus = (
+  e: React.FocusEvent<
+    HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+  >,
+) => {
+  e.currentTarget.style.borderColor = "var(--border-focus)";
+};
+const handleBlur = (
+  e: React.FocusEvent<
+    HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+  >,
+) => {
+  e.currentTarget.style.borderColor = "var(--border-default)";
+};
 
 export function EmployeeForm({
   initial,
@@ -252,29 +278,58 @@ export function EmployeeForm({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 shrink-0">
-        <h3 className="text-sm font-semibold text-zinc-100">
+      <div
+        className="flex items-center justify-between px-4 py-3 shrink-0"
+        style={{ borderBottom: "1px solid var(--border-subtle)" }}
+      >
+        <h3
+          className="text-sm font-semibold"
+          style={{ color: "var(--text-primary)" }}
+        >
           {isEditing ? "Editar colaborador" : "Novo colaborador"}
         </h3>
         <button
           onClick={onCancel}
-          className="p-1 rounded hover:bg-zinc-800 text-zinc-400"
+          className="p-1 rounded"
+          style={{
+            color: "var(--text-secondary)",
+            transition: "var(--transition-default)",
+          }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.background = "var(--glass-bg-hover)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.background = "transparent")
+          }
         >
           <X size={16} />
         </button>
       </div>
 
       {/* Tab nav */}
-      <div className="flex border-b border-zinc-800 shrink-0 px-4 overflow-x-auto">
+      <div
+        className="flex shrink-0 px-4 overflow-x-auto"
+        style={{ borderBottom: "1px solid var(--border-subtle)" }}
+      >
         {TABS.map(({ id, label }) => (
           <button
             key={id}
             onClick={() => setTab(id)}
-            className={`px-3 py-2 text-xs font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
-              tab === id
-                ? "border-violet-500 text-violet-400"
-                : "border-transparent text-zinc-500 hover:text-zinc-300"
-            }`}
+            className="px-3 py-2 text-xs font-medium whitespace-nowrap border-b-2 -mb-px"
+            style={{
+              borderBottomColor: tab === id ? "var(--accent)" : "transparent",
+              color:
+                tab === id ? "var(--accent-hover)" : "var(--text-secondary)",
+              transition: "var(--transition-default)",
+            }}
+            onMouseEnter={(e) => {
+              if (tab !== id)
+                e.currentTarget.style.color = "var(--text-primary)";
+            }}
+            onMouseLeave={(e) => {
+              if (tab !== id)
+                e.currentTarget.style.color = "var(--text-secondary)";
+            }}
           >
             {label}
           </button>
@@ -289,26 +344,33 @@ export function EmployeeForm({
               <input
                 value={form.fullName}
                 onChange={(e) => set("fullName")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 placeholder="Ana Silva"
                 aria-label="Nome completo"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="E-mail">
               <input
                 value={form.email}
                 onChange={(e) => set("email")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 type="email"
                 placeholder="ana@empresa.com"
                 aria-label="E-mail"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="Telefone">
               <PhoneInput
                 value={form.phone}
                 onChange={(v) => set("phone")(v)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="Telefone"
               />
             </Field>
@@ -316,34 +378,46 @@ export function EmployeeForm({
               <input
                 value={form.cpf}
                 onChange={(e) => set("cpf")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 placeholder="000.000.000-00"
                 aria-label="CPF"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="RG">
               <input
                 value={form.rg}
                 onChange={(e) => set("rg")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="RG"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="Data de nascimento">
               <input
                 value={form.birthDate}
                 onChange={(e) => set("birthDate")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 type="date"
                 aria-label="Data de nascimento"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="Gênero">
               <select
                 value={form.gender}
                 onChange={(e) => set("gender")(e.target.value)}
-                className={selectCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="Gênero"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               >
                 <option value="">Selecionar</option>
                 {GENDERS.map((g) => (
@@ -357,8 +431,11 @@ export function EmployeeForm({
               <select
                 value={form.maritalStatus}
                 onChange={(e) => set("maritalStatus")(e.target.value)}
-                className={selectCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="Estado civil"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               >
                 <option value="">Selecionar</option>
                 {MARITAL_STATUSES.map((m) => (
@@ -372,26 +449,35 @@ export function EmployeeForm({
               <input
                 value={form.nationality}
                 onChange={(e) => set("nationality")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="Nacionalidade"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="Bio" col={2}>
               <textarea
                 value={form.bio}
                 onChange={(e) => set("bio")(e.target.value)}
-                className={`${inputCls} resize-none`}
+                style={{ ...inputStyle, resize: "none" }}
+                className="focus:outline-none"
                 rows={3}
                 aria-label="Bio"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="LinkedIn">
               <input
                 value={form.linkedin}
                 onChange={(e) => set("linkedin")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 placeholder="https://linkedin.com/in/..."
                 aria-label="LinkedIn"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
           </div>
@@ -403,48 +489,66 @@ export function EmployeeForm({
               <input
                 value={form.position}
                 onChange={(e) => set("position")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="Cargo"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="Departamento">
               <input
                 value={form.department}
                 onChange={(e) => set("department")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="Departamento"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="Matrícula">
               <input
                 value={form.registrationNumber}
                 onChange={(e) => set("registrationNumber")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="Matrícula"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="Centro de custo">
               <input
                 value={form.costCenter}
                 onChange={(e) => set("costCenter")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="Centro de custo"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="Área de trabalho">
               <input
                 value={form.areaTrabalho}
                 onChange={(e) => set("areaTrabalho")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="Área de trabalho"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="Tipo de contrato">
               <select
                 value={form.contractType}
                 onChange={(e) => set("contractType")(e.target.value)}
-                className={selectCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="Tipo de contrato"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               >
                 {CONTRACT_TYPES.map((c) => (
                   <option key={c} value={c}>
@@ -457,8 +561,11 @@ export function EmployeeForm({
               <select
                 value={form.workRegime}
                 onChange={(e) => set("workRegime")(e.target.value)}
-                className={selectCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="Regime de trabalho"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               >
                 <option value="">Selecionar</option>
                 {WORK_REGIMES.map((r) => (
@@ -472,8 +579,11 @@ export function EmployeeForm({
               <select
                 value={form.status}
                 onChange={(e) => set("status")(e.target.value)}
-                className={selectCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="Status"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               >
                 {Object.entries(STATUS_LABELS).map(([v, l]) => (
                   <option key={v} value={v}>
@@ -486,28 +596,37 @@ export function EmployeeForm({
               <input
                 value={form.hireDate}
                 onChange={(e) => set("hireDate")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 type="date"
                 aria-label="Data de admissão"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="Salário (R$)">
               <input
                 value={form.salary}
                 onChange={(e) => set("salary")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 type="number"
                 step="0.01"
                 aria-label="Salário"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="Jornada">
               <input
                 value={form.workSchedule}
                 onChange={(e) => set("workSchedule")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 placeholder="44h semanais"
                 aria-label="Jornada"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
           </div>
@@ -524,11 +643,21 @@ export function EmployeeForm({
                 }
                 readOnly={isLinked}
                 onChange={(e) => set("corporateEmail")(e.target.value)}
-                className={`${inputCls} ${isLinked ? "opacity-50 cursor-not-allowed" : ""}`}
+                style={{
+                  ...inputStyle,
+                  opacity: isLinked ? 0.5 : 1,
+                  cursor: isLinked ? "not-allowed" : "text",
+                }}
+                className="focus:outline-none"
                 aria-label="E-mail corporativo"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
               {isLinked && (
-                <span className="text-xs text-zinc-600 mt-1 block">
+                <span
+                  className="text-xs mt-1 block"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
                   Vinculado ao usuário — somente leitura
                 </span>
               )}
@@ -537,7 +666,8 @@ export function EmployeeForm({
               <PhoneInput
                 value={form.corporatePhone}
                 onChange={(v) => set("corporatePhone")(v)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="Telefone corporativo"
               />
             </Field>
@@ -545,9 +675,12 @@ export function EmployeeForm({
               <input
                 value={form.ramal}
                 onChange={(e) => set("ramal")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 placeholder="1234"
                 aria-label="Ramal"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
           </div>
@@ -560,7 +693,8 @@ export function EmployeeForm({
                 value={form.addressCep}
                 onChange={(v) => set("addressCep")(v)}
                 onAddressFound={handleAddressFound}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="CEP"
               />
             </Field>
@@ -568,49 +702,67 @@ export function EmployeeForm({
               <input
                 value={form.addressNumber}
                 onChange={(e) => set("addressNumber")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="Número"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="Rua" col={2}>
               <input
                 value={form.addressStreet}
                 onChange={(e) => set("addressStreet")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="Rua"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="Bairro">
               <input
                 value={form.addressNeighborhood}
                 onChange={(e) => set("addressNeighborhood")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="Bairro"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="Complemento">
               <input
                 value={form.addressComplement}
                 onChange={(e) => set("addressComplement")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="Complemento"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="Cidade">
               <input
                 value={form.addressCity}
                 onChange={(e) => set("addressCity")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="Cidade"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="UF">
               <input
                 value={form.addressState}
                 onChange={(e) => set("addressState")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 maxLength={2}
                 aria-label="UF"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
           </div>
@@ -622,74 +774,101 @@ export function EmployeeForm({
               <input
                 value={form.pisPasep}
                 onChange={(e) => set("pisPasep")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="PIS/PASEP"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="Conta FGTS">
               <input
                 value={form.fgtsAccount}
                 onChange={(e) => set("fgtsAccount")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="Conta FGTS"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="CTPS número">
               <input
                 value={form.ctpsNumber}
                 onChange={(e) => set("ctpsNumber")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="CTPS número"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="CTPS série">
               <input
                 value={form.ctpsSeries}
                 onChange={(e) => set("ctpsSeries")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="CTPS série"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="CTPS UF">
               <input
                 value={form.ctpsUf}
                 onChange={(e) => set("ctpsUf")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 maxLength={2}
                 aria-label="CTPS UF"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="Título de eleitor">
               <input
                 value={form.voterTitle}
                 onChange={(e) => set("voterTitle")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="Título de eleitor"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="Status do contrato">
               <input
                 value={form.contractStatus}
                 onChange={(e) => set("contractStatus")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="Status do contrato"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="Prazo do contrato">
               <input
                 value={form.contractTerm}
                 onChange={(e) => set("contractTerm")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 aria-label="Prazo do contrato"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="Término do contrato">
               <input
                 value={form.contractEndDate}
                 onChange={(e) => set("contractEndDate")(e.target.value)}
-                className={inputCls}
+                style={inputStyle}
+                className="focus:outline-none"
                 type="date"
                 aria-label="Término do contrato"
+                onFocus={handleFocus}
+                onBlur={handleBlur}
               />
             </Field>
             <Field label="Adicionais" col={2}>
@@ -716,7 +895,10 @@ export function EmployeeForm({
       </div>
 
       {/* Footer actions */}
-      <div className="flex items-center justify-between px-4 py-3 border-t border-zinc-800 shrink-0">
+      <div
+        className="flex items-center justify-between px-4 py-3 shrink-0"
+        style={{ borderTop: "1px solid var(--border-subtle)" }}
+      >
         {isEditing && onDelete !== undefined ? (
           showDeleteConfirm ? (
             <div className="flex items-center gap-2">
@@ -736,7 +918,17 @@ export function EmployeeForm({
               </button>
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="text-xs text-zinc-500 hover:text-zinc-300"
+                className="text-xs"
+                style={{
+                  color: "var(--text-secondary)",
+                  transition: "var(--transition-default)",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.color = "var(--text-primary)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.color = "var(--text-secondary)")
+                }
               >
                 Cancelar
               </button>
@@ -764,14 +956,36 @@ export function EmployeeForm({
         <div className="flex items-center gap-2">
           <button
             onClick={onCancel}
-            className="px-3 py-1.5 text-xs text-zinc-400 hover:text-zinc-200"
+            className="px-3 py-1.5 text-xs"
+            style={{
+              color: "var(--text-secondary)",
+              transition: "var(--transition-default)",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.color = "var(--text-primary)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.color = "var(--text-secondary)")
+            }
           >
             Cancelar
           </button>
           <button
             onClick={() => void handleSave()}
             disabled={saving || !form.fullName.trim()}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-xs rounded-lg"
+            className="flex items-center gap-1.5 px-3 py-1.5 disabled:opacity-50 text-white text-xs"
+            style={{
+              background: "var(--accent)",
+              borderRadius: "var(--radius-md)",
+              transition: "var(--transition-default)",
+            }}
+            onMouseEnter={(e) => {
+              if (!saving && form.fullName.trim())
+                e.currentTarget.style.background = "var(--accent-hover)";
+            }}
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background = "var(--accent)")
+            }
             aria-label="Salvar"
           >
             {saving ? (

@@ -90,32 +90,69 @@ function TabPerfil() {
     <div className="flex flex-col gap-6 p-6 max-w-lg">
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-zinc-500">Nome de exibição</label>
+          <label style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+            Nome de exibição
+          </label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-violet-500"
+            style={{
+              background: "var(--glass-bg)",
+              border: "1px solid var(--border-default)",
+              borderRadius: "var(--radius-md)",
+              color: "var(--text-primary)",
+              fontSize: 13,
+              padding: "8px 12px",
+            }}
+            className="focus:outline-none"
+            onFocus={(e) =>
+              (e.currentTarget.style.borderColor = "var(--border-focus)")
+            }
+            onBlur={(e) =>
+              (e.currentTarget.style.borderColor = "var(--border-default)")
+            }
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-zinc-500">E-mail</label>
+          <label style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+            E-mail
+          </label>
           <input
             type="email"
             value={email ?? ""}
             readOnly
-            className="rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-500 cursor-not-allowed"
+            style={{
+              background: "var(--bg-base)",
+              border: "1px solid var(--border-subtle)",
+              borderRadius: "var(--radius-md)",
+              color: "var(--text-secondary)",
+              fontSize: 13,
+              padding: "8px 12px",
+              cursor: "not-allowed",
+            }}
+            className="focus:outline-none"
           />
-          <p className="text-xs text-zinc-700">
+          <p style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
             E-mail vinculado ao IdP — altere via Supabase Auth
           </p>
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-zinc-500">Idioma</label>
+          <label style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+            Idioma
+          </label>
           <select
             value={lang}
             onChange={(e) => setLang(e.target.value)}
-            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 focus:outline-none"
+            style={{
+              background: "var(--glass-bg)",
+              border: "1px solid var(--border-default)",
+              borderRadius: "var(--radius-md)",
+              color: "var(--text-primary)",
+              fontSize: 13,
+              padding: "8px 12px",
+            }}
+            className="focus:outline-none"
           >
             <option value="pt-BR">Português (Brasil)</option>
             <option value="en-US">English (US)</option>
@@ -123,19 +160,48 @@ function TabPerfil() {
           </select>
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-zinc-500">Tema</label>
+          <label style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+            Tema
+          </label>
           <div className="flex gap-2">
             {(["dark", "light"] as const).map((t) => (
               <button
                 key={t}
                 type="button"
                 onClick={() => setTheme(t)}
-                className={[
-                  "rounded-md border px-4 py-2 text-xs transition-colors",
+                style={
                   theme === t
-                    ? "border-violet-500 bg-violet-600/20 text-violet-300"
-                    : "border-zinc-700 text-zinc-400 hover:border-zinc-500",
-                ].join(" ")}
+                    ? {
+                        border: "1px solid var(--accent-border)",
+                        background: "var(--accent-dim)",
+                        color: "var(--accent-hover)",
+                        borderRadius: "var(--radius-md)",
+                        padding: "8px 16px",
+                        fontSize: 12,
+                        transition: "var(--transition-default)",
+                      }
+                    : {
+                        border: "1px solid var(--border-default)",
+                        background: "transparent",
+                        color: "var(--text-secondary)",
+                        borderRadius: "var(--radius-md)",
+                        padding: "8px 16px",
+                        fontSize: 12,
+                        transition: "var(--transition-default)",
+                      }
+                }
+                onMouseEnter={(e) => {
+                  if (theme !== t) {
+                    e.currentTarget.style.borderColor = "var(--border-default)";
+                    e.currentTarget.style.color = "var(--text-primary)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (theme !== t) {
+                    e.currentTarget.style.borderColor = "var(--border-default)";
+                    e.currentTarget.style.color = "var(--text-secondary)";
+                  }
+                }}
               >
                 {t === "dark" ? "Escuro" : "Claro"}
               </button>
@@ -143,14 +209,40 @@ function TabPerfil() {
           </div>
         </div>
         {userId !== null && (
-          <p className="text-xs text-zinc-700 font-mono">ID: {userId}</p>
+          <p
+            style={{
+              fontSize: 11,
+              color: "var(--text-tertiary)",
+              fontFamily: "monospace",
+            }}
+          >
+            ID: {userId}
+          </p>
         )}
       </div>
       <button
         type="button"
         onClick={() => void handleSave()}
         disabled={saving}
-        className="self-start rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500 disabled:opacity-50"
+        style={{
+          alignSelf: "flex-start",
+          background: "var(--accent)",
+          borderRadius: "var(--radius-md)",
+          padding: "8px 16px",
+          fontSize: 14,
+          fontWeight: 500,
+          color: "#fff",
+          border: "none",
+          transition: "var(--transition-default)",
+          opacity: saving ? 0.5 : 1,
+          cursor: saving ? "not-allowed" : "pointer",
+        }}
+        onMouseEnter={(e) => {
+          if (!saving) e.currentTarget.style.background = "var(--accent-hover)";
+        }}
+        onMouseLeave={(e) => {
+          if (!saving) e.currentTarget.style.background = "var(--accent)";
+        }}
       >
         {saved ? "Salvo!" : saving ? "Salvando…" : "Salvar"}
       </button>
@@ -210,44 +302,123 @@ function TabEmpresa() {
     <div className="flex flex-col gap-6 p-6 max-w-lg">
       <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-zinc-500">Nome da empresa</label>
+          <label style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+            Nome da empresa
+          </label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-violet-500"
+            style={{
+              background: "var(--glass-bg)",
+              border: "1px solid var(--border-default)",
+              borderRadius: "var(--radius-md)",
+              color: "var(--text-primary)",
+              fontSize: 13,
+              padding: "8px 12px",
+            }}
+            className="focus:outline-none"
+            onFocus={(e) =>
+              (e.currentTarget.style.borderColor = "var(--border-focus)")
+            }
+            onBlur={(e) =>
+              (e.currentTarget.style.borderColor = "var(--border-default)")
+            }
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-zinc-500">Slug</label>
+          <label style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+            Slug
+          </label>
           <input
             type="text"
             value={slug}
             onChange={(e) =>
               setSlug(e.target.value.toLowerCase().replace(/\s+/g, "-"))
             }
-            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:ring-1 focus:ring-violet-500"
+            style={{
+              background: "var(--glass-bg)",
+              border: "1px solid var(--border-default)",
+              borderRadius: "var(--radius-md)",
+              color: "var(--text-primary)",
+              fontSize: 13,
+              padding: "8px 12px",
+              fontFamily: "monospace",
+            }}
+            className="focus:outline-none"
+            onFocus={(e) =>
+              (e.currentTarget.style.borderColor = "var(--border-focus)")
+            }
+            onBlur={(e) =>
+              (e.currentTarget.style.borderColor = "var(--border-default)")
+            }
           />
-          <p className="text-xs text-zinc-700">
-            aethereos.io/<span className="text-zinc-500">{slug}</span>
+          <p style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
+            aethereos.io/
+            <span style={{ color: "var(--text-secondary)" }}>{slug}</span>
           </p>
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-zinc-500">ID da empresa</label>
-          <code className="rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-500 font-mono">
+          <label style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+            ID da empresa
+          </label>
+          <code
+            style={{
+              display: "block",
+              background: "var(--bg-base)",
+              border: "1px solid var(--border-subtle)",
+              borderRadius: "var(--radius-md)",
+              padding: "8px 12px",
+              fontSize: 11,
+              color: "var(--text-secondary)",
+              fontFamily: "monospace",
+            }}
+          >
             {activeCompanyId ?? "não disponível"}
           </code>
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-zinc-500">Link de convite</label>
+          <label style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+            Link de convite
+          </label>
           <div className="flex gap-2">
-            <code className="flex-1 rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-500 font-mono truncate">
+            <code
+              style={{
+                flex: 1,
+                display: "block",
+                background: "var(--bg-base)",
+                border: "1px solid var(--border-subtle)",
+                borderRadius: "var(--radius-md)",
+                padding: "8px 12px",
+                fontSize: 11,
+                color: "var(--text-secondary)",
+                fontFamily: "monospace",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
               https://aethereos.io/join/{slug}/{crypto.randomUUID().slice(0, 8)}
             </code>
             <button
               type="button"
               onClick={() => {}}
-              className="rounded-md border border-zinc-700 px-3 py-2 text-xs text-zinc-300 hover:border-zinc-500"
+              style={{
+                background: "transparent",
+                border: "1px solid var(--border-default)",
+                borderRadius: "var(--radius-md)",
+                padding: "8px 12px",
+                fontSize: 11,
+                color: "var(--text-primary)",
+                cursor: "pointer",
+                transition: "var(--transition-default)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "var(--border-focus)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "var(--border-default)";
+              }}
             >
               Copiar
             </button>
@@ -258,7 +429,31 @@ function TabEmpresa() {
         type="button"
         onClick={() => void handleSave()}
         disabled={saving || drivers === null || activeCompanyId === null}
-        className="self-start rounded-md bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500 disabled:opacity-50"
+        style={{
+          alignSelf: "flex-start",
+          background: "var(--accent)",
+          borderRadius: "var(--radius-md)",
+          padding: "8px 16px",
+          fontSize: 14,
+          fontWeight: 500,
+          color: "#fff",
+          border: "none",
+          transition: "var(--transition-default)",
+          opacity:
+            saving || drivers === null || activeCompanyId === null ? 0.5 : 1,
+          cursor:
+            saving || drivers === null || activeCompanyId === null
+              ? "not-allowed"
+              : "pointer",
+        }}
+        onMouseEnter={(e) => {
+          if (!saving && drivers !== null && activeCompanyId !== null)
+            e.currentTarget.style.background = "var(--accent-hover)";
+        }}
+        onMouseLeave={(e) => {
+          if (!saving && drivers !== null && activeCompanyId !== null)
+            e.currentTarget.style.background = "var(--accent)";
+        }}
       >
         {saved ? "Salvo!" : saving ? "Salvando…" : "Salvar"}
       </button>
@@ -281,10 +476,21 @@ function TabPlano() {
   return (
     <div className="flex flex-col gap-6 p-6 max-w-lg">
       <div className="flex items-center gap-3">
-        <span className="rounded-full bg-violet-600/20 px-3 py-1 text-sm font-medium text-violet-300">
+        <span
+          style={{
+            borderRadius: 9999,
+            background: "var(--accent-dim)",
+            padding: "4px 12px",
+            fontSize: 14,
+            fontWeight: 500,
+            color: "var(--accent-hover)",
+          }}
+        >
           Plano Trial
         </span>
-        <span className="text-xs text-zinc-500">Expira em 30 dias</span>
+        <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+          Expira em 30 dias
+        </span>
       </div>
 
       <div className="flex flex-col gap-3">
@@ -293,15 +499,25 @@ function TabPlano() {
           return (
             <div key={item.label} className="flex flex-col gap-1.5">
               <div className="flex justify-between text-xs">
-                <span className="text-zinc-400">{item.label}</span>
-                <span className="text-zinc-500">
+                <span style={{ color: "var(--text-secondary)" }}>
+                  {item.label}
+                </span>
+                <span style={{ color: "var(--text-secondary)" }}>
                   {item.used}
                   {item.unit !== undefined ? ` ${item.unit}` : ""} /{" "}
                   {item.limit}
                   {item.unit !== undefined ? ` ${item.unit}` : ""}
                 </span>
               </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-800">
+              <div
+                style={{
+                  height: 6,
+                  width: "100%",
+                  overflow: "hidden",
+                  borderRadius: 9999,
+                  background: "rgba(255,255,255,0.08)",
+                }}
+              >
                 <div
                   className={[
                     "h-full rounded-full transition-all",
@@ -319,15 +535,49 @@ function TabPlano() {
         })}
       </div>
 
-      <div className="flex flex-col gap-2 rounded-lg border border-zinc-700 p-4">
-        <p className="text-sm font-medium text-zinc-100">Fazer upgrade</p>
-        <p className="text-xs text-zinc-500">
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+          borderRadius: "var(--radius-md)",
+          border: "1px solid var(--border-default)",
+          padding: 16,
+        }}
+      >
+        <p
+          style={{
+            fontSize: 14,
+            fontWeight: 500,
+            color: "var(--text-primary)",
+          }}
+        >
+          Fazer upgrade
+        </p>
+        <p style={{ fontSize: 12, color: "var(--text-secondary)" }}>
           Starter: R$99/mês — sem limites de usuários, 50GB armazenamento,
           10.000 chamadas LLM
         </p>
         <button
           type="button"
-          className="self-start rounded-md bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-500"
+          style={{
+            alignSelf: "flex-start",
+            background: "var(--accent)",
+            borderRadius: "var(--radius-md)",
+            padding: "6px 12px",
+            fontSize: 12,
+            fontWeight: 500,
+            color: "#fff",
+            border: "none",
+            transition: "var(--transition-default)",
+            cursor: "pointer",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "var(--accent-hover)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "var(--accent)";
+          }}
         >
           Fazer upgrade (disponível em breve)
         </button>
@@ -346,64 +596,148 @@ function TabSistema() {
   return (
     <div className="flex flex-col gap-6 p-6 max-w-lg">
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2 rounded-lg border border-zinc-800 p-4">
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+            borderRadius: "var(--radius-md)",
+            border: "1px solid var(--border-subtle)",
+            padding: 16,
+          }}
+        >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-zinc-100">
+              <p
+                style={{
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: "var(--text-primary)",
+                }}
+              >
                 Exportar dados
               </p>
-              <p className="text-xs text-zinc-500">
+              <p style={{ fontSize: 12, color: "var(--text-secondary)" }}>
                 Download completo de todos os dados da empresa (LGPD Art. 18)
               </p>
             </div>
             <button
               type="button"
-              className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:border-zinc-500"
+              style={{
+                background: "transparent",
+                border: "1px solid var(--border-default)",
+                borderRadius: "var(--radius-md)",
+                padding: "6px 12px",
+                fontSize: 12,
+                color: "var(--text-primary)",
+                cursor: "pointer",
+                transition: "var(--transition-default)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "var(--border-focus)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "var(--border-default)";
+              }}
             >
               Solicitar export
             </button>
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 rounded-lg border border-zinc-800 p-4">
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+            borderRadius: "var(--radius-md)",
+            border: "1px solid var(--border-subtle)",
+            padding: 16,
+          }}
+        >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-zinc-100">
+              <p
+                style={{
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: "var(--text-primary)",
+                }}
+              >
                 Status compliance
               </p>
-              <p className="text-xs text-zinc-500">
+              <p style={{ fontSize: 12, color: "var(--text-secondary)" }}>
                 LGPD, SOC 2 (em preparação), dados residentes no Brasil
               </p>
             </div>
-            <span className="rounded-full bg-green-900/30 px-2 py-0.5 text-xs text-green-400">
+            <span
+              style={{
+                borderRadius: 9999,
+                background: "rgba(16,185,129,0.14)",
+                padding: "2px 8px",
+                fontSize: 12,
+                color: "#34d399",
+              }}
+            >
               Em conformidade
             </span>
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 rounded-lg border border-yellow-800/30 p-4">
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
+            borderRadius: "var(--radius-md)",
+            border: "1px solid rgba(202,138,4,0.3)",
+            padding: 16,
+          }}
+        >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-zinc-100">
+              <p
+                style={{
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: "var(--text-primary)",
+                }}
+              >
                 Modo manutenção
               </p>
-              <p className="text-xs text-zinc-500">
+              <p style={{ fontSize: 12, color: "var(--text-secondary)" }}>
                 Bloqueia acesso de usuários não-admin temporariamente
               </p>
             </div>
             <button
               type="button"
               onClick={() => setMaintenanceMode((m) => !m)}
-              className={[
-                "relative h-6 w-11 rounded-full transition-colors",
-                maintenanceMode ? "bg-yellow-600" : "bg-zinc-700",
-              ].join(" ")}
+              style={{
+                position: "relative",
+                height: 24,
+                width: 44,
+                borderRadius: 9999,
+                border: "none",
+                cursor: "pointer",
+                transition: "var(--transition-default)",
+                background: maintenanceMode
+                  ? "#ca8a04"
+                  : "rgba(255,255,255,0.12)",
+              }}
             >
               <span
-                className={[
-                  "absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform",
-                  maintenanceMode ? "translate-x-5" : "translate-x-0.5",
-                ].join(" ")}
+                style={{
+                  position: "absolute",
+                  top: 2,
+                  height: 20,
+                  width: 20,
+                  borderRadius: "50%",
+                  background: "#fff",
+                  transition: "var(--transition-default)",
+                  transform: maintenanceMode
+                    ? "translateX(20px)"
+                    : "translateX(2px)",
+                }}
               />
             </button>
           </div>
@@ -462,27 +796,75 @@ function TabIntegracoes() {
       {INTEGRATIONS.map((intg) => (
         <div
           key={intg.name}
-          className="flex items-center gap-4 rounded-lg border border-zinc-800 p-4"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
+            borderRadius: "var(--radius-md)",
+            border: "1px solid var(--border-subtle)",
+            padding: 16,
+          }}
         >
           <span className="shrink-0 text-2xl">{intg.icon}</span>
           <div className="flex flex-1 flex-col gap-0.5">
-            <p className="text-sm font-medium text-zinc-100">{intg.name}</p>
-            <p className="text-xs text-zinc-500">{intg.description}</p>
+            <p
+              style={{
+                fontSize: 14,
+                fontWeight: 500,
+                color: "var(--text-primary)",
+              }}
+            >
+              {intg.name}
+            </p>
+            <p style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+              {intg.description}
+            </p>
           </div>
           <div>
             {intg.status === "ativo" ? (
-              <span className="rounded-full bg-green-900/30 px-2 py-0.5 text-xs text-green-400">
+              <span
+                style={{
+                  borderRadius: 9999,
+                  background: "rgba(16,185,129,0.14)",
+                  padding: "2px 8px",
+                  fontSize: 12,
+                  color: "#34d399",
+                }}
+              >
                 Ativo
               </span>
             ) : intg.status === "disponível" ? (
               <button
                 type="button"
-                className="rounded-md border border-zinc-700 px-3 py-1 text-xs text-zinc-300 hover:border-zinc-500"
+                style={{
+                  background: "transparent",
+                  border: "1px solid var(--border-default)",
+                  borderRadius: "var(--radius-md)",
+                  padding: "4px 12px",
+                  fontSize: 12,
+                  color: "var(--text-primary)",
+                  cursor: "pointer",
+                  transition: "var(--transition-default)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "var(--border-focus)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--border-default)";
+                }}
               >
                 Configurar
               </button>
             ) : (
-              <span className="rounded-full bg-zinc-800 px-2 py-0.5 text-xs text-zinc-600">
+              <span
+                style={{
+                  borderRadius: 9999,
+                  background: "var(--glass-bg)",
+                  padding: "2px 8px",
+                  fontSize: 12,
+                  color: "var(--text-tertiary)",
+                }}
+              >
                 Em breve
               </span>
             )}
@@ -518,12 +900,51 @@ export function ConfiguracoesApp() {
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={[
-                "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors text-left",
+              style={
                 activeTab === tab.id
-                  ? "bg-violet-600/20 text-violet-300"
-                  : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200",
-              ].join(" ")}
+                  ? {
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      borderRadius: "var(--radius-sm)",
+                      padding: "8px 12px",
+                      fontSize: 14,
+                      background: "var(--accent-dim)",
+                      color: "var(--accent-hover)",
+                      border: "none",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      width: "100%",
+                      transition: "var(--transition-default)",
+                    }
+                  : {
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      borderRadius: "var(--radius-sm)",
+                      padding: "8px 12px",
+                      fontSize: 14,
+                      background: "transparent",
+                      color: "var(--text-secondary)",
+                      border: "none",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      width: "100%",
+                      transition: "var(--transition-default)",
+                    }
+              }
+              onMouseEnter={(e) => {
+                if (activeTab !== tab.id) {
+                  e.currentTarget.style.background = "var(--glass-bg-hover)";
+                  e.currentTarget.style.color = "var(--text-primary)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeTab !== tab.id) {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                }
+              }}
             >
               <span>{tab.icon}</span>
               <span>{tab.label}</span>

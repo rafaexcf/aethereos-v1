@@ -1,50 +1,76 @@
 :root {
-  /* Backgrounds */
-  --bg-base: #0f151b;
-  --bg-elevated: #191d21;
-  --bg-surface: #272d35;
-  --bg-overlay: rgba(0, 0, 0, 0.6);
+  /* ── TAHOE BACKGROUNDS ──────────────────────────────────────────── */
+  --bg-base: #060912;
+  --bg-base-alt: #0b1120;
+  --bg-overlay: rgba(0, 0, 0, 0.72);
 
-  /* Glass effects (macOS Sequoia) */
-  --glass-bg: rgba(255, 255, 255, 0.03);
-  --glass-bg-hover: rgba(255, 255, 255, 0.06);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-border-hover: rgba(255, 255, 255, 0.12);
-  --glass-blur: 24px;
-  --glass-blur-heavy: 40px;
+  /* ── LIQUID GLASS FILLS ─────────────────────────────────────────── */
+  --glass-bg: rgba(255, 255, 255, 0.045);
+  --glass-bg-hover: rgba(255, 255, 255, 0.085);
+  --glass-bg-active: rgba(255, 255, 255, 0.13);
+  --glass-bg-subtle: rgba(255, 255, 255, 0.025);
 
-  /* Text */
-  --text-primary: rgba(255, 255, 255, 0.95);
-  --text-secondary: rgba(255, 255, 255, 0.55);
-  --text-tertiary: rgba(255, 255, 255, 0.35);
-  --text-disabled: rgba(255, 255, 255, 0.2);
+  /* ── LIQUID GLASS STROKES ───────────────────────────────────────── */
+  --glass-border: rgba(255, 255, 255, 0.11);
+  --glass-border-hover: rgba(255, 255, 255, 0.22);
+  --glass-border-strong: rgba(255, 255, 255, 0.17);
 
-  /* Borders */
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-default: rgba(255, 255, 255, 0.1);
-  --border-hover: rgba(255, 255, 255, 0.15);
-  --border-focus: rgba(37, 99, 235, 0.5);
+  /* Specular top highlight — the "glass edge" effect */
+  --glass-specular: inset 0 1px 0 rgba(255, 255, 255, 0.16);
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
-  --shadow-dock: 0 8px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  /* ── BLUR AMOUNTS ───────────────────────────────────────────────── */
+  --blur-ui: 40px;
+  --blur-dock: 80px;
+  --blur-overlay: 60px;
 
-  /* Radius */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
-  --radius-dock: 22px;
+  /* Backwards-compat aliases */
+  --glass-blur: var(--blur-ui);
+  --glass-blur-heavy: var(--blur-dock);
 
-  /* Transitions */
-  --transition-fast: 120ms ease;
-  --transition-default: 200ms ease;
-  --transition-slow: 300ms ease;
-  --transition-spring: 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  /* ── TEXT ───────────────────────────────────────────────────────── */
+  --text-primary: rgba(255, 255, 255, 0.93);
+  --text-secondary: rgba(255, 255, 255, 0.60);
+  --text-tertiary: rgba(255, 255, 255, 0.36);
+  --text-disabled: rgba(255, 255, 255, 0.20);
 
-  /* App colors */
+  /* ── BORDERS ────────────────────────────────────────────────────── */
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-default: rgba(255, 255, 255, 0.12);
+  --border-hover: rgba(255, 255, 255, 0.20);
+  --border-focus: rgba(99, 102, 241, 0.65);
+
+  /* ── SHADOWS ────────────────────────────────────────────────────── */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.55), 0 1px 4px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.65), 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-dock:
+    0 32px 80px rgba(0, 0, 0, 0.75),
+    0 8px 24px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25);
+
+  /* ── RADIUS ─────────────────────────────────────────────────────── */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 26px;
+  --radius-dock: 30px;
+  --radius-full: 9999px;
+
+  /* ── TRANSITIONS ────────────────────────────────────────────────── */
+  --transition-fast: 100ms ease;
+  --transition-default: 180ms ease;
+  --transition-slow: 320ms ease;
+  --transition-spring: 500ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ── SYSTEM ACCENT ──────────────────────────────────────────────── */
+  --accent: #6366f1;
+  --accent-hover: #818cf8;
+  --accent-dim: rgba(99, 102, 241, 0.16);
+  --accent-border: rgba(99, 102, 241, 0.38);
+  --accent-glow: rgba(99, 102, 241, 0.4);
+
+  /* ── APP BRAND COLORS ───────────────────────────────────────────── */
   --color-comercio: #f0fc05;
   --color-logitix: #059669;
   --color-erp: #7c3aed;
@@ -52,7 +78,12 @@
   --color-appstore: #0ea5e9;
   --color-neutral: #64748b;
 
-  /* Typography */
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+  /* ── TYPOGRAPHY ─────────────────────────────────────────────────── */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    "SF Pro Text", "Inter", system-ui, sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", "Fira Code", monospace;
+
+  /* ── ELEVATED SURFACE (glass over base) ─────────────────────────── */
+  --bg-elevated: rgba(16, 22, 42, 0.94);
+  --bg-surface: rgba(255, 255, 255, 0.05);
 }

@@ -61,21 +61,50 @@ export function EmployeeList({
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-800 shrink-0">
-        <div className="flex items-center gap-2 flex-1 min-w-0 bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5">
-          <Search size={13} className="text-zinc-500 shrink-0" />
+      <div
+        className="flex items-center gap-3 px-4 py-3 shrink-0"
+        style={{ borderBottom: "1px solid var(--border-subtle)" }}
+      >
+        <div
+          className="flex items-center gap-2 flex-1 min-w-0 rounded-lg px-3 py-1.5"
+          style={{
+            background: "var(--glass-bg)",
+            border: "1px solid var(--border-default)",
+            borderRadius: "var(--radius-md)",
+          }}
+        >
+          <Search
+            size={13}
+            className="shrink-0"
+            style={{ color: "var(--text-tertiary)" }}
+          />
           <input
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Buscar colaborador..."
-            className="flex-1 bg-transparent text-sm text-zinc-100 placeholder:text-zinc-600 outline-none"
+            className="flex-1 bg-transparent text-sm outline-none"
+            style={{ color: "var(--text-primary)" }}
             aria-label="Buscar colaborador"
           />
         </div>
         <select
           value={statusFilter}
           onChange={(e) => onStatusFilterChange(e.target.value)}
-          className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-sm text-zinc-300 outline-none"
+          className="outline-none"
+          style={{
+            background: "var(--glass-bg)",
+            border: "1px solid var(--border-default)",
+            borderRadius: "var(--radius-md)",
+            color: "var(--text-secondary)",
+            fontSize: 13,
+            padding: "6px 12px",
+          }}
+          onFocus={(e) =>
+            (e.currentTarget.style.borderColor = "var(--border-focus)")
+          }
+          onBlur={(e) =>
+            (e.currentTarget.style.borderColor = "var(--border-default)")
+          }
           aria-label="Filtrar por status"
         >
           <option value="">Todos</option>
@@ -87,7 +116,18 @@ export function EmployeeList({
         </select>
         <button
           onClick={onNewEmployee}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-600 hover:bg-violet-500 text-white text-sm rounded-lg transition-colors shrink-0"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-white text-sm shrink-0"
+          style={{
+            background: "var(--accent)",
+            borderRadius: "var(--radius-md)",
+            transition: "var(--transition-default)",
+          }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.background = "var(--accent-hover)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.background = "var(--accent)")
+          }
           aria-label="Novo colaborador"
         >
           <Plus size={14} />
@@ -98,15 +138,31 @@ export function EmployeeList({
       {/* Table */}
       <div className="flex-1 overflow-auto">
         {loading ? (
-          <div className="flex items-center justify-center h-full text-zinc-500">
+          <div
+            className="flex items-center justify-center h-full"
+            style={{ color: "var(--text-secondary)" }}
+          >
             <Loader2 size={20} className="animate-spin mr-2" /> Carregando...
           </div>
         ) : employees.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-zinc-500 gap-2">
+          <div
+            className="flex flex-col items-center justify-center h-full gap-2"
+            style={{ color: "var(--text-secondary)" }}
+          >
             <span className="text-sm">Nenhum colaborador encontrado</span>
             <button
               onClick={onNewEmployee}
-              className="text-xs text-violet-400 hover:text-violet-300"
+              className="text-xs"
+              style={{
+                color: "var(--accent-hover)",
+                transition: "var(--transition-default)",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.color = "var(--accent)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.color = "var(--accent-hover)")
+              }
             >
               Adicionar o primeiro colaborador
             </button>
@@ -114,21 +170,39 @@ export function EmployeeList({
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-zinc-800">
-                <th className="text-left py-2 px-4 text-xs text-zinc-500 font-medium w-12" />
-                <th className="text-left py-2 px-4 text-xs text-zinc-500 font-medium">
+              <tr style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+                <th
+                  className="text-left py-2 px-4 text-xs font-medium w-12"
+                  style={{ color: "var(--text-secondary)" }}
+                />
+                <th
+                  className="text-left py-2 px-4 text-xs font-medium"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   Nome
                 </th>
-                <th className="text-left py-2 px-4 text-xs text-zinc-500 font-medium hidden md:table-cell">
+                <th
+                  className="text-left py-2 px-4 text-xs font-medium hidden md:table-cell"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   Cargo
                 </th>
-                <th className="text-left py-2 px-4 text-xs text-zinc-500 font-medium hidden lg:table-cell">
+                <th
+                  className="text-left py-2 px-4 text-xs font-medium hidden lg:table-cell"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   Departamento
                 </th>
-                <th className="text-left py-2 px-4 text-xs text-zinc-500 font-medium hidden xl:table-cell">
+                <th
+                  className="text-left py-2 px-4 text-xs font-medium hidden xl:table-cell"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   Contato
                 </th>
-                <th className="text-left py-2 px-4 text-xs text-zinc-500 font-medium">
+                <th
+                  className="text-left py-2 px-4 text-xs font-medium"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   Status
                 </th>
               </tr>
@@ -138,10 +212,26 @@ export function EmployeeList({
                 <tr
                   key={emp.id}
                   onClick={() => onSelectEmployee(emp)}
-                  className="border-b border-zinc-800/50 hover:bg-zinc-800/40 cursor-pointer transition-colors"
+                  className="cursor-pointer"
+                  style={{
+                    borderBottom: "1px solid var(--border-subtle)",
+                    transition: "var(--transition-default)",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = "var(--glass-bg-hover)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "transparent")
+                  }
                 >
                   <td className="py-2 px-4">
-                    <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-300 text-xs font-bold">
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                      style={{
+                        background: "var(--accent-dim)",
+                        color: "var(--accent-hover)",
+                      }}
+                    >
                       {emp.photoUrl !== null ? (
                         <img
                           src={emp.photoUrl}
@@ -154,32 +244,46 @@ export function EmployeeList({
                     </div>
                   </td>
                   <td className="py-2 px-4">
-                    <span className="text-zinc-100 font-medium">
+                    <span
+                      className="font-medium"
+                      style={{ color: "var(--text-primary)" }}
+                    >
                       {emp.fullName}
                     </span>
                     {emp.hireDate !== null && (
-                      <span className="text-zinc-600 text-xs ml-2">
+                      <span
+                        className="text-xs ml-2"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
                         desde {emp.hireDate}
                       </span>
                     )}
                   </td>
                   <td className="py-2 px-4 hidden md:table-cell">
-                    <span className="text-zinc-400">{emp.position ?? "—"}</span>
+                    <span style={{ color: "var(--text-secondary)" }}>
+                      {emp.position ?? "—"}
+                    </span>
                   </td>
                   <td className="py-2 px-4 hidden lg:table-cell">
-                    <span className="text-zinc-400">
+                    <span style={{ color: "var(--text-secondary)" }}>
                       {emp.department ?? "—"}
                     </span>
                   </td>
                   <td className="py-2 px-4 hidden xl:table-cell">
                     <div className="flex flex-col gap-0.5">
                       {emp.email !== null && (
-                        <span className="flex items-center gap-1 text-zinc-500 text-xs">
+                        <span
+                          className="flex items-center gap-1 text-xs"
+                          style={{ color: "var(--text-secondary)" }}
+                        >
                           <Mail size={10} /> {emp.email}
                         </span>
                       )}
                       {emp.phone !== null && (
-                        <span className="flex items-center gap-1 text-zinc-500 text-xs">
+                        <span
+                          className="flex items-center gap-1 text-xs"
+                          style={{ color: "var(--text-secondary)" }}
+                        >
                           <Phone size={10} /> {emp.phone}
                         </span>
                       )}
@@ -205,13 +309,26 @@ export function EmployeeList({
 
       {/* Pagination */}
       {total > pageSize && (
-        <div className="flex items-center justify-between px-4 py-2 border-t border-zinc-800 shrink-0 text-xs text-zinc-500">
+        <div
+          className="flex items-center justify-between px-4 py-2 shrink-0 text-xs"
+          style={{
+            borderTop: "1px solid var(--border-subtle)",
+            color: "var(--text-secondary)",
+          }}
+        >
           <span>{total} colaboradores</span>
           <div className="flex items-center gap-2">
             <button
               onClick={() => onPageChange(page - 1)}
               disabled={page === 0}
-              className="p-1 rounded hover:bg-zinc-800 disabled:opacity-30"
+              className="p-1 rounded disabled:opacity-30"
+              style={{ transition: "var(--transition-default)" }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "var(--glass-bg-hover)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "transparent")
+              }
               aria-label="Página anterior"
             >
               <ChevronLeft size={14} />
@@ -222,7 +339,14 @@ export function EmployeeList({
             <button
               onClick={() => onPageChange(page + 1)}
               disabled={page >= totalPages - 1}
-              className="p-1 rounded hover:bg-zinc-800 disabled:opacity-30"
+              className="p-1 rounded disabled:opacity-30"
+              style={{ transition: "var(--transition-default)" }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "var(--glass-bg-hover)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "transparent")
+              }
               aria-label="Próxima página"
             >
               <ChevronRight size={14} />

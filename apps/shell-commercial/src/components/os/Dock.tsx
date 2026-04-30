@@ -13,18 +13,23 @@ import { useOSStore } from "../../stores/osStore";
 import { getVisibleDockApps, prefetchApp } from "../../apps/registry";
 import type { OSApp } from "../../types/os";
 
-const SPRING_CONFIG = { mass: 0.1, stiffness: 150, damping: 12 };
+const SPRING_CONFIG = { mass: 0.08, stiffness: 180, damping: 11 };
+
+const ICON_BASE = 48;
+const ICON_MAX = 76;
+const ICON_RANGE = 160;
 
 const HOVER_COLORS: Record<string, string> = {
   "ae-ai": "#8b5cf6",
   drive: "#06b6d4",
   pessoas: "#8b5cf6",
   chat: "#06b6d4",
-  settings: "#64748b",
+  settings: "#94a3b8",
   comercio: "#f0fc05",
-  logitix: "#059669",
+  logitix: "#10b981",
   erp: "#7c3aed",
   "magic-store": "#0ea5e9",
+  rh: "#f59e0b",
 };
 
 function DockIcon({
@@ -41,28 +46,33 @@ function DockIcon({
   const ref = useRef<HTMLDivElement>(null);
   const openApp = useOSStore((s) => s.openApp);
   const toggleAIModal = useOSStore((s) => s.toggleAIModal);
-  const [hovered, setHovered] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipTimeout, setTooltipTimeout] = useState<ReturnType<
     typeof setTimeout
   > | null>(null);
-  const [showTooltip, setShowTooltip] = useState(false);
 
   const distance = useTransform(mouseX, (val) => {
     const bounds = ref.current?.getBoundingClientRect();
-    if (bounds === undefined) return 500;
+    if (bounds === undefined) return 1000;
     return val - (bounds.x + bounds.width / 2);
   });
 
-  const widthTransform = useTransform(distance, [-150, 0, 150], [44, 64, 44]);
-  const heightTransform = useTransform(distance, [-150, 0, 150], [44, 64, 44]);
+  const sizeTransform = useTransform(
+    distance,
+    [-ICON_RANGE, 0, ICON_RANGE],
+    [ICON_BASE, ICON_MAX, ICON_BASE],
+  );
   const iconSizeTransform = useTransform(
     distance,
-    [-150, 0, 150],
-    [22, 32, 22],
+    [-ICON_RANGE, 0, ICON_RANGE],
+    [
+      Math.round(ICON_BASE * 0.46),
+      Math.round(ICON_MAX * 0.46),
+      Math.round(ICON_BASE * 0.46),
+    ],
   );
 
-  const width = useSpring(widthTransform, SPRING_CONFIG);
-  const height = useSpring(heightTransform, SPRING_CONFIG);
+  const size = useSpring(sizeTransform, SPRING_CONFIG);
   const iconSize = useSpring(iconSizeTransform, SPRING_CONFIG);
 
   const Icon =
@@ -73,14 +83,12 @@ function DockIcon({
   const hoverColor = HOVER_COLORS[app.id] ?? app.color;
 
   function handleMouseEnter() {
-    setHovered(true);
     prefetchApp(app.id);
-    const t = setTimeout(() => setShowTooltip(true), 600);
+    const t = setTimeout(() => setShowTooltip(true), 550);
     setTooltipTimeout(t);
   }
 
   function handleMouseLeave() {
-    setHovered(false);
     setShowTooltip(false);
     if (tooltipTimeout !== null) {
       clearTimeout(tooltipTimeout);
@@ -88,24 +96,28 @@ function DockIcon({
     }
   }
 
-  void hovered;
-
   return (
     <div className="relative flex flex-col items-center">
-      {/* Tooltip via portal equivalent — absolute above icon */}
+      {/* Tooltip */}
       <AnimatePresence>
         {showTooltip && (
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 4 }}
-            transition={{ duration: 0.12 }}
-            className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-50 whitespace-nowrap rounded-md px-2 py-1 text-xs font-medium pointer-events-none"
+            initial={{ opacity: 0, y: 10, scale: 0.94 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 6, scale: 0.97 }}
+            transition={{ duration: 0.1 }}
+            className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 z-50 whitespace-nowrap pointer-events-none px-2.5 py-1"
             style={{
               background: "var(--bg-elevated)",
               border: "1px solid var(--glass-border)",
+              borderRadius: "var(--radius-md)",
               boxShadow: "var(--shadow-md)",
               color: "var(--text-primary)",
+              fontSize: 12,
+              fontWeight: 500,
+              letterSpacing: "-0.01em",
+              backdropFilter: `blur(var(--blur-ui))`,
+              WebkitBackdropFilter: `blur(var(--blur-ui))`,
             }}
           >
             {app.name}
@@ -113,22 +125,33 @@ function DockIcon({
         )}
       </AnimatePresence>
 
-      {/* Dot indicator — open app */}
-      {isOpen && (
-        <div
-          className="absolute bottom-0.5 left-1/2 -translate-x-1/2 rounded-full"
-          style={{
-            width: 4,
-            height: 4,
-            background: isActiveTab ? hoverColor : "rgba(255,255,255,0.4)",
-          }}
-        />
-      )}
+      {/* Open indicator dot */}
+      <div
+        className="absolute rounded-full transition-all duration-200"
+        style={{
+          width: isActiveTab ? 5 : 3,
+          height: isActiveTab ? 5 : 3,
+          bottom: -2,
+          left: "50%",
+          transform: "translateX(-50%)",
+          background: isOpen
+            ? isActiveTab
+              ? hoverColor
+              : "rgba(255,255,255,0.5)"
+            : "transparent",
+          boxShadow: isOpen && isActiveTab ? `0 0 6px ${hoverColor}` : "none",
+        }}
+      />
 
       {/* Icon container */}
       <motion.div
         ref={ref}
-        style={{ width, height }}
+        style={{
+          width: size,
+          height: size,
+          borderRadius: "var(--radius-lg)",
+          background: isOpen ? "var(--glass-bg)" : "transparent",
+        }}
         onClick={() =>
           app.opensAsModal === true
             ? toggleAIModal()
@@ -136,20 +159,28 @@ function DockIcon({
         }
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        className="relative flex items-center justify-center rounded-xl cursor-pointer transition-colors"
-        whileTap={{ scale: 0.9 }}
+        className="relative flex items-center justify-center cursor-pointer"
+        whileTap={{ scale: 0.88 }}
         role="button"
         aria-label={app.name}
         data-testid={`dock-app-${app.id}`}
+        onHoverStart={(e) => {
+          (e.target as HTMLElement).style.background = "var(--glass-bg-hover)";
+        }}
+        onHoverEnd={(e) => {
+          (e.target as HTMLElement).style.background = isOpen
+            ? "var(--glass-bg)"
+            : "transparent";
+        }}
       >
         <motion.div
           style={{ width: iconSize, height: iconSize }}
           className="flex items-center justify-center"
         >
           <Icon
-            size={22}
-            strokeWidth={1.5}
-            style={{ color: "rgba(255,255,255,0.65)" }}
+            size={24}
+            strokeWidth={1.4}
+            style={{ color: "rgba(255,255,255,0.75)" }}
           />
         </motion.div>
       </motion.div>
@@ -168,20 +199,21 @@ export function Dock() {
 
   return (
     <motion.div
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50"
+      className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50"
       data-testid="dock"
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: "easeOut" }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
     >
       <motion.div
         onMouseMove={(e) => mouseX.set(e.pageX)}
         onMouseLeave={() => mouseX.set(Infinity)}
-        className="flex items-end pb-2 pt-3 px-4"
+        className="flex items-end pb-3 pt-3 px-4"
         style={{
-          gap: 8,
-          background: "rgba(15,21,27,0.88)",
-          backdropFilter: "blur(var(--glass-blur-heavy))",
+          gap: 10,
+          background: "rgba(6,9,18,0.52)",
+          backdropFilter: `blur(var(--blur-dock))`,
+          WebkitBackdropFilter: `blur(var(--blur-dock))`,
           border: "1px solid var(--glass-border)",
           borderRadius: "var(--radius-dock)",
           boxShadow: "var(--shadow-dock)",

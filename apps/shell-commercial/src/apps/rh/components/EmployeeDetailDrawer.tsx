@@ -27,8 +27,12 @@ function DetailRow({ label, value }: DetailRowProps) {
   if (!value) return null;
   return (
     <div>
-      <div className="text-xs text-zinc-600 mb-0.5">{label}</div>
-      <div className="text-sm text-zinc-300">{value}</div>
+      <div className="text-xs mb-0.5" style={{ color: "var(--text-tertiary)" }}>
+        {label}
+      </div>
+      <div className="text-sm" style={{ color: "var(--text-secondary)" }}>
+        {value}
+      </div>
     </div>
   );
 }
@@ -42,7 +46,10 @@ function Section({
 }) {
   return (
     <div>
-      <h4 className="text-xs font-semibold text-zinc-500 uppercase tracking-wide mb-3">
+      <h4
+        className="text-xs font-semibold uppercase tracking-wide mb-3"
+        style={{ color: "var(--text-secondary)" }}
+      >
         {title}
       </h4>
       <div className="space-y-3">{children}</div>
@@ -56,21 +63,59 @@ export function EmployeeDetailDrawer({
   onEdit,
 }: EmployeeDetailDrawerProps) {
   return (
-    <div className="flex flex-col h-full w-80 border-l border-zinc-800 bg-zinc-950 shrink-0">
+    <div
+      className="flex flex-col h-full w-80 shrink-0"
+      style={{
+        borderLeft: "1px solid var(--border-subtle)",
+        background: "var(--bg-base)",
+      }}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 shrink-0">
-        <span className="text-sm font-medium text-zinc-300">Detalhes</span>
+      <div
+        className="flex items-center justify-between px-4 py-3 shrink-0"
+        style={{ borderBottom: "1px solid var(--border-subtle)" }}
+      >
+        <span
+          className="text-sm font-medium"
+          style={{ color: "var(--text-secondary)" }}
+        >
+          Detalhes
+        </span>
         <div className="flex items-center gap-1">
           <button
             onClick={onEdit}
-            className="p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200"
+            className="p-1 rounded"
+            style={{
+              color: "var(--text-secondary)",
+              transition: "var(--transition-default)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--glass-bg-hover)";
+              e.currentTarget.style.color = "var(--text-primary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "var(--text-secondary)";
+            }}
             aria-label="Editar"
           >
             <Edit2 size={14} />
           </button>
           <button
             onClick={onClose}
-            className="p-1 rounded hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200"
+            className="p-1 rounded"
+            style={{
+              color: "var(--text-secondary)",
+              transition: "var(--transition-default)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--glass-bg-hover)";
+              e.currentTarget.style.color = "var(--text-primary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "var(--text-secondary)";
+            }}
             aria-label="Fechar"
           >
             <X size={14} />
@@ -82,7 +127,13 @@ export function EmployeeDetailDrawer({
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         {/* Avatar + Name */}
         <div className="flex flex-col items-center text-center gap-2">
-          <div className="w-16 h-16 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-300 text-xl font-bold">
+          <div
+            className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold"
+            style={{
+              background: "var(--accent-dim)",
+              color: "var(--accent-hover)",
+            }}
+          >
             {emp.photoUrl !== null ? (
               <img
                 src={emp.photoUrl}
@@ -94,14 +145,25 @@ export function EmployeeDetailDrawer({
             )}
           </div>
           <div>
-            <div className="text-sm font-semibold text-zinc-100">
+            <div
+              className="text-sm font-semibold"
+              style={{ color: "var(--text-primary)" }}
+            >
               {emp.fullName}
             </div>
             {emp.position !== null && (
-              <div className="text-xs text-zinc-500 mt-0.5">{emp.position}</div>
+              <div
+                className="text-xs mt-0.5"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {emp.position}
+              </div>
             )}
             {emp.department !== null && (
-              <div className="flex items-center justify-center gap-1 text-xs text-zinc-600 mt-0.5">
+              <div
+                className="flex items-center justify-center gap-1 text-xs mt-0.5"
+                style={{ color: "var(--text-tertiary)" }}
+              >
                 <Building2 size={11} /> {emp.department}
               </div>
             )}
@@ -120,13 +182,19 @@ export function EmployeeDetailDrawer({
         {/* Contact */}
         <Section title="Contato">
           {emp.email !== null && (
-            <div className="flex items-center gap-2 text-sm text-zinc-400">
+            <div
+              className="flex items-center gap-2 text-sm"
+              style={{ color: "var(--text-secondary)" }}
+            >
               <Mail size={13} className="shrink-0" />
               <span className="truncate">{emp.email}</span>
             </div>
           )}
           {emp.phone !== null && (
-            <div className="flex items-center gap-2 text-sm text-zinc-400">
+            <div
+              className="flex items-center gap-2 text-sm"
+              style={{ color: "var(--text-secondary)" }}
+            >
               <Phone size={13} className="shrink-0" />
               <span>{emp.phone}</span>
             </div>
@@ -140,7 +208,10 @@ export function EmployeeDetailDrawer({
           <DetailRow label="Centro de custo" value={emp.costCenter} />
           <DetailRow label="Matrícula" value={emp.registrationNumber} />
           {emp.hireDate !== null && (
-            <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+            <div
+              className="flex items-center gap-1.5 text-xs"
+              style={{ color: "var(--text-secondary)" }}
+            >
               <Calendar size={11} />
               Admissão: {emp.hireDate}
             </div>
@@ -183,7 +254,12 @@ export function EmployeeDetailDrawer({
         {/* Bio */}
         {emp.bio !== null && (
           <Section title="Bio">
-            <p className="text-xs text-zinc-400 leading-relaxed">{emp.bio}</p>
+            <p
+              className="text-xs leading-relaxed"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              {emp.bio}
+            </p>
           </Section>
         )}
       </div>

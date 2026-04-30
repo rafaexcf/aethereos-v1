@@ -32,11 +32,13 @@ const STATUS_LABELS: Record<PersonStatus, string> = {
   onboarding: "Onboarding",
 };
 
-const STATUS_COLORS: Record<PersonStatus, string> = {
-  active: "text-green-400 bg-green-900/30",
-  inactive: "text-zinc-400 bg-zinc-800",
-  onboarding: "text-yellow-400 bg-yellow-900/30",
-};
+function statusBadgeStyle(status: PersonStatus): React.CSSProperties {
+  if (status === "active")
+    return { background: "rgba(16,185,129,0.14)", color: "#34d399" };
+  if (status === "onboarding")
+    return { background: "rgba(251,191,36,0.14)", color: "#fbbf24" };
+  return { background: "var(--glass-bg)", color: "var(--text-tertiary)" };
+}
 
 function initials(name: string): string {
   return name
@@ -96,6 +98,15 @@ interface PersonFormProps {
   onCancel: () => void;
 }
 
+const inputStyle: React.CSSProperties = {
+  background: "var(--glass-bg)",
+  border: "1px solid var(--border-default)",
+  borderRadius: "var(--radius-md)",
+  color: "var(--text-primary)",
+  fontSize: 13,
+  padding: "6px 12px",
+};
+
 function PersonForm({
   initial = emptyForm,
   onSave,
@@ -115,55 +126,109 @@ function PersonForm({
     <div className="flex flex-col gap-3 p-4">
       <div className="grid grid-cols-2 gap-3">
         <label className="flex flex-col gap-1">
-          <span className="text-xs text-zinc-500">Nome completo *</span>
+          <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+            Nome completo *
+          </span>
           <input
             type="text"
             {...field("fullName")}
             placeholder="João Silva"
-            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500"
+            className="focus:outline-none"
+            style={inputStyle}
+            onFocus={(e) =>
+              (e.currentTarget.style.borderColor = "var(--border-focus)")
+            }
+            onBlur={(e) =>
+              (e.currentTarget.style.borderColor = "var(--border-default)")
+            }
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs text-zinc-500">E-mail</span>
+          <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+            E-mail
+          </span>
           <input
             type="email"
             {...field("email")}
             placeholder="joao@empresa.com"
-            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500"
+            className="focus:outline-none"
+            style={inputStyle}
+            onFocus={(e) =>
+              (e.currentTarget.style.borderColor = "var(--border-focus)")
+            }
+            onBlur={(e) =>
+              (e.currentTarget.style.borderColor = "var(--border-default)")
+            }
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs text-zinc-500">Telefone</span>
+          <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+            Telefone
+          </span>
           <input
             type="tel"
             {...field("phone")}
             placeholder="(11) 99999-9999"
-            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500"
+            className="focus:outline-none"
+            style={inputStyle}
+            onFocus={(e) =>
+              (e.currentTarget.style.borderColor = "var(--border-focus)")
+            }
+            onBlur={(e) =>
+              (e.currentTarget.style.borderColor = "var(--border-default)")
+            }
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs text-zinc-500">Cargo</span>
+          <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+            Cargo
+          </span>
           <input
             type="text"
             {...field("roleLabel")}
             placeholder="Analista de Dados"
-            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500"
+            className="focus:outline-none"
+            style={inputStyle}
+            onFocus={(e) =>
+              (e.currentTarget.style.borderColor = "var(--border-focus)")
+            }
+            onBlur={(e) =>
+              (e.currentTarget.style.borderColor = "var(--border-default)")
+            }
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs text-zinc-500">Departamento</span>
+          <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+            Departamento
+          </span>
           <input
             type="text"
             {...field("department")}
             placeholder="Tecnologia"
-            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500"
+            className="focus:outline-none"
+            style={inputStyle}
+            onFocus={(e) =>
+              (e.currentTarget.style.borderColor = "var(--border-focus)")
+            }
+            onBlur={(e) =>
+              (e.currentTarget.style.borderColor = "var(--border-default)")
+            }
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs text-zinc-500">Status</span>
+          <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+            Status
+          </span>
           <select
             {...field("status")}
-            className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-sm text-zinc-100 focus:outline-none focus:ring-1 focus:ring-violet-500"
+            className="focus:outline-none"
+            style={inputStyle}
+            onFocus={(e) =>
+              (e.currentTarget.style.borderColor = "var(--border-focus)")
+            }
+            onBlur={(e) =>
+              (e.currentTarget.style.borderColor = "var(--border-default)")
+            }
           >
             <option value="active">Ativo</option>
             <option value="onboarding">Onboarding</option>
@@ -175,7 +240,18 @@ function PersonForm({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:border-zinc-500"
+          className="rounded-md px-3 py-1.5 text-xs"
+          style={{
+            border: "1px solid var(--border-subtle)",
+            color: "var(--text-secondary)",
+            transition: "var(--transition-fast)",
+          }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.borderColor = "var(--border-default)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.borderColor = "var(--border-subtle)")
+          }
         >
           Cancelar
         </button>
@@ -183,7 +259,17 @@ function PersonForm({
           type="button"
           onClick={() => onSave(form)}
           disabled={form.fullName.trim().length === 0}
-          className="rounded-md bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-500 disabled:opacity-50"
+          className="rounded-md px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+          style={{
+            background: "var(--accent)",
+            transition: "var(--transition-fast)",
+          }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.background = "var(--accent-hover)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.background = "var(--accent)")
+          }
         >
           Salvar
         </button>
@@ -212,15 +298,24 @@ function DeactivateDialog({
   return (
     <div className="flex flex-col gap-4 p-6">
       <div className="flex flex-col gap-2">
-        <h3 className="text-sm font-semibold text-zinc-100">
+        <h3
+          className="text-sm font-semibold"
+          style={{ color: "var(--text-primary)" }}
+        >
           Desativar {person.fullName}?
         </h3>
-        <p className="text-xs text-zinc-400">
+        <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
           Esta ação desativa o colaborador mas não o exclui permanentemente. O
           acesso ao sistema será revogado.
         </p>
-        <div className="mt-2 rounded-md border border-yellow-600/40 bg-yellow-900/20 p-3">
-          <p className="text-xs text-yellow-300">
+        <div
+          className="mt-2 rounded-md p-3"
+          style={{
+            border: "1px solid rgba(251,191,36,0.25)",
+            background: "rgba(251,191,36,0.08)",
+          }}
+        >
+          <p className="text-xs" style={{ color: "#fbbf24" }}>
             ⚠️ Operação sensível — exige confirmação dupla.
             Demissão/desligamento é listado nas operações invariantes (12.4) que
             agentes nunca executam automaticamente.
@@ -234,16 +329,29 @@ function DeactivateDialog({
           onChange={(e) => setConfirmed(e.target.checked)}
           className="h-4 w-4 accent-red-500"
         />
-        <span className="text-xs text-zinc-300">
+        <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
           Confirmo que desejo desativar{" "}
-          <strong className="text-zinc-100">{person.fullName}</strong>
+          <strong style={{ color: "var(--text-primary)" }}>
+            {person.fullName}
+          </strong>
         </span>
       </label>
       <div className="flex justify-end gap-2">
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-md border border-zinc-700 px-3 py-1.5 text-xs text-zinc-300 hover:border-zinc-500"
+          className="rounded-md px-3 py-1.5 text-xs"
+          style={{
+            border: "1px solid var(--border-subtle)",
+            color: "var(--text-secondary)",
+            transition: "var(--transition-fast)",
+          }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.borderColor = "var(--border-default)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.borderColor = "var(--border-subtle)")
+          }
         >
           Cancelar
         </button>
@@ -454,7 +562,21 @@ export function PessoasApp() {
           <select
             value={filterDept}
             onChange={(e) => setFilterDept(e.target.value)}
-            className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-zinc-300 focus:outline-none"
+            className="focus:outline-none"
+            style={{
+              background: "var(--glass-bg)",
+              border: "1px solid var(--border-default)",
+              borderRadius: "var(--radius-md)",
+              color: "var(--text-secondary)",
+              fontSize: 12,
+              padding: "4px 8px",
+            }}
+            onFocus={(e) =>
+              (e.currentTarget.style.borderColor = "var(--border-focus)")
+            }
+            onBlur={(e) =>
+              (e.currentTarget.style.borderColor = "var(--border-default)")
+            }
           >
             <option value="">Todos os depto.</option>
             {departments.map((d) => (
@@ -463,7 +585,13 @@ export function PessoasApp() {
               </option>
             ))}
           </select>
-          <div className="flex rounded-md border border-zinc-700 overflow-hidden">
+          <div
+            className="flex overflow-hidden"
+            style={{
+              borderRadius: "var(--radius-sm)",
+              border: "1px solid var(--border-subtle)",
+            }}
+          >
             {(
               ["all", "active", "onboarding", "inactive"] as FilterStatus[]
             ).map((s) => (
@@ -471,12 +599,21 @@ export function PessoasApp() {
                 key={s}
                 type="button"
                 onClick={() => setFilterStatus(s)}
-                className={[
-                  "px-2 py-1 text-xs transition-colors",
-                  filterStatus === s
-                    ? "bg-violet-600 text-white"
-                    : "text-zinc-400 hover:text-zinc-200",
-                ].join(" ")}
+                className="px-2 py-1 text-xs"
+                style={{
+                  background:
+                    filterStatus === s ? "var(--accent)" : "transparent",
+                  color: filterStatus === s ? "white" : "var(--text-tertiary)",
+                  transition: "var(--transition-fast)",
+                }}
+                onMouseEnter={(e) => {
+                  if (filterStatus !== s)
+                    e.currentTarget.style.background = "var(--glass-bg-hover)";
+                }}
+                onMouseLeave={(e) => {
+                  if (filterStatus !== s)
+                    e.currentTarget.style.background = "transparent";
+                }}
               >
                 {s === "all" ? "Todos" : STATUS_LABELS[s]}
               </button>
@@ -489,7 +626,17 @@ export function PessoasApp() {
               setShowForm(true);
             }}
             disabled={drivers === null || activeCompanyId === null}
-            className="rounded-md bg-violet-600 px-3 py-1 text-xs font-medium text-white hover:bg-violet-500 disabled:opacity-40"
+            className="rounded-md px-3 py-1 text-xs font-medium text-white disabled:opacity-40"
+            style={{
+              background: "var(--accent)",
+              transition: "var(--transition-fast)",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background = "var(--accent-hover)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background = "var(--accent)")
+            }
           >
             + Cadastrar
           </button>
@@ -498,7 +645,13 @@ export function PessoasApp() {
     >
       {/* Painel de detalhe/edição/form */}
       {(showForm || editingPerson !== null || deactivating !== null) && (
-        <div className="shrink-0 border-b border-zinc-800 bg-zinc-900/50">
+        <div
+          className="shrink-0 border-b"
+          style={{
+            borderColor: "var(--border-subtle)",
+            background: "var(--glass-bg)",
+          }}
+        >
           {deactivating !== null ? (
             <DeactivateDialog
               person={deactivating}
@@ -535,19 +688,32 @@ export function PessoasApp() {
 
       {/* Erro */}
       {error !== null && (
-        <div className="shrink-0 border-b border-red-900/40 bg-red-950/20 px-4 py-2 text-xs text-red-400">
+        <div
+          className="shrink-0 border-b px-4 py-2 text-xs"
+          style={{
+            borderColor: "rgba(239,68,68,0.25)",
+            background: "rgba(239,68,68,0.08)",
+            color: "#f87171",
+          }}
+        >
           {error}
         </div>
       )}
 
       {/* Lista de pessoas */}
-      <div className="flex flex-1 flex-col overflow-y-auto divide-y divide-zinc-800">
+      <div className="flex flex-1 flex-col overflow-y-auto">
         {loading ? (
-          <div className="flex flex-1 items-center justify-center text-sm text-zinc-600">
+          <div
+            className="flex flex-1 items-center justify-center text-sm"
+            style={{ color: "var(--text-tertiary)" }}
+          >
             Carregando…
           </div>
         ) : filtered.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center text-sm text-zinc-600">
+          <div
+            className="flex flex-1 items-center justify-center text-sm"
+            style={{ color: "var(--text-tertiary)" }}
+          >
             {drivers === null || activeCompanyId === null
               ? "Aguardando sessão…"
               : "Nenhuma pessoa encontrada"}
@@ -556,10 +722,23 @@ export function PessoasApp() {
           filtered.map((person) => (
             <div
               key={person.id}
-              className={[
-                "group flex items-center gap-3 px-4 py-3 hover:bg-zinc-900 cursor-pointer",
-                selectedPerson?.id === person.id ? "bg-zinc-900" : "",
-              ].join(" ")}
+              className="group flex items-center gap-3 px-4 py-3 cursor-pointer"
+              style={{
+                background:
+                  selectedPerson?.id === person.id
+                    ? "var(--glass-bg-hover)"
+                    : "transparent",
+                borderBottom: "1px solid var(--border-subtle)",
+                transition: "var(--transition-fast)",
+              }}
+              onMouseEnter={(e) => {
+                if (selectedPerson?.id !== person.id)
+                  e.currentTarget.style.background = "var(--glass-bg-hover)";
+              }}
+              onMouseLeave={(e) => {
+                if (selectedPerson?.id !== person.id)
+                  e.currentTarget.style.background = "transparent";
+              }}
               onClick={() =>
                 setSelectedPerson((prev) =>
                   prev?.id === person.id ? null : person,
@@ -567,31 +746,46 @@ export function PessoasApp() {
               }
             >
               {/* Avatar */}
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-700/30 text-sm font-medium text-violet-300">
+              <div
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-medium"
+                style={{
+                  background: "rgba(99,102,241,0.18)",
+                  color: "var(--accent-hover)",
+                }}
+              >
                 {initials(person.fullName)}
               </div>
 
               {/* Info */}
               <div className="flex flex-1 flex-col gap-0.5 overflow-hidden">
-                <span className="truncate text-sm font-medium text-zinc-100">
+                <span
+                  className="truncate text-sm font-medium"
+                  style={{ color: "var(--text-primary)" }}
+                >
                   {person.fullName}
                 </span>
-                <span className="truncate text-xs text-zinc-500">
+                <span
+                  className="truncate text-xs"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   {[person.roleLabel, person.department]
                     .filter(Boolean)
                     .join(" · ")}
                   {person.email !== undefined && (
-                    <span className="ml-1 text-zinc-600">· {person.email}</span>
+                    <span
+                      className="ml-1"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
+                      · {person.email}
+                    </span>
                   )}
                 </span>
               </div>
 
               {/* Status badge */}
               <span
-                className={[
-                  "shrink-0 rounded-full px-2 py-0.5 text-xs",
-                  STATUS_COLORS[person.status],
-                ].join(" ")}
+                className="shrink-0 rounded-full px-2 py-0.5 text-xs"
+                style={statusBadgeStyle(person.status)}
               >
                 {STATUS_LABELS[person.status]}
               </span>
@@ -605,7 +799,14 @@ export function PessoasApp() {
                     setEditingPerson(person);
                     setShowForm(false);
                   }}
-                  className="rounded p-1 text-xs text-zinc-500 hover:text-zinc-300"
+                  className="rounded p-1 text-xs"
+                  style={{ color: "var(--text-tertiary)" }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.color = "var(--text-secondary)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.color = "var(--text-tertiary)")
+                  }
                   title="Editar"
                 >
                   ✏️
@@ -617,7 +818,14 @@ export function PessoasApp() {
                       e.stopPropagation();
                       setDeactivating(person);
                     }}
-                    className="rounded p-1 text-xs text-zinc-500 hover:text-red-400"
+                    className="rounded p-1 text-xs hover:text-red-400"
+                    style={{ color: "var(--text-tertiary)" }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.color = "#f87171")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.color = "var(--text-tertiary)")
+                    }
                     title="Desativar"
                   >
                     🚫

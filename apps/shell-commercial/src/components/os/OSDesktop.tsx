@@ -59,7 +59,15 @@ export function OSDesktop() {
     <div
       data-testid="os-desktop"
       className="flex flex-col h-screen w-screen overflow-hidden"
-      style={{ background: "var(--bg-base)" }}
+      style={{
+        background: [
+          "radial-gradient(ellipse 150% 65% at 12% -8%, rgba(94,77,230,0.44) 0%, transparent 55%)",
+          "radial-gradient(ellipse 75% 55% at 90% 6%, rgba(14,165,233,0.30) 0%, transparent 50%)",
+          "radial-gradient(ellipse 55% 45% at 55% 100%, rgba(56,189,248,0.16) 0%, transparent 65%)",
+          "radial-gradient(ellipse 100% 80% at 50% 50%, rgba(6,9,18,1) 40%, transparent 100%)",
+          "#060912",
+        ].join(", "),
+      }}
     >
       <TopBar companyName={companyName} onSignOut={handleSignOut} />
 

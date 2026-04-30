@@ -21,33 +21,44 @@ function DesktopIcon({ item }: { item: MesaItem }) {
   return (
     <button
       onClick={() => openApp(app.id, app.name)}
-      className="absolute flex flex-col items-center gap-1 p-2 rounded-xl transition-colors cursor-pointer group"
+      className="absolute flex flex-col items-center gap-1.5 p-2 cursor-pointer group"
       style={{
         left: item.position.x,
         top: item.position.y,
         width: item.size.w,
+        borderRadius: "var(--radius-xl)",
+        transition: "background var(--transition-fast)",
       }}
       onMouseEnter={(e) =>
-        (e.currentTarget.style.background = "rgba(255,255,255,0.06)")
+        (e.currentTarget.style.background = "rgba(255,255,255,0.07)")
       }
       onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
     >
+      {/* Icon tile */}
       <div
-        className="flex items-center justify-center rounded-xl"
+        className="flex items-center justify-center transition-transform group-hover:scale-105"
         style={{
-          width: 44,
-          height: 44,
-          background: `${app.color}20`,
-          border: `1px solid ${app.color}30`,
+          width: 52,
+          height: 52,
+          borderRadius: "var(--radius-lg)",
+          background: `linear-gradient(145deg, ${app.color}28, ${app.color}12)`,
+          border: `1px solid ${app.color}28`,
+          boxShadow: `0 4px 16px ${app.color}15, inset 0 1px 0 rgba(255,255,255,0.10)`,
+          transition: "transform var(--transition-spring)",
         }}
       >
-        <Icon size={22} style={{ color: app.color }} strokeWidth={1.5} />
+        <Icon size={26} style={{ color: app.color }} strokeWidth={1.4} />
       </div>
+
+      {/* Label */}
       <span
-        className="text-[11px] font-medium text-center leading-tight max-w-full truncate px-1"
+        className="text-center leading-tight max-w-full truncate px-1"
         style={{
+          fontSize: 11,
+          fontWeight: 500,
           color: "var(--text-primary)",
-          textShadow: "0 1px 3px rgba(0,0,0,0.8)",
+          letterSpacing: "-0.01em",
+          textShadow: "0 1px 4px rgba(0,0,0,0.9), 0 0 12px rgba(0,0,0,0.6)",
         }}
       >
         {app.name}

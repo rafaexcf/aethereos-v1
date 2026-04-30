@@ -50,18 +50,36 @@ function App() {
       });
   }, []);
 
+  const bootBg = {
+    background: [
+      "radial-gradient(ellipse 150% 65% at 12% -8%, rgba(94,77,230,0.35) 0%, transparent 55%)",
+      "radial-gradient(ellipse 75% 55% at 90% 6%, rgba(14,165,233,0.22) 0%, transparent 50%)",
+      "#060912",
+    ].join(", "),
+  };
+
   if (!booted) {
     return (
-      <div className="flex h-screen items-center justify-center bg-zinc-950">
-        <p className="text-sm text-zinc-400">Iniciando Aethereos…</p>
+      <div className="flex h-screen items-center justify-center" style={bootBg}>
+        <p
+          style={{
+            fontSize: 13,
+            color: "rgba(255,255,255,0.38)",
+            letterSpacing: "-0.01em",
+          }}
+        >
+          Iniciando Aethereos…
+        </p>
       </div>
     );
   }
 
   if (bootError !== null) {
     return (
-      <div className="flex h-screen items-center justify-center bg-zinc-950">
-        <p className="text-sm text-red-400">Erro ao iniciar: {bootError}</p>
+      <div className="flex h-screen items-center justify-center" style={bootBg}>
+        <p style={{ fontSize: 13, color: "rgba(248,113,113,0.8)" }}>
+          Erro ao iniciar: {bootError}
+        </p>
       </div>
     );
   }

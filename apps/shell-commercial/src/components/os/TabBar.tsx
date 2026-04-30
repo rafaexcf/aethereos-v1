@@ -23,7 +23,7 @@ import type { OSTab } from "../../types/os";
 function AppIcon({
   iconName,
   color,
-  size = 14,
+  size = 13,
   active = false,
 }: {
   iconName: string;
@@ -35,7 +35,7 @@ function AppIcon({
     (LucideIcons as unknown as Record<string, ComponentType<LucideProps>>)[
       iconName
     ] ?? LucideIcons.Box;
-  return <Icon size={size} style={{ color, opacity: active ? 1 : 0.5 }} />;
+  return <Icon size={size} style={{ color, opacity: active ? 1 : 0.55 }} />;
 }
 
 function SortableTab({ tab }: { tab: OSTab }) {
@@ -54,7 +54,7 @@ function SortableTab({ tab }: { tab: OSTab }) {
   const dragStyle = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.4 : 1,
   };
 
   const isPinned = tab.isPinned;
@@ -67,42 +67,41 @@ function SortableTab({ tab }: { tab: OSTab }) {
       {...listeners}
       onClick={() => focusTab(tab.id)}
       data-testid={`tab-${tab.appId}`}
-      className="relative flex items-center justify-center cursor-pointer select-none group flex-none transition-colors"
+      className="relative flex items-center justify-center cursor-pointer select-none group flex-none transition-all"
       style={{
         ...dragStyle,
-        height: 32,
-        padding: isPinned ? "0 10px" : "0 12px",
-        gap: 6,
+        height: 28,
+        padding: isPinned ? "0 10px" : "0 10px",
+        gap: 5,
         borderRadius: "var(--radius-md)",
-        maxWidth: isPinned ? 52 : 160,
+        maxWidth: isPinned ? 56 : 160,
+        transitionDuration: "var(--transition-fast)",
         ...(isActive
           ? {
-              background: "var(--glass-bg)",
+              background: "var(--glass-bg-active)",
               border: "1px solid var(--glass-border)",
-              boxShadow: "var(--shadow-sm)",
+              boxShadow:
+                "var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.12)",
             }
           : {
               background: "transparent",
-              border: isPinned
-                ? "1px solid var(--glass-border)"
-                : "1px solid transparent",
+              border: "1px solid transparent",
             }),
       }}
       onMouseEnter={(e) => {
-        if (!isActive) {
+        if (!isActive)
           e.currentTarget.style.background = "var(--glass-bg-hover)";
-        }
       }}
       onMouseLeave={(e) => {
-        if (!isActive) {
-          e.currentTarget.style.background = "transparent";
-        }
+        if (!isActive) e.currentTarget.style.background = "transparent";
       }}
     >
       {isPinned ? (
         <span
-          className="text-[11px] font-medium leading-none"
           style={{
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: "-0.01em",
             color: isActive ? "var(--text-primary)" : "var(--text-tertiary)",
           }}
         >
@@ -114,15 +113,18 @@ function SortableTab({ tab }: { tab: OSTab }) {
             <AppIcon
               iconName={app.icon}
               color={app.color}
-              size={14}
+              size={13}
               active={isActive}
             />
           )}
           <span
-            className="text-[12px] font-medium truncate"
+            className="truncate"
             style={{
+              fontSize: 12,
+              fontWeight: isActive ? 500 : 400,
               color: isActive ? "var(--text-primary)" : "var(--text-tertiary)",
-              maxWidth: 120,
+              maxWidth: 110,
+              letterSpacing: "-0.01em",
             }}
           >
             {tab.title}
@@ -133,16 +135,23 @@ function SortableTab({ tab }: { tab: OSTab }) {
               closeTab(tab.id);
             }}
             data-testid={`close-tab-${tab.appId}`}
-            className="flex-none opacity-0 group-hover:opacity-100 transition-opacity ml-0.5"
-            style={{ color: "var(--text-tertiary)" }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.color = "var(--text-primary)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.color = "var(--text-tertiary)")
-            }
+            className="flex-none opacity-0 group-hover:opacity-100 transition-opacity ml-0.5 flex items-center justify-center"
+            style={{
+              width: 16,
+              height: 16,
+              borderRadius: "var(--radius-full)",
+              color: "var(--text-tertiary)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "var(--glass-bg-hover)";
+              e.currentTarget.style.color = "var(--text-primary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "var(--text-tertiary)";
+            }}
           >
-            <X size={13} />
+            <X size={10} strokeWidth={2.5} />
           </button>
         </>
       )}
@@ -173,11 +182,13 @@ export function TabBar() {
       data-testid="tabbar"
       className="flex items-center overflow-x-auto shrink-0"
       style={{
-        height: 40,
-        background: "var(--bg-base)",
+        height: 36,
+        background: "rgba(6,9,18,0.60)",
+        backdropFilter: `blur(var(--blur-ui))`,
+        WebkitBackdropFilter: `blur(var(--blur-ui))`,
         borderBottom: "1px solid var(--border-subtle)",
         padding: "0 8px",
-        gap: 4,
+        gap: 3,
         scrollbarWidth: "none",
       }}
     >
@@ -190,7 +201,7 @@ export function TabBar() {
           items={tabs.map((t) => t.id)}
           strategy={horizontalListSortingStrategy}
         >
-          <div className="flex items-center" style={{ gap: 4 }}>
+          <div className="flex items-center" style={{ gap: 3 }}>
             {tabs.map((tab) => (
               <SortableTab key={tab.id} tab={tab} />
             ))}

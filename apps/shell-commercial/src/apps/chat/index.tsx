@@ -70,13 +70,26 @@ function ChannelList({
   return (
     <div className="flex flex-col p-2">
       <div className="mb-1 flex items-center justify-between px-2 py-1">
-        <span className="text-xs font-semibold uppercase tracking-wider text-zinc-600">
+        <span
+          className="text-xs font-semibold uppercase tracking-wider"
+          style={{ color: "var(--text-tertiary)" }}
+        >
           Canais
         </span>
         <button
           type="button"
           onClick={onCreateChannel}
-          className="text-xs text-zinc-600 hover:text-zinc-300"
+          className="text-xs"
+          style={{
+            color: "var(--text-tertiary)",
+            transition: "var(--transition-fast)",
+          }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.color = "var(--text-primary)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.color = "var(--text-tertiary)")
+          }
           title="Novo canal"
         >
           +
@@ -87,14 +100,30 @@ function ChannelList({
           key={ch.id}
           type="button"
           onClick={() => onSelect(ch.id)}
-          className={[
-            "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm transition-colors text-left",
-            activeId === ch.id
-              ? "bg-violet-600/20 text-violet-300"
-              : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200",
-          ].join(" ")}
+          className="flex items-center gap-2 rounded-md px-3 py-1.5 text-sm text-left"
+          style={{
+            background:
+              activeId === ch.id ? "var(--accent-dim)" : "transparent",
+            color:
+              activeId === ch.id
+                ? "var(--accent-hover)"
+                : "var(--text-secondary)",
+            transition: "var(--transition-fast)",
+          }}
+          onMouseEnter={(e) => {
+            if (activeId !== ch.id) {
+              e.currentTarget.style.background = "var(--glass-bg-hover)";
+              e.currentTarget.style.color = "var(--text-primary)";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (activeId !== ch.id) {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "var(--text-secondary)";
+            }
+          }}
         >
-          <span className="text-zinc-600">#</span>
+          <span style={{ color: "var(--text-tertiary)" }}>#</span>
           <span className="truncate">{ch.name}</span>
         </button>
       ))}
@@ -120,7 +149,10 @@ function MessageList({ messages, currentUserId }: MessageListProps) {
 
   if (messages.length === 0) {
     return (
-      <div className="flex flex-1 items-center justify-center text-sm text-zinc-600">
+      <div
+        className="flex flex-1 items-center justify-center text-sm"
+        style={{ color: "var(--text-tertiary)" }}
+      >
         Nenhuma mensagem ainda. Seja o primeiro a escrever!
       </div>
     );
@@ -134,21 +166,28 @@ function MessageList({ messages, currentUserId }: MessageListProps) {
           <div key={msg.id} className="flex flex-col gap-0.5">
             <div className="flex items-baseline gap-2">
               <span
-                className={[
-                  "text-xs font-semibold",
-                  isOwn ? "text-violet-400" : "text-zinc-300",
-                ].join(" ")}
+                className="text-xs font-semibold"
+                style={{
+                  color: isOwn
+                    ? "var(--accent-hover)"
+                    : "var(--text-secondary)",
+                }}
               >
                 {isOwn ? "Você" : msg.senderName}
               </span>
-              <span className="text-xs text-zinc-700">
+              <span
+                className="text-xs"
+                style={{ color: "var(--text-tertiary)" }}
+              >
                 {msg.createdAt.toLocaleTimeString("pt-BR", {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
               </span>
             </div>
-            <p className="text-sm text-zinc-200">{msg.body}</p>
+            <p className="text-sm" style={{ color: "var(--text-primary)" }}>
+              {msg.body}
+            </p>
           </div>
         );
       })}
@@ -342,9 +381,17 @@ export function ChatApp() {
     >
       {/* Modal novo canal */}
       {showNewChannel && (
-        <div className="shrink-0 border-b border-zinc-800 bg-zinc-900/50 p-3">
+        <div
+          className="shrink-0 border-b p-3"
+          style={{
+            borderColor: "var(--border-subtle)",
+            background: "var(--glass-bg)",
+          }}
+        >
           <div className="flex items-center gap-2">
-            <span className="text-xs text-zinc-500">#</span>
+            <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+              #
+            </span>
             <input
               type="text"
               value={newChannelName}
@@ -355,19 +402,54 @@ export function ChatApp() {
               }}
               placeholder="nome-do-canal"
               autoFocus
-              className="flex-1 rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-violet-500"
+              className="flex-1 focus:outline-none"
+              style={{
+                background: "var(--glass-bg)",
+                border: "1px solid var(--border-default)",
+                borderRadius: "var(--radius-md)",
+                color: "var(--text-primary)",
+                fontSize: 12,
+                padding: "4px 8px",
+              }}
+              onFocus={(e) =>
+                (e.currentTarget.style.borderColor = "var(--border-focus)")
+              }
+              onBlur={(e) =>
+                (e.currentTarget.style.borderColor = "var(--border-default)")
+              }
             />
             <button
               type="button"
               onClick={() => void handleCreateChannel()}
-              className="rounded-md bg-zinc-700 px-2 py-1 text-xs text-zinc-200 hover:bg-zinc-600"
+              className="rounded-md px-2 py-1 text-xs"
+              style={{
+                background: "var(--glass-bg-hover)",
+                color: "var(--text-primary)",
+                transition: "var(--transition-fast)",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "var(--glass-bg-active)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "var(--glass-bg-hover)")
+              }
             >
               Criar
             </button>
             <button
               type="button"
               onClick={() => setShowNewChannel(false)}
-              className="text-xs text-zinc-500 hover:text-zinc-300"
+              className="text-xs"
+              style={{
+                color: "var(--text-tertiary)",
+                transition: "var(--transition-fast)",
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.color = "var(--text-primary)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.color = "var(--text-tertiary)")
+              }
             >
               ✕
             </button>
@@ -379,8 +461,21 @@ export function ChatApp() {
       <MessageList messages={activeMessages} currentUserId={userId} />
 
       {/* Input */}
-      <div className="shrink-0 border-t border-zinc-800 bg-zinc-900 px-4 py-3">
-        <div className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2">
+      <div
+        className="shrink-0 border-t px-4 py-3"
+        style={{
+          borderColor: "var(--border-subtle)",
+          background: "var(--glass-bg)",
+        }}
+      >
+        <div
+          className="flex items-center gap-2 rounded-lg px-3 py-2"
+          style={{
+            border: "1px solid var(--border-default)",
+            background: "var(--bg-base)",
+            borderRadius: "var(--radius-md)",
+          }}
+        >
           <input
             ref={inputRef}
             type="text"
@@ -400,7 +495,8 @@ export function ChatApp() {
                   : "Selecione um canal"
             }
             disabled={activeChannelId === null || drivers === null}
-            className="flex-1 bg-transparent text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none"
+            className="flex-1 bg-transparent focus:outline-none text-sm"
+            style={{ color: "var(--text-primary)" }}
           />
           <button
             type="button"
@@ -410,12 +506,22 @@ export function ChatApp() {
               activeChannelId === null ||
               drivers === null
             }
-            className="shrink-0 rounded-md bg-violet-600 px-3 py-1 text-xs font-medium text-white hover:bg-violet-500 disabled:opacity-40"
+            className="shrink-0 rounded-md px-3 py-1 text-xs font-medium text-white disabled:opacity-40"
+            style={{
+              background: "var(--accent)",
+              transition: "var(--transition-fast)",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background = "var(--accent-hover)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background = "var(--accent)")
+            }
           >
             Enviar
           </button>
         </div>
-        <p className="mt-1 text-xs text-zinc-700">
+        <p className="mt-1 text-xs" style={{ color: "var(--text-tertiary)" }}>
           Enter para enviar · Realtime ativo via Supabase
         </p>
       </div>

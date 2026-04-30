@@ -19,8 +19,8 @@ export class ErrorBoundary extends Component<Props, State> {
     return { error };
   }
 
-  override componentDidCatch(_error: Error, _info: ErrorInfo) {
-    // App crash isolated — user can reset via the error UI
+  override componentDidCatch(error: Error, _info: ErrorInfo) {
+    console.error("[AppFrame] app crashed:", error.message);
   }
 
   handleReset = () => {
@@ -32,38 +32,77 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.error !== null) {
       return (
         <div
-          className="flex-1 flex flex-col items-center justify-center gap-4 p-8"
+          className="flex-1 flex flex-col items-center justify-center gap-5 p-8"
           style={{ background: "var(--bg-base)" }}
         >
-          <p
-            className="text-[14px] font-medium"
-            style={{ color: "var(--text-primary)" }}
-          >
-            Algo deu errado neste app
-          </p>
-          <p
-            className="text-[12px] text-center max-w-sm font-mono"
-            style={{ color: "var(--text-tertiary)" }}
-          >
-            {this.state.error.message}
-          </p>
-          <button
-            onClick={this.handleReset}
-            className="px-4 py-2 rounded-lg text-sm transition-colors"
+          <div
+            className="flex flex-col items-center gap-4 p-6 max-w-sm w-full"
             style={{
               background: "var(--glass-bg)",
               border: "1px solid var(--glass-border)",
-              color: "var(--text-secondary)",
+              borderRadius: "var(--radius-xl)",
+              boxShadow: "var(--shadow-md), var(--glass-specular)",
             }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.background = "var(--glass-bg-hover)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.background = "var(--glass-bg)")
-            }
           >
-            Fechar app
-          </button>
+            <div
+              className="flex items-center justify-center"
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: "var(--radius-lg)",
+                background: "rgba(248,113,113,0.12)",
+                border: "1px solid rgba(248,113,113,0.2)",
+              }}
+            >
+              <span style={{ fontSize: 22 }}>⚠</span>
+            </div>
+
+            <div className="text-center">
+              <p
+                style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: "var(--text-primary)",
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                Algo deu errado
+              </p>
+              <p
+                className="mt-1.5 font-mono text-center"
+                style={{
+                  fontSize: 11,
+                  color: "var(--text-tertiary)",
+                  lineHeight: 1.5,
+                }}
+              >
+                {this.state.error.message}
+              </p>
+            </div>
+
+            <button
+              onClick={this.handleReset}
+              className="px-5 py-2 transition-all"
+              style={{
+                background: "var(--glass-bg)",
+                border: "1px solid var(--glass-border)",
+                borderRadius: "var(--radius-md)",
+                color: "var(--text-secondary)",
+                fontSize: 13,
+                cursor: "pointer",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "var(--glass-bg-hover)";
+                e.currentTarget.style.color = "var(--text-primary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "var(--glass-bg)";
+                e.currentTarget.style.color = "var(--text-secondary)";
+              }}
+            >
+              Fechar app
+            </button>
+          </div>
         </div>
       );
     }

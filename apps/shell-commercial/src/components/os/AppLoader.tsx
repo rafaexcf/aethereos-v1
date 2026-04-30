@@ -4,6 +4,13 @@ import type { LucideProps } from "lucide-react";
 import type { ComponentType } from "react";
 import { getApp } from "../../apps/registry";
 
+const SHIMMER = {
+  background:
+    "linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.03) 100%)",
+  backgroundSize: "200% 100%",
+  animation: "shimmer 1.6s ease-in-out infinite",
+};
+
 export function AppLoader({ appId }: { appId: string }) {
   const app = getApp(appId);
 
@@ -13,113 +20,108 @@ export function AppLoader({ appId }: { appId: string }) {
         className="flex h-full w-full overflow-hidden"
         style={{ background: "var(--bg-base)" }}
       >
+        {/* Sidebar skeleton */}
         <div
           className="flex flex-col shrink-0"
           style={{
             width: 220,
-            background: "var(--bg-base)",
+            background: "rgba(6,9,18,0.45)",
             borderRight: "1px solid var(--border-subtle)",
-            padding: "12px 8px",
+            padding: "16px 10px",
           }}
         >
-          <div className="flex items-center gap-3 px-2 mb-4">
+          {/* App icon + name placeholder */}
+          <div className="flex items-center gap-3 px-2 mb-5">
             <div
-              className="w-9 h-9 rounded-xl animate-pulse shrink-0"
-              style={{ backgroundColor: `${app.color}25` }}
+              className="rounded-xl shrink-0 animate-pulse"
+              style={{ width: 36, height: 36, background: `${app.color}18` }}
             />
             <div className="flex flex-col gap-1.5">
               <div
-                className="h-3.5 w-16 rounded animate-pulse"
-                style={{ background: "rgba(255,255,255,0.08)" }}
+                className="h-3 w-20 rounded-md animate-pulse"
+                style={SHIMMER}
               />
               <div
-                className="h-2.5 w-24 rounded animate-pulse"
-                style={{ background: "rgba(255,255,255,0.05)" }}
+                className="h-2.5 w-28 rounded-md animate-pulse"
+                style={SHIMMER}
               />
             </div>
           </div>
+
+          {/* Nav items */}
           <div className="flex flex-col gap-1">
-            {[108, 88, 96, 72, 104].map((w, i) => (
+            {[100, 80, 92, 68, 110].map((w, i) => (
               <div
                 key={i}
-                className="flex items-center gap-2 animate-pulse"
+                className="flex items-center gap-2.5 animate-pulse"
                 style={{
-                  height: 34,
+                  height: 32,
                   padding: "0 10px",
                   borderRadius: "var(--radius-md)",
                 }}
               >
+                <div className="w-3.5 h-3.5 rounded shrink-0" style={SHIMMER} />
                 <div
-                  className="w-4 h-4 rounded shrink-0"
-                  style={{ background: "rgba(255,255,255,0.06)" }}
-                />
-                <div
-                  className="h-3 rounded"
-                  style={{
-                    width: w,
-                    background: "rgba(255,255,255,0.06)",
-                  }}
+                  className="h-2.5 rounded-md"
+                  style={{ width: w, ...SHIMMER }}
                 />
               </div>
             ))}
           </div>
         </div>
+
+        {/* Main area skeleton */}
         <div
           className="flex-1 flex flex-col overflow-hidden"
-          style={{ background: "var(--bg-elevated)" }}
+          style={{ background: "var(--bg-base)" }}
         >
+          {/* Breadcrumb */}
           <div
-            className="shrink-0 px-5 pt-4 pb-3"
-            style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+            className="shrink-0 px-5 pt-3 pb-2.5"
+            style={{ borderBottom: "1px solid var(--border-subtle)" }}
           >
             <div className="flex items-center gap-2">
-              <div
-                className="h-2.5 w-12 rounded animate-pulse"
-                style={{ background: "rgba(255,255,255,0.06)" }}
-              />
-              <div
-                className="h-2.5 w-2 rounded animate-pulse"
-                style={{ background: "rgba(255,255,255,0.04)" }}
-              />
-              <div
-                className="h-2.5 w-20 rounded animate-pulse"
-                style={{ background: "rgba(255,255,255,0.06)" }}
-              />
+              {[48, 8, 72].map((w, i) => (
+                <div
+                  key={i}
+                  className="h-2.5 rounded-md animate-pulse"
+                  style={{ width: w, ...SHIMMER }}
+                />
+              ))}
             </div>
           </div>
+
+          {/* Content */}
           <div className="flex-1 overflow-hidden px-6 py-5">
-            <div className="max-w-[1100px] mx-auto space-y-4">
+            <div className="max-w-5xl mx-auto space-y-5">
               <div
-                className="h-6 w-48 rounded animate-pulse"
-                style={{ background: "rgba(255,255,255,0.06)" }}
+                className="h-5 w-44 rounded-lg animate-pulse"
+                style={SHIMMER}
               />
               <div
-                className="h-3 w-72 rounded animate-pulse"
-                style={{ background: "rgba(255,255,255,0.04)" }}
+                className="h-3 w-64 rounded-md animate-pulse"
+                style={SHIMMER}
               />
-              <div className="mt-6 space-y-3">
+              <div className="mt-5 space-y-3">
                 {[1, 2, 3].map((i) => (
                   <div
                     key={i}
-                    className="rounded-xl p-5 animate-pulse"
+                    className="rounded-xl p-4 animate-pulse"
                     style={{
-                      background: "rgba(255,255,255,0.03)",
-                      border: "1px solid rgba(255,255,255,0.05)",
+                      background: "var(--glass-bg-subtle)",
+                      border: "1px solid var(--border-subtle)",
                     }}
                   >
                     <div className="flex items-center gap-3">
                       <div
-                        className="w-10 h-10 rounded-lg shrink-0"
-                        style={{ background: "rgba(255,255,255,0.05)" }}
+                        className="w-10 h-10 rounded-xl shrink-0"
+                        style={SHIMMER}
                       />
                       <div className="flex-1 space-y-2">
+                        <div className="h-3 w-36 rounded-md" style={SHIMMER} />
                         <div
-                          className="h-3.5 w-32 rounded"
-                          style={{ background: "rgba(255,255,255,0.06)" }}
-                        />
-                        <div
-                          className="h-2.5 w-56 rounded"
-                          style={{ background: "rgba(255,255,255,0.04)" }}
+                          className="h-2.5 w-56 rounded-md"
+                          style={SHIMMER}
                         />
                       </div>
                     </div>
@@ -145,20 +147,32 @@ export function AppLoader({ appId }: { appId: string }) {
       style={{ background: "var(--bg-base)" }}
     >
       {app ? (
-        <Icon
-          size={40}
-          style={{ color: app.color, opacity: 0.4 }}
-          className="animate-pulse"
-        />
+        <div
+          className="flex items-center justify-center rounded-2xl animate-pulse"
+          style={{
+            width: 56,
+            height: 56,
+            background: `${app.color}14`,
+            border: `1px solid ${app.color}20`,
+          }}
+        >
+          <Icon size={28} style={{ color: app.color, opacity: 0.6 }} />
+        </div>
       ) : (
         <Loader2
-          size={32}
+          size={28}
           className="animate-spin"
-          style={{ color: "rgba(255,255,255,0.3)" }}
+          style={{ color: "var(--text-tertiary)" }}
         />
       )}
-      <p className="text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>
-        Carregando{app ? ` ${app.name}` : ""}…
+      <p
+        style={{
+          fontSize: 13,
+          color: "var(--text-tertiary)",
+          letterSpacing: "-0.01em",
+        }}
+      >
+        {app !== undefined ? `Carregando ${app.name}…` : "Carregando…"}
       </p>
     </div>
   );
