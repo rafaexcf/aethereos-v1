@@ -20,7 +20,7 @@ import type { CopilotIntentPayload } from "@aethereos/scp-registry";
 import type { LLMDriver, ObservabilityDriver } from "@aethereos/drivers";
 import { SupabaseBrowserVectorDriver } from "@aethereos/drivers-supabase/browser";
 import type { SupabaseBrowserDataDriver } from "@aethereos/drivers-supabase/browser";
-import type { ScpPublisherBrowser } from "../../lib/scp-publisher-browser.js";
+import type { ScpPublisherBrowser } from "../../lib/scp-publisher-browser";
 
 // ---------------------------------------------------------------------------
 // Tipos

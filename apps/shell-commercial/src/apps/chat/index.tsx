@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { AppShell } from "@aethereos/ui-shell";
-import { useSessionStore } from "../../stores/session.js";
-import { useDrivers } from "../../lib/drivers-context.js";
+import { useSessionStore } from "../../stores/session";
+import { useDrivers } from "../../lib/drivers-context";
 import type { RealtimeSubscription } from "@aethereos/drivers-supabase/browser";
 
 // ---------------------------------------------------------------------------

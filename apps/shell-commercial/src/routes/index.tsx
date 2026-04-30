@@ -1,18 +1,18 @@
 import { createRoute, useNavigate } from "@tanstack/react-router";
 import { Suspense } from "react";
-import { rootRoute } from "./__root.js";
-import { useSessionStore } from "../stores/session.js";
-import { isEmbedMode } from "../lib/embed.js";
+import { rootRoute } from "./__root";
+import { useSessionStore } from "../stores/session";
+import { isEmbedMode } from "../lib/embed";
 import { useEffect, useState, useCallback } from "react";
-import { EmbeddedApp } from "../components/EmbeddedApp.js";
+import { EmbeddedApp } from "../components/EmbeddedApp";
 import { useFeatureFlag, useFeatureFlagsContext } from "@aethereos/ui-shell";
 import {
   NotificationBell,
   type NotificationItem,
-} from "../components/NotificationBell.js";
-import { useWindowsStore } from "../stores/windows.js";
-import { APP_REGISTRY, getApp } from "../lib/app-registry.js";
-import { CopilotDrawer } from "../apps/copilot/index.js";
+} from "../components/NotificationBell";
+import { useWindowsStore } from "../stores/windows";
+import { APP_REGISTRY, getApp } from "../lib/app-registry";
+import { CopilotDrawer } from "../apps/copilot/index";
 
 export const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -304,7 +304,7 @@ function DesktopPage() {
 // AppWindowLayer — renderiza o app com maior zIndex
 // ---------------------------------------------------------------------------
 
-import type { AppWindow } from "../stores/windows.js";
+import type { AppWindow } from "../stores/windows";
 
 interface AppWindowLayerProps {
   windows: AppWindow[];

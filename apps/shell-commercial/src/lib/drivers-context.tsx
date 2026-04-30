@@ -1,6 +1,6 @@
 import { createContext, useContext, type ReactNode } from "react";
-import { useSessionStore } from "../stores/session.js";
-import type { CloudDrivers } from "./drivers.js";
+import { useSessionStore } from "../stores/session";
+import type { CloudDrivers } from "./drivers";
 
 const DriversContext = createContext<CloudDrivers | null>(null);
 

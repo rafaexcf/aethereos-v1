@@ -6,8 +6,8 @@
  * Todo acesso gera registro em kernel.staff_access_log + notificação ao owner.
  */
 import { createRoute, useNavigate } from "@tanstack/react-router";
-import { rootRoute } from "./__root.js";
-import { useSessionStore } from "../stores/session.js";
+import { rootRoute } from "./__root";
+import { useSessionStore } from "../stores/session";
 import { useEffect, useState, useCallback } from "react";
 
 // ---------------------------------------------------------------------------

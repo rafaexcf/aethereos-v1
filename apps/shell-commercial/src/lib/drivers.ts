@@ -9,7 +9,7 @@ import {
   withDegradedObservability,
   DegradedObservabilityDriver,
 } from "@aethereos/kernel";
-import { ScpPublisherBrowser } from "./scp-publisher-browser.js";
+import { ScpPublisherBrowser } from "./scp-publisher-browser";
 
 export interface CloudDrivers {
   auth: SupabaseBrowserAuthDriver;
