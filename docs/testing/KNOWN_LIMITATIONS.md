@@ -1,6 +1,6 @@
-# Known Limitations — Camada 1 Sprint 9.6
+# Known Limitations — Camada 1 Sprint 12
 
-**Versão:** Sprint 9.6 (2026-04-30)  
+**Versão:** Sprint 12 (2026-04-30)  
 **Audiência:** Testers externos e internos fazendo validação manual da Camada 1.
 
 Estas limitações são **esperadas e documentadas**. Não são bugs a reportar — a menos que o comportamento observado contradiga o descrito aqui.
@@ -174,21 +174,88 @@ pnpm seed:dev    # repopula dados base
 
 ---
 
+## L12. Onboarding Wizard — Aparece apenas uma vez por empresa
+
+**Status:** Por design. O wizard é suprimido quando `kernel.companies.onboarding_completed = true`.
+
+**O que acontece:**
+
+- Após completar o onboarding e chamar `complete-onboarding`, a coluna `onboarding_completed` vira `true`.
+- Em sessões futuras, o wizard não aparece mais para a mesma company.
+- Para testar o wizard novamente: atualizar `onboarding_completed = false` via Supabase Studio.
+
+**Workaround:**
+
+```sql
+UPDATE kernel.companies SET onboarding_completed = false WHERE id = '<company_id>';
+```
+
+---
+
+## L13. Magic Store — URLs externas são placeholders
+
+**Status:** Apps de Camada 2 (comercio.digital, LOGITIX, ERP, Kwix, Autergon) ainda não estão em produção.
+
+**O que acontece:**
+
+- Clique em "Abrir" no app "Comércio Digital" (status beta) abre URL do env `VITE_COMERCIO_DIGITAL_URL` ou fallback `https://comercio.aethereos.io`.
+- As demais apps exibem status "Em breve" e o botão de abertura é suprimido.
+- Sem env vars configuradas, os links apontam para os domínios canônicos que ainda não existem.
+
+**Não reportar:** Link não abre / 404 nas URLs de Camada 2. São endereços de produção futura.
+
+---
+
+## L14. RH — Delete bloqueado para employee vinculado a usuário
+
+**Status:** Por design (dupla proteção: UI + trigger DB).
+
+**O que acontece:**
+
+- Employees com `user_id` não nulo estão vinculados a uma conta de usuário Supabase Auth.
+- O botão "Excluir" é desabilitado na UI com tooltip explicativo.
+- Se a exclusão for tentada diretamente no banco, o trigger `trg_employees_prevent_delete_linked` lança P0001.
+
+**Workaround para testes:** Excluir via `kernel.employees` apenas employees sem `user_id`.
+
+---
+
+## L15. Onboarding — Variável E2E_ONBOARDING_COMPANY_ID obrigatória para testes
+
+**Status:** Os testes Playwright de onboarding requerem company com `onboarding_completed = false`.
+
+**O que acontece:**
+
+- `tooling/e2e/tests/onboarding.spec.ts` pula testes se `E2E_ONBOARDING_COMPANY_ID` não estiver definido.
+- O `loginToDesktop` helper seleciona a primeira empresa disponível, que pode já ter onboarding completo.
+
+**Como configurar:**
+
+```bash
+E2E_ONBOARDING_COMPANY_ID=<uuid> pnpm test:e2e:full
+```
+
+---
+
 ## Resumo Rápido
 
-| Limitação                            | Impacto       | Workaround                                 |
-| ------------------------------------ | ------------- | ------------------------------------------ |
-| L1. Copilot sem LLM                  | Médio         | Configurar LiteLLM (opcional)              |
-| L2. Email transacional ausente       | Baixo         | Confirmar usuário no Studio                |
-| L3. Staff requer claim JWT           | Baixo         | SQL no Studio para adicionar claim         |
-| L4. RAG sem embeddings               | Médio         | Configurar LiteLLM                         |
-| L5. Billing desativado               | Informacional | Esperado — fora do escopo Sprint 9         |
-| L6. Auditoria/Governança placeholder | Baixo         | Verificar via Studio diretamente           |
-| L7. PWA offline apenas em produção   | Baixo         | Usar `pnpm build && pnpm preview`          |
-| L8. Latência ngrok                   | Baixo         | Testar via localhost para comparar         |
-| L9. Realtime instável via ngrok      | Baixo         | Testar via localhost                       |
-| L10. Seed apagado no dev:db          | Médio         | Rodar `pnpm seed:dev` após dev:db          |
-| L11. Libs Chromium no WSL2           | Baixo         | `LD_LIBRARY_PATH=/tmp/playwright-libs/...` |
+| Limitação                              | Impacto       | Workaround                                   |
+| -------------------------------------- | ------------- | -------------------------------------------- |
+| L1. Copilot sem LLM                    | Médio         | Configurar LiteLLM (opcional)                |
+| L2. Email transacional ausente         | Baixo         | Confirmar usuário no Studio                  |
+| L3. Staff requer claim JWT             | Baixo         | SQL no Studio para adicionar claim           |
+| L4. RAG sem embeddings                 | Médio         | Configurar LiteLLM                           |
+| L5. Billing desativado                 | Informacional | Esperado — fora do escopo Sprint 9           |
+| L6. Auditoria/Governança placeholder   | Baixo         | Verificar via Studio diretamente             |
+| L7. PWA offline apenas em produção     | Baixo         | Usar `pnpm build && pnpm preview`            |
+| L8. Latência ngrok                     | Baixo         | Testar via localhost para comparar           |
+| L9. Realtime instável via ngrok        | Baixo         | Testar via localhost                         |
+| L10. Seed apagado no dev:db            | Médio         | Rodar `pnpm seed:dev` após dev:db            |
+| L11. Libs Chromium no WSL2             | Baixo         | `LD_LIBRARY_PATH=/tmp/playwright-libs/...`   |
+| L12. Onboarding aparece apenas 1x      | Baixo         | Reset via SQL `onboarding_completed = false` |
+| L13. Magic Store URLs são placeholders | Baixo         | Esperado — Camada 2 ainda não em produção    |
+| L14. RH delete bloqueado p/ vinculados | Baixo         | Por design — dupla proteção UI + trigger     |
+| L15. E2E onboarding requer env var     | Baixo         | Definir `E2E_ONBOARDING_COMPANY_ID`          |
 
 ---
 

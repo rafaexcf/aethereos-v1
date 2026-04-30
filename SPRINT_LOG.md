@@ -26,13 +26,13 @@ Camada 1 ganha RH navegável + Magic Store launcher + Onboarding genérico.
 
 ## Histórico de milestones (Sprint 12)
 
-| Milestone | Descrição                                                                       | Status | Commit |
-| --------- | ------------------------------------------------------------------------------- | ------ | ------ |
-| MX56      | ADR-0024 + limpeza registry (verticais removidos, rh + magic-store adicionados) | DONE   | —      |
-| MX57      | Onboarding genérico 3 steps + edge function complete-onboarding                 | —      | —      |
-| MX58      | App RH navegável com CRUD employees enxuto                                      | —      | —      |
-| MX59      | Magic Store catálogo + launcher Camada 2 + edge function activate-module        | —      | —      |
-| MX60      | E2E Playwright + encerramento + gates triplos                                   | —      | —      |
+| Milestone | Descrição                                                                       | Status | Commit  |
+| --------- | ------------------------------------------------------------------------------- | ------ | ------- |
+| MX56      | ADR-0024 + limpeza registry (verticais removidos, rh + magic-store adicionados) | DONE   | —       |
+| MX57      | Onboarding genérico 3 steps + edge function complete-onboarding                 | DONE   | —       |
+| MX58      | App RH navegável com CRUD employees enxuto                                      | DONE   | —       |
+| MX59      | Magic Store catálogo + launcher Camada 2 + edge function activate-module        | DONE   | 45b6061 |
+| MX60      | E2E Playwright + encerramento + gates triplos                                   | DONE   | —       |
 
 ---
 
