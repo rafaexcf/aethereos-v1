@@ -1999,13 +1999,13 @@ conserta cada um. Sprint só fecha com produto funcional end-to-end.
 
 ## Histórico de milestones (Sprint 9.6)
 
-| Milestone | Descrição                                      | Status | Commit   |
-| --------- | ---------------------------------------------- | ------ | -------- |
-| MX33      | Fix bugs #7/8/10/12 + constraint chat_channels | DONE   | daf5dc6  |
-| MX34      | Playwright E2E — 10/10 testes passando         | DONE   | c1cdfc2  |
-| MX35      | Bugs adicionais documentados (E2E descobertos) | DONE   | pendente |
-| MX36      | Pipeline SCP end-to-end validado (13/13)       | DONE   | pendente |
-| MX37      | Quick start + encerramento                     | DONE   | pendente |
+| Milestone | Descrição                                      | Status | Commit  |
+| --------- | ---------------------------------------------- | ------ | ------- |
+| MX33      | Fix bugs #7/8/10/12 + constraint chat_channels | DONE   | daf5dc6 |
+| MX34      | Playwright E2E — 10/10 testes passando         | DONE   | c1cdfc2 |
+| MX35      | Bugs adicionais documentados (E2E descobertos) | DONE   | 3b1a8d6 |
+| MX36      | Pipeline SCP end-to-end validado (13/13)       | DONE   | 3b1a8d6 |
+| MX37      | Quick start + encerramento                     | DONE   | 3b1a8d6 |
 
 ## Bugs adicionais descobertos (Sprint 9.6 MX33)
 
@@ -2026,11 +2026,11 @@ conserta cada um. Sprint só fecha com produto funcional end-to-end.
 
 ### Triple Gate Result
 
-| Gate                 | Resultado | Detalhes                                          |
-| -------------------- | --------- | ------------------------------------------------- |
-| `pnpm ci:full`       | pendente  | Rodar antes de fechar                             |
-| `pnpm test:smoke`    | pendente  | Rodar antes de fechar                             |
-| `pnpm test:e2e:full` | ✅ 13/13  | Login, company, drive, cross-tenant, SCP pipeline |
+| Gate                 | Resultado | Detalhes                                           |
+| -------------------- | --------- | -------------------------------------------------- |
+| `pnpm ci:full`       | ✅ OK     | 5 turbo runs — 24+22+15+8+11 tasks, all successful |
+| `pnpm test:smoke`    | ✅ OK     | 5 ok, 0 falhas — JWT claims + RLS + autenticacao   |
+| `pnpm test:e2e:full` | ✅ 13/13  | Login, company, drive, cross-tenant, SCP pipeline  |
 
 ### O que foi entregue nesta sprint
 
