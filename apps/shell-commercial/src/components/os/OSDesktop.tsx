@@ -61,10 +61,10 @@ export function OSDesktop() {
       className="flex flex-col h-screen w-screen overflow-hidden"
       style={{
         background: [
-          "radial-gradient(ellipse 150% 65% at 12% -8%, rgba(94,77,230,0.44) 0%, transparent 55%)",
-          "radial-gradient(ellipse 75% 55% at 90% 6%, rgba(14,165,233,0.30) 0%, transparent 50%)",
-          "radial-gradient(ellipse 55% 45% at 55% 100%, rgba(56,189,248,0.16) 0%, transparent 65%)",
-          "radial-gradient(ellipse 100% 80% at 50% 50%, rgba(6,9,18,1) 40%, transparent 100%)",
+          "radial-gradient(ellipse 160% 75% at 10% -10%, rgba(99,77,255,0.65) 0%, transparent 50%)",
+          "radial-gradient(ellipse 80% 65% at 92% 5%, rgba(14,165,233,0.50) 0%, transparent 45%)",
+          "radial-gradient(ellipse 60% 50% at 55% 105%, rgba(56,189,248,0.30) 0%, transparent 60%)",
+          "radial-gradient(ellipse 120% 90% at 50% 50%, rgba(6,9,18,0.88) 30%, transparent 100%)",
           "#060912",
         ].join(", "),
       }}

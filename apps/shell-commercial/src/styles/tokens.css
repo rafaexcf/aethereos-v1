@@ -5,18 +5,18 @@
   --bg-overlay: rgba(0, 0, 0, 0.72);
 
   /* ── LIQUID GLASS FILLS ─────────────────────────────────────────── */
-  --glass-bg: rgba(255, 255, 255, 0.045);
-  --glass-bg-hover: rgba(255, 255, 255, 0.085);
-  --glass-bg-active: rgba(255, 255, 255, 0.13);
-  --glass-bg-subtle: rgba(255, 255, 255, 0.025);
+  --glass-bg: rgba(255, 255, 255, 0.08);
+  --glass-bg-hover: rgba(255, 255, 255, 0.13);
+  --glass-bg-active: rgba(255, 255, 255, 0.18);
+  --glass-bg-subtle: rgba(255, 255, 255, 0.04);
 
   /* ── LIQUID GLASS STROKES ───────────────────────────────────────── */
-  --glass-border: rgba(255, 255, 255, 0.11);
-  --glass-border-hover: rgba(255, 255, 255, 0.22);
-  --glass-border-strong: rgba(255, 255, 255, 0.17);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-border-hover: rgba(255, 255, 255, 0.30);
+  --glass-border-strong: rgba(255, 255, 255, 0.24);
 
   /* Specular top highlight — the "glass edge" effect */
-  --glass-specular: inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  --glass-specular: inset 0 1px 0 rgba(255, 255, 255, 0.22);
 
   /* ── BLUR AMOUNTS ───────────────────────────────────────────────── */
   --blur-ui: 40px;

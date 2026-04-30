@@ -3,10 +3,9 @@ import { useSessionStore } from "./session";
 import type { MesaItem } from "../types/os";
 
 export const WALLPAPERS: Record<string, string> = {
-  default:
-    "radial-gradient(ellipse at top, #1a1a3e 0%, #0a0a1a 50%, #050510 100%)",
+  tahoe: "transparent",
   aurora:
-    "radial-gradient(ellipse at bottom left, #0a1628 0%, #0d1b2a 30%, #1a0a2e 70%, #0a0a14 100%)",
+    "radial-gradient(ellipse 140% 70% at 15% -5%, rgba(94,77,230,0.55) 0%, transparent 52%), radial-gradient(ellipse 70% 55% at 88% 8%, rgba(14,165,233,0.40) 0%, transparent 48%), radial-gradient(ellipse 50% 40% at 55% 95%, rgba(56,189,248,0.22) 0%, transparent 65%), #060912",
   ocean: "linear-gradient(160deg, #0c1929 0%, #0a2540 40%, #061a2e 100%)",
   midnight:
     "radial-gradient(circle at 30% 20%, #1a1040 0%, #0a0a18 60%, #050508 100%)",
@@ -19,6 +18,9 @@ export const WALLPAPERS: Record<string, string> = {
 };
 
 export function getWallpaperStyle(value: string): React.CSSProperties {
+  if (value === "transparent") {
+    return { background: "transparent" };
+  }
   if (value.startsWith("/") || value.startsWith("http")) {
     return {
       backgroundImage: `url(${value})`,
@@ -27,12 +29,12 @@ export function getWallpaperStyle(value: string): React.CSSProperties {
     };
   }
   if (value.includes("gradient")) {
-    return { backgroundImage: value };
+    return { background: value };
   }
   return { backgroundColor: value };
 }
 
-const DEFAULT_WALLPAPER = "default";
+const DEFAULT_WALLPAPER = "tahoe";
 
 const DEFAULT_LAYOUT: MesaItem[] = [
   {

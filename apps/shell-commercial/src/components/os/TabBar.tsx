@@ -67,15 +67,14 @@ function SortableTab({ tab }: { tab: OSTab }) {
       {...listeners}
       onClick={() => focusTab(tab.id)}
       data-testid={`tab-${tab.appId}`}
-      className="relative flex items-center justify-center cursor-pointer select-none group flex-none transition-all"
+      className="relative flex items-center justify-center cursor-pointer select-none group flex-none"
       style={{
         ...dragStyle,
         height: 28,
-        padding: isPinned ? "0 10px" : "0 10px",
+        padding: "0 10px",
         gap: 5,
         borderRadius: "var(--radius-md)",
         maxWidth: isPinned ? 56 : 160,
-        transitionDuration: "var(--transition-fast)",
         ...(isActive
           ? {
               background: "var(--glass-bg-active)",
