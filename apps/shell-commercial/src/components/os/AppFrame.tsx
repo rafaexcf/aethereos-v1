@@ -46,7 +46,7 @@ export function AppFrame() {
 
   return (
     <div
-      className="flex-1 overflow-hidden relative"
+      className="h-full overflow-hidden relative"
       style={{ background: "var(--bg-base)" }}
     >
       {tabs.length === 0 && (
