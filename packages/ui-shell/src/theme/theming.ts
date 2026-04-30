@@ -1,4 +1,4 @@
-import { DEFAULT_CSS_VARIABLES } from "./tokens.js";
+import { DEFAULT_CSS_VARIABLES } from "./tokens";
 
 export interface DistributionTheme {
   readonly name: string;

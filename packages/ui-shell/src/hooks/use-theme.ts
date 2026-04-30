@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { applyTheme } from "../theme/theming.js";
-import type { DistributionTheme } from "../theme/theming.js";
+import { applyTheme } from "../theme/theming";
+import type { DistributionTheme } from "../theme/theming";
 
 /**
  * useTheme — hook para aplicar tema de distribuição no shell.
