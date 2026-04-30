@@ -38,6 +38,7 @@
     "db:migration": "supabase migration new",
     "seed:dev": "pnpm --filter=@aethereos/seed start",
     "seed:reset": "pnpm --filter=@aethereos/seed start -- --reset",
+    "setup:env": "bash tooling/setup-env.sh",
     "share:dev": "bash scripts/share-dev.sh",
     "prepare": "husky"
   },

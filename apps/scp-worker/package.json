@@ -4,11 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node --watch --experimental-specifier-resolution=node dist/main.js",
+    "dev": "node --env-file=../../.env.local --watch --experimental-specifier-resolution=node dist/main.js",
     "build": "tsc --build tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
-    "start": "node dist/main.js",
+    "start": "node --env-file=../../.env.local --experimental-specifier-resolution=node dist/main.js",
     "test:isolation": "vitest run --config vitest.isolation.config.ts",
     "clean": "rm -rf dist"
   },
