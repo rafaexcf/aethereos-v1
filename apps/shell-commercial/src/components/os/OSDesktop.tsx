@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { TopBar } from "./TopBar";
 import { TabBar } from "./TabBar";
 import { AppFrame } from "./AppFrame";
+import { Dock } from "./Dock";
 import { useSessionStore } from "../../stores/session";
 import { useOSStore } from "../../stores/osStore";
 import { useMesaStore } from "../../stores/mesaStore";
@@ -50,8 +51,7 @@ export function OSDesktop() {
         <AppFrame />
       </div>
 
-      {/* Dock placeholder — MX44 */}
-      <div id="dock-slot" />
+      <Dock />
 
       {/* AI Copilot drawer */}
       {drivers !== null && (
