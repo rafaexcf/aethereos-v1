@@ -1916,12 +1916,51 @@ Bug #2 impede que scp-worker suba sem passar env inline.
 
 ## Histórico de milestones (Sprint 9.5)
 
-| Milestone | Descrição                                         | Status  | Commit |
-| --------- | ------------------------------------------------- | ------- | ------ |
-| MX26      | Fix bug #6: GRANT schema kernel para auth_admin   | PENDING |        |
-| MX27      | Fix bugs #1 #3: .env.local.example + setup-env.sh | PENDING |        |
-| MX28      | Fix bug #4: shell-commercial .env.local no setup  | PENDING |        |
-| MX29      | Fix bug #2: scp-worker --env-file no dev script   | PENDING |        |
-| MX30      | Fix bug #5: padronizar 127.0.0.1 em todo lugar    | PENDING |        |
-| MX31      | Smoke test automatizado executado pelo agente     | PENDING |        |
-| MX32      | ADR-0022 + encerramento Sprint 9.5                | PENDING |        |
+| Milestone | Descrição                                         | Status | Commit   |
+| --------- | ------------------------------------------------- | ------ | -------- |
+| MX26      | Fix bug #6: GRANT schema kernel para auth_admin   | DONE   | e498825  |
+| MX27      | Fix bugs #1 #3: .env.local.example + setup-env.sh | DONE   | 030c178  |
+| MX28      | Fix bug #4: shell-commercial .env.local no setup  | DONE   | 030c178  |
+| MX29      | Fix bug #2: scp-worker --env-file no dev script   | DONE   | 030c178  |
+| MX30      | Fix bug #5: padronizar 127.0.0.1 em todo lugar    | DONE   | 030c178  |
+| MX31      | Smoke test automatizado executado pelo agente     | DONE   | ca1122f  |
+| MX32      | ADR-0022 + encerramento Sprint 9.5                | DONE   | pendente |
+
+## Bugs adicionais descobertos (nao no escopo dos 6 originais)
+
+- **Bug #6b** — Hook retorna SQL NULL quando user sem memberships. **CORRIGIDO** em migration 20260430000015.
+- **Bug #7** — Seed: campo `metadata` nao existe em `kernel.companies`. **ANOTADO** para Sprint 10.
+- **Bug #8** — Seed: fallback de user lookup usa schema() hack que nao funciona. **ANOTADO** para Sprint 10.
+- **Bug #9** — `service_role` sem grants em tabelas kernel. **CORRIGIDO** em migration 20260430000016.
+- **Bug #10** — `kernel.files` sem GRANT para `authenticated`. **ANOTADO** para Sprint 10.
+
+## Smoke test resultado
+
+T1 Login HTTP 200 + JWT valido: OK
+T2 JWT com companies, active_company_id, is_staff: OK
+T3 Query REST autenticada sem erro: OK
+RESULTADO: 5 ok, 0 falhas — EXIT 0
+
+## Encerramento Sprint 9.5
+
+**Data:** 2026-04-30
+**Status:** SPRINT 9.5 ENCERRADO — EXIT 0 confirmado em ci:full E test:smoke.
+
+### O que foi entregue
+
+- 6 bugs originais corrigidos via migrations + config fixes
+- 2 bugs adicionais criticos corrigidos (6b hook null, #9 service_role grants)
+- 4 bugs anotados para Sprint 10 (#7, #8 seed, #10 files grant)
+- `pnpm setup:env` — script que popula env files automaticamente
+- `pnpm test:smoke` — smoke test automatizado: login + JWT claims + RLS query
+- ADR-0022 — gate duplo obrigatorio: ci:full AND test:smoke
+- CLAUDE.md atualizado com nova regra de aceite
+- QUICK_START.md atualizado com novo fluxo
+
+### Dividas para Sprint 10
+
+1. Fix seed bugs #7 e #8 para dados realistas
+2. Fix #10 — grants authenticated em todas as tabelas kernel
+3. Playwright E2E no browser
+4. Deploy em staging (Vercel preview + Supabase cloud)
+5. IaC Pulumi

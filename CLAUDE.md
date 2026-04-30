@@ -183,6 +183,13 @@ pnpm ci:full            # roda tudo na ordem do pipeline de CI
 
 Gates antes de abrir PR: `pnpm ci:full` deve passar local.
 
+**Gate adicional (ADR-0022):** Toda mudança em auth, env config, migrations ou drivers exige também `pnpm test:smoke` EXIT 0 antes de declarar sprint encerrado. CI verde ≠ produto funciona.
+
+```bash
+pnpm ci:full     # typecheck + lint + deps + test + build
+pnpm test:smoke  # login real + JWT claims + RLS query (obrigatório se toca auth/env/migrations)
+```
+
 ---
 
 ## 11. Fluxo de PR
@@ -190,11 +197,12 @@ Gates antes de abrir PR: `pnpm ci:full` deve passar local.
 1. Agente cria branch `feat/<scope>-<short-desc>` ou `fix/...` ou `chore/...` ou `docs/...`
 2. Implementa mudança
 3. Roda local: `pnpm ci:full`
-4. Abre PR descrevendo: o que muda, por que, qual `[INV]/[DEC]/[HIP]` afeta
-5. CI roda: typecheck, lint, deps:check, audit (high+critical bloqueia), test, test:isolation, build
-6. **Revisão humana obrigatória** mesmo se squad agêntico aprovou
-7. Merge somente com green CI + 1+ approval humano
-8. **ADR emitido ANTES do PR** se mudança for arquitetural (toca [INV] ou [DEC] crítica)
+4. Para mudanças em auth, env, migrations: também roda `pnpm test:smoke` (ADR-0022)
+5. Abre PR descrevendo: o que muda, por que, qual `[INV]/[DEC]/[HIP]` afeta
+6. CI roda: typecheck, lint, deps:check, audit (high+critical bloqueia), test, test:isolation, build
+7. **Revisão humana obrigatória** mesmo se squad agêntico aprovou
+8. Merge somente com green CI + 1+ approval humano
+9. **ADR emitido ANTES do PR** se mudança for arquitetural (toca [INV] ou [DEC] crítica)
 
 ---
 
