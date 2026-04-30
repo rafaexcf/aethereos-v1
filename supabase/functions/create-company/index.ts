@@ -1,4 +1,6 @@
-// Edge Function: create-company
+// Edge Function: create-company — DEPRECATED (Sprint 11)
+// Substituída por register-company (MX51). Mantida para backward compat.
+// Remover em Sprint 12+.
 // Cria empresa + membership owner + evento SCP outbox em transação atômica.
 // Ref: Fundamentação 8.10 [INV] — Outbox Pattern; ADR-0014 Driver Model
 //
