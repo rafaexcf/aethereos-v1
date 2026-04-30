@@ -1890,3 +1890,38 @@ Sprint 9 deixa Camada 1 testável local + via ngrok, sem custo recorrente.
 4. Playwright E2E com E2E_USER_EMAIL configurado
 5. RAG validado E2E com LLM key real
 6. Billing Lago + Stripe live (F2)
+
+---
+
+# Sprint 9.5 — Cirúrgico: consertar 6 bugs descobertos no smoke test
+
+Início: 2026-04-30T00:00:00Z
+Modelo: Claude Code (claude-sonnet-4-6, Sprint 9.5 N=1)
+
+## Origem
+
+Smoke test executado por humano em 2026-04-30 falhou em 6 bugs bloqueadores.
+Bug #6 (GRANT faltando em kernel schema para supabase_auth_admin) impede qualquer login.
+Bug #5 (localhost vs 127.0.0.1) bloqueia CORS.
+Bugs #1, #3, #4 impedem que o ambiente suba corretamente sem intervenção manual.
+Bug #2 impede que scp-worker suba sem passar env inline.
+
+## 5 pontos de calibração respondidos
+
+1. **6 bugs, causa raiz e fix:** ver chat de abertura do Sprint 9.5.
+2. **localhost vs 127.0.0.1 CORS:** origem é tripla (scheme, host, port) — comparação lexical, não resolução DNS. Hosts diferentes = origens diferentes = CORS bloqueado.
+3. **Por que CI passou:** CI só valida typecheck/lint/build/test unitários offline — não sobe Supabase, não faz login, não verifica GRANTs no banco.
+4. **GRANT USAGE ON SCHEMA:** pré-requisito hierárquico no Postgres — sem USAGE no schema, role não pode ver objetos dentro dele mesmo com EXECUTE na função.
+5. **Critério de aceite atualizado:** sprint só fecha com `pnpm ci:full` EXIT 0 E `pnpm test:smoke` EXIT 0. ADR-0022 formaliza.
+
+## Histórico de milestones (Sprint 9.5)
+
+| Milestone | Descrição                                         | Status  | Commit |
+| --------- | ------------------------------------------------- | ------- | ------ |
+| MX26      | Fix bug #6: GRANT schema kernel para auth_admin   | PENDING |        |
+| MX27      | Fix bugs #1 #3: .env.local.example + setup-env.sh | PENDING |        |
+| MX28      | Fix bug #4: shell-commercial .env.local no setup  | PENDING |        |
+| MX29      | Fix bug #2: scp-worker --env-file no dev script   | PENDING |        |
+| MX30      | Fix bug #5: padronizar 127.0.0.1 em todo lugar    | PENDING |        |
+| MX31      | Smoke test automatizado executado pelo agente     | PENDING |        |
+| MX32      | ADR-0022 + encerramento Sprint 9.5                | PENDING |        |
