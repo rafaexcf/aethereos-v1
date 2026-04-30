@@ -72,12 +72,12 @@ const DEFAULT_LAYOUT: MesaItem[] = [
     zIndex: 0,
   },
   {
-    id: "icon-comercio",
+    id: "icon-rh",
     type: "icon",
-    appId: "comercio",
+    appId: "rh",
     position: { x: 420, y: 20 },
     size: { w: 80, h: 80 },
-    config: { name: "Comércio Digital" },
+    config: { name: "RH" },
     zIndex: 0,
   },
   {
