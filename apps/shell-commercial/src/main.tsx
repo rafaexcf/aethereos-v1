@@ -5,6 +5,7 @@ import { FeatureFlagsProvider } from "@aethereos/ui-shell";
 import { rootRoute } from "./routes/__root";
 import { loginRoute } from "./routes/login";
 import { signupRoute } from "./routes/signup";
+import { registerRoute } from "./routes/register";
 import { selectCompanyRoute } from "./routes/select-company";
 import { indexRoute } from "./routes/index";
 import { desktopRoute } from "./routes/desktop";
@@ -19,6 +20,7 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
   signupRoute,
+  registerRoute,
   selectCompanyRoute,
   desktopRoute,
   aboutRoute,

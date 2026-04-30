@@ -12,7 +12,9 @@ export const rootRoute = createRootRoute({
     if (!isBooted) return;
 
     const isAuthRoute =
-      location.pathname === "/login" || location.pathname === "/signup";
+      location.pathname === "/login" ||
+      location.pathname === "/signup" ||
+      location.pathname === "/register";
     const isDesktop = location.pathname === "/desktop";
     const isIndexRedirect = location.pathname === "/";
 
