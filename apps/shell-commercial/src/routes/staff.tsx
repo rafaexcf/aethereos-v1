@@ -50,13 +50,15 @@ interface CompanyDetail {
 
 function StaffPage() {
   const navigate = useNavigate();
-  const { userId, email, isStaff, accessToken } = useSessionStore();
+  const { userId, email, isStaff, isPlatformAdmin, accessToken } =
+    useSessionStore();
   const [companies, setCompanies] = useState<CompanyOverview[]>([]);
   const [totalCompanies, setTotalCompanies] = useState(0);
   const [detail, setDetail] = useState<CompanyDetail | null>(null);
   const [activeCompanyId, setActiveCompanyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [approvalLoading, setApprovalLoading] = useState<string | null>(null);
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
 
@@ -152,6 +154,38 @@ function StaffPage() {
     [fetchDetail],
   );
 
+  const handleApproval = useCallback(
+    async (companyId: string, action: "approve" | "reject") => {
+      if (accessToken === null) return;
+      setApprovalLoading(companyId + action);
+      setError(null);
+      try {
+        const res = await fetch(
+          `${supabaseUrl}/functions/v1/staff-approve-company`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ company_id: companyId, action }),
+          },
+        );
+        if (!res.ok) {
+          const body = (await res.json()) as { error?: string };
+          setError(body.error ?? "Erro ao processar aprovação");
+          return;
+        }
+        void fetchCompanies();
+      } catch {
+        setError("Falha de rede ao processar aprovação");
+      } finally {
+        setApprovalLoading(null);
+      }
+    },
+    [accessToken, supabaseUrl, fetchCompanies],
+  );
+
   const planColor: Record<string, string> = {
     trial: "bg-zinc-800 text-zinc-400",
     starter: "bg-blue-900/30 text-blue-400",
@@ -160,8 +194,10 @@ function StaffPage() {
   };
 
   const statusColor: Record<string, string> = {
+    pending: "bg-yellow-900/30 text-yellow-400",
     active: "bg-green-900/20 text-green-400",
     suspended: "bg-red-900/20 text-red-400",
+    cancelled: "bg-zinc-900/20 text-zinc-600",
     deleted: "bg-zinc-900/20 text-zinc-600",
   };
 
@@ -397,6 +433,68 @@ function StaffPage() {
               {error !== null && (
                 <p className="mb-4 text-xs text-red-400">{error}</p>
               )}
+
+              {/* Pending approvals section */}
+              {isPlatformAdmin &&
+                companies.filter((c) => c.status === "pending").length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-yellow-500">
+                      Aguardando aprovação (
+                      {companies.filter((c) => c.status === "pending").length})
+                    </h3>
+                    <div className="flex flex-col divide-y divide-zinc-800 rounded-lg border border-yellow-800/40 bg-yellow-950/10">
+                      {companies
+                        .filter((c) => c.status === "pending")
+                        .map((c) => (
+                          <div
+                            key={c.id}
+                            className="flex items-center gap-4 px-4 py-3"
+                          >
+                            <div className="flex flex-1 flex-col gap-0.5 min-w-0">
+                              <p className="text-sm font-medium text-zinc-100">
+                                {c.name}
+                              </p>
+                              <p className="font-mono text-xs text-zinc-500">
+                                {c.slug} · {memberCount(c)} membro(s)
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <button
+                                type="button"
+                                disabled={
+                                  approvalLoading === c.id + "approve" ||
+                                  approvalLoading === c.id + "reject"
+                                }
+                                onClick={() =>
+                                  void handleApproval(c.id, "approve")
+                                }
+                                className="rounded-md border border-green-700/50 px-3 py-1 text-xs text-green-400 hover:border-green-500 hover:text-green-300 disabled:opacity-40"
+                              >
+                                {approvalLoading === c.id + "approve"
+                                  ? "…"
+                                  : "Aprovar"}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={
+                                  approvalLoading === c.id + "approve" ||
+                                  approvalLoading === c.id + "reject"
+                                }
+                                onClick={() =>
+                                  void handleApproval(c.id, "reject")
+                                }
+                                className="rounded-md border border-red-800/50 px-3 py-1 text-xs text-red-400 hover:border-red-600 hover:text-red-300 disabled:opacity-40"
+                              >
+                                {approvalLoading === c.id + "reject"
+                                  ? "…"
+                                  : "Rejeitar"}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
 
               {companies.length === 0 && !loading && (
                 <p className="text-xs text-zinc-600">

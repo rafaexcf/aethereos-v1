@@ -13,6 +13,8 @@ interface SessionState {
   activeCompanyId: string | null;
   /** true se o JWT contém is_staff=true (Aethereos internal staff) */
   isStaff: boolean;
+  /** true se o JWT contém is_platform_admin=true (aprovação de tenants, etc.) */
+  isPlatformAdmin: boolean;
   drivers: CloudDrivers | null;
 }
 
@@ -26,6 +28,7 @@ interface SessionActions {
     companies: string[];
     activeCompanyId: string | null;
     isStaff: boolean;
+    isPlatformAdmin: boolean;
   }) => void;
   setActiveCompany: (companyId: string) => void;
   clearSession: () => void;
@@ -42,6 +45,7 @@ const initialState: SessionState = {
   companies: [],
   activeCompanyId: null,
   isStaff: false,
+  isPlatformAdmin: false,
   drivers: null,
 };
 
@@ -58,6 +62,7 @@ export const useSessionStore = create<SessionStore>((set) => ({
     companies,
     activeCompanyId,
     isStaff,
+    isPlatformAdmin,
   }) =>
     set({
       userId,
@@ -65,6 +70,7 @@ export const useSessionStore = create<SessionStore>((set) => ({
       companies,
       activeCompanyId,
       isStaff,
+      isPlatformAdmin,
       ...(email !== undefined ? { email } : {}),
       ...(refreshToken !== undefined ? { refreshToken } : {}),
     }),

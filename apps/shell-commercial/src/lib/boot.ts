@@ -37,6 +37,7 @@ export async function boot(): Promise<void> {
     companies: claims.companies,
     activeCompanyId: claims.activeCompanyId,
     isStaff: claims.isStaff,
+    isPlatformAdmin: claims.isPlatformAdmin,
   });
 
   // Define company context nos drivers se já tem uma company ativa

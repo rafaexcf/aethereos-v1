@@ -86,6 +86,7 @@ function SelectCompanyPage() {
         companies: claims.companies,
         activeCompanyId: companyId,
         isStaff: claims.isStaff,
+        isPlatformAdmin: claims.isPlatformAdmin,
       });
     }
 

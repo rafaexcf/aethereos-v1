@@ -43,6 +43,7 @@ function LoginPage() {
       companies: claims.companies,
       activeCompanyId: claims.activeCompanyId,
       isStaff: claims.isStaff,
+      isPlatformAdmin: claims.isPlatformAdmin,
     });
 
     if (claims.activeCompanyId !== null) {

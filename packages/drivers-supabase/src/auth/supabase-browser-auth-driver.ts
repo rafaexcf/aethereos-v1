@@ -202,29 +202,50 @@ export class SupabaseBrowserAuthDriver implements AuthDriver {
     companies: string[];
     activeCompanyId: string | null;
     isStaff: boolean;
+    isPlatformAdmin: boolean;
   }> {
     const { data } = await this.#client.auth.getSession();
     if (data.session === null)
-      return { companies: [], activeCompanyId: null, isStaff: false };
+      return {
+        companies: [],
+        activeCompanyId: null,
+        isStaff: false,
+        isPlatformAdmin: false,
+      };
 
     try {
       const parts = data.session.access_token.split(".");
       const payloadPart = parts[1];
       if (!payloadPart)
-        return { companies: [], activeCompanyId: null, isStaff: false };
+        return {
+          companies: [],
+          activeCompanyId: null,
+          isStaff: false,
+          isPlatformAdmin: false,
+        };
       const base64 = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
       const payload = JSON.parse(atob(base64)) as Record<string, unknown>;
-      const companies = Array.isArray(payload["companies"])
-        ? (payload["companies"] as string[])
+      // companies[] can be strings or objects {id,role,status} — normalise to ids
+      const rawCompanies = Array.isArray(payload["companies"])
+        ? (payload["companies"] as Array<string | { id: string }>)
         : [];
+      const companies = rawCompanies.map((c) =>
+        typeof c === "string" ? c : c.id,
+      );
       const activeCompanyId =
         typeof payload["active_company_id"] === "string"
           ? payload["active_company_id"]
           : null;
       const isStaff = payload["is_staff"] === true;
-      return { companies, activeCompanyId, isStaff };
+      const isPlatformAdmin = payload["is_platform_admin"] === true;
+      return { companies, activeCompanyId, isStaff, isPlatformAdmin };
     } catch {
-      return { companies: [], activeCompanyId: null, isStaff: false };
+      return {
+        companies: [],
+        activeCompanyId: null,
+        isStaff: false,
+        isPlatformAdmin: false,
+      };
     }
   }
 
