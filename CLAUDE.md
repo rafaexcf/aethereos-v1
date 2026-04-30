@@ -97,6 +97,8 @@ Quando agente detectar uso de tecnologia bloqueada, **não merge**. Lista canôn
 - `KernelPublisher` instanciado em código browser → bloquear (publisher server-only; browser usa Edge Function scp-publish)
 - Escrita em `kernel.scp_outbox` direta de código browser → bloquear (outbox só via Edge Function com service_role)
 
+**Exceção aprovada (ADR-0023):** `framer-motion` é permitido em `apps/shell-commercial/` para paradigma OS (Dock magnification com spring physics, AnimatePresence). Proibido em `apps/shell-base/`, `packages/drivers/`, `packages/kernel/` e demais pacotes.
+
 ---
 
 ## 6. Princípios fundadores resumidos
