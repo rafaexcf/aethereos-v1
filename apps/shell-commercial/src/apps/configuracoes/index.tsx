@@ -2989,7 +2989,7 @@ function ToggleStackTile({
 }
 
 function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
-  const { email } = useSessionStore();
+  const { email, avatarUrl } = useSessionStore();
   const initials = email !== null ? email.slice(0, 2).toUpperCase() : "??";
   const displayName = email !== null ? email.split("@")[0] : "Usuário";
 
@@ -3089,18 +3089,31 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
                 alignItems: "center",
                 justifyContent: "center",
                 flexShrink: 0,
+                overflow: "hidden",
               }}
             >
-              <span
-                style={{
-                  color: "rgba(255,255,255,0.94)",
-                  fontSize: 20,
-                  fontWeight: 700,
-                  letterSpacing: "0.02em",
-                }}
-              >
-                {initials}
-              </span>
+              {avatarUrl !== null ? (
+                <img
+                  src={avatarUrl}
+                  alt=""
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+              ) : (
+                <span
+                  style={{
+                    color: "rgba(255,255,255,0.94)",
+                    fontSize: 20,
+                    fontWeight: 700,
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  {initials}
+                </span>
+              )}
             </div>
             <div style={{ minWidth: 0, flex: 1 }}>
               <p
