@@ -1423,6 +1423,7 @@ function TabPerfil({
 
   // Profile data
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">(
     "idle",
   );
@@ -1490,9 +1491,11 @@ function TabPerfil({
 
   // Refs so debounce callback always reads latest values
   const nameRef = useRef(name);
+  const phoneRef = useRef(phone);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initializedRef = useRef(false);
   nameRef.current = name;
+  phoneRef.current = phone;
 
   // Password change
   const [newPwd, setNewPwd] = useState("");
@@ -1541,6 +1544,26 @@ function TabPerfil({
         }
         initializedRef.current = true;
       });
+
+    void drivers.data
+      .from("profiles")
+      .select("phone,full_name")
+      .eq("id", userId)
+      .maybeSingle()
+      .then(
+        ({
+          data,
+        }: {
+          data: { phone: string | null; full_name: string | null } | null;
+        }) => {
+          if (data === null) return;
+          if (data.phone !== null) setPhone(data.phone);
+          // Se o display_name de settings vier vazio, cai pro full_name de profiles
+          if (data.full_name !== null) {
+            setName((prev) => (prev === "" ? (data.full_name ?? "") : prev));
+          }
+        },
+      );
   }, [drivers, userId]);
 
   function triggerAutoSave() {
@@ -1566,6 +1589,10 @@ function TabPerfil({
             .from("settings")
             .upsert(s, { onConflict: "scope,scope_id,key" });
         }
+        await drivers.data
+          .from("profiles")
+          .update({ phone: phoneRef.current !== "" ? phoneRef.current : null })
+          .eq("id", userId);
         void drivers.scp.publishEvent("platform.settings.updated", {
           scope: "user",
           scope_id: userId,
@@ -1626,11 +1653,21 @@ function TabPerfil({
             />
           </SettingRow>
           <SettingRow
-            label="E-mail"
+            label="Email Corporativo"
             sublabel="Vinculado ao IdP — altere via Supabase Auth"
-            last
           >
             <SettingInput value={email ?? ""} readOnly />
+          </SettingRow>
+          <SettingRow label="Celular Corporativo" last>
+            <SettingInput
+              value={phone}
+              onChange={(value) => {
+                setPhone(value);
+                triggerAutoSave();
+              }}
+              type="tel"
+              placeholder="(00) 00000-0000"
+            />
           </SettingRow>
         </SettingGroup>
       </div>
