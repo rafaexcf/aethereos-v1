@@ -12,8 +12,14 @@ import { CopilotDrawer } from "../../apps/copilot/index";
 
 export function OSDesktop() {
   const navigate = useNavigate();
-  const { userId, activeCompanyId, accessToken, drivers, clearSession } =
-    useSessionStore();
+  const {
+    userId,
+    activeCompanyId,
+    accessToken,
+    drivers,
+    clearSession,
+    setAvatarUrl,
+  } = useSessionStore();
   const { aiModalOpen, closeAIModal } = useOSStore();
   const fetchLayout = useMesaStore((s) => s.fetchLayout);
   const [companyName, setCompanyName] = useState<string | null>(null);
@@ -43,6 +49,20 @@ export function OSDesktop() {
         setOnboardingCompleted(data?.onboarding_completed ?? true);
       });
   }, [drivers, activeCompanyId, fetchLayout]);
+
+  // Hidrata avatar do usuário a partir de kernel.profiles → vai p/ TopBar etc.
+  useEffect(() => {
+    if (drivers === null || userId === null) return;
+    void drivers.data
+      .from("profiles")
+      .select("avatar_url")
+      .eq("id", userId)
+      .maybeSingle()
+      .then(({ data }: { data: { avatar_url: string | null } | null }) => {
+        if (data !== null && data.avatar_url !== null && data.avatar_url !== "")
+          setAvatarUrl(data.avatar_url);
+      });
+  }, [drivers, userId, setAvatarUrl]);
 
   const handleSignOut = useCallback(async () => {
     if (drivers === null) return;

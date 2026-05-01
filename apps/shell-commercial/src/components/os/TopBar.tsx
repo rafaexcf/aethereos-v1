@@ -39,6 +39,7 @@ function ControlPanel({
   email,
   companyName,
   initials,
+  avatarUrl,
   onSignOut,
   onSettings,
   onNav,
@@ -47,6 +48,7 @@ function ControlPanel({
   email: string | null;
   companyName: string | null;
   initials: string;
+  avatarUrl: string | null;
   onSignOut: () => void;
   onSettings: () => void;
   onNav: (id: string, name: string) => void;
@@ -84,7 +86,7 @@ function ControlPanel({
       >
         {/* Avatar */}
         <div
-          className="flex items-center justify-center flex-shrink-0"
+          className="flex items-center justify-center flex-shrink-0 overflow-hidden"
           style={{
             width: 40,
             height: 40,
@@ -94,16 +96,28 @@ function ControlPanel({
             border: "1px solid rgba(255,255,255,0.12)",
           }}
         >
-          <span
-            style={{
-              color: "rgba(255,255,255,0.92)",
-              fontSize: 14,
-              fontWeight: 700,
-              letterSpacing: "0.02em",
-            }}
-          >
-            {initials}
-          </span>
+          {avatarUrl !== null ? (
+            <img
+              src={avatarUrl}
+              alt=""
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
+            />
+          ) : (
+            <span
+              style={{
+                color: "rgba(255,255,255,0.92)",
+                fontSize: 14,
+                fontWeight: 700,
+                letterSpacing: "0.02em",
+              }}
+            >
+              {initials}
+            </span>
+          )}
         </div>
 
         {/* Info */}
@@ -266,7 +280,7 @@ interface TopBarProps {
 }
 
 export function TopBar({ companyName, onSignOut }: TopBarProps) {
-  const { email } = useSessionStore();
+  const { email, avatarUrl } = useSessionStore();
   const openApp = useOSStore((s) => s.openApp);
   const [menuOpen, setMenuOpen] = useState(false);
   const initials = email ? email.slice(0, 2).toUpperCase() : "??";
@@ -319,7 +333,7 @@ export function TopBar({ companyName, onSignOut }: TopBarProps) {
             aria-label="Abrir painel de controle"
             aria-expanded={menuOpen}
             aria-haspopup="dialog"
-            className="relative flex items-center justify-center transition-opacity hover:opacity-75"
+            className="relative flex items-center justify-center transition-opacity hover:opacity-75 overflow-hidden"
             style={{
               width: 26,
               height: 26,
@@ -330,16 +344,28 @@ export function TopBar({ companyName, onSignOut }: TopBarProps) {
               flexShrink: 0,
             }}
           >
-            <span
-              style={{
-                color: "rgba(255,255,255,0.92)",
-                fontSize: 10,
-                fontWeight: 600,
-                letterSpacing: "0.02em",
-              }}
-            >
-              {initials}
-            </span>
+            {avatarUrl !== null ? (
+              <img
+                src={avatarUrl}
+                alt=""
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                }}
+              />
+            ) : (
+              <span
+                style={{
+                  color: "rgba(255,255,255,0.92)",
+                  fontSize: 10,
+                  fontWeight: 600,
+                  letterSpacing: "0.02em",
+                }}
+              >
+                {initials}
+              </span>
+            )}
 
             {/* Hamburger badge */}
             <span
@@ -368,6 +394,7 @@ export function TopBar({ companyName, onSignOut }: TopBarProps) {
             email={email}
             companyName={companyName}
             initials={initials}
+            avatarUrl={avatarUrl}
             onSignOut={onSignOut}
             onSettings={() => openApp("settings", "Configurações")}
             onNav={(id, name) => openApp(id, name)}

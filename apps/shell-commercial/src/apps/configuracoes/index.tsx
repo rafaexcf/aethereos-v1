@@ -3732,45 +3732,27 @@ const SIDEBAR_ICON_W = 48;
 
 export function ConfiguracoesApp() {
   const drivers = useDrivers();
-  const { userId, activeCompanyId } = useSessionStore();
+  const { activeCompanyId, avatarUrl, setAvatarUrl } = useSessionStore();
   const [active, setActive] = useState<TabId>("home");
   const [collapsed, setCollapsed] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const isHome = active === "home";
 
-  // Hydrate avatar (profiles.avatar_url) and logo (companies.logo_url)
+  // Hidrata logo da empresa (avatar do user já é hidratado em OSDesktop e
+  // vive no session store)
   useEffect(() => {
-    if (drivers === null) return;
-    if (userId !== null) {
-      void drivers.data
-        .from("profiles")
-        .select("avatar_url")
-        .eq("id", userId)
-        .maybeSingle()
-        .then(({ data }: { data: { avatar_url: string | null } | null }) => {
-          if (
-            data !== null &&
-            data.avatar_url !== null &&
-            data.avatar_url !== ""
-          ) {
-            setAvatarUrl(data.avatar_url);
-          }
-        });
-    }
-    if (activeCompanyId !== null) {
-      void drivers.data
-        .from("companies")
-        .select("logo_url")
-        .eq("id", activeCompanyId)
-        .maybeSingle()
-        .then(({ data }: { data: { logo_url: string | null } | null }) => {
-          if (data !== null && data.logo_url !== null && data.logo_url !== "") {
-            setLogoUrl(data.logo_url);
-          }
-        });
-    }
-  }, [drivers, userId, activeCompanyId]);
+    if (drivers === null || activeCompanyId === null) return;
+    void drivers.data
+      .from("companies")
+      .select("logo_url")
+      .eq("id", activeCompanyId)
+      .maybeSingle()
+      .then(({ data }: { data: { logo_url: string | null } | null }) => {
+        if (data !== null && data.logo_url !== null && data.logo_url !== "") {
+          setLogoUrl(data.logo_url);
+        }
+      });
+  }, [drivers, activeCompanyId]);
 
   return (
     <div

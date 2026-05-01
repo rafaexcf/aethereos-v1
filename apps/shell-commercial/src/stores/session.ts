@@ -15,6 +15,8 @@ interface SessionState {
   isStaff: boolean;
   /** true se o JWT contém is_platform_admin=true (aprovação de tenants, etc.) */
   isPlatformAdmin: boolean;
+  /** URL da foto de perfil (kernel.profiles.avatar_url) — null se não setada */
+  avatarUrl: string | null;
   drivers: CloudDrivers | null;
 }
 
@@ -31,6 +33,7 @@ interface SessionActions {
     isPlatformAdmin: boolean;
   }) => void;
   setActiveCompany: (companyId: string) => void;
+  setAvatarUrl: (url: string | null) => void;
   clearSession: () => void;
 }
 
@@ -46,6 +49,7 @@ const initialState: SessionState = {
   activeCompanyId: null,
   isStaff: false,
   isPlatformAdmin: false,
+  avatarUrl: null,
   drivers: null,
 };
 
@@ -74,6 +78,8 @@ export const useSessionStore = create<SessionStore>((set) => ({
       ...(email !== undefined ? { email } : {}),
       ...(refreshToken !== undefined ? { refreshToken } : {}),
     }),
+
+  setAvatarUrl: (avatarUrl) => set({ avatarUrl }),
 
   setActiveCompany: (activeCompanyId) =>
     set((state) => {
