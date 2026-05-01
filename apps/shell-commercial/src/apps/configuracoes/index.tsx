@@ -29,6 +29,12 @@ import {
 import { useSessionStore } from "../../stores/session";
 import { useDrivers } from "../../lib/drivers-context";
 import { AnimatedThemeToggler } from "../../components/ui/animated-theme-toggler";
+import {
+  useMesaStore,
+  WALLPAPERS,
+  WALLPAPER_NAMES,
+  getWallpaperStyle,
+} from "../../stores/mesaStore";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -1336,22 +1342,13 @@ function TabMesa() {
 // ─── Tab: Aparência ───────────────────────────────────────────────────────────
 
 function TabAparencia() {
-  const [density, setDensity] = useState("default");
-  const [wallpaperIdx, setWallpaperIdx] = useState(0);
+  const wallpaper = useMesaStore((s) => s.wallpaper);
+  const setWallpaper = useMesaStore((s) => s.setWallpaper);
+  const fetchLayout = useMesaStore((s) => s.fetchLayout);
 
-  const densityOptions = [
-    { key: "compact", label: "Compacto", bars: [4, 4, 4] },
-    { key: "default", label: "Padrão", bars: [4, 6, 4] },
-    { key: "comfortable", label: "Confortável", bars: [4, 8, 4] },
-  ];
-
-  const wallpapers = [
-    { name: "Noite", value: "linear-gradient(135deg, #1e293b, #0f172a)" },
-    { name: "Indigo", value: "linear-gradient(135deg, #4338ca, #1e1b4b)" },
-    { name: "Vinho", value: "linear-gradient(135deg, #831843, #4c0519)" },
-    { name: "Floresta", value: "linear-gradient(135deg, #064e3b, #022c22)" },
-    { name: "Âmbar", value: "linear-gradient(135deg, #92400e, #451a03)" },
-  ];
+  useEffect(() => {
+    void fetchLayout();
+  }, [fetchLayout]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -1360,7 +1357,7 @@ function TabAparencia() {
         iconBg="rgba(139,92,246,0.22)"
         iconColor="#a78bfa"
         title="Aparência"
-        subtitle="Personalize o tema, densidade e visual da interface"
+        subtitle="Personalize o tema e o plano de fundo da Mesa"
       />
 
       <div>
@@ -1402,18 +1399,18 @@ function TabAparencia() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(5, 1fr)",
+            gridTemplateColumns: `repeat(${WALLPAPERS.length}, 1fr)`,
             gap: 10,
           }}
         >
-          {wallpapers.map((wp, i) => {
-            const isActive = wallpaperIdx === i;
+          {WALLPAPERS.map((id) => {
+            const isActive = wallpaper === id;
             return (
               <button
-                key={wp.name}
+                key={id}
                 type="button"
-                onClick={() => setWallpaperIdx(i)}
-                aria-label={wp.name}
+                onClick={() => setWallpaper(id)}
+                aria-label={WALLPAPER_NAMES[id]}
                 style={{
                   borderRadius: 12,
                   border: "none",
@@ -1430,7 +1427,7 @@ function TabAparencia() {
                   style={{
                     height: 96,
                     borderRadius: 12,
-                    background: wp.value,
+                    ...getWallpaperStyle(id),
                     border: isActive
                       ? "2px solid #818cf8"
                       : "1px solid rgba(255,255,255,0.10)",
@@ -1451,93 +1448,11 @@ function TabAparencia() {
                     textAlign: "center",
                   }}
                 >
-                  {wp.name}
+                  {WALLPAPER_NAMES[id]}
                 </span>
               </button>
             );
           })}
-        </div>
-      </div>
-
-      <div>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 8,
-          }}
-        >
-          <SectionLabel>Densidade da interface</SectionLabel>
-          <Badge variant="neutral">Em breve</Badge>
-        </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
-            gap: 10,
-          }}
-        >
-          {densityOptions.map((opt) => (
-            <button
-              key={opt.key}
-              type="button"
-              onClick={() => setDensity(opt.key)}
-              style={{
-                borderRadius: 10,
-                border:
-                  density === opt.key
-                    ? "1px solid rgba(99,102,241,0.60)"
-                    : "1px solid rgba(255,255,255,0.07)",
-                background:
-                  density === opt.key
-                    ? "rgba(99,102,241,0.10)"
-                    : "rgba(255,255,255,0.03)",
-                padding: "14px 12px",
-                cursor: "pointer",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 10,
-                transition: "all 120ms ease",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "flex-end",
-                  gap: 3,
-                  height: 16,
-                }}
-              >
-                {opt.bars.map((h, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      width: 8,
-                      height: h,
-                      borderRadius: 2,
-                      background:
-                        density === opt.key
-                          ? "#818cf8"
-                          : "rgba(255,255,255,0.25)",
-                    }}
-                  />
-                ))}
-              </div>
-              <span
-                style={{
-                  fontSize: 12,
-                  color:
-                    density === opt.key
-                      ? "var(--text-primary)"
-                      : "var(--text-tertiary)",
-                }}
-              >
-                {opt.label}
-              </span>
-            </button>
-          ))}
         </div>
       </div>
     </div>
@@ -2215,15 +2130,14 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
   const [twoFA, setTwoFA] = useState(false);
   const [sound, setSound] = useState(true);
   const [lang, setLang] = useState("pt-BR");
-  const [wallpaperIdx, setWallpaperIdx] = useState(0);
 
-  const wallpapers = [
-    "linear-gradient(135deg, #1e293b, #0f172a)",
-    "linear-gradient(135deg, #4338ca, #1e1b4b)",
-    "linear-gradient(135deg, #831843, #4c0519)",
-    "linear-gradient(135deg, #064e3b, #022c22)",
-    "linear-gradient(135deg, #92400e, #451a03)",
-  ];
+  // Real wallpaper from Mesa store
+  const wallpaper = useMesaStore((s) => s.wallpaper);
+  const setWallpaper = useMesaStore((s) => s.setWallpaper);
+  const fetchLayout = useMesaStore((s) => s.fetchLayout);
+  useEffect(() => {
+    void fetchLayout();
+  }, [fetchLayout]);
 
   const langLabel =
     lang === "pt-BR" ? "Português" : lang === "en-US" ? "English" : "Español";
@@ -2665,19 +2579,20 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
             </div>
           </div>
           <div style={{ display: "flex", gap: 8, flex: 1 }}>
-            {wallpapers.map((wp, i) => {
-              const isActive = wallpaperIdx === i;
+            {WALLPAPERS.map((id) => {
+              const isActive = wallpaper === id;
               return (
                 <button
-                  key={i}
+                  key={id}
                   type="button"
-                  onClick={() => setWallpaperIdx(i)}
-                  aria-label={`Wallpaper ${i + 1}`}
+                  onClick={() => setWallpaper(id)}
+                  aria-label={WALLPAPER_NAMES[id]}
+                  title={WALLPAPER_NAMES[id]}
                   style={{
                     flex: 1,
                     minHeight: 56,
                     borderRadius: 10,
-                    background: wp,
+                    ...getWallpaperStyle(id),
                     border: isActive
                       ? "2px solid #818cf8"
                       : "1px solid rgba(255,255,255,0.10)",
