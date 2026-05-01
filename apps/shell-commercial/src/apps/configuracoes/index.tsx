@@ -2980,7 +2980,13 @@ export function ConfiguracoesApp() {
         )}
       </button>
 
-      <main style={{ flex: 1, overflowY: "auto", padding: 28 }}>
+      <main
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "28px 28px 160px",
+        }}
+      >
         <div style={{ maxWidth: 1095, margin: "0 auto" }}>
           {/* Breadcrumb */}
           <nav
