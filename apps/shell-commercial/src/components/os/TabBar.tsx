@@ -179,7 +179,7 @@ function SortableTab({ tab }: { tab: OSTab }) {
               closeTab(tab.id);
             }}
             data-testid={`close-tab-${tab.appId}`}
-            className={`flex-none transition-opacity ml-0.5 flex items-center justify-center ${isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
+            className={`flex-none transition-opacity ml-0.5 flex items-center justify-center ${isActive ? "opacity-100" : "opacity-0 pointer-events-none"}`}
             style={{
               width: 16,
               height: 16,
