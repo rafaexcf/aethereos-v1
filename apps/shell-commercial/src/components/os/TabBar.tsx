@@ -119,7 +119,7 @@ function SortableTab({ tab }: { tab: OSTab }) {
               height: CORNER_SIZE,
               // Gradiente radial: centro no canto SUPERIOR-DIREITO (onde a aba termina)
               // → a área transparente cria a curva côncava; o resto preenche com a cor do conteúdo
-              background: `radial-gradient(circle at top right, transparent 70%, ${CONTENT_BG} 70%)`,
+              background: `radial-gradient(circle at top right, transparent calc(70% - 1px), rgba(255,255,255,0.10) calc(70% - 1px), rgba(255,255,255,0.10) 70%, ${CONTENT_BG} 70%)`,
               pointerEvents: "none",
             }}
           />
@@ -132,7 +132,7 @@ function SortableTab({ tab }: { tab: OSTab }) {
               right: -CORNER_SIZE,
               width: CORNER_SIZE,
               height: CORNER_SIZE,
-              background: `radial-gradient(circle at top left, transparent 70%, ${CONTENT_BG} 70%)`,
+              background: `radial-gradient(circle at top left, transparent calc(70% - 1px), rgba(255,255,255,0.10) calc(70% - 1px), rgba(255,255,255,0.10) 70%, ${CONTENT_BG} 70%)`,
               pointerEvents: "none",
             }}
           />
@@ -232,8 +232,8 @@ export function TabBar() {
         background: "rgba(6,9,18,0.82)",
         backdropFilter: `blur(var(--blur-ui))`,
         WebkitBackdropFilter: `blur(var(--blur-ui))`,
-        // border-bottom permanece — a aba ativa cobre este 1px com sua própria cor
-        borderBottom: "1px solid var(--border-subtle)",
+        // border-bottom = borda superior do conteúdo; aba ativa cobre com sua própria cor
+        borderBottom: "1px solid var(--border-default)",
         paddingLeft: 8,
         paddingRight: 8,
         paddingBottom: 0,
