@@ -2920,7 +2920,7 @@ export function ConfiguracoesApp() {
         height: "100%",
         width: "100%",
         overflow: "hidden",
-        background: "var(--bg-base)",
+        background: "var(--bg-elevated)",
         position: "relative",
       }}
     >
