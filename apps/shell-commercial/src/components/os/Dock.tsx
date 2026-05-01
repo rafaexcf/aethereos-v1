@@ -653,7 +653,7 @@ export function Dock() {
         className="flex items-end pb-3 pt-3 px-4"
         style={{
           gap: 10,
-          background: "rgba(6,9,18,0.76)",
+          background: "rgba(6,9,18,0.81)",
           backdropFilter: `blur(var(--blur-dock))`,
           WebkitBackdropFilter: `blur(var(--blur-dock))`,
           border: "1px solid var(--glass-border)",

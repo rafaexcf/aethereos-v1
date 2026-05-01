@@ -294,7 +294,9 @@ export function TopBar({ companyName, onSignOut }: TopBarProps) {
         className="flex shrink-0 items-center justify-between px-4"
         style={{
           height: 42,
-          background: "rgba(6,9,18,0.96)",
+          background: "rgba(6,9,18,0.81)",
+          backdropFilter: "blur(var(--blur-dock))",
+          WebkitBackdropFilter: "blur(var(--blur-dock))",
           borderBottom: "1px solid var(--glass-border)",
           position: "relative",
           zIndex: 50,
