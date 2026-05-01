@@ -1998,9 +1998,9 @@ export function ConfiguracoesApp() {
         }}
       >
         {collapsed ? (
-          <PanelLeftOpen size={12} strokeWidth={1.8} />
+          <PanelLeftOpen size={16} strokeWidth={1.8} />
         ) : (
-          <PanelLeftClose size={12} strokeWidth={1.8} />
+          <PanelLeftClose size={16} strokeWidth={1.8} />
         )}
       </button>
 
