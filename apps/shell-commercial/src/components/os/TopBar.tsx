@@ -280,7 +280,6 @@ export function TopBar({ companyName, onSignOut }: TopBarProps) {
         backdropFilter: "blur(24px)",
         WebkitBackdropFilter: "blur(24px)",
         borderBottom: "1px solid var(--glass-border)",
-        boxShadow: "var(--shadow-dock)",
       }}
     >
       {/* Left: ÆTHEREOS */}
