@@ -40,9 +40,8 @@ import {
 
 type TabId =
   | "home"
-  | "meu-perfil"
+  | "perfil"
   | "notificacoes"
-  | "seguranca"
   | "dados-privacidade"
   | "dock"
   | "mesa"
@@ -67,9 +66,8 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: "Conta",
     items: [
-      { id: "meu-perfil", label: "Meu Perfil", icon: User },
+      { id: "perfil", label: "Perfil", icon: User },
       { id: "notificacoes", label: "Notificações", icon: Bell },
-      { id: "seguranca", label: "Segurança", icon: Shield },
       { id: "dados-privacidade", label: "Dados e Privacidade", icon: FileText },
     ],
   },
@@ -92,9 +90,8 @@ const NAV_SECTIONS: NavSection[] = [
 
 const TAB_LABELS: Record<TabId, string> = {
   home: "Início",
-  "meu-perfil": "Meu Perfil",
+  perfil: "Perfil",
   notificacoes: "Notificações",
-  seguranca: "Segurança",
   "dados-privacidade": "Dados e Privacidade",
   dock: "Dock",
   mesa: "Mesa",
@@ -595,11 +592,108 @@ function ComingSoonBanner({ message }: { message?: string }) {
   );
 }
 
-// ─── Tab: Meu Perfil ──────────────────────────────────────────────────────────
+// ─── Tab: Perfil (informações + senha + sessão + proteções) ──────────────────
 
-function TabMeuPerfil() {
+function detectBrowser(): string {
+  const ua = navigator.userAgent;
+  if (ua.includes("Chrome")) return "Chrome";
+  if (ua.includes("Firefox")) return "Firefox";
+  if (ua.includes("Safari")) return "Safari";
+  return "Navegador desconhecido";
+}
+
+function PasswordBadge({ ok, label }: { ok: boolean; label: string }) {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        borderRadius: 999,
+        padding: "3px 10px",
+        fontSize: 11,
+        fontWeight: 500,
+        background: ok ? "rgba(16,185,129,0.14)" : "rgba(255,255,255,0.05)",
+        color: ok ? "#34d399" : "var(--text-tertiary)",
+        transition: "background 200ms ease, color 200ms ease",
+      }}
+    >
+      {ok && <Check size={9} strokeWidth={2.5} />}
+      {label}
+    </span>
+  );
+}
+
+function PwdInput({
+  value,
+  onChange,
+  show,
+  onToggle,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  show: boolean;
+  onToggle: () => void;
+  placeholder: string;
+}) {
+  return (
+    <div style={{ position: "relative", width: 220 }}>
+      <input
+        type={show ? "text" : "password"}
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        autoComplete="new-password"
+        data-1p-ignore="true"
+        data-lpignore="true"
+        style={{
+          width: "100%",
+          background: "rgba(255,255,255,0.06)",
+          border: "1px solid rgba(255,255,255,0.10)",
+          borderRadius: 8,
+          padding: "7px 36px 7px 11px",
+          fontSize: 13,
+          color: "var(--text-primary)",
+          outline: "none",
+          transition: "border-color 120ms ease, box-shadow 120ms ease",
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = "rgba(99,102,241,0.65)";
+          e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.12)";
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)";
+          e.currentTarget.style.boxShadow = "none";
+        }}
+      />
+      <button
+        type="button"
+        onClick={onToggle}
+        style={{
+          position: "absolute",
+          right: 10,
+          top: "50%",
+          transform: "translateY(-50%)",
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          color: "var(--text-tertiary)",
+          padding: 0,
+          display: "flex",
+        }}
+      >
+        {show ? <EyeOff size={14} /> : <Eye size={14} />}
+      </button>
+    </div>
+  );
+}
+
+function TabPerfil() {
   const { email, userId } = useSessionStore();
   const drivers = useDrivers();
+
+  // Profile data
   const [name, setName] = useState("");
   const [lang, setLang] = useState("pt-BR");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">(
@@ -613,6 +707,30 @@ function TabMeuPerfil() {
   const initializedRef = useRef(false);
   nameRef.current = name;
   langRef.current = lang;
+
+  // Password change
+  const [newPwd, setNewPwd] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pwdState, setPwdState] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
+
+  const v = {
+    length: newPwd.length >= 8,
+    upper: /[A-Z]/.test(newPwd),
+    number: /[0-9]/.test(newPwd),
+    special: /[^A-Za-z0-9]/.test(newPwd),
+    match: newPwd.length > 0 && newPwd === confirmPwd,
+  };
+  const canSave = v.length && v.upper && v.number && v.special && v.match;
+
+  const today = new Date().toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
 
   useEffect(() => {
     if (drivers === null || userId === null) return;
@@ -688,18 +806,19 @@ function TabMeuPerfil() {
         icon={User}
         iconBg="rgba(99,102,241,0.22)"
         iconColor="#818cf8"
-        title="Meu Perfil"
-        subtitle="Gerencie suas informações pessoais e preferências de conta"
+        title="Perfil"
+        subtitle="Informações pessoais, senha e proteções da conta"
       />
 
+      {/* Informações pessoais */}
       <div>
         <SectionLabel>Informações pessoais</SectionLabel>
         <SettingGroup>
           <SettingRow label="Nome de exibição">
             <SettingInput
               value={name}
-              onChange={(v) => {
-                setName(v);
+              onChange={(value) => {
+                setName(value);
                 triggerAutoSave();
               }}
             />
@@ -713,8 +832,8 @@ function TabMeuPerfil() {
           <SettingRow label="Idioma" last>
             <SettingSelect
               value={lang}
-              onChange={(v) => {
-                setLang(v);
+              onChange={(value) => {
+                setLang(value);
                 triggerAutoSave();
               }}
               options={[
@@ -727,6 +846,7 @@ function TabMeuPerfil() {
         </SettingGroup>
       </div>
 
+      {/* Identificação */}
       {userId !== null && (
         <div>
           <SectionLabel>Identificação</SectionLabel>
@@ -746,6 +866,106 @@ function TabMeuPerfil() {
           <SaveLabel state={saveState} label="Salvar alterações" />
         </PrimaryButton>
       </SaveRow>
+
+      {/* Alterar senha */}
+      <div>
+        <SectionLabel>Alterar senha</SectionLabel>
+        <SettingGroup>
+          <SettingRow label="Nova senha">
+            <PwdInput
+              value={newPwd}
+              onChange={setNewPwd}
+              show={showNew}
+              onToggle={() => setShowNew((s) => !s)}
+              placeholder="Nova senha"
+            />
+          </SettingRow>
+          <SettingRow label="Confirmar senha" last>
+            <PwdInput
+              value={confirmPwd}
+              onChange={setConfirmPwd}
+              show={showConfirm}
+              onToggle={() => setShowConfirm((s) => !s)}
+              placeholder="Confirmar nova senha"
+            />
+          </SettingRow>
+        </SettingGroup>
+
+        {newPwd.length > 0 && (
+          <div
+            style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}
+          >
+            <PasswordBadge ok={v.length} label="8+ caracteres" />
+            <PasswordBadge ok={v.upper} label="Maiúscula" />
+            <PasswordBadge ok={v.number} label="Número" />
+            <PasswordBadge ok={v.special} label="Especial" />
+            <PasswordBadge ok={v.match} label="Coincidem" />
+          </div>
+        )}
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            marginTop: 14,
+          }}
+        >
+          <PrimaryButton
+            onClick={() => {
+              setPwdState("saving");
+              setTimeout(() => {
+                setPwdState("saved");
+                setTimeout(() => setPwdState("idle"), 2000);
+              }, 800);
+            }}
+            disabled={!canSave || pwdState !== "idle"}
+          >
+            <SaveLabel state={pwdState} label="Alterar senha" />
+          </PrimaryButton>
+        </div>
+      </div>
+
+      {/* Sessão atual */}
+      <div>
+        <SectionLabel>Sessão atual</SectionLabel>
+        <SettingGroup>
+          <SettingRow label="Navegador">
+            <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+              {detectBrowser()}
+            </span>
+          </SettingRow>
+          <SettingRow label="E-mail da conta">
+            <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+              {email ?? "—"}
+            </span>
+          </SettingRow>
+          <SettingRow label="Última atividade" last>
+            <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+              {today}
+            </span>
+          </SettingRow>
+        </SettingGroup>
+      </div>
+
+      {/* Proteção adicional */}
+      <div>
+        <SectionLabel>Proteção adicional</SectionLabel>
+        <SettingGroup>
+          <SettingRow
+            label="Autenticação em dois fatores"
+            sublabel="App autenticador (TOTP)"
+          >
+            <Badge variant="neutral">Em breve</Badge>
+          </SettingRow>
+          <SettingRow
+            label="Tokens de API"
+            sublabel="Acesso programático à plataforma"
+            last
+          >
+            <Badge variant="neutral">Em breve</Badge>
+          </SettingRow>
+        </SettingGroup>
+      </div>
     </div>
   );
 }
@@ -928,238 +1148,6 @@ function TabNotificacoes() {
               on={prefs.notify_system}
               onToggle={() => update("notify_system", !prefs.notify_system)}
             />
-          </SettingRow>
-        </SettingGroup>
-      </div>
-    </div>
-  );
-}
-
-// ─── Tab: Segurança ───────────────────────────────────────────────────────────
-
-function detectBrowser(): string {
-  const ua = navigator.userAgent;
-  if (ua.includes("Chrome")) return "Chrome";
-  if (ua.includes("Firefox")) return "Firefox";
-  if (ua.includes("Safari")) return "Safari";
-  return "Navegador desconhecido";
-}
-
-function PasswordBadge({ ok, label }: { ok: boolean; label: string }) {
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 4,
-        borderRadius: 999,
-        padding: "3px 10px",
-        fontSize: 11,
-        fontWeight: 500,
-        background: ok ? "rgba(16,185,129,0.14)" : "rgba(255,255,255,0.05)",
-        color: ok ? "#34d399" : "var(--text-tertiary)",
-        transition: "background 200ms ease, color 200ms ease",
-      }}
-    >
-      {ok && <Check size={9} strokeWidth={2.5} />}
-      {label}
-    </span>
-  );
-}
-
-function TabSeguranca() {
-  const { email } = useSessionStore();
-  const [newPwd, setNewPwd] = useState("");
-  const [confirmPwd, setConfirmPwd] = useState("");
-  const [showNew, setShowNew] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [pwdState, setPwdState] = useState<
-    "idle" | "saving" | "saved" | "error"
-  >("idle");
-
-  const v = {
-    length: newPwd.length >= 8,
-    upper: /[A-Z]/.test(newPwd),
-    number: /[0-9]/.test(newPwd),
-    special: /[^A-Za-z0-9]/.test(newPwd),
-    match: newPwd.length > 0 && newPwd === confirmPwd,
-  };
-  const canSave = v.length && v.upper && v.number && v.special && v.match;
-
-  const today = new Date().toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-
-  function PwdInput({
-    value,
-    onChange,
-    show,
-    onToggle,
-    placeholder,
-  }: {
-    value: string;
-    onChange: (v: string) => void;
-    show: boolean;
-    onToggle: () => void;
-    placeholder: string;
-  }) {
-    return (
-      <div style={{ position: "relative", width: 220 }}>
-        <input
-          type={show ? "text" : "password"}
-          value={value}
-          placeholder={placeholder}
-          onChange={(e) => onChange(e.target.value)}
-          autoComplete="new-password"
-          data-1p-ignore="true"
-          data-lpignore="true"
-          style={{
-            width: "100%",
-            background: "rgba(255,255,255,0.06)",
-            border: "1px solid rgba(255,255,255,0.10)",
-            borderRadius: 8,
-            padding: "7px 36px 7px 11px",
-            fontSize: 13,
-            color: "var(--text-primary)",
-            outline: "none",
-            transition: "border-color 120ms ease, box-shadow 120ms ease",
-          }}
-          onFocus={(e) => {
-            e.currentTarget.style.borderColor = "rgba(99,102,241,0.65)";
-            e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.12)";
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)";
-            e.currentTarget.style.boxShadow = "none";
-          }}
-        />
-        <button
-          type="button"
-          onClick={onToggle}
-          style={{
-            position: "absolute",
-            right: 10,
-            top: "50%",
-            transform: "translateY(-50%)",
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            color: "var(--text-tertiary)",
-            padding: 0,
-            display: "flex",
-          }}
-        >
-          {show ? <EyeOff size={14} /> : <Eye size={14} />}
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <ContentHeader
-        icon={Shield}
-        iconBg="rgba(99,102,241,0.22)"
-        iconColor="#818cf8"
-        title="Segurança"
-        subtitle="Gerencie sua senha, sessões ativas e proteções adicionais"
-      />
-
-      <div>
-        <SectionLabel>Alterar senha</SectionLabel>
-        <SettingGroup>
-          <SettingRow label="Nova senha">
-            <PwdInput
-              value={newPwd}
-              onChange={setNewPwd}
-              show={showNew}
-              onToggle={() => setShowNew((v) => !v)}
-              placeholder="Nova senha"
-            />
-          </SettingRow>
-          <SettingRow label="Confirmar senha" last>
-            <PwdInput
-              value={confirmPwd}
-              onChange={setConfirmPwd}
-              show={showConfirm}
-              onToggle={() => setShowConfirm((v) => !v)}
-              placeholder="Confirmar nova senha"
-            />
-          </SettingRow>
-        </SettingGroup>
-
-        {newPwd.length > 0 && (
-          <div
-            style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}
-          >
-            <PasswordBadge ok={v.length} label="8+ caracteres" />
-            <PasswordBadge ok={v.upper} label="Maiúscula" />
-            <PasswordBadge ok={v.number} label="Número" />
-            <PasswordBadge ok={v.special} label="Especial" />
-            <PasswordBadge ok={v.match} label="Coincidem" />
-          </div>
-        )}
-
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            marginTop: 14,
-          }}
-        >
-          <PrimaryButton
-            onClick={() => {
-              setPwdState("saving");
-              setTimeout(() => {
-                setPwdState("saved");
-                setTimeout(() => setPwdState("idle"), 2000);
-              }, 800);
-            }}
-            disabled={!canSave || pwdState !== "idle"}
-          >
-            <SaveLabel state={pwdState} label="Alterar senha" />
-          </PrimaryButton>
-        </div>
-      </div>
-
-      <div>
-        <SectionLabel>Sessão atual</SectionLabel>
-        <SettingGroup>
-          <SettingRow label="Navegador">
-            <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-              {detectBrowser()}
-            </span>
-          </SettingRow>
-          <SettingRow label="E-mail da conta">
-            <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-              {email ?? "—"}
-            </span>
-          </SettingRow>
-          <SettingRow label="Última atividade" last>
-            <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-              {today}
-            </span>
-          </SettingRow>
-        </SettingGroup>
-      </div>
-
-      <div>
-        <SectionLabel>Proteção adicional</SectionLabel>
-        <SettingGroup>
-          <SettingRow
-            label="Autenticação em dois fatores"
-            sublabel="App autenticador (TOTP)"
-          >
-            <Badge variant="neutral">Em breve</Badge>
-          </SettingRow>
-          <SettingRow
-            label="Tokens de API"
-            sublabel="Acesso programático à plataforma"
-            last
-          >
-            <Badge variant="neutral">Em breve</Badge>
           </SettingRow>
         </SettingGroup>
       </div>
@@ -2269,7 +2257,7 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
           <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
             <button
               type="button"
-              onClick={() => onSelect("meu-perfil")}
+              onClick={() => onSelect("perfil")}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -2293,33 +2281,6 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
             >
               Editar perfil
               <ArrowRight size={12} strokeWidth={2} />
-            </button>
-            <button
-              type="button"
-              onClick={() => onSelect("seguranca")}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.10)",
-                borderRadius: 8,
-                padding: "8px 14px",
-                fontSize: 12,
-                fontWeight: 500,
-                color: "var(--text-primary)",
-                cursor: "pointer",
-                transition: "background 120ms ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(255,255,255,0.10)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "rgba(255,255,255,0.06)";
-              }}
-            >
-              <Shield size={12} strokeWidth={2} />
-              Segurança
             </button>
           </div>
         </div>
@@ -2682,7 +2643,7 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
         {/* ── Sessões ativas (2×1) ── */}
         <button
           type="button"
-          onClick={() => onSelect("seguranca")}
+          onClick={() => onSelect("perfil")}
           style={{
             ...TILE_BASE,
             gridColumn: "1 / span 2",
@@ -2850,12 +2811,10 @@ function TabContent({
   switch (id) {
     case "home":
       return <TabHome onSelect={onSelect} />;
-    case "meu-perfil":
-      return <TabMeuPerfil />;
+    case "perfil":
+      return <TabPerfil />;
     case "notificacoes":
       return <TabNotificacoes />;
-    case "seguranca":
-      return <TabSeguranca />;
     case "dados-privacidade":
       return <TabDadosPrivacidade />;
     case "dock":
