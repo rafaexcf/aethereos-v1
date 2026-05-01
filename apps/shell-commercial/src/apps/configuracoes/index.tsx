@@ -1281,7 +1281,7 @@ export function ConfiguracoesApp() {
           padding: 28,
         }}
       >
-        <div style={{ maxWidth: 952, margin: "0 auto" }}>
+        <div style={{ maxWidth: 1095, margin: "0 auto" }}>
           {/* Breadcrumb */}
           <nav
             aria-label="breadcrumb"
