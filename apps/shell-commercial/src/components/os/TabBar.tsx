@@ -173,30 +173,32 @@ function SortableTab({ tab }: { tab: OSTab }) {
           >
             {tab.title}
           </span>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              closeTab(tab.id);
-            }}
-            data-testid={`close-tab-${tab.appId}`}
-            className={`flex-none transition-opacity ml-0.5 flex items-center justify-center ${isActive ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-            style={{
-              width: 16,
-              height: 16,
-              borderRadius: "var(--radius-full)",
-              color: "var(--text-tertiary)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(255,255,255,0.10)";
-              e.currentTarget.style.color = "var(--text-primary)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.color = "var(--text-tertiary)";
-            }}
-          >
-            <X size={10} strokeWidth={2.5} />
-          </button>
+          {isActive && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                closeTab(tab.id);
+              }}
+              data-testid={`close-tab-${tab.appId}`}
+              className="flex-none ml-0.5 flex items-center justify-center"
+              style={{
+                width: 16,
+                height: 16,
+                borderRadius: "var(--radius-full)",
+                color: "var(--text-tertiary)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.10)";
+                e.currentTarget.style.color = "var(--text-primary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = "var(--text-tertiary)";
+              }}
+            >
+              <X size={10} strokeWidth={2.5} />
+            </button>
+          )}
         </>
       )}
     </div>
