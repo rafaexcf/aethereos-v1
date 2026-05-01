@@ -1,5 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { Bell, LogOut, Settings, ChevronDown } from "lucide-react";
+import {
+  Bell,
+  LogOut,
+  Settings,
+  ChevronDown,
+  MessageCircle,
+} from "lucide-react";
 import { motion, AnimatePresence, type MotionStyle } from "framer-motion";
 import { useSessionStore } from "../../stores/session";
 import { useOSStore } from "../../stores/osStore";
@@ -9,8 +15,8 @@ const DROPDOWN_STYLE: MotionStyle = {
   border: "1px solid var(--glass-border)",
   borderRadius: "var(--radius-lg)",
   boxShadow: "var(--shadow-lg)",
-  backdropFilter: `blur(var(--blur-ui))`,
-  WebkitBackdropFilter: `blur(var(--blur-ui))`,
+  backdropFilter: "blur(var(--glass-blur-heavy))",
+  WebkitBackdropFilter: "blur(var(--glass-blur-heavy))",
 };
 
 const DROPDOWN_MOTION = {
@@ -31,39 +37,6 @@ function useClickOutside(
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
   }, [ref, handler]);
-}
-
-function Clock() {
-  const [time, setTime] = useState(() => formatTime(new Date()));
-
-  useEffect(() => {
-    const now = new Date();
-    const ms = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
-    const t = setTimeout(() => {
-      setTime(formatTime(new Date()));
-      const id = setInterval(() => setTime(formatTime(new Date())), 60_000);
-      return () => clearInterval(id);
-    }, ms);
-    return () => clearTimeout(t);
-  }, []);
-
-  return (
-    <span
-      className="tabular-nums"
-      style={{
-        fontSize: 13,
-        fontWeight: 500,
-        color: "var(--text-secondary)",
-        letterSpacing: "-0.01em",
-      }}
-    >
-      {time}
-    </span>
-  );
-}
-
-function formatTime(d: Date): string {
-  return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }
 
 function NotificationsDropdown({ onClose }: { onClose: () => void }) {
@@ -95,6 +68,41 @@ function NotificationsDropdown({ onClose }: { onClose: () => void }) {
       <div className="px-4 py-8 text-center">
         <p style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
           Sem notificações
+        </p>
+      </div>
+    </motion.div>
+  );
+}
+
+function MessagesDropdown({ onClose }: { onClose: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useClickOutside(ref, onClose);
+
+  return (
+    <motion.div
+      ref={ref}
+      {...DROPDOWN_MOTION}
+      className="absolute right-0 top-full mt-2 w-72 z-50"
+      style={{ ...DROPDOWN_STYLE, overflow: "hidden" }}
+    >
+      <div
+        className="flex items-center px-4 py-2.5"
+        style={{ borderBottom: "1px solid var(--border-subtle)" }}
+      >
+        <span
+          style={{
+            fontSize: 12,
+            fontWeight: 600,
+            color: "var(--text-primary)",
+            letterSpacing: "-0.01em",
+          }}
+        >
+          Mensagens
+        </span>
+      </div>
+      <div className="px-4 py-8 text-center">
+        <p style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
+          Sem mensagens
         </p>
       </div>
     </motion.div>
@@ -207,6 +215,40 @@ function MenuItem({
   );
 }
 
+function IconButton({
+  children,
+  onClick,
+  "aria-label": ariaLabel,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  "aria-label": string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={ariaLabel}
+      className="flex items-center justify-center transition-colors"
+      style={{
+        width: 28,
+        height: 28,
+        borderRadius: "var(--radius-sm)",
+        color: "var(--text-tertiary)",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "var(--glass-bg-hover)";
+        e.currentTarget.style.color = "var(--text-secondary)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "transparent";
+        e.currentTarget.style.color = "var(--text-tertiary)";
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
 interface TopBarProps {
   companyName: string | null;
   onSignOut: () => void;
@@ -216,99 +258,98 @@ export function TopBar({ companyName, onSignOut }: TopBarProps) {
   const { email } = useSessionStore();
   const openApp = useOSStore((s) => s.openApp);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [messagesOpen, setMessagesOpen] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
   const initials = email ? email.slice(0, 2).toUpperCase() : "??";
+
+  function closeAll() {
+    setNotifOpen(false);
+    setMessagesOpen(false);
+    setAvatarOpen(false);
+  }
 
   return (
     <header
       data-testid="topbar"
       role="banner"
       aria-label="topbar"
-      className="flex shrink-0 items-center justify-between px-4"
+      className="relative flex shrink-0 items-center justify-between px-4"
       style={{
-        height: 32,
-        background: "rgba(6,9,18,0.72)",
-        backdropFilter: `blur(var(--blur-ui))`,
-        WebkitBackdropFilter: `blur(var(--blur-ui))`,
+        height: 36,
+        background: "var(--topbar-bg)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
         borderBottom: "1px solid var(--border-subtle)",
-        boxShadow: "var(--glass-specular)",
+        boxShadow: "0 1px 0 rgba(255,255,255,0.04), var(--shadow-sm)",
       }}
     >
-      {/* Left: Logo + Company */}
-      <div className="flex items-center gap-2">
+      {/* Left: ÆTHEREOS */}
+      <div className="flex items-center">
         <span
           style={{
             fontSize: 13,
             fontWeight: 700,
             letterSpacing: "-0.02em",
             color: "var(--text-primary)",
+            fontFamily: "var(--font-display)",
           }}
         >
-          Aethereos
+          ÆTHEREOS
         </span>
-
-        {companyName !== null && (
-          <>
-            <div
-              style={{
-                width: 1,
-                height: 12,
-                background: "var(--border-subtle)",
-              }}
-            />
-            <div className="flex items-center gap-1 cursor-pointer">
-              <span
-                style={{
-                  fontSize: 12,
-                  fontWeight: 500,
-                  color: "var(--text-secondary)",
-                }}
-              >
-                {companyName}
-              </span>
-              <ChevronDown
-                size={11}
-                style={{ color: "var(--text-tertiary)" }}
-              />
-            </div>
-          </>
-        )}
       </div>
 
-      {/* Right: Clock, Bell, Avatar */}
-      <div className="flex items-center gap-1">
-        <Clock />
-
+      {/* Center: Company name (absolute) */}
+      {companyName !== null && (
         <div
-          style={{ width: 1, height: 12, background: "var(--border-subtle)" }}
-          className="mx-1.5"
-        />
+          className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1 cursor-pointer select-none"
+          style={{ pointerEvents: "auto" }}
+        >
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 500,
+              color: "var(--text-secondary)",
+            }}
+          >
+            {companyName}
+          </span>
+          <ChevronDown size={11} style={{ color: "var(--text-tertiary)" }} />
+        </div>
+      )}
+
+      {/* Right: Messages, Bell, Avatar */}
+      <div className="flex items-center gap-0.5">
+        {/* Messages */}
+        <div className="relative">
+          <IconButton
+            aria-label="Mensagens"
+            onClick={() => {
+              setMessagesOpen((v) => !v);
+              setNotifOpen(false);
+              setAvatarOpen(false);
+            }}
+          >
+            <MessageCircle size={15} strokeWidth={1.7} />
+          </IconButton>
+          <AnimatePresence>
+            {messagesOpen && (
+              <MessagesDropdown onClose={() => setMessagesOpen(false)} />
+            )}
+          </AnimatePresence>
+        </div>
 
         {/* Notifications */}
         <div className="relative">
-          <button
+          <IconButton
+            aria-label="Notificações"
             onClick={() => {
               setNotifOpen((v) => !v);
+              setMessagesOpen(false);
               setAvatarOpen(false);
-            }}
-            className="flex items-center justify-center transition-colors"
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: "var(--radius-sm)",
-              color: "var(--text-tertiary)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "var(--glass-bg-hover)";
-              e.currentTarget.style.color = "var(--text-secondary)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.color = "var(--text-tertiary)";
             }}
           >
             <Bell size={15} strokeWidth={1.7} />
-          </button>
+          </IconButton>
           <AnimatePresence>
             {notifOpen && (
               <NotificationsDropdown onClose={() => setNotifOpen(false)} />
@@ -322,16 +363,17 @@ export function TopBar({ companyName, onSignOut }: TopBarProps) {
             onClick={() => {
               setAvatarOpen((v) => !v);
               setNotifOpen(false);
+              setMessagesOpen(false);
             }}
+            aria-label="Menu do usuário"
             className="flex items-center justify-center transition-opacity hover:opacity-80"
             style={{
               width: 24,
               height: 24,
-              borderRadius: "var(--radius-full)",
+              borderRadius: "50%",
               background:
                 "linear-gradient(135deg, rgba(99,102,241,0.8), rgba(30,41,80,0.9))",
-              border: "1px solid var(--glass-border-strong)",
-              boxShadow: "var(--glass-specular)",
+              border: "1px solid var(--glass-border)",
             }}
           >
             <span
@@ -351,7 +393,10 @@ export function TopBar({ companyName, onSignOut }: TopBarProps) {
                 onClose={() => setAvatarOpen(false)}
                 email={email}
                 companyName={companyName}
-                onSignOut={onSignOut}
+                onSignOut={() => {
+                  closeAll();
+                  onSignOut();
+                }}
                 onSettings={() => openApp("settings", "Configurações")}
               />
             )}
