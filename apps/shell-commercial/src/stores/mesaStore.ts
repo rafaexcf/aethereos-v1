@@ -4,45 +4,33 @@ import type { MesaItem } from "../types/os";
 
 export const WALLPAPERS = [
   "default",
-  "aurora",
-  "ocean",
   "midnight",
-  "minimal",
   "mesh",
   "sunset",
   "forest",
   "lavender",
   "cherry",
-  "slate",
   "gold",
   "ruby",
   "emerald",
   "sapphire",
   "cosmic",
-  "volcano",
-  "arctic",
 ] as const;
 export type WallpaperId = (typeof WALLPAPERS)[number];
 
 export const WALLPAPER_NAMES: Record<WallpaperId, string> = {
   default: "Cosmos",
-  aurora: "Aurora Boreal",
-  ocean: "Oceano Profundo",
   midnight: "Meia-Noite",
-  minimal: "Minimal",
   mesh: "Mesh",
   sunset: "Pôr do Sol",
   forest: "Floresta",
   lavender: "Lavanda",
   cherry: "Cerejeira",
-  slate: "Ardósia",
   gold: "Dourado",
   ruby: "Rubi",
   emerald: "Esmeralda",
   sapphire: "Safira",
   cosmic: "Cósmico",
-  volcano: "Vulcão",
-  arctic: "Ártico",
 };
 
 export const CUSTOM_WALLPAPER_ID = "custom";
