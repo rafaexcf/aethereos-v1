@@ -863,9 +863,6 @@ function TabMinhaEmpresa({
   const [cnpjLoading, setCnpjLoading] = useState(false);
   const [cnpjError, setCnpjError] = useState<string | null>(null);
   const [name, setName] = useState("");
-  const [tradeName, setTradeName] = useState("");
-  const [companyEmail, setCompanyEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [saveState, setSaveState] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
@@ -939,7 +936,7 @@ function TabMinhaEmpresa({
     if (drivers === null || activeCompanyId === null) return;
     void drivers.data
       .from("companies")
-      .select("name,cnpj,cnpj_data,trade_name,email,phone")
+      .select("name,cnpj,cnpj_data")
       .eq("id", activeCompanyId)
       .single()
       .then(
@@ -950,9 +947,6 @@ function TabMinhaEmpresa({
             name: string | null;
             cnpj: string | null;
             cnpj_data: CnpjPreview | null;
-            trade_name: string | null;
-            email: string | null;
-            phone: string | null;
           } | null;
         }) => {
           if (data === null) {
@@ -962,9 +956,6 @@ function TabMinhaEmpresa({
           if (data.name !== null) setName(data.name);
           if (data.cnpj !== null) setCnpjDisplay(maskCnpj(data.cnpj));
           if (data.cnpj_data !== null) setCnpjPreview(data.cnpj_data);
-          if (data.trade_name !== null) setTradeName(data.trade_name);
-          if (data.email !== null) setCompanyEmail(data.email);
-          if (data.phone !== null) setPhone(data.phone);
           initializedRef.current = true;
         },
       );
@@ -989,10 +980,8 @@ function TabMinhaEmpresa({
       } else {
         const data = (await res.json()) as CnpjPreview;
         setCnpjPreview(data);
-        // Auto-preencher razão social e nome fantasia caso estejam vazios
+        // Auto-preencher razão social caso esteja vazia
         if (name === "" && data.razao_social !== "") setName(data.razao_social);
-        if (tradeName === "" && data.nome_fantasia !== null)
-          setTradeName(data.nome_fantasia);
       }
     } catch (err) {
       if ((err as { name?: string }).name !== "AbortError") {
@@ -1032,9 +1021,6 @@ function TabMinhaEmpresa({
       cnpj: cnpjDigits,
       cnpj_data: cnpjPreview,
       name,
-      trade_name: tradeName !== "" ? tradeName : null,
-      email: companyEmail !== "" ? companyEmail : null,
-      phone: phone !== "" ? phone : null,
     };
 
     const { error } = await drivers.data
@@ -1238,30 +1224,8 @@ function TabMinhaEmpresa({
       <div>
         <SectionLabel>Dados da empresa</SectionLabel>
         <SettingGroup>
-          <SettingRow label="Razão social">
+          <SettingRow label="Razão social" last>
             <SettingInput value={name} onChange={setName} />
-          </SettingRow>
-          <SettingRow label="Nome fantasia">
-            <SettingInput
-              value={tradeName}
-              onChange={setTradeName}
-              placeholder="(opcional)"
-            />
-          </SettingRow>
-          <SettingRow label="E-mail corporativo">
-            <SettingInput
-              value={companyEmail}
-              onChange={setCompanyEmail}
-              type="email"
-              placeholder="contato@empresa.com"
-            />
-          </SettingRow>
-          <SettingRow label="Telefone" last>
-            <SettingInput
-              value={phone}
-              onChange={setPhone}
-              placeholder="(00) 00000-0000"
-            />
           </SettingRow>
         </SettingGroup>
       </div>
@@ -1274,6 +1238,78 @@ function TabMinhaEmpresa({
           <SaveLabel state={saveState} label="Salvar alterações" />
         </PrimaryButton>
       </SaveRow>
+
+      {/* Cadastro completo (placeholder — destino criado depois) */}
+      <button
+        type="button"
+        onClick={() => {
+          // TODO: navegar para o cadastro completo da empresa quando a rota existir
+        }}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+          padding: 18,
+          borderRadius: 12,
+          background: "rgba(255,255,255,0.04)",
+          border: "1px solid rgba(255,255,255,0.07)",
+          cursor: "pointer",
+          textAlign: "left",
+          width: "100%",
+          transition: "background 160ms ease, border-color 160ms ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+          e.currentTarget.style.borderColor = "rgba(255,255,255,0.14)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+          e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)";
+        }}
+      >
+        <div
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 10,
+            background: "rgba(6,182,212,0.18)",
+            border: "1px solid #22d3ee38",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <FileText size={18} style={{ color: "#22d3ee" }} strokeWidth={1.7} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: "var(--text-primary)",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Ver cadastro completo
+          </p>
+          <p
+            style={{
+              fontSize: 11,
+              color: "var(--text-tertiary)",
+              marginTop: 3,
+              lineHeight: 1.4,
+            }}
+          >
+            Endereço, regime tributário, sócios e documentos complementares
+          </p>
+        </div>
+        <ArrowRight
+          size={14}
+          style={{ color: "var(--text-tertiary)", flexShrink: 0 }}
+          strokeWidth={1.8}
+        />
+      </button>
     </div>
   );
 }
