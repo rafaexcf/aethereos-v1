@@ -83,10 +83,10 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    label: "Sistema",
+    label: "Avançado",
     items: [
       { id: "integracoes", label: "Integrações", icon: Link2 },
-      { id: "sobre", label: "Sobre", icon: Info },
+      { id: "sobre", label: "Sistema", icon: Info },
     ],
   },
 ];
@@ -101,7 +101,7 @@ const TAB_LABELS: Record<TabId, string> = {
   mesa: "Mesa",
   aparencia: "Aparência",
   integracoes: "Integrações",
-  sobre: "Sobre",
+  sobre: "Sistema",
 };
 
 // ─── Design primitives ────────────────────────────────────────────────────────
@@ -1387,7 +1387,6 @@ function TabPerfil({
 
   // Profile data
   const [name, setName] = useState("");
-  const [lang, setLang] = useState("pt-BR");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">(
     "idle",
   );
@@ -1455,11 +1454,9 @@ function TabPerfil({
 
   // Refs so debounce callback always reads latest values
   const nameRef = useRef(name);
-  const langRef = useRef(lang);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initializedRef = useRef(false);
   nameRef.current = name;
-  langRef.current = lang;
 
   // Password change
   const [newPwd, setNewPwd] = useState("");
@@ -1497,8 +1494,6 @@ function TabPerfil({
         for (const row of data as { key: string; value: unknown }[]) {
           if (row.key === "display_name" && typeof row.value === "string")
             setName(row.value);
-          if (row.key === "lang" && typeof row.value === "string")
-            setLang(row.value);
           if (
             row.key === "theme" &&
             (row.value === "dark" || row.value === "light")
@@ -1527,12 +1522,6 @@ function TabPerfil({
             scope_id: userId,
             key: "display_name",
             value: nameRef.current,
-          },
-          {
-            scope: "user",
-            scope_id: userId,
-            key: "lang",
-            value: langRef.current,
           },
           { scope: "user", scope_id: userId, key: "theme", value: theme },
         ];
@@ -1603,22 +1592,9 @@ function TabPerfil({
           <SettingRow
             label="E-mail"
             sublabel="Vinculado ao IdP — altere via Supabase Auth"
+            last
           >
             <SettingInput value={email ?? ""} readOnly />
-          </SettingRow>
-          <SettingRow label="Idioma" last>
-            <SettingSelect
-              value={lang}
-              onChange={(value) => {
-                setLang(value);
-                triggerAutoSave();
-              }}
-              options={[
-                { value: "pt-BR", label: "Português (Brasil)" },
-                { value: "en-US", label: "English (US)" },
-                { value: "es-ES", label: "Español" },
-              ]}
-            />
           </SettingRow>
         </SettingGroup>
       </div>
@@ -2307,11 +2283,19 @@ function TabIntegracoes() {
 // ─── Tab: Sobre ───────────────────────────────────────────────────────────────
 
 function TabSobre() {
-  const { activeCompanyId } = useSessionStore();
+  const { userId, activeCompanyId } = useSessionStore();
   const drivers = useDrivers();
   const [company, setCompany] = useState<{ name: string; slug: string } | null>(
     null,
   );
+
+  // Language preference (movido de Meu Perfil)
+  const [lang, setLang] = useState("pt-BR");
+  const [langSaveState, setLangSaveState] = useState<
+    "idle" | "saving" | "saved"
+  >("idle");
+  const langInitializedRef = useRef(false);
+  const langTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (drivers === null || activeCompanyId === null) return;
@@ -2325,18 +2309,86 @@ function TabSobre() {
       });
   }, [drivers, activeCompanyId]);
 
+  useEffect(() => {
+    if (drivers === null || userId === null) return;
+    drivers.data
+      .from("settings")
+      .select("key,value")
+      .eq("scope", "user")
+      .eq("scope_id", userId)
+      .eq("key", "lang")
+      .maybeSingle()
+      .then(({ data }: { data: { value: unknown } | null }) => {
+        if (data !== null && typeof data.value === "string") {
+          setLang(data.value);
+        }
+        langInitializedRef.current = true;
+      });
+  }, [drivers, userId]);
+
+  function handleLangChange(value: string) {
+    setLang(value);
+    if (!langInitializedRef.current) return;
+    if (drivers === null || userId === null) return;
+    setLangSaveState("saving");
+    if (langTimerRef.current !== null) clearTimeout(langTimerRef.current);
+    langTimerRef.current = setTimeout(async () => {
+      await drivers.data
+        .from("settings")
+        .upsert(
+          { scope: "user", scope_id: userId, key: "lang", value },
+          { onConflict: "scope,scope_id,key" },
+        );
+      void drivers.scp.publishEvent("platform.settings.updated", {
+        scope: "user",
+        scope_id: userId,
+        key: "lang",
+        updated_by: userId,
+      });
+      setLangSaveState("saved");
+      setTimeout(() => setLangSaveState("idle"), 2000);
+    }, 800);
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <ContentHeader
         icon={Info}
         iconBg="rgba(100,116,139,0.22)"
         iconColor="#94a3b8"
-        title="Sobre"
-        subtitle="Informações sobre a plataforma, sua empresa e o plano contratado"
+        title="Sistema"
+        subtitle="Idioma, informações da plataforma e do plano contratado"
       />
 
       <div>
-        <SectionLabel>Sistema</SectionLabel>
+        <SectionLabel>Idioma</SectionLabel>
+        <SettingGroup>
+          <SettingRow
+            label="Idioma da interface"
+            sublabel={
+              langSaveState === "saving"
+                ? "Salvando…"
+                : langSaveState === "saved"
+                  ? "Salvo!"
+                  : "Aplicado em todo o OS"
+            }
+            last
+          >
+            <SettingSelect
+              value={lang}
+              onChange={handleLangChange}
+              options={[
+                { value: "pt-BR", label: "Português (Brasil)" },
+                { value: "en-US", label: "English (US)" },
+                { value: "es-ES", label: "Español" },
+              ]}
+            />
+          </SettingRow>
+        </SettingGroup>
+      </div>
+
+      <div>
+        <SectionLabel>Plataforma</SectionLabel>
         <SettingGroup>
           <SettingRow label="Plataforma">
             <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
