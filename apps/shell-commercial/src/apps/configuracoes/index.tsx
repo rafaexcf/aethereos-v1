@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useSessionStore } from "../../stores/session";
 import { useDrivers } from "../../lib/drivers-context";
+import { AnimatedThemeToggler } from "../../components/ui/animated-theme-toggler";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -525,7 +526,6 @@ function TabPerfil() {
   const drivers = useDrivers();
   const [name, setName] = useState("");
   const [lang, setLang] = useState("pt-BR");
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">(
     "idle",
   );
@@ -547,8 +547,11 @@ function TabPerfil() {
           if (
             row.key === "theme" &&
             (row.value === "dark" || row.value === "light")
-          )
-            setTheme(row.value);
+          ) {
+            if (row.value === "light")
+              document.documentElement.classList.remove("dark");
+            else document.documentElement.classList.add("dark");
+          }
         }
       });
   }, [drivers, userId]);
@@ -556,10 +559,13 @@ function TabPerfil() {
   async function handleSave() {
     setSaveState("saving");
     if (drivers !== null && userId !== null) {
+      const currentTheme = document.documentElement.classList.contains("dark")
+        ? "dark"
+        : "light";
       const rows = [
         { scope: "user", scope_id: userId, key: "display_name", value: name },
         { scope: "user", scope_id: userId, key: "lang", value: lang },
-        { scope: "user", scope_id: userId, key: "theme", value: theme },
+        { scope: "user", scope_id: userId, key: "theme", value: currentTheme },
       ];
       for (const s of rows) {
         await drivers.data
@@ -572,8 +578,6 @@ function TabPerfil() {
         key: "profile",
         updated_by: userId,
       });
-      if (theme === "light") document.documentElement.classList.remove("dark");
-      else document.documentElement.classList.add("dark");
     }
     setSaveState("saved");
     setTimeout(() => setSaveState("idle"), 2000);
@@ -618,36 +622,33 @@ function TabPerfil() {
       <div>
         <SectionLabel>Aparência</SectionLabel>
         <SettingGroup>
-          <SettingRow label="Tema" last>
-            <div style={{ display: "flex", gap: 6 }}>
-              {(["dark", "light"] as const).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setTheme(t)}
-                  style={{
-                    padding: "6px 14px",
-                    borderRadius: 8,
-                    fontSize: 12,
-                    fontWeight: 500,
-                    border: "1px solid",
-                    cursor: "pointer",
-                    transition: "all 120ms ease",
-                    background:
-                      theme === t
-                        ? "rgba(99,102,241,0.25)"
-                        : "rgba(255,255,255,0.05)",
-                    borderColor:
-                      theme === t
-                        ? "rgba(99,102,241,0.50)"
-                        : "rgba(255,255,255,0.08)",
-                    color: theme === t ? "#a5b4fc" : "var(--text-secondary)",
-                  }}
-                >
-                  {t === "dark" ? "Escuro" : "Claro"}
-                </button>
-              ))}
-            </div>
+          <SettingRow
+            label="Tema"
+            sublabel="Alterna entre modo escuro e claro com animação"
+            last
+          >
+            <AnimatedThemeToggler
+              variant="circle"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 38,
+                height: 38,
+                borderRadius: 10,
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.10)",
+                color: "var(--text-primary)",
+                cursor: "pointer",
+                transition: "background 120ms ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.11)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+              }}
+            />
           </SettingRow>
         </SettingGroup>
       </div>
