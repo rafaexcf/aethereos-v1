@@ -1672,6 +1672,20 @@ function TabPerfil({
           </SettingRow>
         </SettingGroup>
       </div>
+
+      {/* Mais recursos */}
+      <div>
+        <SectionLabel>Mais recursos</SectionLabel>
+        <SettingGroup>
+          <SettingRow
+            label="Assinatura digital"
+            sublabel="Assine documentos com validade jurídica diretamente do OS"
+            last
+          >
+            <Badge variant="neutral">Em breve</Badge>
+          </SettingRow>
+        </SettingGroup>
+      </div>
     </div>
   );
 }
