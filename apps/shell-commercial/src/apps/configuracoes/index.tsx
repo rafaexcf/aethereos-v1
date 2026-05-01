@@ -7,6 +7,7 @@ import {
   Plug,
   ChevronRight,
   Copy,
+  Settings,
 } from "lucide-react";
 import { useSessionStore } from "../../stores/session";
 import { useDrivers } from "../../lib/drivers-context";
@@ -1190,6 +1191,44 @@ export function ConfiguracoesApp() {
         }}
       >
         <div style={{ maxWidth: 952, margin: "0 auto" }}>
+          {/* Breadcrumb */}
+          <nav
+            aria-label="breadcrumb"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              marginBottom: 20,
+            }}
+          >
+            <Settings
+              size={13}
+              style={{ color: "var(--text-tertiary)", flexShrink: 0 }}
+              strokeWidth={1.6}
+            />
+            <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
+              Configurações
+            </span>
+            <ChevronRight
+              size={12}
+              style={{
+                color: "var(--text-tertiary)",
+                flexShrink: 0,
+                opacity: 0.6,
+              }}
+              strokeWidth={1.8}
+            />
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 500,
+                color: "var(--text-secondary)",
+              }}
+            >
+              {TAB_LABELS[active]}
+            </span>
+          </nav>
+
           {TAB_CONTENT[active]}
         </div>
       </main>
