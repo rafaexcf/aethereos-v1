@@ -14,6 +14,7 @@ import { opsRoute } from "./routes/settings/ops";
 import { staffRoute } from "./routes/staff";
 import { boot } from "./lib/boot";
 import { DriversProvider } from "./lib/drivers-context";
+import { ThemeProvider } from "./lib/theme/theme-provider";
 import "./styles/globals.css";
 
 const routeTree = rootRoute.addChildren([
@@ -50,24 +51,13 @@ function App() {
       });
   }, []);
 
-  const bootBg = {
-    background: [
-      "radial-gradient(ellipse 150% 65% at 12% -8%, rgba(94,77,230,0.35) 0%, transparent 55%)",
-      "radial-gradient(ellipse 75% 55% at 90% 6%, rgba(14,165,233,0.22) 0%, transparent 50%)",
-      "#060912",
-    ].join(", "),
-  };
-
   if (!booted) {
     return (
-      <div className="flex h-screen items-center justify-center" style={bootBg}>
-        <p
-          style={{
-            fontSize: 13,
-            color: "rgba(255,255,255,0.38)",
-            letterSpacing: "-0.01em",
-          }}
-        >
+      <div
+        className="flex h-screen items-center justify-center"
+        style={{ background: "var(--bg-base)" }}
+      >
+        <p className="text-[13px] text-[var(--text-tertiary)] tracking-tight">
           Iniciando Aethereos…
         </p>
       </div>
@@ -76,8 +66,11 @@ function App() {
 
   if (bootError !== null) {
     return (
-      <div className="flex h-screen items-center justify-center" style={bootBg}>
-        <p style={{ fontSize: 13, color: "rgba(248,113,113,0.8)" }}>
+      <div
+        className="flex h-screen items-center justify-center"
+        style={{ background: "var(--bg-base)" }}
+      >
+        <p className="text-[13px] text-[var(--status-error)]">
           Erro ao iniciar: {bootError}
         </p>
       </div>
@@ -98,6 +91,8 @@ if (container === null) throw new Error("#root not found");
 
 createRoot(container).render(
   <StrictMode>
-    <App />
+    <ThemeProvider>
+      <App />
+    </ThemeProvider>
   </StrictMode>,
 );

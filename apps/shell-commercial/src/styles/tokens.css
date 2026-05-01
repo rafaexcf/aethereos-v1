@@ -1,89 +1,179 @@
-:root {
-  /* ── TAHOE BACKGROUNDS ──────────────────────────────────────────── */
-  --bg-base: #060912;
-  --bg-base-alt: #0b1120;
-  --bg-overlay: rgba(0, 0, 0, 0.72);
+/* ── TOKENS DARK (default) ───────────────────────────────────────────── */
+:root.dark,
+html.dark {
+  /* Backgrounds */
+  --bg-base: #09090b;
+  --bg-elevated: #111113;
+  --bg-surface: #18181b;
+  --bg-overlay: rgba(0, 0, 0, 0.6);
 
-  /* ── LIQUID GLASS FILLS ─────────────────────────────────────────── */
-  --glass-bg: rgba(255, 255, 255, 0.08);
-  --glass-bg-hover: rgba(255, 255, 255, 0.13);
-  --glass-bg-active: rgba(255, 255, 255, 0.18);
-  --glass-bg-subtle: rgba(255, 255, 255, 0.04);
+  /* Glass */
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-bg-hover: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-border-hover: rgba(255, 255, 255, 0.12);
+  --glass-blur: 24px;
+  --glass-blur-heavy: 40px;
 
-  /* ── LIQUID GLASS STROKES ───────────────────────────────────────── */
-  --glass-border: rgba(255, 255, 255, 0.18);
-  --glass-border-hover: rgba(255, 255, 255, 0.30);
-  --glass-border-strong: rgba(255, 255, 255, 0.24);
+  /* Text */
+  --text-primary: rgba(255, 255, 255, 0.95);
+  --text-secondary: rgba(255, 255, 255, 0.55);
+  --text-tertiary: rgba(255, 255, 255, 0.35);
+  --text-disabled: rgba(255, 255, 255, 0.2);
 
-  /* Specular top highlight — the "glass edge" effect */
-  --glass-specular: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  /* Borders */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-default: rgba(255, 255, 255, 0.1);
+  --border-hover: rgba(255, 255, 255, 0.15);
+  --border-focus: rgba(37, 99, 235, 0.5);
 
-  /* ── BLUR AMOUNTS ───────────────────────────────────────────────── */
-  --blur-ui: 40px;
-  --blur-dock: 80px;
-  --blur-overlay: 60px;
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-dock: 0 8px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
 
-  /* Backwards-compat aliases */
-  --glass-blur: var(--blur-ui);
-  --glass-blur-heavy: var(--blur-dock);
+  /* HSL tokens — shadcn/Tailwind v4 */
+  --background: 240 6% 4%;
+  --foreground: 0 0% 95%;
+  --card: 240 5% 7%;
+  --card-foreground: 0 0% 95%;
+  --card-border: 0 0% 15%;
+  --popover: 240 5% 10%;
+  --popover-foreground: 0 0% 95%;
+  --popover-border: 0 0% 15%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 4% 12%;
+  --secondary-foreground: 0 0% 95%;
+  --muted: 240 4% 15%;
+  --muted-foreground: 0 0% 55%;
+  --accent: 240 4% 15%;
+  --accent-foreground: 0 0% 95%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 95%;
+  --border: 0 0% 100% / 0.1;
+  --input: 0 0% 100% / 0.1;
+  --ring: 217 91% 60% / 0.5;
+  --sidebar: 240 5% 6%;
+  --sidebar-foreground: 0 0% 95%;
+  --sidebar-border: 0 0% 100% / 0.08;
+  --sidebar-primary: 217 91% 60%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 240 4% 15%;
+  --sidebar-accent-foreground: 0 0% 95%;
+  --sidebar-ring: 217 91% 60% / 0.5;
+  --radius: 0.625rem;
+}
 
-  /* ── TEXT ───────────────────────────────────────────────────────── */
-  --text-primary: rgba(255, 255, 255, 0.93);
-  --text-secondary: rgba(255, 255, 255, 0.60);
-  --text-tertiary: rgba(255, 255, 255, 0.36);
-  --text-disabled: rgba(255, 255, 255, 0.20);
+/* ── TOKENS LIGHT ────────────────────────────────────────────────────── */
+:root,
+html.light {
+  /* Backgrounds */
+  --bg-base: #fafaf9;
+  --bg-elevated: #ffffff;
+  --bg-surface: #f4f4f3;
+  --bg-overlay: rgba(0, 0, 0, 0.4);
 
-  /* ── BORDERS ────────────────────────────────────────────────────── */
-  --border-subtle: rgba(255, 255, 255, 0.07);
-  --border-default: rgba(255, 255, 255, 0.12);
-  --border-hover: rgba(255, 255, 255, 0.20);
-  --border-focus: rgba(99, 102, 241, 0.65);
+  /* Glass */
+  --glass-bg: rgba(0, 0, 0, 0.025);
+  --glass-bg-hover: rgba(0, 0, 0, 0.05);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-border-hover: rgba(0, 0, 0, 0.12);
+  --glass-blur: 24px;
+  --glass-blur-heavy: 40px;
 
-  /* ── SHADOWS ────────────────────────────────────────────────────── */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.55), 0 1px 4px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.65), 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-dock:
-    0 32px 80px rgba(0, 0, 0, 0.75),
-    0 8px 24px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.25);
+  /* Text */
+  --text-primary: rgba(0, 0, 0, 0.92);
+  --text-secondary: rgba(0, 0, 0, 0.6);
+  --text-tertiary: rgba(0, 0, 0, 0.4);
+  --text-disabled: rgba(0, 0, 0, 0.25);
 
-  /* ── RADIUS ─────────────────────────────────────────────────────── */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 18px;
-  --radius-xl: 26px;
-  --radius-dock: 30px;
-  --radius-full: 9999px;
+  /* Borders */
+  --border-subtle: rgba(0, 0, 0, 0.05);
+  --border-default: rgba(0, 0, 0, 0.08);
+  --border-hover: rgba(0, 0, 0, 0.12);
+  --border-focus: rgba(37, 99, 235, 0.5);
 
-  /* ── TRANSITIONS ────────────────────────────────────────────────── */
-  --transition-fast: 100ms ease;
-  --transition-default: 180ms ease;
-  --transition-slow: 320ms ease;
-  --transition-spring: 500ms cubic-bezier(0.16, 1, 0.3, 1);
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --shadow-dock: 0 8px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.06);
 
-  /* ── SYSTEM ACCENT ──────────────────────────────────────────────── */
-  --accent: #6366f1;
-  --accent-hover: #818cf8;
-  --accent-dim: rgba(99, 102, 241, 0.16);
-  --accent-border: rgba(99, 102, 241, 0.38);
-  --accent-glow: rgba(99, 102, 241, 0.4);
+  /* HSL tokens — shadcn/Tailwind v4 */
+  --background: 60 5% 98%;
+  --foreground: 0 0% 8%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 8%;
+  --card-border: 0 0% 90%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 8%;
+  --popover-border: 0 0% 90%;
+  --primary: 217 91% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 60 5% 95%;
+  --secondary-foreground: 0 0% 8%;
+  --muted: 60 5% 92%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 60 5% 92%;
+  --accent-foreground: 0 0% 8%;
+  --destructive: 0 72% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 0% / 0.08;
+  --input: 0 0% 0% / 0.08;
+  --ring: 217 91% 50% / 0.5;
+  --sidebar: 60 5% 96%;
+  --sidebar-foreground: 0 0% 8%;
+  --sidebar-border: 0 0% 0% / 0.06;
+  --sidebar-primary: 217 91% 50%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 60 5% 92%;
+  --sidebar-accent-foreground: 0 0% 8%;
+  --sidebar-ring: 217 91% 50% / 0.5;
+  --radius: 0.625rem;
+}
 
-  /* ── APP BRAND COLORS ───────────────────────────────────────────── */
+/* ── TOKENS COMPARTILHADOS ───────────────────────────────────────────── */
+:root,
+html.light,
+html.dark {
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-dock: 22px;
+
+  /* Transitions */
+  --transition-fast: 120ms ease;
+  --transition-default: 200ms ease;
+  --transition-slow: 300ms ease;
+  --transition-spring: 400ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* App colors */
   --color-comercio: #f0fc05;
   --color-logitix: #059669;
   --color-erp: #7c3aed;
   --color-admin: #ef4444;
   --color-appstore: #0ea5e9;
+  --color-drive: #06b6d4;
+  --color-pessoas: #8b5cf6;
+  --color-chat: #06b6d4;
+  --color-rh: #10b981;
+  --color-copilot: #8b5cf6;
+  --color-auditoria: #f59e0b;
+  --color-settings: #64748b;
   --color-neutral: #64748b;
 
-  /* ── TYPOGRAPHY ─────────────────────────────────────────────────── */
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display",
-    "SF Pro Text", "Inter", system-ui, sans-serif;
-  --font-mono: "SF Mono", "JetBrains Mono", "Fira Code", monospace;
+  /* Status */
+  --status-success: #10b981;
+  --status-warning: #f59e0b;
+  --status-error: #ef4444;
+  --status-info: #3b82f6;
 
-  /* ── ELEVATED SURFACE (glass over base) ─────────────────────────── */
-  --bg-elevated: rgba(16, 22, 42, 0.94);
-  --bg-surface: rgba(255, 255, 255, 0.05);
+  /* Typography */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-display: "Outfit", "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
 }
