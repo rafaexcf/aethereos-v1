@@ -63,7 +63,7 @@ function ControlPanel({
       transition={{ type: "spring", stiffness: 420, damping: 32, mass: 0.65 }}
       className="fixed z-[91] flex flex-col"
       style={{
-        top: 42,
+        top: 48,
         right: 12,
         width: 296,
         transformOrigin: "top right",
@@ -279,7 +279,7 @@ export function TopBar({ companyName, onSignOut }: TopBarProps) {
         aria-label="topbar"
         className="flex shrink-0 items-center justify-between px-4"
         style={{
-          height: 36,
+          height: 42,
           background: "rgba(6,9,18,0.96)",
           borderBottom: "1px solid var(--glass-border)",
           position: "relative",
