@@ -1616,7 +1616,7 @@ function TabPerfil({
       <div>
         <SectionLabel>Informações pessoais</SectionLabel>
         <SettingGroup>
-          <SettingRow label="Nome de exibição">
+          <SettingRow label="Nome Completo">
             <SettingInput
               value={name}
               onChange={(value) => {
@@ -1634,18 +1634,6 @@ function TabPerfil({
           </SettingRow>
         </SettingGroup>
       </div>
-
-      {/* Identificação */}
-      {userId !== null && (
-        <div>
-          <SectionLabel>Identificação</SectionLabel>
-          <SettingGroup>
-            <SettingRow label="ID do usuário" last>
-              <MonoCode>{userId}</MonoCode>
-            </SettingRow>
-          </SettingGroup>
-        </div>
-      )}
 
       <SaveRow>
         <PrimaryButton
