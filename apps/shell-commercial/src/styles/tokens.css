@@ -1,13 +1,13 @@
-/* ── TOKENS DARK (default) ───────────────────────────────────────────── */
+/* ── TOKENS DARK (V2-real slate-tinted) ──────────────────────────────── */
 :root.dark,
 html.dark {
-  /* Backgrounds */
-  --bg-base: #09090b;
-  --bg-elevated: #111113;
-  --bg-surface: #18181b;
+  /* Backgrounds — slate-tinted, NÃO preto puro (V2-real) */
+  --bg-base: #0f151b;
+  --bg-elevated: #191d21;
+  --bg-surface: #272d35;
   --bg-overlay: rgba(0, 0, 0, 0.6);
 
-  /* Glass */
+  /* Glass — white com baixa opacidade */
   --glass-bg: rgba(255, 255, 255, 0.03);
   --glass-bg-hover: rgba(255, 255, 255, 0.06);
   --glass-border: rgba(255, 255, 255, 0.08);
@@ -33,49 +33,63 @@ html.dark {
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
   --shadow-dock: 0 8px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
 
-  /* HSL tokens — shadcn/Tailwind v4 */
-  --background: 240 6% 4%;
+  /* Label text-shadow contextual ao tema */
+  --label-text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+
+  /* Wallpapers dark */
+  --wallpaper-default: radial-gradient(ellipse at top, #1a1a3e 0%, #0a0a1a 50%, #050510 100%);
+  --wallpaper-aurora: radial-gradient(ellipse at bottom left, #0a1628 0%, #0d1b2a 30%, #1a0a2e 70%, #0a0a14 100%);
+  --wallpaper-ocean: linear-gradient(160deg, #0c1929 0%, #0a2540 40%, #061a2e 100%);
+  --wallpaper-midnight: radial-gradient(circle at 30% 20%, #1a1040 0%, #0a0a18 60%, #050508 100%);
+  --wallpaper-minimal: #0f151b;
+  --wallpaper-mesh: radial-gradient(ellipse at 20% 50%, rgba(29, 78, 216, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 50%, rgba(124, 58, 237, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(16, 185, 129, 0.1) 0%, transparent 50%),
+    #0f151b;
+
+  /* HSL tokens — shadcn/Tailwind v4 (≈ slate-tinted dark) */
+  --background: 210 24% 8%;
   --foreground: 0 0% 95%;
-  --card: 240 5% 7%;
+  --card: 215 9% 12%;
   --card-foreground: 0 0% 95%;
   --card-border: 0 0% 15%;
-  --popover: 240 5% 10%;
+  --popover: 220 10% 18%;
   --popover-foreground: 0 0% 95%;
   --popover-border: 0 0% 15%;
   --primary: 217 91% 60%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 240 4% 12%;
+  --secondary: 215 9% 14%;
   --secondary-foreground: 0 0% 95%;
-  --muted: 240 4% 15%;
+  --muted: 215 9% 17%;
   --muted-foreground: 0 0% 55%;
-  --accent: 240 4% 15%;
+  --accent: 215 9% 17%;
   --accent-foreground: 0 0% 95%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 95%;
   --border: 0 0% 100% / 0.1;
   --input: 0 0% 100% / 0.1;
   --ring: 217 91% 60% / 0.5;
-  --sidebar: 240 5% 6%;
+  --sidebar: 210 24% 7%;
   --sidebar-foreground: 0 0% 95%;
   --sidebar-border: 0 0% 100% / 0.08;
   --sidebar-primary: 217 91% 60%;
   --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 240 4% 15%;
+  --sidebar-accent: 215 9% 17%;
   --sidebar-accent-foreground: 0 0% 95%;
   --sidebar-ring: 217 91% 60% / 0.5;
   --radius: 0.625rem;
 }
 
-/* ── TOKENS LIGHT ────────────────────────────────────────────────────── */
+/* ── TOKENS LIGHT (Notion/Apple style) ───────────────────────────────── */
 :root,
 html.light {
-  /* Backgrounds */
+  /* Backgrounds — off-white acinzentado */
   --bg-base: #fafaf9;
   --bg-elevated: #ffffff;
   --bg-surface: #f4f4f3;
   --bg-overlay: rgba(0, 0, 0, 0.4);
 
-  /* Glass */
+  /* Glass — black com baixa opacidade (inverso do dark) */
   --glass-bg: rgba(0, 0, 0, 0.025);
   --glass-bg-hover: rgba(0, 0, 0, 0.05);
   --glass-border: rgba(0, 0, 0, 0.08);
@@ -83,7 +97,7 @@ html.light {
   --glass-blur: 24px;
   --glass-blur-heavy: 40px;
 
-  /* Text */
+  /* Text — não preto puro */
   --text-primary: rgba(0, 0, 0, 0.92);
   --text-secondary: rgba(0, 0, 0, 0.6);
   --text-tertiary: rgba(0, 0, 0, 0.4);
@@ -95,11 +109,25 @@ html.light {
   --border-hover: rgba(0, 0, 0, 0.12);
   --border-focus: rgba(37, 99, 235, 0.5);
 
-  /* Shadows */
+  /* Shadows — mais visíveis em light para ter profundidade */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
   --shadow-dock: 0 8px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.06);
+
+  /* Label text-shadow contextual ao tema */
+  --label-text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+
+  /* Wallpapers light */
+  --wallpaper-default: radial-gradient(ellipse at top, #f4f4f0 0%, #fafaf9 50%, #ffffff 100%);
+  --wallpaper-aurora: radial-gradient(ellipse at bottom left, #f0f4ff 0%, #fff0f8 30%, #f8f0ff 70%, #fafaff 100%);
+  --wallpaper-ocean: linear-gradient(160deg, #ecf3ff 0%, #e0f0ff 40%, #f0f8ff 100%);
+  --wallpaper-midnight: radial-gradient(circle at 30% 20%, #f0e8ff 0%, #fafaf9 60%, #ffffff 100%);
+  --wallpaper-minimal: #fafaf9;
+  --wallpaper-mesh: radial-gradient(ellipse at 20% 50%, rgba(219, 234, 254, 0.5) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 50%, rgba(237, 233, 254, 0.5) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(209, 250, 229, 0.4) 0%, transparent 50%),
+    #fafaf9;
 
   /* HSL tokens — shadcn/Tailwind v4 */
   --background: 60 5% 98%;
@@ -134,7 +162,7 @@ html.light {
   --radius: 0.625rem;
 }
 
-/* ── TOKENS COMPARTILHADOS ───────────────────────────────────────────── */
+/* ── TOKENS COMPARTILHADOS (idênticos em ambos modos) ────────────────── */
 :root,
 html.light,
 html.dark {
@@ -151,22 +179,33 @@ html.dark {
   --transition-slow: 300ms ease;
   --transition-spring: 400ms cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* App colors */
+  /* App colors — V2-real (usar EXATAMENTE estes) */
+  --color-mesa: #64748b;
+  --color-dashboard: #64748b;
   --color-comercio: #f0fc05;
   --color-logitix: #059669;
   --color-erp: #7c3aed;
-  --color-admin: #ef4444;
-  --color-appstore: #0ea5e9;
+  --color-rh: #8b5cf6;
+  --color-notes: #eab308;
+  --color-calendar: #0ea5e9;
   --color-drive: #06b6d4;
-  --color-pessoas: #8b5cf6;
+  --color-messaging: #06b6d4;
   --color-chat: #06b6d4;
-  --color-rh: #10b981;
-  --color-copilot: #8b5cf6;
-  --color-auditoria: #f59e0b;
+  --color-crm-vendas: #f97316;
+  --color-projects: #8b5cf6;
+  --color-magic-store: #0ea5e9;
+  --color-administrativo: #f59e0b;
+  --color-support: #64748b;
   --color-settings: #64748b;
+  --color-empresas: #06b6d4;
+  --color-admin: #ef4444;
+  --color-ae-ai: #8b5cf6;
+  --color-pessoas: #8b5cf6;
+  --color-auditoria: #f59e0b;
+  --color-governanca: #ef4444;
   --color-neutral: #64748b;
 
-  /* Status */
+  /* Status semantic */
   --status-success: #10b981;
   --status-warning: #f59e0b;
   --status-error: #ef4444;

@@ -19,8 +19,8 @@ export class ErrorBoundary extends Component<Props, State> {
     return { error };
   }
 
-  override componentDidCatch(error: Error, _info: ErrorInfo) {
-    console.error("[AppFrame] app crashed:", error.message);
+  override componentDidCatch(_error: Error, _info: ErrorInfo) {
+    // Error displayed in render; structured logging via OTel pending.
   }
 
   handleReset = () => {

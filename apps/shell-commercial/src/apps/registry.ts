@@ -70,7 +70,7 @@ export const APP_REGISTRY: OSApp[] = [
     id: "rh",
     name: "RH",
     icon: "Users",
-    color: "#10b981",
+    color: "#8b5cf6",
     component: React.lazy(() =>
       import("./rh/index").then((m) => ({ default: m.RHApp })),
     ),

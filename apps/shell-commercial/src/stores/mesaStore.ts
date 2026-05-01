@@ -2,39 +2,30 @@ import { create } from "zustand";
 import { useSessionStore } from "./session";
 import type { MesaItem } from "../types/os";
 
-export const WALLPAPERS: Record<string, string> = {
-  tahoe: "transparent",
-  aurora:
-    "radial-gradient(ellipse 140% 70% at 15% -5%, rgba(94,77,230,0.55) 0%, transparent 52%), radial-gradient(ellipse 70% 55% at 88% 8%, rgba(14,165,233,0.40) 0%, transparent 48%), radial-gradient(ellipse 50% 40% at 55% 95%, rgba(56,189,248,0.22) 0%, transparent 65%), #060912",
-  ocean: "linear-gradient(160deg, #0c1929 0%, #0a2540 40%, #061a2e 100%)",
-  midnight:
-    "radial-gradient(circle at 30% 20%, #1a1040 0%, #0a0a18 60%, #050508 100%)",
-  minimal: "#0f151b",
-  nebula:
-    "radial-gradient(ellipse at 70% 30%, #1a0a3e 0%, #0d0a2a 40%, #050510 100%)",
-  forest: "linear-gradient(170deg, #0a1a0f 0%, #0d2818 40%, #061a10 100%)",
-  sunset:
-    "radial-gradient(ellipse at bottom, #1a1020 0%, #200a15 30%, #0a0a14 70%, #050508 100%)",
+export const WALLPAPERS = [
+  "default",
+  "aurora",
+  "ocean",
+  "midnight",
+  "minimal",
+  "mesh",
+] as const;
+export type WallpaperId = (typeof WALLPAPERS)[number];
+
+export const WALLPAPER_NAMES: Record<WallpaperId, string> = {
+  default: "Cosmos",
+  aurora: "Aurora Boreal",
+  ocean: "Oceano Profundo",
+  midnight: "Meia-Noite",
+  minimal: "Minimal",
+  mesh: "Mesh",
 };
 
-export function getWallpaperStyle(value: string): React.CSSProperties {
-  if (value === "transparent") {
-    return { background: "transparent" };
-  }
-  if (value.startsWith("/") || value.startsWith("http")) {
-    return {
-      backgroundImage: `url(${value})`,
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-    };
-  }
-  if (value.includes("gradient")) {
-    return { background: value };
-  }
-  return { backgroundColor: value };
+export function getWallpaperStyle(id: string): React.CSSProperties {
+  return { background: `var(--wallpaper-${id}, var(--bg-base))` };
 }
 
-const DEFAULT_WALLPAPER = "tahoe";
+const DEFAULT_WALLPAPER = "default";
 
 const DEFAULT_LAYOUT: MesaItem[] = [
   {
