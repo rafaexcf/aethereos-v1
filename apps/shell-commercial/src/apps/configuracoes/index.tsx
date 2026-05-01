@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Copy,
   Settings,
+  Search,
 } from "lucide-react";
 import { useSessionStore } from "../../stores/session";
 import { useDrivers } from "../../lib/drivers-context";
@@ -1061,9 +1062,14 @@ function Sidebar({
   active: TabId;
   onSelect: (id: TabId) => void;
 }) {
-  const { email } = useSessionStore();
-  const { activeCompanyId } = useSessionStore();
-  const initials = email ? email.slice(0, 2).toUpperCase() : "??";
+  const [query, setQuery] = useState("");
+
+  const filtered = NAV_SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.filter((item) =>
+      item.label.toLowerCase().includes(query.toLowerCase()),
+    ),
+  })).filter((section) => section.items.length > 0);
 
   return (
     <aside
@@ -1077,73 +1083,78 @@ function Sidebar({
         overflowY: "auto",
       }}
     >
-      {/* User card */}
+      {/* App identity */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          gap: 12,
-          padding: 16,
+          gap: 10,
+          padding: "16px 14px 12px",
           borderBottom: "1px solid rgba(255,255,255,0.06)",
         }}
       >
-        <div
+        <Settings
+          size={18}
+          style={{ color: "var(--text-primary)", flexShrink: 0 }}
+          strokeWidth={1.6}
+        />
+        <span
           style={{
-            width: 40,
-            height: 40,
-            borderRadius: "50%",
-            background:
-              "linear-gradient(135deg, rgba(99,102,241,0.85), rgba(30,41,80,0.95))",
-            border: "1px solid rgba(255,255,255,0.12)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
+            fontSize: 14,
+            fontWeight: 600,
+            color: "var(--text-primary)",
+            letterSpacing: "-0.02em",
+            fontFamily: "var(--font-display)",
           }}
         >
-          <span
+          Configurações
+        </span>
+      </div>
+
+      {/* Search */}
+      <div style={{ padding: "10px 10px 4px" }}>
+        <div style={{ position: "relative" }}>
+          <Search
+            size={13}
             style={{
-              color: "rgba(255,255,255,0.92)",
-              fontSize: 14,
-              fontWeight: 700,
+              position: "absolute",
+              left: 9,
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "var(--text-tertiary)",
+              pointerEvents: "none",
             }}
-          >
-            {initials}
-          </span>
-        </div>
-        <div style={{ minWidth: 0 }}>
-          <p
+            strokeWidth={1.8}
+          />
+          <input
+            type="search"
+            placeholder="Buscar…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
             style={{
+              width: "100%",
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 8,
+              padding: "6px 10px 6px 28px",
               fontSize: 12,
-              fontWeight: 600,
               color: "var(--text-primary)",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
+              outline: "none",
+              transition: "border-color 120ms ease",
             }}
-          >
-            {email ?? "—"}
-          </p>
-          {activeCompanyId !== null && (
-            <p
-              style={{
-                fontSize: 11,
-                color: "var(--text-tertiary)",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                marginTop: 2,
-              }}
-            >
-              {activeCompanyId.slice(0, 8)}…
-            </p>
-          )}
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = "rgba(99,102,241,0.50)";
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
+            }}
+          />
         </div>
       </div>
 
       {/* Navigation */}
-      <nav style={{ flex: 1, padding: "8px 8px 16px" }}>
-        {NAV_SECTIONS.map((section, sectionIdx) => (
+      <nav style={{ flex: 1, padding: "4px 8px 16px" }}>
+        {filtered.map((section, sectionIdx) => (
           <div
             key={section.label}
             style={{ marginTop: sectionIdx === 0 ? 4 : 8 }}
@@ -1208,30 +1219,30 @@ function Sidebar({
                     }
                   }}
                 >
-                  <div
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: 8,
-                      background: item.iconBg,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <Icon
-                      size={15}
-                      style={{ color: item.iconColor }}
-                      strokeWidth={1.8}
-                    />
-                  </div>
+                  <Icon
+                    size={15}
+                    style={{ color: "currentColor", flexShrink: 0 }}
+                    strokeWidth={1.8}
+                  />
                   {item.label}
                 </button>
               );
             })}
           </div>
         ))}
+
+        {filtered.length === 0 && (
+          <p
+            style={{
+              fontSize: 12,
+              color: "var(--text-tertiary)",
+              padding: "16px 8px",
+              textAlign: "center",
+            }}
+          >
+            Nenhum resultado para "{query}"
+          </p>
+        )}
       </nav>
     </aside>
   );
