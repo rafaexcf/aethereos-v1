@@ -7,7 +7,7 @@ import { Dock } from "./Dock";
 import { OnboardingWizard } from "./OnboardingWizard";
 import { useSessionStore } from "../../stores/session";
 import { useOSStore } from "../../stores/osStore";
-import { useMesaStore } from "../../stores/mesaStore";
+import { useMesaStore, getWallpaperStyle } from "../../stores/mesaStore";
 import { CopilotDrawer } from "../../apps/copilot/index";
 
 export function OSDesktop() {
@@ -22,6 +22,8 @@ export function OSDesktop() {
   } = useSessionStore();
   const { aiModalOpen, closeAIModal } = useOSStore();
   const fetchLayout = useMesaStore((s) => s.fetchLayout);
+  const wallpaper = useMesaStore((s) => s.wallpaper);
+  const wallpaperUrl = useMesaStore((s) => s.wallpaperUrl);
   const [companyName, setCompanyName] = useState<string | null>(null);
   // null = loading, true = done, false = show wizard
   const [onboardingCompleted, setOnboardingCompleted] = useState<
@@ -81,13 +83,7 @@ export function OSDesktop() {
       className="flex flex-col h-screen w-screen overflow-hidden relative"
       style={{
         paddingTop: 42,
-        background: [
-          "radial-gradient(ellipse 160% 75% at 10% -10%, rgba(99,77,255,0.65) 0%, transparent 50%)",
-          "radial-gradient(ellipse 80% 65% at 92% 5%, rgba(14,165,233,0.50) 0%, transparent 45%)",
-          "radial-gradient(ellipse 60% 50% at 55% 105%, rgba(56,189,248,0.30) 0%, transparent 60%)",
-          "radial-gradient(ellipse 120% 90% at 50% 50%, rgba(6,9,18,0.88) 30%, transparent 100%)",
-          "#060912",
-        ].join(", "),
+        ...getWallpaperStyle(wallpaper, wallpaperUrl),
       }}
     >
       <TopBar companyName={companyName} onSignOut={handleSignOut} />
