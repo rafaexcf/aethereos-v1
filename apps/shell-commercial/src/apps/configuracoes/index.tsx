@@ -1007,6 +1007,9 @@ function TabSeguranca() {
           value={value}
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
+          autoComplete="new-password"
+          data-1p-ignore="true"
+          data-lpignore="true"
           style={{
             width: "100%",
             background: "rgba(255,255,255,0.06)",
@@ -1818,9 +1821,17 @@ function Sidebar({
           />
           <input
             type="search"
+            name="ae-config-nav-filter"
             placeholder="Buscar…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck={false}
+            data-1p-ignore="true"
+            data-lpignore="true"
+            data-form-type="other"
             style={{
               width: "100%",
               background: "rgba(255,255,255,0.05)",
