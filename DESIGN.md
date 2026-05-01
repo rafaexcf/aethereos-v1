@@ -2,9 +2,12 @@
 
 > **Documento canônico.** Toda decisão visual em Camada 1 (`shell-commercial`) e em apps Camada 2 derivados deve respeitar este documento. Mudanças no design system são feitas via PR específica que atualiza este arquivo + commit referenciando.
 >
-> Este documento substitui qualquer convenção visual implícita anterior. Se houver código que viola estas regras, é dívida técnica (não verdade alternativa).
+> Este documento é o canon. Se houver código que viola estas regras, é dívida técnica (não verdade alternativa).
 >
-> **Inspiração principal:** macOS Tahoe 26 (Apple, 2025) — sistema **Liquid Glass**. Adaptado ao contexto B2B brasileiro e ao paradigma OS-no-browser do Aethereos.
+> **Inspiração:**
+>
+> - **Dark mode:** macOS Sequoia + Linear + Vercel + Raycast (escuro, premium, glass sutil)
+> - **Light mode:** Notion + Apple (off-white acinzentado, soft, suave)
 
 ---
 
@@ -14,429 +17,660 @@
 
 1. **OS-first, não SaaS-first.** Aethereos é um sistema operacional no navegador, não um dashboard. Hierarquia visual replica conceitos de OS desktop — Mesa (área de trabalho), Dock (barra de apps), TabBar (tabs ativas), TopBar (menu global). O usuário deve sentir-se em um ambiente coerente, não em uma sequência de páginas.
 
-2. **Liquid Glass como material primário.** Painéis, controles e elementos elevados usam **glass material** — translúcido, com blur, refração suave, borda sutil. O glass não é um efeito decorativo: é o material padrão. Tudo que flutua sobre o background usa glass.
+2. **Dark default, Light first-class.** Aethereos abre em dark mode. Light mode é alternativa equivalente (não fallback), com tokens próprios e qualidade visual ao mesmo nível.
 
-3. **Profundidade através de camadas, não de sombras pesadas.** Hierarquia visual vem de:
-   - Background (Mesa, sólido ou wallpaper)
-   - Mid layer (containers de app, semi-transparentes)
-   - Glass elements (TopBar, Dock, drawers, popovers, modais)
-   - Foreground (texto, ícones, controles ativos)
+3. **Glass sutil, não vibrante.** Glass material existe (Sequoia-style), mas com baixa opacidade. Em dark: white com 3% opacity. Em light: black com baixa opacity. É refinamento, não efeito decorativo. Usado em Dock, dropdowns, popovers, modais. **TopBar é sólida em ambos os modos — sem blur.**
 
-4. **Movimento contextual, não decorativo.** Animações servem propósitos: feedback de interação, transição de estado, comunicação de hierarquia. Nada anima sem razão.
+4. **Profundidade através de camadas, não de sombras pesadas.** Em dark, hierarquia vem de mais escuro → mais claro nas camadas. Em light, mais claro → mais branco. Glass elements flutuam sobre o resto.
 
-5. **Conteúdo é o protagonista.** Glass material e UI são meios pra destacar conteúdo. Texto deve ser legível, dados devem ser hierárquicos, ações devem ser claras. Quando glass compete com conteúdo, glass cede.
+5. **Movimento contextual, não decorativo.** Animações servem propósitos: feedback, transição de estado, hierarquia. Spring-based easing.
 
-6. **Brasileiro discreto.** Não decorativo, não barroco. Português direto, ícones diretos, espaçamento confortável. Nem latino "rico em cor", nem norte-americano "spreadsheet em fonte 11px". Equilíbrio sóbrio.
+6. **Conteúdo é o protagonista.** Glass material e UI são meios pra destacar conteúdo.
+
+7. **Brasileiro discreto.** Não decorativo, não barroco. Espaçamento confortável. Equilíbrio sóbrio.
 
 ### 1.2 O que NÃO é Aethereos
 
-- **Não é skeumorphism.** Sem ícones desenhados como objetos físicos, sem sombras 3D pesadas, sem texturas de couro/madeira/vidro fotorrealista.
-- **Não é flat puro.** Sem cores chapadas sem profundidade, sem retângulos rígidos.
-- **Não é "cyberpunk neon".** Sem ciano e roxo neon competindo, sem grids de matrix, sem sci-fi.
-- **Não é "pastel orgânico".** Sem cores Lo-Fi, sem ilustrações 3D, sem mascotes.
-- **Não é Bootstrap.** Sem botões azul-padrão, sem alerts amarelos, sem cards com border-radius pequeno.
+- ❌ Skeumorphism
+- ❌ Flat puro (cores chapadas sem profundidade)
+- ❌ Apple Tahoe (aurora colorida vibrante full-screen, TopBar com blur)
+- ❌ Cyberpunk neon
+- ❌ Pastel orgânico saturado
+- ❌ Bootstrap (botões azul-padrão sem refinamento)
+- ❌ Light mode high-contrast (preto puro #000 sobre branco puro #fff cansa vista)
+- ❌ Dark mode com fundo cinza claro (#222 não é dark, é "cinza")
 
 ---
 
-## 2. Modos: Light, Dark, System
+## 2. Modos: Dark e Light
 
-Aethereos suporta **3 modos via toggle no Settings**:
+### 2.1 Default e toggle
 
-- **Dark** (padrão inicial — fundo escuro com aurora gradient)
-- **Light** (fundo claro com aurora suave)
-- **System** (segue OS do usuário)
+- **Default:** Dark (primeira visita sem preferência salva)
+- **Toggle:** botão Dark ↔ Light em Settings (app `configuracoes`)
+- **Persistência:** `localStorage` chave `aethereos-theme` (valores: `'dark'` | `'light'`) + sincronizado com `kernel.user_preferences.theme` quando logado
+- **System mode** (segue OS): evolução futura v2.1, não v2.0
 
-Toggle do modo persiste em `localStorage` + sincroniza com `kernel.user_preferences.theme` no banco quando logado.
+### 2.2 Implementação
 
-**O modo determina:**
+- Classe no `<html>`: `dark` (default) ou `light`
+- shadcn/ui usa `:is(.dark *)` selector — funciona com classe
+- Tokens divergem em `:root` (light) e `.dark` (dark) — invertendo a convenção shadcn padrão
+- ThemeProvider em React hooks lê localStorage no mount, aplica classe, expõe `setTheme(theme)`
 
-- Background (Mesa)
-- Cor de texto
-- Tonalidade dos glass elements (mais escuros em dark, mais claros em light)
-- Imagens contextuais (logos, ilustrações vão ter variantes)
+### 2.3 Sem flash on load (FOIT/FOUC)
+
+Script inline no `<head>` antes do bundle JS:
+
+```html
+<script>
+  (function () {
+    var t = localStorage.getItem("aethereos-theme") || "dark";
+    document.documentElement.classList.add(t);
+  })();
+</script>
+```
+
+Sem isso, página carrega em light (default CSS), JS lê localStorage e troca pra dark — flash visível.
 
 ---
 
-## 3. Tokens CSS — Variáveis canônicas
+## 3. Tokens CSS
 
 Todos os componentes consomem variáveis CSS, **nunca cores hard-coded**.
 
-### 3.1 Base — Backgrounds
+Estrutura: dois conjuntos de tokens convivem:
+
+- **Tokens nomeados em rgba/hex** — fonte primária, mais legível.
+- **Tokens HSL para shadcn/Tailwind v4** — convertidos pra HSL pra integração com `@theme inline`.
+
+### 3.1 Tokens primários — DARK (default)
 
 ```css
-:root[data-theme="dark"] {
-  /* Mesa background — aurora gradient sobre base escura */
-  --bg-base: #0a0e1a;
-  --bg-aurora-1: #1e1b4b; /* indigo profundo */
-  --bg-aurora-2: #312e81; /* indigo médio */
-  --bg-aurora-3: #4c1d95; /* purple */
-  --bg-aurora-4: #1e3a8a; /* azul */
+:root.dark,
+html.dark {
+  /* Backgrounds */
+  --bg-base: #09090b; /* fundo Mesa, sidebars */
+  --bg-elevated: #111113; /* cards, conteúdo de apps, modais */
+  --bg-surface: #18181b; /* hover, inputs, header de tabela */
+  --bg-overlay: rgba(0, 0, 0, 0.6); /* overlay de modais */
 
-  /* Mid layer — containers de app */
-  --bg-elevated: rgba(20, 24, 38, 0.6);
-  --bg-elevated-strong: rgba(20, 24, 38, 0.85);
-
-  /* Surface — cards, popovers internos */
-  --bg-surface: rgba(30, 35, 50, 0.7);
-  --bg-surface-hover: rgba(40, 45, 65, 0.8);
-}
-
-:root[data-theme="light"] {
-  --bg-base: #f5f7fb;
-  --bg-aurora-1: #c7d2fe; /* indigo claro */
-  --bg-aurora-2: #ddd6fe; /* purple claro */
-  --bg-aurora-3: #bfdbfe; /* azul claro */
-  --bg-aurora-4: #fbcfe8; /* rosa muito claro */
-
-  --bg-elevated: rgba(255, 255, 255, 0.7);
-  --bg-elevated-strong: rgba(255, 255, 255, 0.92);
-
-  --bg-surface: rgba(255, 255, 255, 0.85);
-  --bg-surface-hover: rgba(255, 255, 255, 0.95);
-}
-```
-
-### 3.2 Glass — Material translúcido
-
-```css
-:root[data-theme="dark"] {
-  --glass-fill: rgba(20, 25, 40, 0.55);
-  --glass-fill-strong: rgba(20, 25, 40, 0.78);
+  /* Glass (white com baixa opacidade) */
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-bg-hover: rgba(255, 255, 255, 0.06);
   --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-border-strong: rgba(255, 255, 255, 0.14);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --glass-border-hover: rgba(255, 255, 255, 0.12);
   --glass-blur: 24px;
-  --glass-saturation: 180%;
-}
+  --glass-blur-heavy: 40px;
 
-:root[data-theme="light"] {
-  --glass-fill: rgba(255, 255, 255, 0.6);
-  --glass-fill-strong: rgba(255, 255, 255, 0.85);
-  --glass-border: rgba(0, 0, 0, 0.06);
-  --glass-border-strong: rgba(0, 0, 0, 0.1);
-  --glass-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
-  --glass-blur: 24px;
-  --glass-saturation: 180%;
-}
-```
+  /* Text (white com decay) */
+  --text-primary: rgba(255, 255, 255, 0.95);
+  --text-secondary: rgba(255, 255, 255, 0.55);
+  --text-tertiary: rgba(255, 255, 255, 0.35);
+  --text-disabled: rgba(255, 255, 255, 0.2);
 
-### 3.3 Text — Hierarquia tipográfica
-
-```css
-:root[data-theme="dark"] {
-  --text-primary: rgba(248, 250, 252, 1); /* títulos, valores principais */
-  --text-secondary: rgba(203, 213, 225, 0.85); /* corpo, descrições */
-  --text-tertiary: rgba(148, 163, 184, 0.6); /* auxiliar, labels */
-  --text-disabled: rgba(100, 116, 139, 0.4);
-  --text-inverse: #0f172a; /* texto sobre cor primária */
-}
-
-:root[data-theme="light"] {
-  --text-primary: rgba(15, 23, 42, 1);
-  --text-secondary: rgba(51, 65, 85, 0.85);
-  --text-tertiary: rgba(100, 116, 139, 0.7);
-  --text-disabled: rgba(148, 163, 184, 0.5);
-  --text-inverse: #ffffff;
-}
-```
-
-### 3.4 Border / Divider
-
-```css
-:root[data-theme="dark"] {
+  /* Borders */
   --border-subtle: rgba(255, 255, 255, 0.06);
   --border-default: rgba(255, 255, 255, 0.1);
-  --border-strong: rgba(255, 255, 255, 0.16);
-  --border-focus: rgba(99, 102, 241, 0.6); /* indigo */
-}
+  --border-hover: rgba(255, 255, 255, 0.15);
+  --border-focus: rgba(37, 99, 235, 0.5);
 
-:root[data-theme="light"] {
-  --border-subtle: rgba(15, 23, 42, 0.05);
-  --border-default: rgba(15, 23, 42, 0.1);
-  --border-strong: rgba(15, 23, 42, 0.16);
-  --border-focus: rgba(79, 70, 229, 0.4);
-}
-```
-
-### 3.5 Accent / Brand colors
-
-Aethereos não tem **uma** cor primária. Cada app/contexto tem sua cor de acento (registry do app). Mas a plataforma tem cores globais para ações e feedbacks:
-
-```css
-:root {
-  /* Cores de marca (universais nos dois modos) */
-  --brand-primary: #6366f1; /* indigo 500 — hover/active default */
-  --brand-secondary: #8b5cf6; /* violet 500 */
-  --brand-tertiary: #06b6d4; /* cyan 500 */
-
-  /* Status semântico */
-  --status-success: #10b981; /* emerald */
-  --status-warning: #f59e0b; /* amber */
-  --status-error: #ef4444; /* red */
-  --status-info: #3b82f6; /* blue */
-
-  /* Cores de app (alinhadas com registry.ts) */
-  --app-drive: #06b6d4; /* cyan */
-  --app-pessoas: #8b5cf6; /* violet */
-  --app-chat: #06b6d4; /* cyan */
-  --app-rh: #10b981; /* emerald */
-  --app-magic-store: #0ea5e9; /* sky */
-  --app-settings: #64748b; /* slate */
-  --app-copilot: #8b5cf6; /* violet */
-  --app-governanca: #ef4444; /* red */
-  --app-auditoria: #f59e0b; /* amber */
-}
-```
-
-### 3.6 Espaçamento
-
-Sistema de **8px**:
-
-```css
-:root {
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-10: 40px;
-  --space-12: 48px;
-  --space-16: 64px;
-}
-```
-
-Pads de container internos: 16-24px. Margens entre seções: 24-32px. Gap em listas: 8-12px.
-
-### 3.7 Radius
-
-```css
-:root {
-  --radius-sm: 6px; /* botões pequenos, badges */
-  --radius-md: 10px; /* inputs, cards menores */
-  --radius-lg: 14px; /* cards principais */
-  --radius-xl: 20px; /* modais, drawers, AppFrame */
-  --radius-2xl: 28px; /* containers grandes */
-  --radius-full: 9999px;
-}
-```
-
-Apple Tahoe usa cantos generosos. Seguimos. **Default é radius-lg.** Não usar radius < md em superfícies primárias.
-
-### 3.8 Shadows
-
-```css
-:root[data-theme="dark"] {
+  /* Shadows mais discretas (dark tem profundidade nativa) */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 10px 24px rgba(0, 0, 0, 0.45);
-  --shadow-xl: 0 20px 48px rgba(0, 0, 0, 0.55);
-  --shadow-glow-primary: 0 0 24px rgba(99, 102, 241, 0.35);
-}
-
-:root[data-theme="light"] {
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
-  --shadow-lg: 0 10px 32px rgba(15, 23, 42, 0.12);
-  --shadow-xl: 0 20px 56px rgba(15, 23, 42, 0.16);
-  --shadow-glow-primary: 0 0 24px rgba(99, 102, 241, 0.25);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+  --shadow-dock:
+    0 8px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 ```
+
+### 3.2 Tokens primários — LIGHT (Notion/Apple style)
+
+```css
+:root,
+html.light {
+  /* Backgrounds (off-white acinzentado, Notion/Apple-style) */
+  --bg-base: #fafaf9; /* fundo Mesa, sidebars (off-white) */
+  --bg-elevated: #ffffff; /* cards, conteúdo de apps, modais (branco puro) */
+  --bg-surface: #f4f4f3; /* hover, inputs (off-white mais escuro) */
+  --bg-overlay: rgba(0, 0, 0, 0.4); /* overlay de modais */
+
+  /* Glass (black com baixa opacidade — inverso do dark) */
+  --glass-bg: rgba(0, 0, 0, 0.025);
+  --glass-bg-hover: rgba(0, 0, 0, 0.05);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-border-hover: rgba(0, 0, 0, 0.12);
+  --glass-blur: 24px;
+  --glass-blur-heavy: 40px;
+
+  /* Text (black com decay — não preto puro #000) */
+  --text-primary: rgba(0, 0, 0, 0.92);
+  --text-secondary: rgba(0, 0, 0, 0.6);
+  --text-tertiary: rgba(0, 0, 0, 0.4);
+  --text-disabled: rgba(0, 0, 0, 0.25);
+
+  /* Borders */
+  --border-subtle: rgba(0, 0, 0, 0.05);
+  --border-default: rgba(0, 0, 0, 0.08);
+  --border-hover: rgba(0, 0, 0, 0.12);
+  --border-focus: rgba(37, 99, 235, 0.5);
+
+  /* Shadows mais visíveis (light precisa pra ter profundidade) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --shadow-dock: 0 8px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+```
+
+### 3.3 Tokens compartilhados (idênticos em ambos os modos)
+
+```css
+:root,
+html.light,
+html.dark {
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-dock: 22px;
+
+  /* Transitions */
+  --transition-fast: 120ms ease;
+  --transition-default: 200ms ease;
+  --transition-slow: 300ms ease;
+  --transition-spring: 400ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* App colors (cravadas, mesmo em ambos modos — saturação alta) */
+  --color-comercio: #f0fc05; /* amarelo flúor — Comércio Digital */
+  --color-logitix: #059669; /* verde — LOGITIX */
+  --color-erp: #7c3aed; /* roxo — ERP */
+  --color-admin: #ef4444; /* vermelho — Governança/Admin */
+  --color-appstore: #0ea5e9; /* sky — Magic Store */
+  --color-drive: #06b6d4; /* cyan — Drive */
+  --color-pessoas: #8b5cf6; /* violet — Pessoas/CRM */
+  --color-chat: #06b6d4; /* cyan — Chat */
+  --color-rh: #10b981; /* emerald — RH */
+  --color-copilot: #8b5cf6; /* violet — AE AI Copilot */
+  --color-auditoria: #f59e0b; /* amber — Auditoria */
+  --color-settings: #64748b; /* slate — Configurações */
+  --color-neutral: #64748b;
+
+  /* Status semantic */
+  --status-success: #10b981;
+  --status-warning: #f59e0b;
+  --status-error: #ef4444;
+  --status-info: #3b82f6;
+
+  /* Typography */
+  --font-sans:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+    sans-serif;
+  --font-display: "Outfit", "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+}
+```
+
+⚠️ **Importante:** algumas cores de app podem precisar ajuste em light (ex: amarelo flúor `#f0fc05` perde contraste em fundo branco). Ajuste será caso-a-caso na ETAPA 10 com validação visual; por enquanto manter as mesmas e documentar pendência.
+
+### 3.4 Tokens HSL para shadcn/Tailwind v4 — DARK
+
+```css
+:root.dark,
+html.dark {
+  --background: 240 6% 4%; /* ≈ #09090b */
+  --foreground: 0 0% 95%;
+  --card: 240 5% 7%; /* ≈ #111113 */
+  --card-foreground: 0 0% 95%;
+  --card-border: 0 0% 15%;
+  --popover: 240 5% 10%; /* ≈ #18181b */
+  --popover-foreground: 0 0% 95%;
+  --popover-border: 0 0% 15%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 4% 12%;
+  --secondary-foreground: 0 0% 95%;
+  --muted: 240 4% 15%;
+  --muted-foreground: 0 0% 55%;
+  --accent: 240 4% 15%;
+  --accent-foreground: 0 0% 95%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 95%;
+  --border: 0 0% 100% / 0.1;
+  --input: 0 0% 100% / 0.1;
+  --ring: 217 91% 60% / 0.5;
+  --sidebar: 240 5% 6%;
+  --sidebar-foreground: 0 0% 95%;
+  --sidebar-border: 0 0% 100% / 0.08;
+  --sidebar-primary: 217 91% 60%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 240 4% 15%;
+  --sidebar-accent-foreground: 0 0% 95%;
+  --sidebar-ring: 217 91% 60% / 0.5;
+  --radius: 0.625rem;
+}
+```
+
+### 3.5 Tokens HSL — LIGHT
+
+```css
+:root,
+html.light {
+  --background: 60 5% 98%; /* ≈ #fafaf9 */
+  --foreground: 0 0% 8%; /* ≈ rgba(0,0,0,0.92) — não preto puro */
+  --card: 0 0% 100%; /* branco puro pra cards */
+  --card-foreground: 0 0% 8%;
+  --card-border: 0 0% 90%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 8%;
+  --popover-border: 0 0% 90%;
+  --primary: 217 91% 50%; /* azul um pouco mais escuro pra contraste */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 60 5% 95%;
+  --secondary-foreground: 0 0% 8%;
+  --muted: 60 5% 92%;
+  --muted-foreground: 0 0% 40%;
+  --accent: 60 5% 92%;
+  --accent-foreground: 0 0% 8%;
+  --destructive: 0 72% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 0% / 0.08;
+  --input: 0 0% 0% / 0.08;
+  --ring: 217 91% 50% / 0.5;
+  --sidebar: 60 5% 96%; /* mais escuro que content (que é branco) */
+  --sidebar-foreground: 0 0% 8%;
+  --sidebar-border: 0 0% 0% / 0.06;
+  --sidebar-primary: 217 91% 50%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 60 5% 92%;
+  --sidebar-accent-foreground: 0 0% 8%;
+  --sidebar-ring: 217 91% 50% / 0.5;
+  --radius: 0.625rem;
+}
+```
+
+### 3.6 Tailwind v4 — `@theme inline`
+
+```css
+@theme inline {
+  --font-sans:
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+    sans-serif;
+  --font-display: "Outfit", sans-serif;
+
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+```
+
+### 3.7 Espaçamento
+
+Tailwind padrão (`p-1=4px ... p-12=48px`).
+
+Pads container: 16-24px. Margens entre seções: 24-32px. Gap em listas: 8-12px.
 
 ---
 
 ## 4. Tipografia
 
-### 4.1 Font stack
+### 4.1 Fonts
 
-```css
-:root {
-  --font-sans:
-    "Inter", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI",
-    system-ui, sans-serif;
-  --font-display: "Inter Display", "SF Pro Display", -apple-system, sans-serif;
-  --font-mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
-}
+- **Inter** (`--font-sans`): corpo, UI, inputs, botões. Pesos: 400, 500, 600, 700.
+- **Outfit** (`--font-display`): h1-h6, hero. Pesos: 400, 500, 600, 700, 800.
+- **JetBrains Mono** (`--font-mono`): código, IDs.
+
+Carregar via Google Fonts no `index.html`:
+
+```html
+<link
+  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+  rel="stylesheet"
+/>
 ```
 
-**Inter** é a font primária (web font auto-hospedada via Fontsource). SF Pro como fallback se sistema Apple. **Não usar fonts genéricas como Arial, Helvetica direto** — fica desalinhado com identidade.
+### 4.2 Hierarquia tipográfica
 
-### 4.2 Escala tipográfica
+| Uso                | Tamanho                | Peso    | Font             |
+| ------------------ | ---------------------- | ------- | ---------------- |
+| Display (hero)     | 56px / -1.5px tracking | 700-800 | Outfit           |
+| H1 (page title)    | 28-32px                | 700     | Outfit           |
+| H2 (section title) | 20-22px                | 600     | Outfit           |
+| H3 (sub-section)   | 18px                   | 600     | Outfit           |
+| H4 (card title)    | 15px                   | 600     | Inter            |
+| Body large         | 15px                   | 400     | Inter            |
+| **Body (default)** | **13px**               | **400** | **Inter**        |
+| Body small         | 12px                   | 400     | Inter            |
+| Caption            | 11px                   | 400-500 | Inter            |
+| Label uppercase    | 11px / 0.5px tracking  | 600     | Inter, uppercase |
 
-```css
-:root {
-  /* Display — para titles de seção, marketing */
-  --text-display-lg: 56px / 1.1 / -0.02em; /* size / line-height / letter-spacing */
-  --text-display-md: 40px / 1.15 / -0.01em;
-  --text-display-sm: 32px / 1.2 / -0.01em;
-
-  /* Heading — para titles de app/seção */
-  --text-h1: 28px / 1.25 / -0.01em;
-  --text-h2: 22px / 1.3 / -0.005em;
-  --text-h3: 18px / 1.35 / 0;
-  --text-h4: 15px / 1.4 / 0;
-
-  /* Body */
-  --text-body-lg: 16px / 1.5 / 0;
-  --text-body: 14px / 1.5 / 0; /* default */
-  --text-body-sm: 13px / 1.4 / 0;
-  --text-caption: 12px / 1.35 / 0;
-  --text-label: 11px / 1.3 / 0.02em; /* uppercase labels */
-}
-```
+**Default do app é 13px** (Linear/Sequoia density).
 
 ### 4.3 Pesos
 
-- 400 (Regular) — corpo padrão
-- 500 (Medium) — links, labels destacados
-- 600 (Semibold) — headings, CTAs
-- 700 (Bold) — só pra display ou ênfase forte
+- 400 Regular — corpo
+- 500 Medium — labels, links, items destacados
+- 600 Semibold — H4, CTAs
+- 700 Bold — H1-H3 (Outfit), display
+- 800 Extra Bold — só hero
 
-**Nunca usar** 100, 200, 300 (extra light) — somem em backgrounds glass.
+**Nunca usar** 100, 200, 300.
 
 ---
 
 ## 5. Componentes — Padrões canônicos
 
-### 5.1 Glass Panel (componente base)
+### 5.1 TopBar (Sequoia — SÓLIDA em ambos modos)
 
-Toda elemento que flutua sobre Mesa usa glass panel:
+⚠️ **Regra cravada V2: TopBar NÃO tem backdrop-blur. É sólida.** Vale para dark e light.
 
-```tsx
-// Padrão Tailwind v4 (com utility classes do tokens)
-<div className="bg-[var(--glass-fill)] backdrop-blur-[var(--glass-blur)] backdrop-saturate-[var(--glass-saturation)] border border-[var(--glass-border)] rounded-[var(--radius-xl)] shadow-[var(--glass-shadow)]">
-```
+- Height: **38px**
+- Background: `var(--bg-base)` sólido (em ambos modos — em light é `#fafaf9`, em dark é `#09090b`)
+- Border-bottom: `1px solid var(--border-subtle)`
+- Padding horizontal: 16px
 
-**Variantes:**
+**Esquerda:**
 
-- `glass-subtle` — fundo bem translúcido, blur 16px (TopBar)
-- `glass-default` — padrão, blur 24px (Dock, drawers)
-- `glass-strong` — mais opaco, blur 32px (modais com conteúdo crítico, formulários)
-- `glass-clear` — quase transparente, blur 12px (overlays leves)
+- Logo "Ae" em badge 24px com gradient sutil azul-roxo
+- "Aethereos" texto 13px font-medium
+- Separador vertical (1px × 16px, `var(--border-subtle)`)
+- Nome empresa: `text-[13px] font-medium var(--text-primary)`, truncate `max-w-[200px]`
+- Dropdown de empresas se múltiplas
 
-### 5.2 TopBar
+**Direita** (gap 8px):
 
-- Altura: 44px (igual macOS Tahoe)
-- Material: `glass-subtle`
-- Conteúdo: logo Aethereos (esquerda) → nome empresa com dropdown (centro-esquerda) → notificações + avatar (direita)
-- Sem borda inferior visível
-- Permanece flutuando, **transparente sobre Mesa**
+- Relógio: `text-[13px] font-medium var(--text-secondary)` HH:mm
+- Separador
+- Sino notificações Bell 18px (badge ponto 8px se unread)
+- **Toggle Theme:** ícone `Sun` (em dark) ou `Moon` (em light), 18px secondary, hover primary, click alterna
+- Avatar 26px
+
+### 5.2 Dropdowns (canônico — usar em todos)
+
+- Background: `var(--bg-elevated)` (não glass — apenas elementos flutuantes-sobre-tudo são glass)
+- Border: `1px solid var(--glass-border)`
+- Border-radius: `var(--radius-lg)`
+- Shadow: `var(--shadow-lg)`
+- Backdrop-filter: `blur(var(--glass-blur-heavy))` (40px)
+- Items: padding 8px 12px, radius `var(--radius-sm)`, hover `bg-[var(--glass-bg-hover)]`
+- Animação: `scale(0.97) + opacity 0 → scale(1) + opacity 1`, spring
 
 ### 5.3 TabBar
 
-- Altura: 36px
-- Posição: abaixo do TopBar, mesmo material
-- Tabs com radius-md, pad horizontal 12px, gap 4px entre tabs
-- Tab ativa tem `bg-[var(--glass-fill-strong)]` + ícone colorido (cor do app)
-- Tab inativa: ícone semi-transparente
-- Botão fechar (×) aparece on-hover ou se tab tem foco
-- Drag-and-drop via @dnd-kit (já existe)
+- Height: 40px
+- Background: `var(--bg-base)`
+- Border-bottom: `1px solid var(--border-subtle)`
+- Padding: 0 8px
 
-### 5.4 Mesa
+**Cada tab:**
 
-- Background: `var(--bg-base)` + aurora gradient (4 cores em radial-gradient)
-- Wallpaper opcional sobreposto (com opacity)
-- Ícones: 80×80 (icon-app), com label embaixo, transition-colors em hover
-- Posicionamento: absolute, drag-drop pra reposicionar (já existe)
-- Padding inicial: 32px do top/left
+- Height: 32px (margin vertical auto)
+- Padding: 0 12px
+- Border-radius: `var(--radius-md)`
+- Gap: 6px
+- Ícone: 14px, cor do app
+- Texto: `text-[12px] font-medium`, truncate `max-w-[120px]`
+- Botão ×: 14px, aparece on-hover
 
-### 5.5 Dock
+**Tab inativa:** transparent, texto tertiary, hover glass-bg-hover.
 
-- Posição: `fixed bottom-4 left-1/2 -translate-x-1/2`
-- Material: `glass-default`
-- Altura: 64px, padding lateral 12px
-- Ícones: 48×48 default, magnification até 64×64 on-hover
-- Indicador de app aberto: dot embaixo do ícone (3×3px, cor do app)
-- Magnification: framer-motion spring (mass: 0.1, stiffness: 150, damping: 12)
-- Separador entre apps universais e adicionais: linha vertical 1px, `bg-[var(--border-subtle)]`
+**Tab ativa:** glass-bg + border glass-border + shadow-sm + ícone full opacity color do app. ⚠️ NÃO usar borda inferior colorida.
 
-### 5.6 AppFrame (área principal de cada app)
+**Tab pinned (Mesa):** só ícone, width 36px.
 
-- Container: `h-full` (NÃO `flex-1` — bug histórico do Sprint 12)
-- Background: `var(--bg-elevated)` (translúcido sobre Mesa)
-- Border-radius: `var(--radius-xl)` no top (cantos inferiores são da viewport)
-- Padding interno: 0 (cada app define seu próprio)
+**Botão [+]:** Plus 14px tertiary, hover glass-bg-hover.
+
+**Overflow:** scroll horizontal, scrollbar oculta.
+
+### 5.4 Mesa (desktop premium)
+
+Background: `var(--bg-base)` + um dos 6 wallpapers gradientes — **com versões dark e light separadas**.
+
+| ID         | Dark gradient                                                                 | Light gradient                                                                |
+| ---------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `default`  | `radial-gradient(ellipse at top, #1a1a3e 0%, #0a0a1a 50%, #050510 100%)`      | `radial-gradient(ellipse at top, #f4f4f0 0%, #fafaf9 50%, #ffffff 100%)`      |
+| `aurora`   | `radial-gradient(ellipse at bottom left, #0a1628, #0d1b2a, #1a0a2e, #0a0a14)` | `radial-gradient(ellipse at bottom left, #f0f4ff, #fff0f8, #f8f0ff, #fafaff)` |
+| `ocean`    | `linear-gradient(160deg, #0c1929 0%, #0a2540 40%, #061a2e 100%)`              | `linear-gradient(160deg, #ecf3ff 0%, #e0f0ff 40%, #f0f8ff 100%)`              |
+| `midnight` | `radial-gradient(circle at 30% 20%, #1a1040, #0a0a18, #050508)`               | `radial-gradient(circle at 30% 20%, #f0e8ff, #fafaf9, #ffffff)` (= "morning") |
+| `minimal`  | `#09090b` (sólido)                                                            | `#fafaf9` (sólido)                                                            |
+| `mesh`     | mesh dark (azul/roxo/verde escuros)                                           | mesh light (rosa/azul/lilás pastel sutil)                                     |
+
+**Wallpaper é estático** (não anima). Versão automática conforme tema ativo.
+
+**DesktopIcon:**
+
+- Container 56px × 56px com `bg-[var(--glass-bg)]`, `border 1px var(--glass-border)`, `radius var(--radius-lg)`
+- Ícone interno: 48px, cor do app
+- Hover: glass-bg-hover + glass-border-hover + shadow-sm + scale(1.05)
+- Selected: ring 2px border-focus + bg blue/0.1
+- Label: `text-[11px] font-medium var(--text-primary)`, text-shadow para legibilidade
+  - Dark: `text-shadow: 0 1px 3px rgba(0,0,0,0.8)`
+  - Light: `text-shadow: 0 1px 2px rgba(255,255,255,0.8)`
+- Spacing: grid 90×100
+- Stagger fade-in ao aparecer
+
+### 5.5 Dock (Sequoia)
+
+**Container:**
+
+- Position: `fixed bottom-2 left-1/2 -translate-x-1/2`
+- Background: `var(--glass-bg)` + `backdrop-filter: blur(40px)`
+- Border: `1px solid var(--glass-border)`
+- Border-radius: `var(--radius-dock)` (22px)
+- Shadow: `var(--shadow-dock)`
+- Padding: 4px 8px
+- Gap: 2px
+
+**Ícones:**
+
+- Base: 44px transparent
+- Lucide 24px cor do app
+- Hover individual sem magnification: glass-bg-hover
+
+**Magnification (Framer Motion):**
+
+- Hover: scale(1.35)
+- Vizinhos imediatos: scale(1.15)
+- Vizinhos 2º grau: scale(1.05)
+- Spring: stiffness 400, damping 25
+- Container NÃO muda tamanho
+- Respeitar `prefers-reduced-motion`
+
+**Dot indicador (app aberto):** 4px, cor secondary; tab ativa: cor do app.
+
+**Separador:** vertical 1px × 28px subtle, antes de Magic Store e Admin.
+
+**Tooltip:** 600ms delay, bg-elevated + border-glass + radius-sm + shadow-md + 11px primary.
+
+**Prefetch (regra obrigatória):** `onMouseEnter` no DockIcon → `prefetchApp(app.id)`. Set evita download duplo.
+
+### 5.6 AppFrame
+
+- Container: `h-full` (NÃO `flex-1` — bug histórico Sprint 12 corrigido)
+- Background: transparent
+- Padding: 0
+- TabPane: opacity 0→1, 150ms
 
 ### 5.7 AppShell (sidebar + main)
 
-Apps com navegação interna usam `<AppShell>` do `@aethereos/ui-shell`:
+**AppSidebar:**
 
-- Sidebar: 220px, `glass-subtle`, padding 12px 8px
-- Sidebar items: altura 34px, radius-md, hover `bg-[var(--bg-surface-hover)]`
-- Item ativo: `bg-[var(--glass-fill-strong)]` + ícone colorido
-- Main area: `flex-1`, padding 24px, scroll vertical interno
+- Width: **220px** (collapsible 56px)
+- Background: `var(--bg-base)` (mais escuro/claro que conteúdo)
+- Border-right: `1px solid var(--border-subtle)`
+- Padding: 12px 8px
+
+**Sidebar items:**
+
+- Height: 34px
+- Padding: 0 10px
+- Radius: `var(--radius-md)`
+- Gap: 8px
+- Ícone: 16px, tertiary
+- Texto: `text-[13px] font-medium secondary`
+- Hover: glass-bg-hover, texto primary
+- **Ativo:** bg cor-do-app/0.1 + border-left 2px cor-do-app + ícone e texto cor-do-app
+- Badge: pill glass-bg, `text-[11px] font-medium`
+
+**AppContent:**
+
+- Background: `var(--bg-elevated)`
+- Padding: 24px
+- Max-width interna: 1200px
+- Scrollbar estilizada
+
+**AppHeader:**
+
+- Flex justify-between, align-center
+- Título: `text-[18px] font-semibold primary`
+- Ações ghost ou outline
+- Border-bottom subtle, pad-bottom 16px, mb 24px
 
 ### 5.8 Botões
 
-#### Primary
+**Primary:**
 
 ```tsx
-<button className="px-4 h-9 rounded-[var(--radius-md)] bg-[var(--brand-primary)] hover:bg-[#5558e3] text-[var(--text-inverse)] text-[14px] font-medium transition-colors shadow-[var(--shadow-glow-primary)]">
+className =
+  "px-4 h-9 rounded-[var(--radius-md)] bg-gradient-to-b from-blue-600 to-blue-700 text-white text-[13px] font-medium hover:brightness-110 active:scale-[0.98] transition-[120ms]";
 ```
 
-#### Secondary (ghost glass)
+**Secondary:**
 
 ```tsx
-<button className="px-4 h-9 rounded-[var(--radius-md)] bg-[var(--glass-fill)] backdrop-blur-md border border-[var(--glass-border)] hover:bg-[var(--glass-fill-strong)] text-[var(--text-primary)] text-[14px] font-medium transition-colors">
+className =
+  "px-4 h-9 rounded-[var(--radius-md)] bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-primary)] text-[13px] font-medium hover:bg-[var(--glass-bg-hover)] active:scale-[0.98] transition-[120ms]";
 ```
 
-#### Tertiary (texto)
+**Ghost:**
 
 ```tsx
-<button className="px-2 h-9 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-[14px] font-medium transition-colors">
+className =
+  "px-3 h-9 rounded-[var(--radius-md)] bg-transparent text-[var(--text-secondary)] text-[13px] font-medium hover:bg-[var(--glass-bg-hover)] hover:text-[var(--text-primary)] transition-[120ms]";
 ```
 
-#### Destructive
+**Danger:**
 
 ```tsx
-<button className="px-4 h-9 rounded-[var(--radius-md)] bg-[var(--status-error)] hover:bg-[#dc2626] text-white text-[14px] font-medium transition-colors">
+className =
+  "px-4 h-9 rounded-[var(--radius-md)] bg-red-600/10 text-red-400 dark:text-red-400 light:text-red-700 text-[13px] font-medium hover:bg-red-600/20 active:scale-[0.98] transition-[120ms]";
 ```
+
+**Disabled:** `opacity-40 cursor-not-allowed pointer-events-none`
+
+**Tamanhos:** sm h-8 / md h-9 / lg h-10
 
 ### 5.9 Inputs
 
 ```tsx
-<input className="w-full h-9 px-3 rounded-[var(--radius-md)] bg-[var(--bg-surface)] border border-[var(--border-default)] focus:border-[var(--border-focus)] focus:ring-2 focus:ring-[var(--brand-primary)]/20 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] text-[14px] transition-colors outline-none">
+className =
+  "w-full h-9 px-3 rounded-[var(--radius-md)] bg-[var(--bg-surface)] border border-[var(--border-default)] text-[13px] text-[var(--text-primary)] placeholder:text-[var(--text-disabled)] focus:border-[var(--border-focus)] focus:ring-2 focus:ring-blue-600/15 focus:outline-none transition-[120ms]";
 ```
 
-- Altura padrão 36px
-- Sempre acompanhado de label acima (text-label, uppercase, tracking-wide)
-- Focus ring suave (não pesado)
-- Erro: border `var(--status-error)`, mensagem abaixo em text-caption
+- Height: 36px
+- Label acima: `text-[11px] font-semibold uppercase tracking-wide tertiary`
+- Erro: `border-red-500 ring-2 ring-red-500/20`
 
-### 5.10 Cards (em listas, dashboard)
+### 5.10 Cards
 
 ```tsx
-<div className="bg-[var(--bg-surface)] backdrop-blur-md border border-[var(--border-subtle)] rounded-[var(--radius-lg)] p-5 hover:bg-[var(--bg-surface-hover)] transition-colors">
+className =
+  "bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded-[var(--radius-lg)] p-5 transition-[120ms]";
 ```
 
-### 5.11 Tabelas (RH, Pessoas, listagens)
+**Hover:** `hover:border-[var(--border-hover)] hover:shadow-sm hover:-translate-y-px`
 
-- Background: `var(--bg-elevated)`
-- Header row: `bg-[var(--bg-surface)]`, text-label uppercase, sticky top-0
-- Rows: `border-b border-[var(--border-subtle)]`, hover `bg-[var(--bg-surface-hover)]`
-- Padding célula: 12px 16px
-- Texto: text-body
-- Ações por row: aparecem on-hover, alinhadas à direita
+### 5.11 Tabelas
 
-### 5.12 Modais e Drawers
+```tsx
+<table className="w-full">
+  <thead>
+    <tr className="bg-[var(--bg-surface)]">
+      <th className="text-[11px] font-medium uppercase tracking-wide text-[var(--text-tertiary)] px-4 py-3 text-left">
+        ...
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr className="border-b border-[var(--border-subtle)] hover:bg-[var(--glass-bg-hover)] transition-[120ms]">
+      <td className="text-[13px] text-[var(--text-primary)] px-4 py-3">...</td>
+    </tr>
+  </tbody>
+</table>
+```
 
-- Backdrop: `bg-black/40 backdrop-blur-sm` (overlay full-screen)
-- Container: `glass-strong`, radius-xl, max-width contextual (sm: 480, md: 640, lg: 880)
-- Padding: 24-32px
-- Header: title (h2) + close button (×) à direita
-- Footer com ações: pad-top 16px, border-top var(--border-subtle), botões alinhados à direita
+### 5.12 Badges
 
-Drawer (lateral): mesmo padrão, mas `right: 0`, full-height, slide-in from right.
+```tsx
+className = "rounded-full px-2 py-0.5 text-[11px] font-medium";
+```
 
-### 5.13 Toasts / Notifications
+**Variantes** (mesmas em ambos modos):
 
-- Posição: `fixed top-4 right-4` (acima da TopBar)
-- Material: `glass-default`
-- Largura: 380px
-- Padding: 12px 16px
-- Auto-dismiss: 5s (success), 8s (warning/error)
-- Animação: framer-motion slide-in da direita
+- success: `bg-green-500/15 text-green-700 dark:text-green-400`
+- warning: `bg-amber-500/15 text-amber-700 dark:text-amber-400`
+- error: `bg-red-500/15 text-red-700 dark:text-red-400`
+- info: `bg-blue-500/15 text-blue-700 dark:text-blue-400`
+- neutral: `bg-[var(--glass-bg)] text-[var(--text-secondary)]`
+
+### 5.13 Dialogs / Modais
+
+**Overlay:** `bg-black/60 backdrop-blur-md fixed inset-0` (em light: `bg-black/40`)
+
+**Content:**
+
+```tsx
+className =
+  "bg-[var(--bg-elevated)] border border-[var(--glass-border)] rounded-[var(--radius-xl)] shadow-[var(--shadow-lg)] max-w-[640px] w-full p-6";
+```
+
+- Header: title (h2 18-20px) + close button
+- Footer: pad-top 16px, border-top, botões direita
+- Animação: scale(0.95) + opacity 0 → scale(1) + opacity 1, spring
+
+### 5.14 Drawers (lateral)
+
+Mesmo padrão Dialog, mas:
+
+- Position: `fixed right-0 top-0 h-full`
+- Width: 480-640px
+- Border-radius: 0
+- Animação: slide-in `translateX(100%) → 0`
+
+### 5.15 Toasts
+
+```tsx
+className =
+  "bg-[var(--bg-elevated)] border border-[var(--glass-border)] rounded-[var(--radius-lg)] shadow-[var(--shadow-lg)] p-3 px-4 max-w-[380px]";
+```
+
+- Position: `fixed bottom-4 right-4`
+- Auto-dismiss: 5s success, 8s warning/error
+- Animação: slide-in da direita
 
 ---
 
@@ -444,114 +678,179 @@ Drawer (lateral): mesmo padrão, mas `right: 0`, full-height, slide-in from righ
 
 ### 6.1 Princípios
 
-- **Duration default:** 200ms (interações rápidas), 300ms (transições de estado), 450ms (entradas de modal/drawer)
-- **Easing:** `cubic-bezier(0.32, 0.72, 0, 1)` (Apple-like spring) ou `ease-out` para entradas, `ease-in` para saídas
-- **Não animar:** background-color, color (fica jittery). Animar opacity, transform, filter.
+- **Tokens fixos:** fast 120ms, default 200ms, slow 300ms, spring 400ms cubic-bezier(0.16, 1, 0.3, 1)
+- **Não animar background-color e color em simultâneo** (jittery)
+- **Sempre Framer Motion** para enter/exit
 
 ### 6.2 Casos comuns
 
-```typescript
-// Entrada de modal/drawer
-{ opacity: [0, 1], y: [20, 0] } com duration 300ms ease-out
+| Caso               | Token         | Detalhes                                            |
+| ------------------ | ------------- | --------------------------------------------------- |
+| Hover botão        | fast          | transition fast                                     |
+| Active/click       | scale 0.98    | imediato                                            |
+| Tab switch         | default       | opacity 0→1                                         |
+| Modal/Drawer enter | spring        | scale + opacity                                     |
+| Card hover lift    | fast          | translateY(-1px) + shadow                           |
+| Toast in/out       | spring        | translateX(100%) → 0                                |
+| Dock magnification | spring 400/25 | per-icon scale                                      |
+| Stagger lista      | 50ms delay    | useStaggerChildren                                  |
+| **Theme toggle**   | default 200ms | bg, border, text, shadow simultâneos com transition |
+| Skeleton           | animate-pulse | nunca spinner em área grande                        |
 
-// Hover em botão / card
-transition: 'background-color 200ms ease, transform 200ms ease'
+### 6.3 Theme toggle animation
 
-// Tab switch
-{ opacity: [0, 1] } com duration 150ms
+Transição entre dark e light precisa ser suave (não flash):
 
-// Dock magnification
-spring config: { mass: 0.1, stiffness: 150, damping: 12 }
-
-// Framer-motion AnimatePresence sempre que componente sai/entra do DOM
+```css
+html {
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
+}
+* {
+  transition-property:
+    background-color, border-color, color, fill, stroke, box-shadow;
+  transition-duration: 200ms;
+  transition-timing-function: ease;
+}
 ```
 
-### 6.3 Reduced motion
+⚠️ Cuidado: aplicar em `*` é caro em árvores grandes. Limite o seletor a `body, body *` ou aplique seletivamente em containers principais.
 
-Respeitar `prefers-reduced-motion`. Quando ativo:
+### 6.4 Reduced motion
 
-- Desabilitar magnification do Dock
-- Reduzir duration pra 50% ou 0
-- Sem aurora animation no background
+```css
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+```
 
 ---
 
-## 7. Aurora Background (assinatura visual da Mesa)
+## 7. Estados de carregamento (regras inviolá­veis)
 
-Background da Mesa é um **aurora gradient animado** — característica visual única do Aethereos.
+### 7.1 Skeleton estrutural — não genérico
+
+⚠️ **Inviolável:** TODA tela que carrega via `React.lazy` ou query DEVE ter skeleton que reproduz a **estrutura real** do layout final. NÃO usar loader genérico.
+
+- Apps com `hasInternalNav: true`: sidebar 220px + breadcrumb + cards placeholder
+- Apps simples: ícone do app + texto "Carregando" centralizado
+- Suspense interno: `SectionFallback` com blocos `animate-pulse`
+
+**Tokens skeleton (consciente do tema):**
+
+| Uso             | Dark                  | Light                 |
+| --------------- | --------------------- | --------------------- |
+| Background base | `bg-white/5`          | `bg-black/5`          |
+| Background leve | `bg-white/4`          | `bg-black/4`          |
+| Card skeleton   | `bg-white/[0.03]`     | `bg-black/[0.03]`     |
+| Border          | `border-white/[0.05]` | `border-black/[0.05]` |
+
+Ou criar utility classes que respeitam tema:
 
 ```css
-.mesa-aurora {
-  background:
-    radial-gradient(
-      ellipse 80% 60% at 20% 10%,
-      var(--bg-aurora-1) 0%,
-      transparent 50%
-    ),
-    radial-gradient(
-      ellipse 70% 50% at 80% 30%,
-      var(--bg-aurora-2) 0%,
-      transparent 55%
-    ),
-    radial-gradient(
-      ellipse 60% 40% at 50% 70%,
-      var(--bg-aurora-3) 0%,
-      transparent 50%
-    ),
-    radial-gradient(
-      ellipse 70% 60% at 90% 90%,
-      var(--bg-aurora-4) 0%,
-      transparent 55%
-    ),
-    var(--bg-base);
-  animation: aurora-shift 30s ease-in-out infinite alternate;
+.skeleton-bg {
+  @apply bg-black/5 dark:bg-white/5;
 }
-
-@keyframes aurora-shift {
-  0% {
-    background-position:
-      0% 0%,
-      100% 0%,
-      50% 100%,
-      100% 100%,
-      0 0;
-  }
-  50% {
-    background-position:
-      5% 5%,
-      95% 5%,
-      55% 95%,
-      95% 95%,
-      0 0;
-  }
-  100% {
-    background-position:
-      0% 10%,
-      90% 10%,
-      60% 90%,
-      90% 90%,
-      0 0;
-  }
+.skeleton-bg-card {
+  @apply bg-black/[0.03] dark:bg-white/[0.03];
+}
+.skeleton-border {
+  @apply border-black/[0.05] dark:border-white/[0.05];
 }
 ```
 
-Animação muito sutil (30s ciclo, deslocamento mínimo). Não distrai, mas dá sensação de "vivo".
+**Animação:** `animate-pulse`. Radius: `rounded-xl` (cards) ou `rounded` (textos).
 
-Wallpapers customizados sobrepoem aurora se usuário escolher imagem.
+**Nunca mostrar texto real no skeleton** — apenas blocos cinza animados.
+
+### 7.2 Prefetch de chunks no Dock
+
+⚠️ **Inviolável:** TODO app no `APP_REGISTRY` DEVE ter entrada em `APP_PREFETCH` em `registry.ts`.
+
+- `onMouseEnter` no DockIcon → `prefetchApp(app.id)`
+- Set `prefetchedApps` evita download duplo
+- Falha silenciosa, retry no próximo hover
+
+### 7.3 Suspense com `key`
+
+⚠️ **Inviolável:** TODO `<Suspense>` que envolve conteúdo dinâmico DEVE ter `key` vinculada ao identificador ativo.
+
+```tsx
+// CORRETO
+<Suspense key={activeId} fallback={<SectionFallback />}>
+  {renderSection(activeId)}
+</Suspense>
+```
+
+### 7.4 Títulos consistentes loading/error/success
+
+⚠️ **Inviolável:** título idêntico em TODOS os estados.
+
+```tsx
+const title = "Drive Minha Empresa";
+if (isLoading)
+  return (
+    <>
+      <h2>{title}</h2>
+      <Skeleton />
+    </>
+  );
+if (isError)
+  return (
+    <>
+      <h2>{title}</h2>
+      <ErrorState onRetry={refetch} />
+    </>
+  );
+return (
+  <>
+    <h2>{title}</h2>
+    <Content data={data} />
+  </>
+);
+```
+
+### 7.5 Estados obrigatórios
+
+| Estado  | Quando                          |
+| ------- | ------------------------------- |
+| Loading | Antes dos dados                 |
+| Error   | Falha de query/API (com retry)  |
+| Empty   | Sucesso mas sem dados (com CTA) |
+| Success | Conteúdo real                   |
+
+```tsx
+if (isLoading) return <SkeletonFiel />;
+if (error) return <ErrorState onRetry={refetch} />;
+if (!data?.length) return <EmptyState />;
+return <Conteudo data={data} />;
+```
 
 ---
 
 ## 8. Acessibilidade
 
-### 8.1 Contraste mínimo
+### 8.1 Contraste — DARK
 
-- Texto primary sobre fundo: **WCAG AA mínimo 4.5:1**, AAA preferido (7:1)
-- Texto secondary: AA 3:1 minimum
-- Glass material **sempre** tem fallback opaco se contraste falhar
+- text-primary (0.95 white) sobre bg-base: > 16:1 ✅ AAA
+- text-secondary (0.55) sobre bg-base: > 7:1 ✅ AAA
+- text-tertiary (0.35): > 4.5:1 ✅ AA
+- ⚠️ Nunca usar text-disabled (0.2) como texto principal
 
-### 8.2 Focus visible
+### 8.2 Contraste — LIGHT
 
-Todos os elementos interativos tem focus ring claro:
+- text-primary (0.92 black) sobre bg-base (#fafaf9): > 14:1 ✅ AAA
+- text-secondary (0.6) sobre bg-base: > 7:1 ✅ AAA
+- text-tertiary (0.4) sobre bg-base: > 4.5:1 ✅ AA
+- ⚠️ Nunca usar text-disabled (0.25) como texto principal
+
+### 8.3 Focus visible
 
 ```css
 :focus-visible {
@@ -560,45 +859,51 @@ Todos os elementos interativos tem focus ring claro:
 }
 ```
 
-### 8.3 Aria labels
-
-Todos os ícones interativos sem texto têm `aria-label`:
+### 8.4 Aria labels
 
 - Botão fechar tab: `aria-label="Fechar Drive"`
 - Ícone do dock: `aria-label="Drive"` + `data-testid="dock-app-drive"`
-- Toggle de tema: `aria-label="Alternar para modo claro/escuro"`
+- Toggle tema: `aria-label="Alternar para modo claro"` (em dark) ou `aria-label="Alternar para modo escuro"` (em light)
+- Pressed state: `aria-pressed={theme === 'dark'}`
 
-### 8.4 Keyboard navigation
+### 8.5 Keyboard navigation
 
-- Tab order respeitada em modais
+- Tab order respeitada em modais (focus trap)
 - Esc fecha modal/drawer
-- Enter ativa CTA primário do form
+- Enter ativa CTA primário
+- ↑↓ navega listas
 
 ---
 
 ## 9. Responsividade
 
-Breakpoints:
-
-```css
-sm: 640px    /* mobile horizontal */
-md: 768px    /* tablet */
-lg: 1024px   /* desktop pequeno */
-xl: 1280px   /* desktop padrão */
-2xl: 1536px  /* desktop grande */
+```
+sm: 640px    md: 768px    lg: 1024px    xl: 1280px    2xl: 1536px
 ```
 
-**Aethereos é desktop-first.** Em < 1024px:
+**Aethereos é desktop-first.**
 
-- TabBar passa a scroll horizontal em vez de quebrar linha
-- Dock encolhe ícones para 40×40
-- Sidebar de AppShell vira drawer toggle
+### 9.1 Mobile (<768px)
 
-**Em < 640px (mobile):**
+- TopBar: padding reduzido, esconde nome empresa
+- TabBar: **escondida** (um app por vez via Dock)
+- Dock: bottom nav fixa 5 ícones max, sem magnification, height 56px
+- Mesa: **escondida** — abre direto no Dashboard ou último app
+- AppSidebar: drawer toggle por hamburger
+- AppContent: padding 16px
+- Modais: full screen
 
-- Dock vira menu de hamburger
-- TabBar some, vira dropdown "Apps abertos"
-- Mesa vira lista vertical de ícones
+### 9.2 Tablet (768-1024px)
+
+- TopBar completa
+- TabBar: tabs só ícone
+- Dock: ícones 36px, magnification reduzida (1.15 max)
+- AppSidebar: colapsada (56px), expand on hover
+- Cards: 2 colunas
+
+### 9.3 Desktop (>1024px)
+
+Padrão completo.
 
 ---
 
@@ -606,66 +911,86 @@ xl: 1280px   /* desktop padrão */
 
 ### 10.1 Library
 
-**lucide-react** como library padrão. Já é dep.
+**lucide-react** padrão.
 
-- Tamanho default: 20px
-- Tamanho em ícones de Dock: 24px
-- Tamanho em sidebar: 16px
-- Tamanho em badges: 12px
-- Stroke width: 1.5 (default lucide), nunca menor que 1
+| Contexto | Tamanho | Stroke |
+| -------- | ------- | ------ |
+| Default  | 20px    | 1.5    |
+| Dock     | 24px    | 1.5    |
+| Sidebar  | 16px    | 1.5    |
+| TopBar   | 18px    | 1.5    |
+| TabBar   | 14px    | 1.5    |
+| Badge    | 12px    | 1.5    |
 
-### 10.2 Cor do ícone
+### 10.2 Cor
 
-- Inativo: `var(--text-secondary)`
-- Ativo / hover: cor do app (var(--app-X))
-- Disabled: `var(--text-disabled)`
+- Inativo: tertiary ou secondary
+- Ativo / hover: cor do app
+- Disabled: text-disabled
 
-### 10.3 Emojis em UI
+### 10.3 Emojis
 
-**Permitidos** em contextos casuais (Magic Store cards, mensagens chat, status, onboarding wizard) **mas com moderação**. Nunca em headers de tabela, botões CTA, alertas críticos.
+**Permitidos** em contextos casuais (Magic Store, chat, status, onboarding, empty states) com moderação.
 
 ---
 
 ## 11. Imagens e ilustrações
 
-### 11.1 Avatares de usuário
+### 11.1 Avatares
 
-- Formato: square com radius-full (círculo)
-- Fallback: iniciais do nome em fundo com cor derivada (hash do nome → hue HSL)
+- Square com `rounded-full`
+- Fallback: iniciais + cor derivada do hash do nome (HSL hue, sat 60%, light 45%)
 - Tamanhos: 24, 32, 40, 56, 80
-- Ring on hover: `ring-2 ring-[var(--brand-primary)]/30`
+- Border: `1px solid var(--border-subtle)`
+- Ring on hover: `ring-2 ring-blue-500/30`
 
 ### 11.2 Logos de empresa
 
-- Upload via Onboarding wizard
-- Formato armazenado: PNG 256×256
-- Fallback: nome da empresa em texto + cor derivada do hash
+- Upload no Onboarding wizard
+- PNG 256×256
+- Fallback: nome em texto (Outfit semibold) + cor derivada
 
 ### 11.3 Empty states
 
-Cada listagem vazia tem:
-
-- Ilustração SVG simples (linha solta, monocromática em var(--text-tertiary))
-- Título h3 com mensagem clara ("Nenhum funcionário cadastrado")
-- Subtítulo body em text-secondary explicando o que fazer
-- CTA primary se aplicável ("Criar primeiro colaborador")
+```tsx
+<div className="flex flex-col items-center justify-center py-16">
+  <Icon size={48} className="text-[var(--text-tertiary)] mb-4" />
+  <h3 className="text-[18px] font-semibold text-[var(--text-primary)] mb-2">
+    Nenhum funcionário cadastrado
+  </h3>
+  <p className="text-[13px] text-[var(--text-secondary)] mb-6 max-w-md text-center">
+    Cadastre o primeiro colaborador da sua empresa para começar.
+  </p>
+  <Button variant="primary">Criar primeiro colaborador</Button>
+</div>
+```
 
 ---
 
-## 12. Padrões anti
+## 12. Anti-patterns
 
 **Não fazer:**
 
-1. ❌ `bg-blue-500` direto em componentes — sempre via var()
-2. ❌ Sombras pesadas (shadow > xl) em superfícies não-flutuantes
-3. ❌ Border solid color sem opacity (sempre usar `var(--border-X)` com alpha)
-4. ❌ Animações em loop (pulse, bounce) exceto loaders
-5. ❌ Tooltips em hover de elementos óbvios
-6. ❌ Modal sobre modal (max 1 modal de cada vez)
-7. ❌ Cores neon (#00ffff, #ff00ff) ou ácidas
-8. ❌ Texto em cor com pouco contraste sobre glass (testar sempre)
+1. ❌ `bg-blue-500` direto — sempre via tokens
+2. ❌ `bg-zinc-900`, `bg-gray-800` — usar tokens
+3. ❌ Sombras pesadas em superfícies não-flutuantes
+4. ❌ Border solid sem alpha
+5. ❌ Animações em loop (pulse, bounce) exceto loaders/skeletons
+6. ❌ Tooltips em hover de elementos óbvios
+7. ❌ Modal sobre modal
+8. ❌ Cores neon
 9. ❌ Border-radius < 6px em componentes principais
 10. ❌ Botões só com ícone sem aria-label
+11. ❌ Fonts genéricas (Arial, Helvetica) em vez de Inter/Outfit
+12. ❌ TopBar com backdrop-blur (regra V2)
+13. ❌ Aurora colorida vibrante full-screen (não somos Tahoe)
+14. ❌ Skeleton genérico ("Carregando..." centralizado)
+15. ❌ Suspense sem `key` em conteúdo dinâmico
+16. ❌ Títulos diferentes em loading vs success
+17. ❌ Spinner em área grande (use skeleton)
+18. ❌ **Light mode com preto puro #000** (cansa vista) — usar 0.92 alpha
+19. ❌ **Dark mode com cinza claro #444** (não é dark, é "cinza") — usar #09090b base
+20. ❌ Cores hardcoded com sufixo `dark:` — usar tokens
 
 ---
 
@@ -673,75 +998,140 @@ Cada listagem vazia tem:
 
 ### 13.1 Stack
 
-- **CSS variables** definidas em `apps/shell-commercial/src/styles/tokens.css`
-- **Tailwind v4** com `@theme` (config-less) consumindo as variáveis
-- **shadcn/ui** primitivas customizadas pra usar tokens (não cores defaults do shadcn)
-- **framer-motion** para animações complexas
+- **CSS variables** em `apps/shell-commercial/src/styles/tokens.css`
+- **Tailwind v4** com `@theme inline` em `globals.css`
+- **shadcn/ui** primitivas customizadas com tokens
+- **framer-motion** para animações
 - **lucide-react** para ícones
+- **Inter + Outfit + JetBrains Mono** via Google Fonts
+- **ThemeProvider** custom (não next-themes — não usamos Next no shell)
 
-### 13.2 Estrutura de arquivos
+### 13.2 ThemeProvider — implementação
+
+```tsx
+// apps/shell-commercial/src/lib/theme/theme-provider.tsx
+import { createContext, useContext, useEffect, useState } from "react";
+
+type Theme = "dark" | "light";
+
+interface ThemeContextValue {
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+  toggleTheme: () => void;
+}
+
+const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setThemeState] = useState<Theme>("dark");
+
+  // Read on mount (script inline no <head> já aplicou class, aqui só sincroniza state)
+  useEffect(() => {
+    const stored = localStorage.getItem("aethereos-theme") as Theme | null;
+    setThemeState(stored ?? "dark");
+  }, []);
+
+  const setTheme = (newTheme: Theme) => {
+    document.documentElement.classList.remove("dark", "light");
+    document.documentElement.classList.add(newTheme);
+    localStorage.setItem("aethereos-theme", newTheme);
+    setThemeState(newTheme);
+  };
+
+  const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
+
+  return (
+    <ThemeContext.Provider value={{ theme, setTheme, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+export function useTheme() {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) throw new Error("useTheme must be inside ThemeProvider");
+  return ctx;
+}
+```
+
+### 13.3 Estrutura de arquivos
 
 ```
 apps/shell-commercial/src/
 ├── styles/
-│   ├── tokens.css          # variáveis CSS (este DESIGN.md em código)
-│   ├── globals.css         # reset + base + utility classes
-│   └── theme.ts            # JS export dos tokens (para framer-motion)
+│   ├── tokens.css       # variáveis CSS (light + dark)
+│   ├── globals.css      # @import tokens + tailwind + @theme + reset
+│   └── animations.css   # keyframes (shimmer, glow)
 ├── components/
-│   ├── ui/                 # primitivas shadcn customizadas
-│   └── os/                 # componentes de OS (TopBar, Dock, etc)
+│   ├── ui/              # primitivas (button, input, card, dialog)
+│   └── os/              # OS components (TopBar, Dock, TabBar, Mesa)
+└── lib/
+    └── theme/
+        ├── theme-provider.tsx
+        └── theme-toggle.tsx  # botão usado em TopBar
 ```
 
-### 13.3 Como adicionar novo componente
+### 13.4 Como adicionar novo componente
 
-1. Verificar se já existe primitiva em `components/ui/` (Button, Input, etc)
-2. Se não, criar em `components/ui/<name>.tsx` consumindo tokens
-3. Documentar variants no Storybook (futuro) ou no próprio JSDoc do componente
-4. Não criar one-off components com cores hardcoded
+1. Verificar se já existe primitiva em `components/ui/`
+2. Se não, criar consumindo tokens (sem cores hardcoded)
+3. Documentar variants no JSDoc
+4. **Validar em ambos modos** (dark + light) antes de commit
 
 ---
 
-## 14. Mantendo o design system
+## 14. Manutenção
 
-### 14.1 Mudanças cosméticas
+### 14.1 Cosméticas
 
-- Ajustar valor de variable em `tokens.css` → propaga pra todo lugar
-- Não criar nova variable por capricho — pesar se realmente necessária
+- Ajustar variable em `tokens.css` (ambos blocos dark + light) → propaga
+- Não criar variable por capricho
 
-### 14.2 Mudanças estruturais (novo componente, novo padrão)
+### 14.2 Estruturais
 
 - Atualizar este `DESIGN.md` primeiro
-- Implementar componente respeitando os tokens
-- PR referenciando seção do DESIGN.md alterada
-- Reviewer valida que componente respeita o documento
+- Implementar respeitando tokens
+- PR referenciando seção
+- Testar em ambos modos antes de mergear
 
 ### 14.3 Conflitos com features
 
-Se uma feature pede algo que viola o design system:
-
-- 80% das vezes a feature está errada — ajustar feature
-- 20% das vezes o design system precisa evoluir — propor mudança aqui
+- 80%: feature está errada, ajustar feature
+- 20%: design system precisa evoluir, propor mudança aqui
 
 ---
 
-## 15. Glossário rápido
+## 15. Glossário
 
-| Termo                    | Significado                                                   |
-| ------------------------ | ------------------------------------------------------------- |
-| **Glass / Liquid Glass** | Material translúcido com blur+saturation, base do design      |
-| **Aurora**               | Background gradient animado da Mesa, cores indigo/purple/blue |
-| **Mesa**                 | Área de trabalho principal (analogia desktop)                 |
-| **Dock**                 | Barra flutuante de atalhos pra apps                           |
-| **TabBar**               | Barra de tabs ativas (analogia browser)                       |
-| **TopBar**               | Barra superior com logo + empresa + ações globais             |
-| **AppFrame**             | Container que renderiza o app ativo                           |
-| **AppShell**             | Wrapper de sidebar + main para apps com navegação interna     |
-| **AE AI**                | Copilot Aethereos (drawer/modal, não TabPane)                 |
+| Termo                     | Significado                                                       |
+| ------------------------- | ----------------------------------------------------------------- |
+| **Glass / Glassmorphism** | Material translúcido sutil (3% opacity dark / 2.5% opacity light) |
+| **Sequoia-style**         | Inspiração visual de macOS Sequoia (dark mode)                    |
+| **Notion/Apple-light**    | Inspiração visual do light mode (off-white acinzentado, soft)     |
+| **Mesa**                  | Área de trabalho principal (analogia desktop)                     |
+| **Dock**                  | Barra flutuante de atalhos pra apps                               |
+| **TabBar**                | Barra de tabs ativas (analogia browser)                           |
+| **TopBar**                | Barra superior sólida (não glass)                                 |
+| **AppFrame**              | Container que renderiza app ativo                                 |
+| **AppShell**              | Wrapper sidebar + main para apps com nav interna                  |
+| **AE AI**                 | Copilot Aethereos (drawer/modal)                                  |
+| **APP_REGISTRY**          | Registry central de apps                                          |
+| **APP_PREFETCH**          | Map de apps → função de import dinâmico                           |
+| **ThemeProvider**         | Context React que gerencia tema dark/light                        |
 
 ---
 
 ## 16. Versão
 
-**v1.0** — Definição inicial pós-redesign Tahoe (abril 2026, Sprint 12+).
+**v2.0** — Canon V2-based com dark + light modes. Abril 2026.
 
-Mudanças futuras incrementam versão. Histórico em `docs/design-system-changelog.md`.
+Histórico:
+
+- v1.0: Tahoe/aurora animada (descartada — não chegou ao browser, conceito divergente)
+- v2.0: Sequoia/Linear/Vercel/Raycast premium escuro + Notion/Apple light (canon atual)
+
+Mudanças futuras:
+
+- v2.1: System mode (segue OS, prefere-color-scheme)
+- v2.2: Wallpapers customizados upload
+- v3.0: revisão completa para Camada 2 (apps SaaS standalone)
