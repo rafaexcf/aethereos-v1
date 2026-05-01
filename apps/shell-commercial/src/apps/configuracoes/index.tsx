@@ -25,7 +25,6 @@ import {
   Globe,
   ArrowRight,
   Monitor,
-  Sparkles,
 } from "lucide-react";
 import { useSessionStore } from "../../stores/session";
 import { useDrivers } from "../../lib/drivers-context";
@@ -1097,7 +1096,13 @@ function TabSeguranca() {
           </div>
         )}
 
-        <SaveRow>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            marginTop: 14,
+          }}
+        >
           <PrimaryButton
             onClick={() => {
               setPwdState("saving");
@@ -1110,7 +1115,7 @@ function TabSeguranca() {
           >
             <SaveLabel state={pwdState} label="Alterar senha" />
           </PrimaryButton>
-        </SaveRow>
+        </div>
       </div>
 
       <div>
@@ -1332,11 +1337,20 @@ function TabMesa() {
 
 function TabAparencia() {
   const [density, setDensity] = useState("default");
+  const [wallpaperIdx, setWallpaperIdx] = useState(0);
 
   const densityOptions = [
     { key: "compact", label: "Compacto", bars: [4, 4, 4] },
     { key: "default", label: "Padrão", bars: [4, 6, 4] },
     { key: "comfortable", label: "Confortável", bars: [4, 8, 4] },
+  ];
+
+  const wallpapers = [
+    { name: "Noite", value: "linear-gradient(135deg, #1e293b, #0f172a)" },
+    { name: "Indigo", value: "linear-gradient(135deg, #4338ca, #1e1b4b)" },
+    { name: "Vinho", value: "linear-gradient(135deg, #831843, #4c0519)" },
+    { name: "Floresta", value: "linear-gradient(135deg, #064e3b, #022c22)" },
+    { name: "Âmbar", value: "linear-gradient(135deg, #92400e, #451a03)" },
   ];
 
   return (
@@ -1381,6 +1395,68 @@ function TabAparencia() {
             />
           </SettingRow>
         </SettingGroup>
+      </div>
+
+      <div>
+        <SectionLabel>Plano de fundo</SectionLabel>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(5, 1fr)",
+            gap: 10,
+          }}
+        >
+          {wallpapers.map((wp, i) => {
+            const isActive = wallpaperIdx === i;
+            return (
+              <button
+                key={wp.name}
+                type="button"
+                onClick={() => setWallpaperIdx(i)}
+                aria-label={wp.name}
+                style={{
+                  borderRadius: 12,
+                  border: "none",
+                  background: "transparent",
+                  padding: 0,
+                  cursor: "pointer",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 6,
+                  transition: "transform 120ms ease",
+                }}
+              >
+                <div
+                  style={{
+                    height: 96,
+                    borderRadius: 12,
+                    background: wp.value,
+                    border: isActive
+                      ? "2px solid #818cf8"
+                      : "1px solid rgba(255,255,255,0.10)",
+                    boxShadow: isActive
+                      ? "0 0 0 3px rgba(99,102,241,0.20)"
+                      : "none",
+                    transition:
+                      "border-color 120ms ease, box-shadow 120ms ease",
+                  }}
+                />
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: isActive ? 500 : 400,
+                    color: isActive
+                      ? "var(--text-primary)"
+                      : "var(--text-tertiary)",
+                    textAlign: "center",
+                  }}
+                >
+                  {wp.name}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div>
@@ -2139,9 +2215,6 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
   const [twoFA, setTwoFA] = useState(false);
   const [sound, setSound] = useState(true);
   const [lang, setLang] = useState("pt-BR");
-  const [density, setDensity] = useState<"compact" | "regular" | "comfortable">(
-    "regular",
-  );
   const [wallpaperIdx, setWallpaperIdx] = useState(0);
 
   const wallpapers = [
@@ -2630,98 +2703,66 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
           </div>
         </div>
 
-        {/* ── Densidade (2×1) ── */}
-        <div
+        {/* ── Privacidade & LGPD (2×1) ── */}
+        <button
+          type="button"
+          onClick={() => onSelect("dados-privacidade")}
           style={{
             ...TILE_BASE,
             gridColumn: "3 / span 2",
             gridRow: "4 / span 1",
-            padding: 16,
+            padding: 18,
+            cursor: "pointer",
+            textAlign: "left",
+            transition: "background 160ms ease, border-color 160ms ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+            e.currentTarget.style.borderColor = "rgba(255,255,255,0.14)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+            e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)";
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <TileIcon
-              Icon={Sparkles}
-              color="#a78bfa"
-              bg="rgba(139,92,246,0.18)"
-            />
-            <div>
-              <p
-                style={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "var(--text-primary)",
-                  letterSpacing: "-0.01em",
-                }}
-              >
-                Densidade
-              </p>
-              <p
-                style={{
-                  fontSize: 11,
-                  color: "var(--text-tertiary)",
-                  marginTop: 1,
-                }}
-              >
-                Espaçamento da interface
-              </p>
-            </div>
-          </div>
-          <div style={{ flex: 1 }} />
           <div
             style={{
               display: "flex",
-              gap: 6,
-              padding: 4,
-              background: "rgba(255,255,255,0.04)",
-              border: "1px solid rgba(255,255,255,0.07)",
-              borderRadius: 10,
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
             }}
           >
-            {(
-              [
-                { v: "compact", label: "Compacta" },
-                { v: "regular", label: "Padrão" },
-                { v: "comfortable", label: "Confortável" },
-              ] as const
-            ).map(({ v, label }) => {
-              const isActive = density === v;
-              return (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setDensity(v)}
-                  style={{
-                    flex: 1,
-                    padding: "7px 10px",
-                    borderRadius: 7,
-                    border: "none",
-                    background: isActive
-                      ? "rgba(255,255,255,0.10)"
-                      : "transparent",
-                    color: isActive
-                      ? "var(--text-primary)"
-                      : "var(--text-tertiary)",
-                    fontSize: 12,
-                    fontWeight: isActive ? 600 : 400,
-                    cursor: "pointer",
-                    transition: "background 120ms ease, color 120ms ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive)
-                      e.currentTarget.style.color = "var(--text-secondary)";
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive)
-                      e.currentTarget.style.color = "var(--text-tertiary)";
-                  }}
-                >
-                  {label}
-                </button>
-              );
-            })}
+            <TileIcon
+              Icon={FileText}
+              color="#22d3ee"
+              bg="rgba(6,182,212,0.18)"
+            />
+            <Badge variant="success">Em conformidade</Badge>
           </div>
-        </div>
+          <div style={{ flex: 1 }} />
+          <p
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: "var(--text-primary)",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Privacidade & LGPD
+          </p>
+          <p
+            style={{
+              fontSize: 11,
+              color: "var(--text-tertiary)",
+              marginTop: 2,
+              lineHeight: 1.4,
+            }}
+          >
+            Exporte ou solicite exclusão dos seus dados conforme a Lei
+            13.709/2018
+          </p>
+        </button>
 
         {/* ── Sessões ativas (2×1) ── */}
         <button
