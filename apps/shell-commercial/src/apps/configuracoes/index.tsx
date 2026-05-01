@@ -16,6 +16,7 @@ import {
   EyeOff,
   Check,
   Download,
+  Loader2,
 } from "lucide-react";
 import { useSessionStore } from "../../stores/session";
 import { useDrivers } from "../../lib/drivers-context";
@@ -475,7 +476,6 @@ function PrimaryButton({
         cursor: disabled ? "not-allowed" : "pointer",
         opacity: disabled ? 0.45 : 1,
         transition: "background 120ms ease, opacity 120ms ease",
-        alignSelf: "flex-start",
       }}
       onMouseEnter={(e) => {
         if (!disabled) e.currentTarget.style.background = "#6366f1";
@@ -488,6 +488,38 @@ function PrimaryButton({
       {children}
     </button>
   );
+}
+
+function SaveRow({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "flex-end" }}>
+      {children}
+    </div>
+  );
+}
+
+function SaveLabel({
+  state,
+  label,
+}: {
+  state: "idle" | "saving" | "saved" | "error";
+  label: string;
+}) {
+  if (state === "saving")
+    return (
+      <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <Loader2 size={13} className="animate-spin" />
+        Salvando…
+      </span>
+    );
+  if (state === "saved")
+    return (
+      <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <Check size={13} />
+        Salvo!
+      </span>
+    );
+  return <>{label}</>;
 }
 
 function MonoCode({ children }: { children: React.ReactNode }) {
@@ -558,6 +590,14 @@ function TabMeuPerfil() {
     "idle",
   );
 
+  // Refs so debounce callback always reads latest values
+  const nameRef = useRef(name);
+  const langRef = useRef(lang);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initializedRef = useRef(false);
+  nameRef.current = name;
+  langRef.current = lang;
+
   useEffect(() => {
     if (drivers === null || userId === null) return;
     drivers.data
@@ -581,34 +621,49 @@ function TabMeuPerfil() {
             else document.documentElement.classList.add("dark");
           }
         }
+        initializedRef.current = true;
       });
   }, [drivers, userId]);
 
-  async function handleSave() {
+  function triggerAutoSave() {
+    if (!initializedRef.current) return;
     setSaveState("saving");
-    if (drivers !== null && userId !== null) {
-      const currentTheme = document.documentElement.classList.contains("dark")
-        ? "dark"
-        : "light";
-      const rows = [
-        { scope: "user", scope_id: userId, key: "display_name", value: name },
-        { scope: "user", scope_id: userId, key: "lang", value: lang },
-        { scope: "user", scope_id: userId, key: "theme", value: currentTheme },
-      ];
-      for (const s of rows) {
-        await drivers.data
-          .from("settings")
-          .upsert(s, { onConflict: "scope,scope_id,key" });
+    if (timerRef.current !== null) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(async () => {
+      if (drivers !== null && userId !== null) {
+        const theme = document.documentElement.classList.contains("dark")
+          ? "dark"
+          : "light";
+        const rows = [
+          {
+            scope: "user",
+            scope_id: userId,
+            key: "display_name",
+            value: nameRef.current,
+          },
+          {
+            scope: "user",
+            scope_id: userId,
+            key: "lang",
+            value: langRef.current,
+          },
+          { scope: "user", scope_id: userId, key: "theme", value: theme },
+        ];
+        for (const s of rows) {
+          await drivers.data
+            .from("settings")
+            .upsert(s, { onConflict: "scope,scope_id,key" });
+        }
+        void drivers.scp.publishEvent("platform.settings.updated", {
+          scope: "user",
+          scope_id: userId,
+          key: "profile",
+          updated_by: userId,
+        });
       }
-      void drivers.scp.publishEvent("platform.settings.updated", {
-        scope: "user",
-        scope_id: userId,
-        key: "profile",
-        updated_by: userId,
-      });
-    }
-    setSaveState("saved");
-    setTimeout(() => setSaveState("idle"), 2000);
+      setSaveState("saved");
+      setTimeout(() => setSaveState("idle"), 2000);
+    }, 1500);
   }
 
   return (
@@ -625,7 +680,13 @@ function TabMeuPerfil() {
         <SectionLabel>Informações pessoais</SectionLabel>
         <SettingGroup>
           <SettingRow label="Nome de exibição">
-            <SettingInput value={name} onChange={setName} />
+            <SettingInput
+              value={name}
+              onChange={(v) => {
+                setName(v);
+                triggerAutoSave();
+              }}
+            />
           </SettingRow>
           <SettingRow
             label="E-mail"
@@ -636,7 +697,10 @@ function TabMeuPerfil() {
           <SettingRow label="Idioma" last>
             <SettingSelect
               value={lang}
-              onChange={setLang}
+              onChange={(v) => {
+                setLang(v);
+                triggerAutoSave();
+              }}
               options={[
                 { value: "pt-BR", label: "Português (Brasil)" },
                 { value: "en-US", label: "English (US)" },
@@ -658,16 +722,14 @@ function TabMeuPerfil() {
         </div>
       )}
 
-      <PrimaryButton
-        onClick={() => void handleSave()}
-        disabled={saveState !== "idle"}
-      >
-        {saveState === "saving"
-          ? "Salvando…"
-          : saveState === "saved"
-            ? "Salvo!"
-            : "Salvar alterações"}
-      </PrimaryButton>
+      <SaveRow>
+        <PrimaryButton
+          onClick={triggerAutoSave}
+          disabled={saveState === "saving"}
+        >
+          <SaveLabel state={saveState} label="Salvar alterações" />
+        </PrimaryButton>
+      </SaveRow>
     </div>
   );
 }
@@ -1021,7 +1083,7 @@ function TabSeguranca() {
           </div>
         )}
 
-        <div style={{ marginTop: 12 }}>
+        <SaveRow>
           <PrimaryButton
             onClick={() => {
               setPwdState("saving");
@@ -1032,13 +1094,9 @@ function TabSeguranca() {
             }}
             disabled={!canSave || pwdState !== "idle"}
           >
-            {pwdState === "saving"
-              ? "Salvando…"
-              : pwdState === "saved"
-                ? "Senha alterada!"
-                : "Alterar senha"}
+            <SaveLabel state={pwdState} label="Alterar senha" />
           </PrimaryButton>
-        </div>
+        </SaveRow>
       </div>
 
       <div>
