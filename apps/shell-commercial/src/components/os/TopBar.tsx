@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { LogOut, Settings, ChevronDown, MessageCircle } from "lucide-react";
+import { LogOut, Settings, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence, type MotionStyle } from "framer-motion";
 import { useSessionStore } from "../../stores/session";
 import { useOSStore } from "../../stores/osStore";
@@ -31,41 +31,6 @@ function useClickOutside(
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
   }, [ref, handler]);
-}
-
-function MessagesDropdown({ onClose }: { onClose: () => void }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useClickOutside(ref, onClose);
-
-  return (
-    <motion.div
-      ref={ref}
-      {...DROPDOWN_MOTION}
-      className="absolute right-0 top-full mt-2 w-72 z-50"
-      style={{ ...DROPDOWN_STYLE, overflow: "hidden" }}
-    >
-      <div
-        className="flex items-center px-4 py-2.5"
-        style={{ borderBottom: "1px solid var(--border-subtle)" }}
-      >
-        <span
-          style={{
-            fontSize: 12,
-            fontWeight: 600,
-            color: "var(--text-primary)",
-            letterSpacing: "-0.01em",
-          }}
-        >
-          Mensagens
-        </span>
-      </div>
-      <div className="px-4 py-8 text-center">
-        <p style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
-          Sem mensagens
-        </p>
-      </div>
-    </motion.div>
-  );
 }
 
 function AvatarDropdown({
@@ -174,40 +139,6 @@ function MenuItem({
   );
 }
 
-function IconButton({
-  children,
-  onClick,
-  "aria-label": ariaLabel,
-}: {
-  children: React.ReactNode;
-  onClick: () => void;
-  "aria-label": string;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      aria-label={ariaLabel}
-      className="flex items-center justify-center transition-colors"
-      style={{
-        width: 28,
-        height: 28,
-        borderRadius: "var(--radius-sm)",
-        color: "var(--text-tertiary)",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = "var(--glass-bg-hover)";
-        e.currentTarget.style.color = "var(--text-secondary)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = "transparent";
-        e.currentTarget.style.color = "var(--text-tertiary)";
-      }}
-    >
-      {children}
-    </button>
-  );
-}
-
 interface TopBarProps {
   companyName: string | null;
   onSignOut: () => void;
@@ -216,12 +147,10 @@ interface TopBarProps {
 export function TopBar({ companyName, onSignOut }: TopBarProps) {
   const { email } = useSessionStore();
   const openApp = useOSStore((s) => s.openApp);
-  const [messagesOpen, setMessagesOpen] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
   const initials = email ? email.slice(0, 2).toUpperCase() : "??";
 
   function closeAll() {
-    setMessagesOpen(false);
     setAvatarOpen(false);
   }
 
@@ -271,33 +200,12 @@ export function TopBar({ companyName, onSignOut }: TopBarProps) {
         </div>
       )}
 
-      {/* Right: Messages, Avatar */}
+      {/* Right: Avatar */}
       <div className="flex items-center gap-0.5">
-        {/* Messages */}
-        <div className="relative">
-          <IconButton
-            aria-label="Mensagens"
-            onClick={() => {
-              setMessagesOpen((v) => !v);
-              setAvatarOpen(false);
-            }}
-          >
-            <MessageCircle size={15} strokeWidth={1.7} />
-          </IconButton>
-          <AnimatePresence>
-            {messagesOpen && (
-              <MessagesDropdown onClose={() => setMessagesOpen(false)} />
-            )}
-          </AnimatePresence>
-        </div>
-
         {/* Avatar */}
         <div className="relative ml-0.5">
           <button
-            onClick={() => {
-              setAvatarOpen((v) => !v);
-              setMessagesOpen(false);
-            }}
+            onClick={() => setAvatarOpen((v) => !v)}
             aria-label="Menu do usuário"
             className="flex items-center justify-center transition-opacity hover:opacity-80"
             style={{
