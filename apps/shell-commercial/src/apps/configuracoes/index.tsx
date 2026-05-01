@@ -352,8 +352,9 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
         height: 24,
         borderRadius: 12,
         border: "none",
+        padding: 0,
         cursor: "pointer",
-        background: on ? "#6366f1" : "rgba(255,255,255,0.15)",
+        background: on ? "#63f27e" : "rgba(255,255,255,0.15)",
         transition: "background 200ms ease",
         flexShrink: 0,
       }}
@@ -362,12 +363,14 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
         style={{
           position: "absolute",
           top: 2,
+          left: 0,
+          display: "block",
           width: 20,
           height: 20,
           borderRadius: 10,
           background: "#ffffff",
           transition: "transform 200ms ease",
-          transform: on ? "translateX(20px)" : "translateX(2px)",
+          transform: on ? "translateX(22px)" : "translateX(2px)",
           boxShadow: "0 1px 3px rgba(0,0,0,0.35)",
         }}
       />
