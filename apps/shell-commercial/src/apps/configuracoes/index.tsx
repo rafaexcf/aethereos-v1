@@ -598,6 +598,28 @@ function ComingSoonBanner({ message }: { message?: string }) {
 
 // ─── Image upload card (avatar / logo) ───────────────────────────────────────
 
+/**
+ * SupabaseBrowserAuthDriver e SupabaseBrowserDataDriver instanciam clients
+ * separados — apesar de persistSession compartilhar o token via localStorage,
+ * o data client nem sempre vê o JWT a tempo de operações de Storage.
+ * Este helper força a sincronização do session no data client antes do upload.
+ */
+async function syncDataClientSession(
+  drivers: NonNullable<ReturnType<typeof useDrivers>>,
+): Promise<void> {
+  const r = await drivers.auth.getSession();
+  if (!r.ok || r.value === null) return;
+  const session = r.value;
+  if (session.refresh_token === undefined) return;
+  const client = drivers.data.getClient();
+  const current = await client.auth.getSession();
+  if (current.data.session?.access_token === session.access_token) return;
+  await client.auth.setSession({
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+  });
+}
+
 const MAX_IMG_BYTES = 2 * 1024 * 1024; // 2 MB
 const ACCEPTED_IMG_TYPES = [
   "image/jpeg",
@@ -866,6 +888,7 @@ function TabMinhaEmpresa({
     }
 
     setLogoUploading(true);
+    await syncDataClientSession(drivers);
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "png";
     const path = `${activeCompanyId}.${ext}`;
     const client = drivers.data.getClient();
@@ -1384,6 +1407,7 @@ function TabPerfil({
     }
 
     setAvatarUploading(true);
+    await syncDataClientSession(drivers);
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
     const path = `${userId}.${ext}`;
     const client = drivers.data.getClient();
