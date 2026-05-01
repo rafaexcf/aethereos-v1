@@ -20,9 +20,10 @@ import { useOSStore } from "../../stores/osStore";
 import { getApp } from "../../apps/registry";
 import type { OSTab } from "../../types/os";
 
-// Cor que o fundo do conteúdo (AppFrame) usa — precisa ser idêntica para o efeito funcionar
-const CONTENT_BG = "#0f151b"; // var(--bg-base) dark
-const CORNER_SIZE = 8;
+// Deve ser idêntica ao background do AppFrame para o efeito de junção funcionar
+const CONTENT_BG = "#0f151b";
+// Tamanho do raio côncavo nos cantos inferiores da aba ativa (estilo Chrome)
+const CORNER_R = 10;
 
 function AppIcon({
   iconName,
@@ -76,12 +77,12 @@ function SortableTab({ tab }: { tab: OSTab }) {
             .join(" ") || undefined,
         transition,
         opacity: isDragging ? 0.4 : 1,
-        height: isActive ? 32 : 27,
+        alignSelf: isActive ? "flex-end" : "center",
+        height: isActive ? 35 : 27,
         padding: "0 10px",
         gap: 5,
         maxWidth: isPinned ? 56 : 160,
         zIndex: isActive ? 2 : 1,
-        // Aba ativa: só radius em cima, fundo = conteúdo, sem borda inferior
         ...(isActive
           ? {
               borderRadius: "8px 8px 0 0",
@@ -105,34 +106,34 @@ function SortableTab({ tab }: { tab: OSTab }) {
         if (!isActive) e.currentTarget.style.background = "transparent";
       }}
     >
-      {/* ── Concavidades estilo Chrome ── */}
+      {/* ── Cantos côncavos estilo Chrome ── */}
       {isActive && (
         <>
-          {/* Canto inferior-esquerdo: curva côncava */}
+          {/* Canto inferior-esquerdo */}
           <span
             aria-hidden="true"
             style={{
               position: "absolute",
               bottom: 0,
-              left: -CORNER_SIZE,
-              width: CORNER_SIZE,
-              height: CORNER_SIZE,
-              // Gradiente radial: centro no canto SUPERIOR-DIREITO (onde a aba termina)
-              // → a área transparente cria a curva côncava; o resto preenche com a cor do conteúdo
-              background: `radial-gradient(circle at top right, transparent calc(70% - 1px), rgba(255,255,255,0.10) calc(70% - 1px), rgba(255,255,255,0.10) 70%, ${CONTENT_BG} 70%)`,
+              left: -CORNER_R,
+              width: CORNER_R,
+              height: CORNER_R,
+              // Centro no canto superior-direito do span → cria curva côncava para baixo-esquerda
+              background: `radial-gradient(circle at 100% 100%, transparent ${CORNER_R - 1}px, ${CONTENT_BG} ${CORNER_R - 1}px)`,
               pointerEvents: "none",
             }}
           />
-          {/* Canto inferior-direito: espelho */}
+          {/* Canto inferior-direito */}
           <span
             aria-hidden="true"
             style={{
               position: "absolute",
               bottom: 0,
-              right: -CORNER_SIZE,
-              width: CORNER_SIZE,
-              height: CORNER_SIZE,
-              background: `radial-gradient(circle at top left, transparent calc(70% - 1px), rgba(255,255,255,0.10) calc(70% - 1px), rgba(255,255,255,0.10) 70%, ${CONTENT_BG} 70%)`,
+              right: -CORNER_R,
+              width: CORNER_R,
+              height: CORNER_R,
+              // Centro no canto superior-esquerdo do span → espelho
+              background: `radial-gradient(circle at 0% 100%, transparent ${CORNER_R - 1}px, ${CONTENT_BG} ${CORNER_R - 1}px)`,
               pointerEvents: "none",
             }}
           />
@@ -226,13 +227,12 @@ export function TabBar() {
   return (
     <div
       data-testid="tabbar"
-      className="flex items-end overflow-x-auto shrink-0"
+      className="flex items-center overflow-x-auto shrink-0"
       style={{
-        height: 36,
+        height: 40,
         background: "rgba(6,9,18,0.82)",
         backdropFilter: `blur(var(--blur-ui))`,
         WebkitBackdropFilter: `blur(var(--blur-ui))`,
-        // border-bottom = borda superior do conteúdo; aba ativa cobre com sua própria cor
         borderBottom: "1px solid var(--border-default)",
         paddingLeft: 8,
         paddingRight: 8,
@@ -250,7 +250,7 @@ export function TabBar() {
           items={tabs.map((t) => t.id)}
           strategy={horizontalListSortingStrategy}
         >
-          <div className="flex items-end" style={{ gap: 2 }}>
+          <div className="flex items-center" style={{ gap: 2, height: "100%" }}>
             {tabs.map((tab) => (
               <SortableTab key={tab.id} tab={tab} />
             ))}
