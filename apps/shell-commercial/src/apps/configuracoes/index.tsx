@@ -1220,16 +1220,6 @@ function TabMinhaEmpresa({
         )}
       </div>
 
-      {/* Dados da empresa */}
-      <div>
-        <SectionLabel>Dados da empresa</SectionLabel>
-        <SettingGroup>
-          <SettingRow label="Razão social" last>
-            <SettingInput value={name} onChange={setName} />
-          </SettingRow>
-        </SettingGroup>
-      </div>
-
       <SaveRow>
         <PrimaryButton
           onClick={() => void handleSave()}
