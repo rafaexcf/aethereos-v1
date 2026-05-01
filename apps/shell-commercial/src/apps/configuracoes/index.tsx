@@ -19,6 +19,7 @@ import {
   Loader2,
   PanelLeftClose,
   PanelLeftOpen,
+  Home,
 } from "lucide-react";
 import { useSessionStore } from "../../stores/session";
 import { useDrivers } from "../../lib/drivers-context";
@@ -27,6 +28,7 @@ import { AnimatedThemeToggler } from "../../components/ui/animated-theme-toggler
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type TabId =
+  | "home"
   | "meu-perfil"
   | "notificacoes"
   | "seguranca"
@@ -78,6 +80,7 @@ const NAV_SECTIONS: NavSection[] = [
 ];
 
 const TAB_LABELS: Record<TabId, string> = {
+  home: "Início",
   "meu-perfil": "Meu Perfil",
   notificacoes: "Notificações",
   seguranca: "Segurança",
@@ -87,6 +90,61 @@ const TAB_LABELS: Record<TabId, string> = {
   aparencia: "Aparência",
   integracoes: "Integrações",
   sobre: "Sobre",
+};
+
+// ─── Bento home metadata ──────────────────────────────────────────────────────
+
+type BentoId = Exclude<TabId, "home">;
+
+const BENTO_META: Record<
+  BentoId,
+  { description: string; color: string; bg: string }
+> = {
+  "meu-perfil": {
+    description: "Nome, email, idioma e foto",
+    color: "#818cf8",
+    bg: "rgba(99,102,241,0.18)",
+  },
+  notificacoes: {
+    description: "Alertas, sons e canais de comunicação",
+    color: "#fbbf24",
+    bg: "rgba(245,158,11,0.18)",
+  },
+  seguranca: {
+    description: "Senha, 2FA e sessões ativas",
+    color: "#34d399",
+    bg: "rgba(16,185,129,0.18)",
+  },
+  "dados-privacidade": {
+    description: "Exportar, excluir e privacidade",
+    color: "#22d3ee",
+    bg: "rgba(6,182,212,0.18)",
+  },
+  dock: {
+    description: "Ícones, posição e comportamento",
+    color: "#a78bfa",
+    bg: "rgba(139,92,246,0.18)",
+  },
+  mesa: {
+    description: "Layout e organização do workspace",
+    color: "#fb7185",
+    bg: "rgba(244,63,94,0.18)",
+  },
+  aparencia: {
+    description: "Tema, cores e densidade visual",
+    color: "#f472b6",
+    bg: "rgba(236,72,153,0.18)",
+  },
+  integracoes: {
+    description: "Apps e serviços conectados",
+    color: "#fb923c",
+    bg: "rgba(249,115,22,0.18)",
+  },
+  sobre: {
+    description: "Versão, créditos e licenças",
+    color: "#94a3b8",
+    bg: "rgba(100,116,139,0.20)",
+  },
 };
 
 // ─── Design primitives ────────────────────────────────────────────────────────
@@ -1669,7 +1727,10 @@ function Sidebar({
   })).filter((section) => section.items.length > 0);
 
   if (collapsed) {
-    const allItems = NAV_SECTIONS.flatMap((s) => s.items);
+    const allItems: { id: TabId; label: string; icon: typeof User }[] = [
+      { id: "home", label: "Início", icon: Home },
+      ...NAV_SECTIONS.flatMap((s) => s.items),
+    ];
     return (
       <aside style={ASIDE_STYLE}>
         <nav
@@ -1739,14 +1800,36 @@ function Sidebar({
 
   return (
     <aside style={ASIDE_STYLE}>
-      {/* App identity */}
-      <div
+      {/* App identity — clickable, navigates to home */}
+      <button
+        type="button"
+        onClick={() => onSelect("home")}
+        aria-label="Início"
+        aria-current={active === "home" ? "page" : undefined}
         style={{
           display: "flex",
           alignItems: "center",
           gap: 10,
           padding: "16px 14px 12px",
           borderBottom: "1px solid rgba(255,255,255,0.06)",
+          background:
+            active === "home" ? "rgba(255,255,255,0.04)" : "transparent",
+          border: "none",
+          borderBottomWidth: 1,
+          borderBottomStyle: "solid",
+          borderBottomColor: "rgba(255,255,255,0.06)",
+          cursor: "pointer",
+          textAlign: "left",
+          width: "100%",
+          transition: "background 120ms ease",
+        }}
+        onMouseEnter={(e) => {
+          if (active !== "home")
+            e.currentTarget.style.background = "rgba(255,255,255,0.03)";
+        }}
+        onMouseLeave={(e) => {
+          if (active !== "home")
+            e.currentTarget.style.background = "transparent";
         }}
       >
         <Settings
@@ -1765,7 +1848,7 @@ function Sidebar({
         >
           Configurações
         </span>
-      </div>
+      </button>
 
       {/* Search */}
       <div style={{ padding: "10px 10px 4px" }}>
@@ -1904,10 +1987,173 @@ function Sidebar({
   );
 }
 
+// ─── Home (bento grid) ────────────────────────────────────────────────────────
+
+function BentoCard({
+  item,
+  onSelect,
+}: {
+  item: NavItem;
+  onSelect: (id: TabId) => void;
+}) {
+  const meta = BENTO_META[item.id as BentoId];
+  const Icon = item.icon;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(item.id)}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-start",
+        gap: 14,
+        padding: "18px",
+        minHeight: 132,
+        borderRadius: 14,
+        background: "rgba(255,255,255,0.04)",
+        border: "1px solid rgba(255,255,255,0.07)",
+        cursor: "pointer",
+        textAlign: "left",
+        transition:
+          "background 160ms ease, border-color 160ms ease, transform 160ms ease",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "rgba(255,255,255,0.07)";
+        e.currentTarget.style.borderColor = "rgba(255,255,255,0.14)";
+        e.currentTarget.style.transform = "translateY(-1px)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+        e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)";
+        e.currentTarget.style.transform = "translateY(0)";
+      }}
+    >
+      <div
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: 10,
+          background: meta.bg,
+          border: `1px solid ${meta.color}33`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        <Icon size={20} style={{ color: meta.color }} strokeWidth={1.7} />
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <h3
+          style={{
+            fontSize: 14,
+            fontWeight: 600,
+            color: "var(--text-primary)",
+            letterSpacing: "-0.01em",
+            lineHeight: 1.25,
+          }}
+        >
+          {item.label}
+        </h3>
+        <p
+          style={{
+            fontSize: 12,
+            color: "var(--text-tertiary)",
+            lineHeight: 1.45,
+          }}
+        >
+          {meta.description}
+        </p>
+      </div>
+    </button>
+  );
+}
+
+function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
+  return (
+    <div>
+      {/* Hero */}
+      <div
+        style={{
+          marginBottom: 28,
+          padding: "26px 28px",
+          borderRadius: 16,
+          background:
+            "linear-gradient(135deg, rgba(99,102,241,0.16), rgba(139,92,246,0.06))",
+          border: "1px solid rgba(99,102,241,0.20)",
+        }}
+      >
+        <h1
+          style={{
+            fontSize: 24,
+            fontWeight: 700,
+            color: "var(--text-primary)",
+            letterSpacing: "-0.03em",
+            fontFamily: "var(--font-display)",
+            marginBottom: 6,
+            lineHeight: 1.2,
+          }}
+        >
+          Bem-vindo às Configurações
+        </h1>
+        <p
+          style={{
+            fontSize: 13,
+            color: "var(--text-secondary)",
+            lineHeight: 1.55,
+            maxWidth: 620,
+          }}
+        >
+          Personalize sua conta, customize a aparência e gerencie as integrações
+          do seu workspace.
+        </p>
+      </div>
+
+      {/* Sections */}
+      {NAV_SECTIONS.map((section, idx) => (
+        <div key={section.label} style={{ marginTop: idx === 0 ? 0 : 28 }}>
+          <p
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              color: "var(--text-tertiary)",
+              letterSpacing: "0.07em",
+              textTransform: "uppercase",
+              marginBottom: 10,
+            }}
+          >
+            {section.label}
+          </p>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: 14,
+            }}
+          >
+            {section.items.map((item) => (
+              <BentoCard key={item.id} item={item} onSelect={onSelect} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
-function TabContent({ id }: { id: TabId }) {
+function TabContent({
+  id,
+  onSelect,
+}: {
+  id: TabId;
+  onSelect: (id: TabId) => void;
+}) {
   switch (id) {
+    case "home":
+      return <TabHome onSelect={onSelect} />;
     case "meu-perfil":
       return <TabMeuPerfil />;
     case "notificacoes":
@@ -1933,8 +2179,9 @@ const SIDEBAR_W = 239;
 const SIDEBAR_ICON_W = 48;
 
 export function ConfiguracoesApp() {
-  const [active, setActive] = useState<TabId>("meu-perfil");
+  const [active, setActive] = useState<TabId>("home");
   const [collapsed, setCollapsed] = useState(false);
+  const isHome = active === "home";
 
   return (
     <div
@@ -2016,35 +2263,65 @@ export function ConfiguracoesApp() {
               marginBottom: 20,
             }}
           >
-            <Settings
-              size={13}
-              style={{ color: "var(--text-tertiary)", flexShrink: 0 }}
-              strokeWidth={1.6}
-            />
-            <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
-              Configurações
-            </span>
-            <ChevronRight
-              size={12}
+            <button
+              type="button"
+              onClick={() => setActive("home")}
               style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: 0,
+                background: "transparent",
+                border: "none",
+                cursor: isHome ? "default" : "pointer",
                 color: "var(--text-tertiary)",
-                flexShrink: 0,
-                opacity: 0.6,
+                transition: "color 120ms ease",
               }}
-              strokeWidth={1.8}
-            />
-            <span
-              style={{
-                fontSize: 12,
-                fontWeight: 500,
-                color: "var(--text-secondary)",
+              onMouseEnter={(e) => {
+                if (!isHome)
+                  e.currentTarget.style.color = "var(--text-secondary)";
               }}
+              onMouseLeave={(e) => {
+                if (!isHome)
+                  e.currentTarget.style.color = "var(--text-tertiary)";
+              }}
+              disabled={isHome}
+              aria-current={isHome ? "page" : undefined}
             >
-              {TAB_LABELS[active]}
-            </span>
+              <Settings
+                size={13}
+                style={{ color: "currentColor", flexShrink: 0 }}
+                strokeWidth={1.6}
+              />
+              <span style={{ fontSize: 12, color: "currentColor" }}>
+                Configurações
+              </span>
+            </button>
+            {!isHome && (
+              <>
+                <ChevronRight
+                  size={12}
+                  style={{
+                    color: "var(--text-tertiary)",
+                    flexShrink: 0,
+                    opacity: 0.6,
+                  }}
+                  strokeWidth={1.8}
+                />
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  {TAB_LABELS[active]}
+                </span>
+              </>
+            )}
           </nav>
 
-          <TabContent id={active} />
+          <TabContent id={active} onSelect={setActive} />
         </div>
       </main>
     </div>
