@@ -66,7 +66,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: "Conta",
     items: [
-      { id: "perfil", label: "Perfil", icon: User },
+      { id: "perfil", label: "Meu Perfil", icon: User },
       { id: "notificacoes", label: "Notificações", icon: Bell },
       { id: "dados-privacidade", label: "Dados e Privacidade", icon: FileText },
     ],
@@ -90,7 +90,7 @@ const NAV_SECTIONS: NavSection[] = [
 
 const TAB_LABELS: Record<TabId, string> = {
   home: "Início",
-  perfil: "Perfil",
+  perfil: "Meu Perfil",
   notificacoes: "Notificações",
   "dados-privacidade": "Dados e Privacidade",
   dock: "Dock",
@@ -806,7 +806,7 @@ function TabPerfil() {
         icon={User}
         iconBg="rgba(99,102,241,0.22)"
         iconColor="#818cf8"
-        title="Perfil"
+        title="Meu Perfil"
         subtitle="Informações pessoais, senha e proteções da conta"
       />
 
