@@ -20,6 +20,10 @@ import { useOSStore } from "../../stores/osStore";
 import { getApp } from "../../apps/registry";
 import type { OSTab } from "../../types/os";
 
+// Cor que o fundo do conteúdo (AppFrame) usa — precisa ser idêntica para o efeito funcionar
+const CONTENT_BG = "#0f151b"; // var(--bg-base) dark
+const CORNER_SIZE = 8;
+
 function AppIcon({
   iconName,
   color,
@@ -51,12 +55,6 @@ function SortableTab({ tab }: { tab: OSTab }) {
     isDragging,
   } = useSortable({ id: tab.id });
 
-  const dragStyle = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1,
-  };
-
   const isPinned = tab.isPinned;
   const isActive = tab.isActive;
 
@@ -69,32 +67,79 @@ function SortableTab({ tab }: { tab: OSTab }) {
       data-testid={`tab-${tab.appId}`}
       className="relative flex items-center justify-center cursor-pointer select-none group flex-none"
       style={{
-        ...dragStyle,
-        height: 28,
+        transform:
+          [
+            CSS.Transform.toString(transform),
+            isActive ? "translateY(1px)" : undefined,
+          ]
+            .filter(Boolean)
+            .join(" ") || undefined,
+        transition,
+        opacity: isDragging ? 0.4 : 1,
+        height: isActive ? 32 : 27,
         padding: "0 10px",
         gap: 5,
-        borderRadius: "var(--radius-md)",
         maxWidth: isPinned ? 56 : 160,
+        zIndex: isActive ? 2 : 1,
+        // Aba ativa: só radius em cima, fundo = conteúdo, sem borda inferior
         ...(isActive
           ? {
-              background: "var(--glass-bg-active)",
-              border: "1px solid var(--glass-border)",
-              boxShadow:
-                "var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,0.12)",
+              borderRadius: "8px 8px 0 0",
+              background: CONTENT_BG,
+              borderTop: "1px solid rgba(255,255,255,0.10)",
+              borderLeft: "1px solid rgba(255,255,255,0.10)",
+              borderRight: "1px solid rgba(255,255,255,0.10)",
+              borderBottom: `1px solid ${CONTENT_BG}`,
             }
           : {
+              borderRadius: 7,
               background: "transparent",
               border: "1px solid transparent",
             }),
       }}
       onMouseEnter={(e) => {
         if (!isActive)
-          e.currentTarget.style.background = "var(--glass-bg-hover)";
+          e.currentTarget.style.background = "rgba(255,255,255,0.05)";
       }}
       onMouseLeave={(e) => {
         if (!isActive) e.currentTarget.style.background = "transparent";
       }}
     >
+      {/* ── Concavidades estilo Chrome ── */}
+      {isActive && (
+        <>
+          {/* Canto inferior-esquerdo: curva côncava */}
+          <span
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: -CORNER_SIZE,
+              width: CORNER_SIZE,
+              height: CORNER_SIZE,
+              // Gradiente radial: centro no canto SUPERIOR-DIREITO (onde a aba termina)
+              // → a área transparente cria a curva côncava; o resto preenche com a cor do conteúdo
+              background: `radial-gradient(circle at top right, transparent 70%, ${CONTENT_BG} 70%)`,
+              pointerEvents: "none",
+            }}
+          />
+          {/* Canto inferior-direito: espelho */}
+          <span
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              bottom: 0,
+              right: -CORNER_SIZE,
+              width: CORNER_SIZE,
+              height: CORNER_SIZE,
+              background: `radial-gradient(circle at top left, transparent 70%, ${CONTENT_BG} 70%)`,
+              pointerEvents: "none",
+            }}
+          />
+        </>
+      )}
+
+      {/* ── Conteúdo da aba ── */}
       {isPinned ? (
         <span
           style={{
@@ -142,7 +187,7 @@ function SortableTab({ tab }: { tab: OSTab }) {
               color: "var(--text-tertiary)",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "var(--glass-bg-hover)";
+              e.currentTarget.style.background = "rgba(255,255,255,0.10)";
               e.currentTarget.style.color = "var(--text-primary)";
             }}
             onMouseLeave={(e) => {
@@ -179,15 +224,18 @@ export function TabBar() {
   return (
     <div
       data-testid="tabbar"
-      className="flex items-center overflow-x-auto shrink-0"
+      className="flex items-end overflow-x-auto shrink-0"
       style={{
         height: 36,
-        background: "rgba(6,9,18,0.60)",
+        background: "rgba(6,9,18,0.82)",
         backdropFilter: `blur(var(--blur-ui))`,
         WebkitBackdropFilter: `blur(var(--blur-ui))`,
+        // border-bottom permanece — a aba ativa cobre este 1px com sua própria cor
         borderBottom: "1px solid var(--border-subtle)",
-        padding: "0 8px",
-        gap: 3,
+        paddingLeft: 8,
+        paddingRight: 8,
+        paddingBottom: 0,
+        gap: 2,
         scrollbarWidth: "none",
       }}
     >
@@ -200,7 +248,7 @@ export function TabBar() {
           items={tabs.map((t) => t.id)}
           strategy={horizontalListSortingStrategy}
         >
-          <div className="flex items-center" style={{ gap: 3 }}>
+          <div className="flex items-end" style={{ gap: 2 }}>
             {tabs.map((tab) => (
               <SortableTab key={tab.id} tab={tab} />
             ))}
