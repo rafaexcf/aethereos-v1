@@ -17,6 +17,8 @@ import {
   Check,
   Download,
   Loader2,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { useSessionStore } from "../../stores/session";
 import { useDrivers } from "../../lib/drivers-context";
@@ -1657,7 +1659,7 @@ function Sidebar({
   return (
     <aside
       style={{
-        width: 253,
+        width: 228,
         flexShrink: 0,
         background: "rgba(15,21,27,0.82)",
         borderRight: "1px solid rgba(255,255,255,0.06)",
@@ -1856,8 +1858,11 @@ function TabContent({ id }: { id: TabId }) {
   }
 }
 
+const SIDEBAR_W = 228;
+
 export function ConfiguracoesApp() {
   const [active, setActive] = useState<TabId>("meu-perfil");
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <div
@@ -1868,9 +1873,64 @@ export function ConfiguracoesApp() {
         width: "100%",
         overflow: "hidden",
         background: "var(--bg-base)",
+        position: "relative",
       }}
     >
-      <Sidebar active={active} onSelect={setActive} />
+      {/* Animated sidebar wrapper */}
+      <div
+        style={{
+          width: collapsed ? 0 : SIDEBAR_W,
+          flexShrink: 0,
+          overflow: "hidden",
+          transition: "width 250ms ease",
+        }}
+      >
+        <Sidebar active={active} onSelect={setActive} />
+      </div>
+
+      {/* Collapse/expand toggle */}
+      <button
+        type="button"
+        onClick={() => setCollapsed((v) => !v)}
+        aria-label={collapsed ? "Expandir sidebar" : "Colapsar sidebar"}
+        style={{
+          position: "absolute",
+          left: collapsed ? 4 : SIDEBAR_W - 10,
+          top: "50%",
+          transform: "translateY(-50%)",
+          transition: "left 250ms ease",
+          zIndex: 10,
+          width: 20,
+          height: 20,
+          borderRadius: "50%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "rgba(15,21,27,0.95)",
+          border: "1px solid rgba(255,255,255,0.10)",
+          cursor: "pointer",
+          color: "var(--text-tertiary)",
+          flexShrink: 0,
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "rgba(40,55,80,0.95)";
+          e.currentTarget.style.borderColor = "rgba(255,255,255,0.20)";
+          (e.currentTarget as HTMLButtonElement).style.color =
+            "var(--text-primary)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "rgba(15,21,27,0.95)";
+          e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)";
+          (e.currentTarget as HTMLButtonElement).style.color =
+            "var(--text-tertiary)";
+        }}
+      >
+        {collapsed ? (
+          <PanelLeftOpen size={11} strokeWidth={1.8} />
+        ) : (
+          <PanelLeftClose size={11} strokeWidth={1.8} />
+        )}
+      </button>
 
       <main style={{ flex: 1, overflowY: "auto", padding: 28 }}>
         <div style={{ maxWidth: 1095, margin: "0 auto" }}>
