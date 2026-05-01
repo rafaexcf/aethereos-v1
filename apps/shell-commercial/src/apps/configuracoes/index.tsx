@@ -855,22 +855,10 @@ function TabMinhaEmpresa({
   const drivers = useDrivers();
   const { activeCompanyId } = useSessionStore();
 
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-
   const [cnpjDisplay, setCnpjDisplay] = useState("");
   const [cnpjPreview, setCnpjPreview] = useState<CnpjPreview | null>(null);
-  const [cnpjLoading, setCnpjLoading] = useState(false);
-  const [cnpjError, setCnpjError] = useState<string | null>(null);
-  const [name, setName] = useState("");
-  const [saveState, setSaveState] = useState<
-    "idle" | "saving" | "saved" | "error"
-  >("idle");
   const [logoUploading, setLogoUploading] = useState(false);
   const [logoError, setLogoError] = useState<string | null>(null);
-
-  const cnpjLookupAbort = useRef<AbortController | null>(null);
-  const initializedRef = useRef(false);
 
   async function handleLogoUpload(file: File) {
     if (drivers === null || activeCompanyId === null) return;
@@ -931,12 +919,12 @@ function TabMinhaEmpresa({
     setLogoUploading(false);
   }
 
-  // Hydrate from companies table
+  // Hydrate from companies table — CNPJ é read-only depois do cadastro
   useEffect(() => {
     if (drivers === null || activeCompanyId === null) return;
     void drivers.data
       .from("companies")
-      .select("name,cnpj,cnpj_data")
+      .select("cnpj,cnpj_data")
       .eq("id", activeCompanyId)
       .single()
       .then(
@@ -944,106 +932,16 @@ function TabMinhaEmpresa({
           data,
         }: {
           data: {
-            name: string | null;
             cnpj: string | null;
             cnpj_data: CnpjPreview | null;
           } | null;
         }) => {
-          if (data === null) {
-            initializedRef.current = true;
-            return;
-          }
-          if (data.name !== null) setName(data.name);
+          if (data === null) return;
           if (data.cnpj !== null) setCnpjDisplay(maskCnpj(data.cnpj));
           if (data.cnpj_data !== null) setCnpjPreview(data.cnpj_data);
-          initializedRef.current = true;
         },
       );
   }, [drivers, activeCompanyId]);
-
-  async function lookupCnpj(cnpj: string) {
-    if (cnpjLookupAbort.current) cnpjLookupAbort.current.abort();
-    cnpjLookupAbort.current = new AbortController();
-
-    setCnpjLoading(true);
-    setCnpjError(null);
-    try {
-      const res = await fetch(
-        `${supabaseUrl}/functions/v1/cnpj-lookup?cnpj=${cnpj}`,
-        {
-          headers: { apikey: anonKey },
-          signal: cnpjLookupAbort.current.signal,
-        },
-      );
-      if (!res.ok) {
-        setCnpjError("CNPJ não encontrado");
-      } else {
-        const data = (await res.json()) as CnpjPreview;
-        setCnpjPreview(data);
-        // Auto-preencher razão social caso esteja vazia
-        if (name === "" && data.razao_social !== "") setName(data.razao_social);
-      }
-    } catch (err) {
-      if ((err as { name?: string }).name !== "AbortError") {
-        setCnpjError("Erro ao consultar CNPJ");
-      }
-    } finally {
-      setCnpjLoading(false);
-    }
-  }
-
-  function handleCnpjChange(value: string) {
-    const masked = maskCnpj(value);
-    setCnpjDisplay(masked);
-    setCnpjPreview(null);
-    setCnpjError(null);
-
-    const digits = masked.replace(/\D/g, "");
-    if (digits.length === 14) {
-      void lookupCnpj(digits);
-    }
-  }
-
-  async function handleSave() {
-    if (drivers === null || activeCompanyId === null) return;
-
-    const cnpjDigits = cnpjDisplay.replace(/\D/g, "");
-    if (cnpjDigits.length !== 14) {
-      setCnpjError("CNPJ deve ter 14 dígitos");
-      setSaveState("error");
-      setTimeout(() => setSaveState("idle"), 2000);
-      return;
-    }
-
-    setSaveState("saving");
-
-    const payload: Record<string, unknown> = {
-      cnpj: cnpjDigits,
-      cnpj_data: cnpjPreview,
-      name,
-    };
-
-    const { error } = await drivers.data
-      .from("companies")
-      .update(payload)
-      .eq("id", activeCompanyId);
-
-    if (error !== null && error !== undefined) {
-      setSaveState("error");
-      setTimeout(() => setSaveState("idle"), 2000);
-      return;
-    }
-
-    void drivers.scp.publishEvent("platform.settings.updated", {
-      scope: "company",
-      scope_id: activeCompanyId,
-      key: "company_profile",
-      updated_by: useSessionStore.getState().userId ?? "",
-    });
-
-    setSaveState("saved");
-    setTimeout(() => setSaveState("idle"), 2000);
-  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -1080,70 +978,30 @@ function TabMinhaEmpresa({
         <SettingGroup>
           <SettingRow
             label="CNPJ"
-            sublabel="Digite os 14 dígitos para consulta automática"
+            sublabel="Não é possível alterar após o cadastro"
             last
           >
-            <div style={{ position: "relative", width: 220 }}>
-              <input
-                type="text"
-                value={cnpjDisplay}
-                onChange={(e) => handleCnpjChange(e.target.value)}
-                placeholder="00.000.000/0000-00"
-                inputMode="numeric"
-                autoComplete="off"
-                data-1p-ignore="true"
-                data-lpignore="true"
-                style={{
-                  width: "100%",
-                  background: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.10)",
-                  borderRadius: 8,
-                  padding: "7px 32px 7px 11px",
-                  fontSize: 13,
-                  fontFamily: "var(--font-mono)",
-                  color: "var(--text-primary)",
-                  outline: "none",
-                  transition: "border-color 120ms ease, box-shadow 120ms ease",
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(99,102,241,0.65)";
-                  e.currentTarget.style.boxShadow =
-                    "0 0 0 3px rgba(99,102,241,0.12)";
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)";
-                  e.currentTarget.style.boxShadow = "none";
-                }}
-              />
-              {cnpjLoading && (
-                <Loader2
-                  size={14}
-                  className="animate-spin"
-                  style={{
-                    position: "absolute",
-                    right: 10,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    color: "var(--text-tertiary)",
-                  }}
-                />
-              )}
-            </div>
+            <input
+              type="text"
+              value={cnpjDisplay}
+              readOnly
+              data-1p-ignore="true"
+              data-lpignore="true"
+              style={{
+                width: 220,
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.05)",
+                borderRadius: 8,
+                padding: "7px 11px",
+                fontSize: 13,
+                fontFamily: "var(--font-mono)",
+                color: "var(--text-secondary)",
+                cursor: "not-allowed",
+                outline: "none",
+              }}
+            />
           </SettingRow>
         </SettingGroup>
-
-        {cnpjError !== null && (
-          <p
-            style={{
-              fontSize: 12,
-              color: "#f87171",
-              marginTop: 8,
-              paddingLeft: 2,
-            }}
-          >
-            {cnpjError}
-          </p>
-        )}
 
         {cnpjPreview !== null && (
           <div
@@ -1219,15 +1077,6 @@ function TabMinhaEmpresa({
           </div>
         )}
       </div>
-
-      <SaveRow>
-        <PrimaryButton
-          onClick={() => void handleSave()}
-          disabled={saveState === "saving"}
-        >
-          <SaveLabel state={saveState} label="Salvar alterações" />
-        </PrimaryButton>
-      </SaveRow>
 
       {/* Cadastro completo (placeholder — destino criado depois) */}
       <button
