@@ -1640,12 +1640,24 @@ function TabSobre() {
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
+const ASIDE_STYLE = {
+  width: "100%",
+  height: "100%",
+  background: "rgba(15,21,27,0.82)",
+  borderRight: "1px solid rgba(255,255,255,0.06)",
+  display: "flex",
+  flexDirection: "column" as const,
+  overflowY: "auto" as const,
+};
+
 function Sidebar({
   active,
   onSelect,
+  collapsed,
 }: {
   active: TabId;
   onSelect: (id: TabId) => void;
+  collapsed: boolean;
 }) {
   const [query, setQuery] = useState("");
 
@@ -1656,18 +1668,77 @@ function Sidebar({
     ),
   })).filter((section) => section.items.length > 0);
 
+  if (collapsed) {
+    const allItems = NAV_SECTIONS.flatMap((s) => s.items);
+    return (
+      <aside style={ASIDE_STYLE}>
+        <nav
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            padding: "12px 0",
+            gap: 2,
+            flex: 1,
+          }}
+        >
+          {allItems.map((item) => {
+            const Icon = item.icon;
+            const isSelected = active === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onSelect(item.id)}
+                title={item.label}
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 8,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: isSelected
+                    ? "1px solid rgba(255,255,255,0.08)"
+                    : "1px solid transparent",
+                  background: isSelected
+                    ? "rgba(255,255,255,0.08)"
+                    : "transparent",
+                  color: isSelected
+                    ? "var(--text-primary)"
+                    : "var(--text-secondary)",
+                  cursor: "pointer",
+                  transition: "background 120ms ease",
+                  flexShrink: 0,
+                }}
+                onMouseEnter={(e) => {
+                  if (!isSelected) {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+                    e.currentTarget.style.color = "var(--text-primary)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSelected) {
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.color = "var(--text-secondary)";
+                  }
+                }}
+              >
+                <Icon
+                  size={16}
+                  style={{ color: "currentColor", flexShrink: 0 }}
+                  strokeWidth={1.8}
+                />
+              </button>
+            );
+          })}
+        </nav>
+      </aside>
+    );
+  }
+
   return (
-    <aside
-      style={{
-        width: 228,
-        flexShrink: 0,
-        background: "rgba(15,21,27,0.82)",
-        borderRight: "1px solid rgba(255,255,255,0.06)",
-        display: "flex",
-        flexDirection: "column",
-        overflowY: "auto",
-      }}
-    >
+    <aside style={ASIDE_STYLE}>
       {/* App identity */}
       <div
         style={{
@@ -1858,7 +1929,8 @@ function TabContent({ id }: { id: TabId }) {
   }
 }
 
-const SIDEBAR_W = 228;
+const SIDEBAR_W = 239;
+const SIDEBAR_ICON_W = 48;
 
 export function ConfiguracoesApp() {
   const [active, setActive] = useState<TabId>("meu-perfil");
@@ -1879,13 +1951,13 @@ export function ConfiguracoesApp() {
       {/* Animated sidebar wrapper */}
       <div
         style={{
-          width: collapsed ? 0 : SIDEBAR_W,
+          width: collapsed ? SIDEBAR_ICON_W : SIDEBAR_W,
           flexShrink: 0,
           overflow: "hidden",
           transition: "width 250ms ease",
         }}
       >
-        <Sidebar active={active} onSelect={setActive} />
+        <Sidebar active={active} onSelect={setActive} collapsed={collapsed} />
       </div>
 
       {/* Collapse/expand toggle */}
@@ -1895,7 +1967,7 @@ export function ConfiguracoesApp() {
         aria-label={collapsed ? "Expandir sidebar" : "Colapsar sidebar"}
         style={{
           position: "absolute",
-          left: collapsed ? 4 : SIDEBAR_W - 10,
+          left: (collapsed ? SIDEBAR_ICON_W : SIDEBAR_W) - 10,
           top: "50%",
           transform: "translateY(-50%)",
           transition: "left 250ms ease",
