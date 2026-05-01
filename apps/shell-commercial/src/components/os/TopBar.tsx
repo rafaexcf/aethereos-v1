@@ -1,11 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import {
-  Bell,
-  LogOut,
-  Settings,
-  ChevronDown,
-  MessageCircle,
-} from "lucide-react";
+import { LogOut, Settings, ChevronDown, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence, type MotionStyle } from "framer-motion";
 import { useSessionStore } from "../../stores/session";
 import { useOSStore } from "../../stores/osStore";
@@ -37,41 +31,6 @@ function useClickOutside(
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
   }, [ref, handler]);
-}
-
-function NotificationsDropdown({ onClose }: { onClose: () => void }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useClickOutside(ref, onClose);
-
-  return (
-    <motion.div
-      ref={ref}
-      {...DROPDOWN_MOTION}
-      className="absolute right-0 top-full mt-2 w-80 z-50"
-      style={{ ...DROPDOWN_STYLE, overflow: "hidden" }}
-    >
-      <div
-        className="flex items-center px-4 py-2.5"
-        style={{ borderBottom: "1px solid var(--border-subtle)" }}
-      >
-        <span
-          style={{
-            fontSize: 12,
-            fontWeight: 600,
-            color: "var(--text-primary)",
-            letterSpacing: "-0.01em",
-          }}
-        >
-          Notificações
-        </span>
-      </div>
-      <div className="px-4 py-8 text-center">
-        <p style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
-          Sem notificações
-        </p>
-      </div>
-    </motion.div>
-  );
 }
 
 function MessagesDropdown({ onClose }: { onClose: () => void }) {
@@ -257,13 +216,11 @@ interface TopBarProps {
 export function TopBar({ companyName, onSignOut }: TopBarProps) {
   const { email } = useSessionStore();
   const openApp = useOSStore((s) => s.openApp);
-  const [notifOpen, setNotifOpen] = useState(false);
   const [messagesOpen, setMessagesOpen] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
   const initials = email ? email.slice(0, 2).toUpperCase() : "??";
 
   function closeAll() {
-    setNotifOpen(false);
     setMessagesOpen(false);
     setAvatarOpen(false);
   }
@@ -314,7 +271,7 @@ export function TopBar({ companyName, onSignOut }: TopBarProps) {
         </div>
       )}
 
-      {/* Right: Messages, Bell, Avatar */}
+      {/* Right: Messages, Avatar */}
       <div className="flex items-center gap-0.5">
         {/* Messages */}
         <div className="relative">
@@ -322,7 +279,6 @@ export function TopBar({ companyName, onSignOut }: TopBarProps) {
             aria-label="Mensagens"
             onClick={() => {
               setMessagesOpen((v) => !v);
-              setNotifOpen(false);
               setAvatarOpen(false);
             }}
           >
@@ -335,31 +291,11 @@ export function TopBar({ companyName, onSignOut }: TopBarProps) {
           </AnimatePresence>
         </div>
 
-        {/* Notifications */}
-        <div className="relative">
-          <IconButton
-            aria-label="Notificações"
-            onClick={() => {
-              setNotifOpen((v) => !v);
-              setMessagesOpen(false);
-              setAvatarOpen(false);
-            }}
-          >
-            <Bell size={15} strokeWidth={1.7} />
-          </IconButton>
-          <AnimatePresence>
-            {notifOpen && (
-              <NotificationsDropdown onClose={() => setNotifOpen(false)} />
-            )}
-          </AnimatePresence>
-        </div>
-
         {/* Avatar */}
         <div className="relative ml-0.5">
           <button
             onClick={() => {
               setAvatarOpen((v) => !v);
-              setNotifOpen(false);
               setMessagesOpen(false);
             }}
             aria-label="Menu do usuário"
