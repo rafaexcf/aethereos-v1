@@ -596,6 +596,212 @@ function ComingSoonBanner({ message }: { message?: string }) {
   );
 }
 
+// ─── Image upload card (avatar / logo) ───────────────────────────────────────
+
+const MAX_IMG_BYTES = 2 * 1024 * 1024; // 2 MB
+const ACCEPTED_IMG_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+];
+
+function ImageUploadCard({
+  url,
+  onUpload,
+  onRemove,
+  shape,
+  fallback,
+  title,
+  helper,
+  uploading,
+  error,
+}: {
+  url: string | null;
+  onUpload: (file: File) => void;
+  onRemove: () => void;
+  shape: "circle" | "square";
+  fallback: React.ReactNode;
+  title: string;
+  helper: string;
+  uploading: boolean;
+  error: string | null;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const radius = shape === "circle" ? "50%" : 12;
+
+  function pickFile() {
+    inputRef.current?.click();
+  }
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file === undefined) return;
+    onUpload(file);
+    e.target.value = "";
+  }
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 18,
+        padding: 18,
+        borderRadius: 12,
+        background: "rgba(255,255,255,0.04)",
+        border: "1px solid rgba(255,255,255,0.07)",
+      }}
+    >
+      <div
+        style={{
+          position: "relative",
+          width: 72,
+          height: 72,
+          borderRadius: radius,
+          overflow: "hidden",
+          flexShrink: 0,
+          background:
+            "linear-gradient(135deg, rgba(99,102,241,0.85), rgba(30,41,80,0.95))",
+          border: "1px solid rgba(255,255,255,0.12)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {url !== null ? (
+          <img
+            src={url}
+            alt=""
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        ) : (
+          fallback
+        )}
+        {uploading && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "rgba(6,9,18,0.55)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backdropFilter: "blur(2px)",
+            }}
+          >
+            <Loader2
+              size={18}
+              className="animate-spin"
+              style={{ color: "rgba(255,255,255,0.9)" }}
+            />
+          </div>
+        )}
+      </div>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: "var(--text-primary)",
+            letterSpacing: "-0.01em",
+          }}
+        >
+          {title}
+        </p>
+        <p
+          style={{
+            fontSize: 11,
+            color: "var(--text-tertiary)",
+            marginTop: 3,
+            lineHeight: 1.4,
+          }}
+        >
+          {helper}
+        </p>
+        {error !== null && (
+          <p
+            style={{
+              fontSize: 11,
+              color: "#f87171",
+              marginTop: 4,
+            }}
+          >
+            {error}
+          </p>
+        )}
+        <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+          <button
+            type="button"
+            onClick={pickFile}
+            disabled={uploading}
+            style={{
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.10)",
+              borderRadius: 8,
+              padding: "6px 12px",
+              fontSize: 12,
+              fontWeight: 500,
+              color: "var(--text-primary)",
+              cursor: uploading ? "wait" : "pointer",
+              opacity: uploading ? 0.6 : 1,
+              transition: "background 120ms ease",
+            }}
+            onMouseEnter={(e) => {
+              if (!uploading)
+                e.currentTarget.style.background = "rgba(255,255,255,0.11)";
+            }}
+            onMouseLeave={(e) => {
+              if (!uploading)
+                e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+            }}
+          >
+            {url !== null ? "Trocar" : "Enviar arquivo"}
+          </button>
+          {url !== null && (
+            <button
+              type="button"
+              onClick={onRemove}
+              disabled={uploading}
+              style={{
+                background: "rgba(239,68,68,0.10)",
+                border: "1px solid rgba(239,68,68,0.18)",
+                borderRadius: 8,
+                padding: "6px 12px",
+                fontSize: 12,
+                fontWeight: 500,
+                color: "#f87171",
+                cursor: uploading ? "wait" : "pointer",
+                opacity: uploading ? 0.6 : 1,
+                transition: "background 120ms ease",
+              }}
+              onMouseEnter={(e) => {
+                if (!uploading)
+                  e.currentTarget.style.background = "rgba(239,68,68,0.18)";
+              }}
+              onMouseLeave={(e) => {
+                if (!uploading)
+                  e.currentTarget.style.background = "rgba(239,68,68,0.10)";
+              }}
+            >
+              Remover
+            </button>
+          )}
+        </div>
+      </div>
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept={ACCEPTED_IMG_TYPES.join(",")}
+        onChange={handleChange}
+        style={{ display: "none" }}
+      />
+    </div>
+  );
+}
+
 // ─── Tab: Minha Empresa (CNPJ + dados PJ) ────────────────────────────────────
 
 interface CnpjPreview {
@@ -617,7 +823,13 @@ function maskCnpj(raw: string): string {
     .replace(/(\d{4})(\d)/, "$1-$2");
 }
 
-function TabMinhaEmpresa() {
+function TabMinhaEmpresa({
+  logoUrl,
+  setLogoUrl,
+}: {
+  logoUrl: string | null;
+  setLogoUrl: (url: string | null) => void;
+}) {
   const drivers = useDrivers();
   const { activeCompanyId } = useSessionStore();
 
@@ -635,9 +847,69 @@ function TabMinhaEmpresa() {
   const [saveState, setSaveState] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoError, setLogoError] = useState<string | null>(null);
 
   const cnpjLookupAbort = useRef<AbortController | null>(null);
   const initializedRef = useRef(false);
+
+  async function handleLogoUpload(file: File) {
+    if (drivers === null || activeCompanyId === null) return;
+    setLogoError(null);
+    if (!ACCEPTED_IMG_TYPES.includes(file.type)) {
+      setLogoError("Formato inválido. Use JPG, PNG, WebP ou GIF.");
+      return;
+    }
+    if (file.size > MAX_IMG_BYTES) {
+      setLogoError("Arquivo maior que 2 MB.");
+      return;
+    }
+
+    setLogoUploading(true);
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "png";
+    const path = `${activeCompanyId}.${ext}`;
+    const client = drivers.data.getClient();
+    const { error: upErr } = await client.storage
+      .from("company-logos")
+      .upload(path, file, { upsert: true, contentType: file.type });
+    if (upErr !== null) {
+      setLogoError(upErr.message);
+      setLogoUploading(false);
+      return;
+    }
+    const { data: pub } = client.storage
+      .from("company-logos")
+      .getPublicUrl(path);
+    const newUrl = `${pub.publicUrl}?v=${Date.now()}`;
+    const { error: updErr } = await drivers.data
+      .from("companies")
+      .update({ logo_url: newUrl })
+      .eq("id", activeCompanyId);
+    if (updErr !== null && updErr !== undefined) {
+      setLogoError(updErr.message);
+      setLogoUploading(false);
+      return;
+    }
+    setLogoUrl(newUrl);
+    setLogoUploading(false);
+  }
+
+  async function handleLogoRemove() {
+    if (drivers === null || activeCompanyId === null) return;
+    setLogoError(null);
+    setLogoUploading(true);
+    const { error } = await drivers.data
+      .from("companies")
+      .update({ logo_url: null })
+      .eq("id", activeCompanyId);
+    if (error !== null && error !== undefined) {
+      setLogoError(error.message);
+      setLogoUploading(false);
+      return;
+    }
+    setLogoUrl(null);
+    setLogoUploading(false);
+  }
 
   // Hydrate from companies table
   useEffect(() => {
@@ -772,6 +1044,25 @@ function TabMinhaEmpresa() {
         iconColor="#22d3ee"
         title="Minha Empresa"
         subtitle="Cadastro fiscal e dados da pessoa jurídica"
+      />
+
+      {/* Logo da empresa */}
+      <ImageUploadCard
+        url={logoUrl}
+        onUpload={(f) => void handleLogoUpload(f)}
+        onRemove={() => void handleLogoRemove()}
+        shape="square"
+        fallback={
+          <Building2
+            size={32}
+            style={{ color: "rgba(255,255,255,0.6)" }}
+            strokeWidth={1.5}
+          />
+        }
+        title="Logo da empresa"
+        helper="JPG, PNG, WebP ou GIF até 2 MB"
+        uploading={logoUploading}
+        error={logoError}
       />
 
       {/* Identificação fiscal */}
@@ -1061,7 +1352,13 @@ function PwdInput({
   );
 }
 
-function TabPerfil() {
+function TabPerfil({
+  avatarUrl,
+  setAvatarUrl,
+}: {
+  avatarUrl: string | null;
+  setAvatarUrl: (url: string | null) => void;
+}) {
   const { email, userId } = useSessionStore();
   const drivers = useDrivers();
 
@@ -1071,6 +1368,66 @@ function TabPerfil() {
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">(
     "idle",
   );
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+
+  async function handleAvatarUpload(file: File) {
+    if (drivers === null || userId === null) return;
+    setAvatarError(null);
+    if (!ACCEPTED_IMG_TYPES.includes(file.type)) {
+      setAvatarError("Formato inválido. Use JPG, PNG, WebP ou GIF.");
+      return;
+    }
+    if (file.size > MAX_IMG_BYTES) {
+      setAvatarError("Arquivo maior que 2 MB.");
+      return;
+    }
+
+    setAvatarUploading(true);
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+    const path = `${userId}.${ext}`;
+    const client = drivers.data.getClient();
+    const { error: upErr } = await client.storage
+      .from("user-avatars")
+      .upload(path, file, { upsert: true, contentType: file.type });
+    if (upErr !== null) {
+      setAvatarError(upErr.message);
+      setAvatarUploading(false);
+      return;
+    }
+    const { data: pub } = client.storage
+      .from("user-avatars")
+      .getPublicUrl(path);
+    const newUrl = `${pub.publicUrl}?v=${Date.now()}`;
+    const { error: updErr } = await drivers.data
+      .from("profiles")
+      .update({ avatar_url: newUrl })
+      .eq("id", userId);
+    if (updErr !== null && updErr !== undefined) {
+      setAvatarError(updErr.message);
+      setAvatarUploading(false);
+      return;
+    }
+    setAvatarUrl(newUrl);
+    setAvatarUploading(false);
+  }
+
+  async function handleAvatarRemove() {
+    if (drivers === null || userId === null) return;
+    setAvatarError(null);
+    setAvatarUploading(true);
+    const { error } = await drivers.data
+      .from("profiles")
+      .update({ avatar_url: null })
+      .eq("id", userId);
+    if (error !== null && error !== undefined) {
+      setAvatarError(error.message);
+      setAvatarUploading(false);
+      return;
+    }
+    setAvatarUrl(null);
+    setAvatarUploading(false);
+  }
 
   // Refs so debounce callback always reads latest values
   const nameRef = useRef(name);
@@ -1180,6 +1537,30 @@ function TabPerfil() {
         iconColor="#818cf8"
         title="Meu Perfil"
         subtitle="Informações pessoais, senha e proteções da conta"
+      />
+
+      {/* Foto de perfil */}
+      <ImageUploadCard
+        url={avatarUrl}
+        onUpload={(f) => void handleAvatarUpload(f)}
+        onRemove={() => void handleAvatarRemove()}
+        shape="circle"
+        fallback={
+          <span
+            style={{
+              color: "rgba(255,255,255,0.92)",
+              fontSize: 26,
+              fontWeight: 700,
+              letterSpacing: "0.02em",
+            }}
+          >
+            {email !== null ? email.slice(0, 2).toUpperCase() : "??"}
+          </span>
+        }
+        title="Foto de perfil"
+        helper="JPG, PNG, WebP ou GIF até 2 MB"
+        uploading={avatarUploading}
+        error={avatarError}
       />
 
       {/* Informações pessoais */}
@@ -2013,14 +2394,68 @@ const ASIDE_STYLE = {
   overflowY: "auto" as const,
 };
 
+function NavItemIcon({
+  itemId,
+  Icon,
+  size,
+  imgSize,
+  avatarUrl,
+  logoUrl,
+}: {
+  itemId: TabId;
+  Icon: typeof User;
+  size: number;
+  imgSize: number;
+  avatarUrl: string | null;
+  logoUrl: string | null;
+}) {
+  let imgUrl: string | null = null;
+  let imgRadius = 0;
+  if (itemId === "perfil" && avatarUrl !== null) {
+    imgUrl = avatarUrl;
+    imgRadius = 999;
+  } else if (itemId === "minha-empresa" && logoUrl !== null) {
+    imgUrl = logoUrl;
+    imgRadius = 5;
+  }
+
+  if (imgUrl !== null) {
+    return (
+      <img
+        src={imgUrl}
+        alt=""
+        style={{
+          width: imgSize,
+          height: imgSize,
+          borderRadius: imgRadius,
+          objectFit: "cover",
+          flexShrink: 0,
+        }}
+      />
+    );
+  }
+
+  return (
+    <Icon
+      size={size}
+      style={{ color: "currentColor", flexShrink: 0 }}
+      strokeWidth={1.8}
+    />
+  );
+}
+
 function Sidebar({
   active,
   onSelect,
   collapsed,
+  avatarUrl,
+  logoUrl,
 }: {
   active: TabId;
   onSelect: (id: TabId) => void;
   collapsed: boolean;
+  avatarUrl: string | null;
+  logoUrl: string | null;
 }) {
   const [query, setQuery] = useState("");
 
@@ -2049,7 +2484,6 @@ function Sidebar({
           }}
         >
           {allItems.map((item) => {
-            const Icon = item.icon;
             const isSelected = active === item.id;
             return (
               <button
@@ -2090,10 +2524,13 @@ function Sidebar({
                   }
                 }}
               >
-                <Icon
+                <NavItemIcon
+                  itemId={item.id}
+                  Icon={item.icon}
                   size={16}
-                  style={{ color: "currentColor", flexShrink: 0 }}
-                  strokeWidth={1.8}
+                  imgSize={22}
+                  avatarUrl={avatarUrl}
+                  logoUrl={logoUrl}
                 />
               </button>
             );
@@ -2225,7 +2662,6 @@ function Sidebar({
             </p>
 
             {section.items.map((item) => {
-              const Icon = item.icon;
               const isSelected = active === item.id;
 
               return (
@@ -2271,10 +2707,13 @@ function Sidebar({
                     }
                   }}
                 >
-                  <Icon
+                  <NavItemIcon
+                    itemId={item.id}
+                    Icon={item.icon}
                     size={15}
-                    style={{ color: "currentColor", flexShrink: 0 }}
-                    strokeWidth={1.8}
+                    imgSize={20}
+                    avatarUrl={avatarUrl}
+                    logoUrl={logoUrl}
                   />
                   {item.label}
                 </button>
@@ -3176,17 +3615,25 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
 function TabContent({
   id,
   onSelect,
+  avatarUrl,
+  setAvatarUrl,
+  logoUrl,
+  setLogoUrl,
 }: {
   id: TabId;
   onSelect: (id: TabId) => void;
+  avatarUrl: string | null;
+  setAvatarUrl: (url: string | null) => void;
+  logoUrl: string | null;
+  setLogoUrl: (url: string | null) => void;
 }) {
   switch (id) {
     case "home":
       return <TabHome onSelect={onSelect} />;
     case "minha-empresa":
-      return <TabMinhaEmpresa />;
+      return <TabMinhaEmpresa logoUrl={logoUrl} setLogoUrl={setLogoUrl} />;
     case "perfil":
-      return <TabPerfil />;
+      return <TabPerfil avatarUrl={avatarUrl} setAvatarUrl={setAvatarUrl} />;
     case "notificacoes":
       return <TabNotificacoes />;
     case "dados-privacidade":
@@ -3208,9 +3655,46 @@ const SIDEBAR_W = 239;
 const SIDEBAR_ICON_W = 48;
 
 export function ConfiguracoesApp() {
+  const drivers = useDrivers();
+  const { userId, activeCompanyId } = useSessionStore();
   const [active, setActive] = useState<TabId>("home");
   const [collapsed, setCollapsed] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const isHome = active === "home";
+
+  // Hydrate avatar (profiles.avatar_url) and logo (companies.logo_url)
+  useEffect(() => {
+    if (drivers === null) return;
+    if (userId !== null) {
+      void drivers.data
+        .from("profiles")
+        .select("avatar_url")
+        .eq("id", userId)
+        .maybeSingle()
+        .then(({ data }: { data: { avatar_url: string | null } | null }) => {
+          if (
+            data !== null &&
+            data.avatar_url !== null &&
+            data.avatar_url !== ""
+          ) {
+            setAvatarUrl(data.avatar_url);
+          }
+        });
+    }
+    if (activeCompanyId !== null) {
+      void drivers.data
+        .from("companies")
+        .select("logo_url")
+        .eq("id", activeCompanyId)
+        .maybeSingle()
+        .then(({ data }: { data: { logo_url: string | null } | null }) => {
+          if (data !== null && data.logo_url !== null && data.logo_url !== "") {
+            setLogoUrl(data.logo_url);
+          }
+        });
+    }
+  }, [drivers, userId, activeCompanyId]);
 
   return (
     <div
@@ -3233,7 +3717,13 @@ export function ConfiguracoesApp() {
           transition: "width 250ms ease",
         }}
       >
-        <Sidebar active={active} onSelect={setActive} collapsed={collapsed} />
+        <Sidebar
+          active={active}
+          onSelect={setActive}
+          collapsed={collapsed}
+          avatarUrl={avatarUrl}
+          logoUrl={logoUrl}
+        />
       </div>
 
       {/* Collapse/expand toggle */}
@@ -3356,7 +3846,14 @@ export function ConfiguracoesApp() {
             )}
           </nav>
 
-          <TabContent id={active} onSelect={setActive} />
+          <TabContent
+            id={active}
+            onSelect={setActive}
+            avatarUrl={avatarUrl}
+            setAvatarUrl={setAvatarUrl}
+            logoUrl={logoUrl}
+            setLogoUrl={setLogoUrl}
+          />
         </div>
       </main>
     </div>
