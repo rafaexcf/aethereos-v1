@@ -276,11 +276,11 @@ export function TopBar({ companyName, onSignOut }: TopBarProps) {
       className="relative flex shrink-0 items-center justify-between px-4"
       style={{
         height: 36,
-        background: "var(--topbar-bg)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        borderBottom: "1px solid var(--border-subtle)",
-        boxShadow: "0 1px 0 rgba(255,255,255,0.04), var(--shadow-sm)",
+        background: "rgba(6,9,18,0.52)",
+        backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
+        borderBottom: "1px solid var(--glass-border)",
+        boxShadow: "var(--shadow-dock)",
       }}
     >
       {/* Left: ÆTHEREOS */}
