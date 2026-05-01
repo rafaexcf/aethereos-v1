@@ -289,7 +289,7 @@ export function TopBar({ companyName, onSignOut }: TopBarProps) {
         {/* Left: wordmark */}
         <span
           style={{
-            fontSize: 13,
+            fontSize: 15,
             fontWeight: 700,
             letterSpacing: "-0.02em",
             color: "var(--text-primary)",
