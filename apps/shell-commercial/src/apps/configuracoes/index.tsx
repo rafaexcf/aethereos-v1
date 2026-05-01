@@ -20,6 +20,12 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Home,
+  Mail,
+  Volume2,
+  Globe,
+  ArrowRight,
+  Monitor,
+  Sparkles,
 } from "lucide-react";
 import { useSessionStore } from "../../stores/session";
 import { useDrivers } from "../../lib/drivers-context";
@@ -90,61 +96,6 @@ const TAB_LABELS: Record<TabId, string> = {
   aparencia: "Aparência",
   integracoes: "Integrações",
   sobre: "Sobre",
-};
-
-// ─── Bento home metadata ──────────────────────────────────────────────────────
-
-type BentoId = Exclude<TabId, "home">;
-
-const BENTO_META: Record<
-  BentoId,
-  { description: string; color: string; bg: string }
-> = {
-  "meu-perfil": {
-    description: "Nome, email, idioma e foto",
-    color: "#818cf8",
-    bg: "rgba(99,102,241,0.18)",
-  },
-  notificacoes: {
-    description: "Alertas, sons e canais de comunicação",
-    color: "#fbbf24",
-    bg: "rgba(245,158,11,0.18)",
-  },
-  seguranca: {
-    description: "Senha, 2FA e sessões ativas",
-    color: "#34d399",
-    bg: "rgba(16,185,129,0.18)",
-  },
-  "dados-privacidade": {
-    description: "Exportar, excluir e privacidade",
-    color: "#22d3ee",
-    bg: "rgba(6,182,212,0.18)",
-  },
-  dock: {
-    description: "Ícones, posição e comportamento",
-    color: "#a78bfa",
-    bg: "rgba(139,92,246,0.18)",
-  },
-  mesa: {
-    description: "Layout e organização do workspace",
-    color: "#fb7185",
-    bg: "rgba(244,63,94,0.18)",
-  },
-  aparencia: {
-    description: "Tema, cores e densidade visual",
-    color: "#f472b6",
-    bg: "rgba(236,72,153,0.18)",
-  },
-  integracoes: {
-    description: "Apps e serviços conectados",
-    color: "#fb923c",
-    bg: "rgba(249,115,22,0.18)",
-  },
-  sobre: {
-    description: "Versão, créditos e licenças",
-    color: "#94a3b8",
-    bg: "rgba(100,116,139,0.20)",
-  },
 };
 
 // ─── Design primitives ────────────────────────────────────────────────────────
@@ -1987,97 +1938,219 @@ function Sidebar({
   );
 }
 
-// ─── Home (bento grid) ────────────────────────────────────────────────────────
+// ─── Home (true bento) ────────────────────────────────────────────────────────
 
-function BentoCard({
-  item,
-  onSelect,
+const TILE_BASE: React.CSSProperties = {
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(255,255,255,0.07)",
+  borderRadius: 14,
+  padding: 16,
+  display: "flex",
+  flexDirection: "column",
+  minHeight: 0,
+  overflow: "hidden",
+};
+
+function TileIcon({
+  Icon,
+  color,
+  bg,
+  size = 30,
 }: {
-  item: NavItem;
-  onSelect: (id: TabId) => void;
+  Icon: typeof User;
+  color: string;
+  bg: string;
+  size?: number;
 }) {
-  const meta = BENTO_META[item.id as BentoId];
-  const Icon = item.icon;
-
   return (
-    <button
-      type="button"
-      onClick={() => onSelect(item.id)}
+    <div
       style={{
+        width: size,
+        height: size,
+        borderRadius: 8,
+        background: bg,
+        border: `1px solid ${color}38`,
         display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-start",
-        gap: 14,
-        padding: "18px",
-        minHeight: 132,
-        borderRadius: 14,
-        background: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.07)",
-        cursor: "pointer",
-        textAlign: "left",
-        transition:
-          "background 160ms ease, border-color 160ms ease, transform 160ms ease",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = "rgba(255,255,255,0.07)";
-        e.currentTarget.style.borderColor = "rgba(255,255,255,0.14)";
-        e.currentTarget.style.transform = "translateY(-1px)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-        e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)";
-        e.currentTarget.style.transform = "translateY(0)";
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
       }}
     >
+      <Icon
+        size={Math.round(size * 0.55)}
+        style={{ color }}
+        strokeWidth={1.8}
+      />
+    </div>
+  );
+}
+
+function ToggleRowTile({
+  Icon,
+  color,
+  bg,
+  label,
+  sublabel,
+  on,
+  onToggle,
+  gridColumn,
+  gridRow,
+}: {
+  Icon: typeof User;
+  color: string;
+  bg: string;
+  label: string;
+  sublabel: string;
+  on: boolean;
+  onToggle: () => void;
+  gridColumn: string;
+  gridRow: string;
+}) {
+  return (
+    <div style={{ ...TILE_BASE, gridColumn, gridRow, padding: 18 }}>
       <div
         style={{
-          width: 40,
-          height: 40,
-          borderRadius: 10,
-          background: meta.bg,
-          border: `1px solid ${meta.color}33`,
           display: "flex",
           alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
+          justifyContent: "space-between",
+          gap: 14,
+          flex: 1,
         }}
       >
-        <Icon size={20} style={{ color: meta.color }} strokeWidth={1.7} />
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-        <h3
+        <div
           style={{
-            fontSize: 14,
-            fontWeight: 600,
-            color: "var(--text-primary)",
-            letterSpacing: "-0.01em",
-            lineHeight: 1.25,
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            minWidth: 0,
           }}
         >
-          {item.label}
-        </h3>
-        <p
-          style={{
-            fontSize: 12,
-            color: "var(--text-tertiary)",
-            lineHeight: 1.45,
-          }}
-        >
-          {meta.description}
-        </p>
+          <TileIcon Icon={Icon} color={color} bg={bg} size={36} />
+          <div style={{ minWidth: 0 }}>
+            <p
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: "var(--text-primary)",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {label}
+            </p>
+            <p
+              style={{
+                fontSize: 11,
+                color: "var(--text-tertiary)",
+                marginTop: 2,
+                lineHeight: 1.4,
+              }}
+            >
+              {sublabel}
+            </p>
+          </div>
+        </div>
+        <Toggle on={on} onToggle={onToggle} />
       </div>
-    </button>
+    </div>
+  );
+}
+
+function ToggleStackTile({
+  Icon,
+  color,
+  bg,
+  label,
+  on,
+  onToggle,
+  gridColumn,
+  gridRow,
+}: {
+  Icon: typeof User;
+  color: string;
+  bg: string;
+  label: string;
+  on: boolean;
+  onToggle: () => void;
+  gridColumn: string;
+  gridRow: string;
+}) {
+  return (
+    <div style={{ ...TILE_BASE, gridColumn, gridRow }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <TileIcon Icon={Icon} color={color} bg={bg} />
+        <Toggle on={on} onToggle={onToggle} />
+      </div>
+      <div style={{ flex: 1 }} />
+      <p
+        style={{
+          fontSize: 13,
+          fontWeight: 600,
+          color: "var(--text-primary)",
+          letterSpacing: "-0.01em",
+        }}
+      >
+        {label}
+      </p>
+      <p
+        style={{
+          fontSize: 11,
+          color: on ? color : "var(--text-tertiary)",
+          marginTop: 2,
+          fontWeight: 500,
+        }}
+      >
+        {on ? "Ativado" : "Desativado"}
+      </p>
+    </div>
   );
 }
 
 function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
+  const { email } = useSessionStore();
+  const initials = email !== null ? email.slice(0, 2).toUpperCase() : "??";
+  const displayName = email !== null ? email.split("@")[0] : "Usuário";
+
+  // Persisted notification prefs
+  const [notif, setNotif] = useState<NotifPrefs>(loadNotifPrefs);
+  function toggleNotif(key: keyof NotifPrefs) {
+    const next = { ...notif, [key]: !notif[key] };
+    setNotif(next);
+    localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(next));
+  }
+
+  // Local-only state (visual)
+  const [twoFA, setTwoFA] = useState(false);
+  const [sound, setSound] = useState(true);
+  const [lang, setLang] = useState("pt-BR");
+  const [density, setDensity] = useState<"compact" | "regular" | "comfortable">(
+    "regular",
+  );
+  const [wallpaperIdx, setWallpaperIdx] = useState(0);
+
+  const wallpapers = [
+    "linear-gradient(135deg, #1e293b, #0f172a)",
+    "linear-gradient(135deg, #4338ca, #1e1b4b)",
+    "linear-gradient(135deg, #831843, #4c0519)",
+    "linear-gradient(135deg, #064e3b, #022c22)",
+    "linear-gradient(135deg, #92400e, #451a03)",
+  ];
+
+  const langLabel =
+    lang === "pt-BR" ? "Português" : lang === "en-US" ? "English" : "Español";
+
   return (
     <div>
       {/* Hero */}
       <div
         style={{
-          marginBottom: 28,
-          padding: "26px 28px",
+          marginBottom: 24,
+          padding: "24px 28px",
           borderRadius: 16,
           background:
             "linear-gradient(135deg, rgba(99,102,241,0.16), rgba(139,92,246,0.06))",
@@ -2086,7 +2159,7 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
       >
         <h1
           style={{
-            fontSize: 24,
+            fontSize: 22,
             fontWeight: 700,
             color: "var(--text-primary)",
             letterSpacing: "-0.03em",
@@ -2095,7 +2168,7 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
             lineHeight: 1.2,
           }}
         >
-          Bem-vindo às Configurações
+          Início
         </h1>
         <p
           style={{
@@ -2105,39 +2178,695 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
             maxWidth: 620,
           }}
         >
-          Personalize sua conta, customize a aparência e gerencie as integrações
-          do seu workspace.
+          Acesse rapidamente os controles mais usados do seu workspace.
         </p>
       </div>
 
-      {/* Sections */}
-      {NAV_SECTIONS.map((section, idx) => (
-        <div key={section.label} style={{ marginTop: idx === 0 ? 0 : 28 }}>
+      {/* Bento grid */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gridAutoRows: "minmax(132px, auto)",
+          gap: 14,
+        }}
+      >
+        {/* ── Profile (2×2) ── */}
+        <div
+          style={{
+            ...TILE_BASE,
+            gridColumn: "1 / span 2",
+            gridRow: "1 / span 2",
+            padding: 20,
+            background:
+              "linear-gradient(135deg, rgba(99,102,241,0.12), rgba(255,255,255,0.04))",
+            borderColor: "rgba(99,102,241,0.20)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: "50%",
+                background:
+                  "linear-gradient(135deg, rgba(99,102,241,0.85), rgba(30,41,80,0.95))",
+                border: "1px solid rgba(255,255,255,0.14)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <span
+                style={{
+                  color: "rgba(255,255,255,0.94)",
+                  fontSize: 20,
+                  fontWeight: 700,
+                  letterSpacing: "0.02em",
+                }}
+              >
+                {initials}
+              </span>
+            </div>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <p
+                style={{
+                  fontSize: 16,
+                  fontWeight: 600,
+                  color: "var(--text-primary)",
+                  letterSpacing: "-0.01em",
+                  textTransform: "capitalize",
+                }}
+              >
+                {displayName}
+              </p>
+              <p
+                style={{
+                  fontSize: 12,
+                  color: "var(--text-tertiary)",
+                  marginTop: 3,
+                  wordBreak: "break-word",
+                }}
+              >
+                {email ?? "—"}
+              </p>
+            </div>
+          </div>
+
+          <p
+            style={{
+              fontSize: 12,
+              color: "var(--text-secondary)",
+              lineHeight: 1.55,
+              marginTop: 16,
+            }}
+          >
+            Gerencie suas informações pessoais, foto, idioma e preferências da
+            conta.
+          </p>
+
+          <div style={{ flex: 1 }} />
+
+          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+            <button
+              type="button"
+              onClick={() => onSelect("meu-perfil")}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                background: "rgba(99,102,241,0.18)",
+                border: "1px solid rgba(99,102,241,0.32)",
+                borderRadius: 8,
+                padding: "8px 14px",
+                fontSize: 12,
+                fontWeight: 500,
+                color: "#a5b4fc",
+                cursor: "pointer",
+                transition: "background 120ms ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(99,102,241,0.28)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(99,102,241,0.18)";
+              }}
+            >
+              Editar perfil
+              <ArrowRight size={12} strokeWidth={2} />
+            </button>
+            <button
+              type="button"
+              onClick={() => onSelect("seguranca")}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.10)",
+                borderRadius: 8,
+                padding: "8px 14px",
+                fontSize: 12,
+                fontWeight: 500,
+                color: "var(--text-primary)",
+                cursor: "pointer",
+                transition: "background 120ms ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.10)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+              }}
+            >
+              <Shield size={12} strokeWidth={2} />
+              Segurança
+            </button>
+          </div>
+        </div>
+
+        {/* ── Tema (1×1) ── */}
+        <div
+          style={{
+            ...TILE_BASE,
+            gridColumn: "3 / span 1",
+            gridRow: "1 / span 1",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <TileIcon
+              Icon={Palette}
+              color="#f472b6"
+              bg="rgba(236,72,153,0.18)"
+            />
+            <AnimatedThemeToggler
+              variant="circle"
+              fromCenter
+              className="flex items-center justify-center w-9 h-9 rounded-[10px] bg-white/[0.06] border border-white/10 cursor-pointer text-[var(--text-primary)] transition-colors hover:bg-white/[0.12] [&>svg]:w-4 [&>svg]:h-4"
+            />
+          </div>
+          <div style={{ flex: 1 }} />
+          <p
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: "var(--text-primary)",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Tema
+          </p>
           <p
             style={{
               fontSize: 11,
-              fontWeight: 600,
               color: "var(--text-tertiary)",
-              letterSpacing: "0.07em",
-              textTransform: "uppercase",
-              marginBottom: 10,
+              marginTop: 2,
             }}
           >
-            {section.label}
+            Claro / Escuro
           </p>
+        </div>
+
+        {/* ── Idioma (1×1) ── */}
+        <div
+          style={{
+            ...TILE_BASE,
+            gridColumn: "4 / span 1",
+            gridRow: "1 / span 1",
+          }}
+        >
+          <TileIcon Icon={Globe} color="#22d3ee" bg="rgba(6,182,212,0.18)" />
+          <div style={{ flex: 1 }} />
+          <p
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: "var(--text-primary)",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Idioma
+          </p>
+          <select
+            value={lang}
+            onChange={(e) => setLang(e.target.value)}
+            style={{
+              marginTop: 6,
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.10)",
+              borderRadius: 8,
+              padding: "6px 8px",
+              fontSize: 12,
+              color: "var(--text-primary)",
+              outline: "none",
+              cursor: "pointer",
+              appearance: "none",
+            }}
+            aria-label="Idioma"
+          >
+            <option value="pt-BR">Português</option>
+            <option value="en-US">English</option>
+            <option value="es-ES">Español</option>
+          </select>
+          <p
+            style={{
+              fontSize: 11,
+              color: "var(--text-tertiary)",
+              marginTop: 4,
+            }}
+          >
+            Atual: {langLabel}
+          </p>
+        </div>
+
+        {/* ── Notificações push (2×1) ── */}
+        <ToggleRowTile
+          Icon={Bell}
+          color="#fbbf24"
+          bg="rgba(245,158,11,0.18)"
+          label="Notificações push"
+          sublabel="Receba alertas em tempo real no seu navegador"
+          on={notif.push_notifications}
+          onToggle={() => toggleNotif("push_notifications")}
+          gridColumn="3 / span 2"
+          gridRow="2 / span 1"
+        />
+
+        {/* ── 2FA (2×1) ── */}
+        <div
+          style={{
+            ...TILE_BASE,
+            gridColumn: "1 / span 2",
+            gridRow: "3 / span 1",
+            padding: 18,
+          }}
+        >
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
               gap: 14,
+              flex: 1,
             }}
           >
-            {section.items.map((item) => (
-              <BentoCard key={item.id} item={item} onSelect={onSelect} />
-            ))}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                minWidth: 0,
+              }}
+            >
+              <TileIcon
+                Icon={Shield}
+                color="#34d399"
+                bg="rgba(16,185,129,0.18)"
+                size={36}
+              />
+              <div style={{ minWidth: 0 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "var(--text-primary)",
+                      letterSpacing: "-0.01em",
+                    }}
+                  >
+                    Autenticação 2FA
+                  </p>
+                  <Badge variant={twoFA ? "success" : "neutral"}>
+                    {twoFA ? "Ativada" : "Desativada"}
+                  </Badge>
+                </div>
+                <p
+                  style={{
+                    fontSize: 11,
+                    color: "var(--text-tertiary)",
+                    marginTop: 2,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  Camada extra de proteção via app autenticador
+                </p>
+              </div>
+            </div>
+            <Toggle on={twoFA} onToggle={() => setTwoFA((v) => !v)} />
           </div>
         </div>
-      ))}
+
+        {/* ── Email digest (1×1) ── */}
+        <ToggleStackTile
+          Icon={Mail}
+          color="#a78bfa"
+          bg="rgba(139,92,246,0.18)"
+          label="Email digest"
+          on={notif.email_notifications}
+          onToggle={() => toggleNotif("email_notifications")}
+          gridColumn="3 / span 1"
+          gridRow="3 / span 1"
+        />
+
+        {/* ── Sons (1×1) ── */}
+        <ToggleStackTile
+          Icon={Volume2}
+          color="#fb923c"
+          bg="rgba(249,115,22,0.18)"
+          label="Sons"
+          on={sound}
+          onToggle={() => setSound((v) => !v)}
+          gridColumn="4 / span 1"
+          gridRow="3 / span 1"
+        />
+
+        {/* ── Wallpaper (2×1) ── */}
+        <div
+          style={{
+            ...TILE_BASE,
+            gridColumn: "1 / span 2",
+            gridRow: "4 / span 1",
+            padding: 16,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 12,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <TileIcon
+                Icon={LayoutGrid}
+                color="#fb7185"
+                bg="rgba(244,63,94,0.18)"
+              />
+              <div>
+                <p
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "var(--text-primary)",
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  Plano de fundo
+                </p>
+                <p
+                  style={{
+                    fontSize: 11,
+                    color: "var(--text-tertiary)",
+                    marginTop: 1,
+                  }}
+                >
+                  Selecione o wallpaper da Mesa
+                </p>
+              </div>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 8, flex: 1 }}>
+            {wallpapers.map((wp, i) => {
+              const isActive = wallpaperIdx === i;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setWallpaperIdx(i)}
+                  aria-label={`Wallpaper ${i + 1}`}
+                  style={{
+                    flex: 1,
+                    minHeight: 56,
+                    borderRadius: 10,
+                    background: wp,
+                    border: isActive
+                      ? "2px solid #818cf8"
+                      : "1px solid rgba(255,255,255,0.10)",
+                    cursor: "pointer",
+                    transition: "border-color 120ms ease, transform 120ms ease",
+                    boxShadow: isActive
+                      ? "0 0 0 3px rgba(99,102,241,0.20)"
+                      : "none",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive)
+                      e.currentTarget.style.borderColor =
+                        "rgba(255,255,255,0.25)";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive)
+                      e.currentTarget.style.borderColor =
+                        "rgba(255,255,255,0.10)";
+                  }}
+                />
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Densidade (2×1) ── */}
+        <div
+          style={{
+            ...TILE_BASE,
+            gridColumn: "3 / span 2",
+            gridRow: "4 / span 1",
+            padding: 16,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <TileIcon
+              Icon={Sparkles}
+              color="#a78bfa"
+              bg="rgba(139,92,246,0.18)"
+            />
+            <div>
+              <p
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "var(--text-primary)",
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                Densidade
+              </p>
+              <p
+                style={{
+                  fontSize: 11,
+                  color: "var(--text-tertiary)",
+                  marginTop: 1,
+                }}
+              >
+                Espaçamento da interface
+              </p>
+            </div>
+          </div>
+          <div style={{ flex: 1 }} />
+          <div
+            style={{
+              display: "flex",
+              gap: 6,
+              padding: 4,
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.07)",
+              borderRadius: 10,
+            }}
+          >
+            {(
+              [
+                { v: "compact", label: "Compacta" },
+                { v: "regular", label: "Padrão" },
+                { v: "comfortable", label: "Confortável" },
+              ] as const
+            ).map(({ v, label }) => {
+              const isActive = density === v;
+              return (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setDensity(v)}
+                  style={{
+                    flex: 1,
+                    padding: "7px 10px",
+                    borderRadius: 7,
+                    border: "none",
+                    background: isActive
+                      ? "rgba(255,255,255,0.10)"
+                      : "transparent",
+                    color: isActive
+                      ? "var(--text-primary)"
+                      : "var(--text-tertiary)",
+                    fontSize: 12,
+                    fontWeight: isActive ? 600 : 400,
+                    cursor: "pointer",
+                    transition: "background 120ms ease, color 120ms ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive)
+                      e.currentTarget.style.color = "var(--text-secondary)";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive)
+                      e.currentTarget.style.color = "var(--text-tertiary)";
+                  }}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── Sessões ativas (2×1) ── */}
+        <button
+          type="button"
+          onClick={() => onSelect("seguranca")}
+          style={{
+            ...TILE_BASE,
+            gridColumn: "1 / span 2",
+            gridRow: "5 / span 1",
+            padding: 18,
+            cursor: "pointer",
+            textAlign: "left",
+            transition: "background 160ms ease, border-color 160ms ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+            e.currentTarget.style.borderColor = "rgba(255,255,255,0.14)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+            e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)";
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flex: 1,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <TileIcon
+                Icon={Monitor}
+                color="#34d399"
+                bg="rgba(16,185,129,0.18)"
+                size={36}
+              />
+              <div>
+                <p
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: "var(--text-primary)",
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  Sessões ativas
+                </p>
+                <p
+                  style={{
+                    fontSize: 11,
+                    color: "var(--text-tertiary)",
+                    marginTop: 2,
+                  }}
+                >
+                  1 dispositivo conectado agora
+                </p>
+              </div>
+            </div>
+            <ArrowRight
+              size={14}
+              style={{ color: "var(--text-tertiary)" }}
+              strokeWidth={1.8}
+            />
+          </div>
+        </button>
+
+        {/* ── Integrações (1×1) ── */}
+        <button
+          type="button"
+          onClick={() => onSelect("integracoes")}
+          style={{
+            ...TILE_BASE,
+            gridColumn: "3 / span 1",
+            gridRow: "5 / span 1",
+            cursor: "pointer",
+            textAlign: "left",
+            transition: "background 160ms ease, border-color 160ms ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+            e.currentTarget.style.borderColor = "rgba(255,255,255,0.14)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+            e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)";
+          }}
+        >
+          <TileIcon Icon={Link2} color="#fb923c" bg="rgba(249,115,22,0.18)" />
+          <div style={{ flex: 1 }} />
+          <p
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: "var(--text-primary)",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Integrações
+          </p>
+          <p
+            style={{
+              fontSize: 11,
+              color: "var(--text-tertiary)",
+              marginTop: 2,
+            }}
+          >
+            0 conectadas
+          </p>
+        </button>
+
+        {/* ── Sobre (1×1) ── */}
+        <button
+          type="button"
+          onClick={() => onSelect("sobre")}
+          style={{
+            ...TILE_BASE,
+            gridColumn: "4 / span 1",
+            gridRow: "5 / span 1",
+            cursor: "pointer",
+            textAlign: "left",
+            transition: "background 160ms ease, border-color 160ms ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+            e.currentTarget.style.borderColor = "rgba(255,255,255,0.14)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+            e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)";
+          }}
+        >
+          <TileIcon Icon={Info} color="#94a3b8" bg="rgba(100,116,139,0.20)" />
+          <div style={{ flex: 1 }} />
+          <p
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: "var(--text-primary)",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Versão
+          </p>
+          <p
+            style={{
+              fontSize: 11,
+              color: "var(--text-tertiary)",
+              marginTop: 2,
+            }}
+          >
+            Aethereos v0.1.0
+          </p>
+        </button>
+      </div>
     </div>
   );
 }
