@@ -1,10 +1,12 @@
-# SPRINT REDESIGN-1 — Aplicação do DESIGN.md (V2-based, dark + light)
+# SPRINT REDESIGN-1 — Aplicação do DESIGN.md V2-real
 
-> **Tipo:** Sprint dedicado a aplicar o design system canônico V2-based (`DESIGN.md` v2.0) em todo o `shell-commercial`. Inclui dark + light mode com toggle.
+> **Tipo:** Sprint dedicado a aplicar o design system canônico V2-real (`DESIGN.md` v3.0) em todo o `shell-commercial`. Inclui dark + light mode com toggle.
 >
-> Não adiciona features. Refaz a camada visual de Camada 1 do zero usando tokens canônicos.
+> Base: análise direta do código V2 em `~/Projetos/aethereos-v2/artifacts/aethereos/` — tokens reais, componentes reais, wireframes reais.
 >
-> **Estimativa:** 10-16 horas. Custo: $100-160.
+> Não adiciona features. Refaz a camada visual de Camada 1 do zero.
+>
+> **Estimativa:** 14-20 horas. Custo: $140-200.
 
 ---
 
@@ -12,127 +14,123 @@
 
 ### Por que este sprint
 
-V2 do Aethereos (em `~/Projetos/aethereos-v2`) já tem design system maduro testado em produção: macOS Sequoia + Linear + Vercel + Raycast. Premium dark, glass sutil, TopBar sólida, prefetch de chunks, skeleton estrutural.
+V2 do Aethereos tem design system maduro, completo e em produção: macOS Sequoia + Linear + Vercel + Raycast. Premium dark slate-tinted, glass sutil, TopBar sólida, prefetch chunks, skeleton estrutural, command palette, dock magnification.
 
-Sprint anterior tentou aplicar redesign macOS Tahoe (commits `9b89604` e `535f699`) mas:
+Sprint anterior (commits `9b89604` e `535f699`) tentou aplicar redesign Tahoe — descartado.
 
-1. Mudanças não chegaram ao browser
-2. Conceito Tahoe (aurora animada vibrante, glass com saturate 180%) é divergente do que V2 provou funcionar
+DESIGN.md v3.0 agora é canon, baseado em análise verbatim do V2. Inclui light mode (Notion/Apple style) como extensão.
 
-Decisão: **descartar Tahoe, aplicar V2 canon. Adicionar light mode (Notion/Apple style) já neste sprint.**
+### V2 referência viva
 
-DESIGN.md v2.0 já reflete essas decisões — dark default, light first-class, toggle Dark/Light.
-
-### V2 está em `~/Projetos/aethereos-v2` para referência
+`~/Projetos/aethereos-v2/artifacts/aethereos/` — código que funciona em produção.
 
 Quando útil, consultar:
 
-- `artifacts/aethereos/src/index.css` — CSS real do V2 em produção (só dark)
-- `DESIGN-POLISH-PROMPT.md` — prompt original
-- `docs/UI-UX-RULES.md` — regras de skeleton/prefetch/Suspense
-- `docs/AUDIT-RESULTADOS.md` — auditorias
+- `src/styles/tokens.css` — tokens primários
+- `src/index.css` — tokens HSL + @theme inline + animations
+- `src/components/os/` — TopBar/TabBar/Dock/AppFrame/Mesa/Onboarding/CommandPalette/AEAIModal
+- `src/components/app-shell/` — AppLayout/AppSidebar/AppContent/AppHeader
+- `src/components/ui/` — shadcn primitives
+- `src/apps/registry.ts` — APP_REGISTRY + APP_PREFETCH
 
-V2 é referência, não código pra copiar literal — adapte ao contexto V1. ⚠️ V2 NÃO tem light mode — você está estendendo.
+V2 NÃO tem light mode — você está estendendo. Tokens light estão no DESIGN.md.
 
-### Pontos de atenção descobertos em sessões anteriores
+### Pontos de atenção
 
-1. PWA pode estar cacheando bundle antigo (VitePWA service worker)
-2. `apps/shell-commercial/lib/app-registry.ts` é legado, verificar imports
-3. Múltiplas instâncias Vite zumbi após restarts — sempre `pkill -9 -f vite` antes de subir
-4. Browser cache agressivo — testar em **aba anônima** com **DevTools → Network → "Disable cache"**
-5. `@aethereos/ui-shell` importado por 8 apps — mudanças propagam
-6. Bug histórico AppFrame — sempre `h-full`, nunca `flex-1` sem pai flex
+1. PWA cache (VitePWA service worker) — investigar antes de codar
+2. `apps/shell-commercial/lib/app-registry.ts` é legado, verificar
+3. `pkill -9 -f vite` antes de subir
+4. Testar em **aba anônima** com **Disable cache**
+5. `@aethereos/ui-shell` afeta 8 apps
+6. Bug histórico AppFrame: sempre `h-full`, não `flex-1` sem pai flex
+7. **AppDisabledScreen** não existe em V1 — precisa criar
 
 ---
 
 ## REGRAS INVIOLÁVEIS
 
-**R1.** **Ler `DESIGN.md` (v2.0) na íntegra antes de tocar em qualquer código.** É canon V2-based, NÃO Tahoe. Toda decisão sai dele.
+**R1.** Ler `DESIGN.md` (v3.0) na íntegra antes de tocar em qualquer código.
 
-**R2.** Se algo no código atual viola o `DESIGN.md`, refazer. Não preservar implementações antigas.
+**R2.** Refazer código que viola o `DESIGN.md`. Não preservar implementações antigas.
 
 **R3.** Commit por etapa: `style(<scope>): <descrição> (REDESIGN-1 ETAPA-N)`.
 
-**R4.** Validação visual humana é gate obrigatório no fim. Não declarar fechado sem humano abrir browser e confirmar **em ambos os modos**.
+**R4.** Validação visual humana é gate obrigatório no fim, em **AMBOS modos**.
 
-**R5.** Não criar features novas. Não mexer em lógica de stores ou queries.
+**R5.** Sem features novas. Sem mexer em lógica de stores/queries.
 
-**R6.** Manter compatibilidade funcional: nenhum app pode quebrar.
+**R6.** Manter compatibilidade funcional.
 
-**R7.** **Dark + Light desde o início.** Tokens, ThemeProvider, toggle — tudo. Não adiar light pra depois.
+**R7.** **Dark + Light desde o início.** Theme Provider, toggle — tudo na ETAPA 1.
 
-**R8.** Tokens CSS canônicos em `apps/shell-commercial/src/styles/tokens.css`. Nada hardcoded.
+**R8.** Tokens canônicos em **um** arquivo (`apps/shell-commercial/src/styles/tokens.css`). Nada hardcoded.
 
 **R9.** Tailwind v4 + `@theme inline`. Variáveis CSS são fonte de verdade.
 
-**R10.** **TopBar é SÓLIDA** em ambos modos (sem backdrop-blur). Regra cravada V2.
+**R10.** **TopBar SÓLIDA** (sem backdrop-blur) em ambos modos.
 
-**R11.** **Skeleton estrutural obrigatório** — NÃO usar loader genérico.
+**R11.** **TabBar sem borda inferior colorida** na tab ativa.
 
-**R12.** **Prefetch de chunks no Dock obrigatório** — todo app no `APP_REGISTRY` em `APP_PREFETCH`.
+**R12.** **Sidebar item ativo** apenas com `bg ${appColor}1a` + ícone/texto cor-app — sem border-left 2px.
 
-**R13.** **Suspense com `key`** sempre que envolve conteúdo dinâmico.
+**R13.** **Skeleton estrutural** copiando o `AppLoader` literal do V2 (DESIGN.md 5.7).
 
-**R14.** **Títulos consistentes** loading/error/success.
+**R14.** **Prefetch chunks no Dock** obrigatório — todo app no `APP_REGISTRY` em `APP_PREFETCH`.
 
-**R15.** **Validar em AMBOS modos** antes de cada commit (não só dark).
+**R15.** **Suspense com `key`** em conteúdo dinâmico.
 
-**R16.** Não fazer push pra origin sem aprovação humana após validação visual.
+**R16.** **Títulos consistentes** loading/error/success.
+
+**R17.** **AppDisabledScreen** criado e usado quando módulo não ativo.
+
+**R18.** **Validar em AMBOS modos** antes de cada commit.
+
+**R19.** Sem push pra origin sem aprovação humana.
+
+**R20.** **Cmd+K abre CommandPalette** (não AEAIModal). AEAIModal usa outro shortcut ou botão dedicado.
 
 ---
 
 ## ROADMAP
 
-### ETAPA 0 — Investigar por que redesign anterior não está visível (1h)
-
-Investigações:
+### ETAPA 0 — Diagnóstico (1h)
 
 ```bash
-# Ver os commits do redesign Tahoe
-git show 9b89604 --stat
-git show 535f699 --stat
+# Commits do redesign Tahoe
+git show 9b89604 --stat && git show 535f699 --stat
 
 # Cache / Service Worker
 grep -rn "registerSW\|VitePWA\|ServiceWorker" apps/shell-commercial/src/ apps/shell-commercial/index.html apps/shell-commercial/vite.config.ts
-ls -la apps/shell-commercial/dist/ 2>/dev/null
-ls -la apps/shell-commercial/node_modules/.vite/ 2>/dev/null | head
+ls -la apps/shell-commercial/dist/ apps/shell-commercial/node_modules/.vite/ 2>/dev/null
 
-# CSS está sendo importado?
+# CSS importado?
 grep -rn "import.*\.css" apps/shell-commercial/src/main.tsx apps/shell-commercial/src/styles/
 
-# Mudanças do redesign foram em arquivo importado?
-git diff a803d1c..535f699 -- apps/shell-commercial/src/styles/
-git diff a803d1c..535f699 -- apps/shell-commercial/src/components/os/
-git diff a803d1c..535f699 -- apps/shell-commercial/src/apps/mesa/
+# Diff dos commits Tahoe
+git diff a803d1c..535f699 -- apps/shell-commercial/src/styles/ apps/shell-commercial/src/components/os/ apps/shell-commercial/src/apps/mesa/
 ```
 
-Documentar achados em `REDESIGN_DIAGNOSIS.md` na raiz.
+Documentar em `REDESIGN_DIAGNOSIS.md`. Possíveis fixes:
 
-Possíveis fixes:
-
-- Unregister service workers via main.tsx
+- Unregister service workers
 - `clearCache` em dev
-- Remover `apps/shell-commercial/node_modules/.vite/`
-- Remover `apps/shell-commercial/dist/` se existir
-- Confirmar que `globals.css` é importado por `main.tsx`
+- Remover `node_modules/.vite/` e `dist/`
+- Confirmar import do CSS no `main.tsx`
 
-Commit: `chore(redesign): diagnostico cache+sw antes de aplicar design (REDESIGN-1 ETAPA-0)`
+Commit: `chore(redesign): diagnostico antes de aplicar (REDESIGN-1 ETAPA-0)`
 
 ---
 
-### ETAPA 1 — Tokens canônicos + ThemeProvider + Toggle (2h)
+### ETAPA 1 — Tokens + ThemeProvider + Toggle (2h)
 
-DESIGN.md seções 2, 3, 13.2.
+DESIGN.md seções 3, 14.2.
 
-**1. Criar `apps/shell-commercial/src/styles/tokens.css`** com:
+1. **Criar `apps/shell-commercial/src/styles/tokens.css`** com:
+   - Tokens primários DARK (3.1)
+   - Tokens primários LIGHT (3.2)
+   - Tokens compartilhados (3.3) — radius, transitions, app colors, status, fonts
 
-- Tokens primários DARK (seção 3.1)
-- Tokens primários LIGHT (seção 3.2)
-- Tokens compartilhados (seção 3.3) — radius, transitions, app colors, status, fonts
-- Tokens HSL DARK (seção 3.4)
-- Tokens HSL LIGHT (seção 3.5)
-
-**2. Criar `apps/shell-commercial/src/styles/globals.css`:**
+2. **Criar `apps/shell-commercial/src/styles/globals.css`:**
 
 ```css
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap");
@@ -141,8 +139,20 @@ DESIGN.md seções 2, 3, 13.2.
 
 @custom-variant dark (&:is(.dark *));
 
+/* HSL tokens dark */
+:root.dark,
+html.dark {
+  /* DESIGN.md 3.4 dark */
+}
+
+/* HSL tokens light */
+:root,
+html.light {
+  /* DESIGN.md 3.4 light */
+}
+
 @theme inline {
-  /* das seção 3.6 do DESIGN.md */
+  /* DESIGN.md 3.5 */
 }
 
 @layer base {
@@ -154,6 +164,8 @@ DESIGN.md seções 2, 3, 13.2.
     background-color: var(--bg-base);
     color: var(--text-primary);
     @apply antialiased;
+  }
+  html {
     transition:
       background-color 200ms ease,
       color 200ms ease;
@@ -166,16 +178,6 @@ DESIGN.md seções 2, 3, 13.2.
   h6 {
     font-family: var(--font-display);
     @apply font-bold tracking-tight;
-  }
-  /* Skeleton helper classes (DESIGN.md 7.1) */
-  .skeleton-bg {
-    @apply bg-black/5 dark:bg-white/5;
-  }
-  .skeleton-bg-card {
-    @apply bg-black/[0.03] dark:bg-white/[0.03];
-  }
-  .skeleton-border {
-    @apply border-black/[0.05] dark:border-white/[0.05];
   }
 }
 
@@ -192,9 +194,27 @@ DESIGN.md seções 2, 3, 13.2.
   outline: 2px solid var(--border-focus);
   outline-offset: 2px;
 }
+
+/* Skeleton helper utilities (consciente do tema) */
+.skeleton-bg {
+  @apply bg-black/5 dark:bg-white/5;
+}
+.skeleton-bg-card {
+  @apply bg-black/[0.03] dark:bg-white/[0.03];
+}
+.skeleton-border {
+  @apply border-black/[0.05] dark:border-white/[0.05];
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 ```
 
-**3. Adicionar script inline no `index.html` head (anti-flash):**
+3. **Anti-flash no `index.html` head:**
 
 ```html
 <script>
@@ -205,9 +225,9 @@ DESIGN.md seções 2, 3, 13.2.
 </script>
 ```
 
-**4. Criar `apps/shell-commercial/src/lib/theme/theme-provider.tsx`** seguindo DESIGN.md 13.2.
+4. **`apps/shell-commercial/src/lib/theme/theme-provider.tsx`** seguindo DESIGN.md 14.2.
 
-**5. Criar `apps/shell-commercial/src/lib/theme/theme-toggle.tsx`:**
+5. **`apps/shell-commercial/src/lib/theme/theme-toggle.tsx`:**
 
 ```tsx
 import { Sun, Moon } from "lucide-react";
@@ -224,37 +244,32 @@ export function ThemeToggle() {
       onClick={toggleTheme}
       aria-label={label}
       aria-pressed={theme === "dark"}
-      className="p-1.5 rounded-md text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--glass-bg-hover)] transition-[120ms]"
+      className="flex items-center justify-center rounded-lg transition-colors hover:bg-[var(--glass-bg-hover)]"
+      style={{ width: 32, height: 32, color: "var(--text-secondary)" }}
     >
-      <Icon size={18} />
+      <Icon size={18} strokeWidth={1.8} />
     </button>
   );
 }
 ```
 
-**6. No `main.tsx`:**
+6. No `main.tsx`: importar `globals.css`, wrap App em `<ThemeProvider>`. NÃO duplicar `classList.add('dark')` — script inline já fez.
 
-- Importar `globals.css`
-- Wrap App em `<ThemeProvider>`
-- Não chamar `classList.add('dark')` aqui — script inline no `<head>` já fez isso
+7. Validação visual humana antes de prosseguir:
+   - Tema dark funciona (background `#0f151b`)
+   - Toggle (no Settings ou TopBar) alterna pra light (`#fafaf9`)
+   - Sem flash on reload
+   - Persistência localStorage
 
-Commit: `style(theme): tokens dark+light + ThemeProvider + Toggle (REDESIGN-1 ETAPA-1)`
-
-**Validação visual humana antes de prosseguir:** abrir browser, confirmar:
-
-- Tema dark funciona (background `#09090b`)
-- Toggle alterna pra light (background `#fafaf9`)
-- Sem flash on reload
-- Persistência: refresh mantém tema escolhido
+Commit: `style(theme): tokens V2-real dark+light + ThemeProvider + Toggle (REDESIGN-1 ETAPA-1)`
 
 ---
 
-### ETAPA 2 — Mesa + 6 wallpapers gradientes (dark + light) (1.5h)
+### ETAPA 2 — Mesa + Wallpapers gradientes (1.5h)
 
 DESIGN.md seção 5.4.
 
-1. `MesaApp.tsx`: 6 wallpapers gradientes estáticos com **versões dark e light**.
-2. CSS variables `--wallpaper-X` que mudam por tema:
+1. Wallpapers como CSS variables `--wallpaper-{id}` que mudam por tema:
 
 ```css
 html.dark {
@@ -273,205 +288,307 @@ html.light {
     #ffffff 100%
   );
 }
-/* repetir pra aurora, ocean, midnight, minimal, mesh */
+/* etc para aurora, ocean, midnight, minimal, mesh */
 ```
 
-3. Selector de wallpaper em Configurações (existe em `mesaStore.ts`?). Se não existir UI, criar dropdown simples no app `configuracoes`.
+2. `MesaApp.tsx` aplica wallpaper selecionado via `var(--wallpaper-${id})`.
+
+3. `WallpaperPicker.tsx` modal pra trocar (já existe em `mesaStore.ts`?). Senão criar.
 
 4. **DesktopIcon** (5.4):
    - Container 56×56 glass-bg + glass-border + radius-lg
-   - Ícone interno 48px
-   - Hover scale(1.05) + shadow-sm
-   - Label com text-shadow adaptado por tema
+   - Ícone interno 48px cor-app
+   - Hover: glass-bg-hover + scale(1.05) + shadow-sm
+   - Label 11px font-medium com text-shadow contextual ao tema
+   - Spacing grid 90×100
    - Stagger fade-in
+
+5. (Opcional) Widgets: NoteWidget, WeatherWidget, CalendarWidget, EventsWidget — V2 já tem, mas pode adiar pra Sprint 13+
 
 Commit: `style(mesa): wallpapers dark+light + DesktopIcon canônico (REDESIGN-1 ETAPA-2)`
 
 ---
 
-### ETAPA 3 — TopBar (sólida em ambos modos) + Theme Toggle integrado (1h)
+### ETAPA 3 — TopBar (49px sólida + busca animada + CNPJ dropdown) (2h)
 
-DESIGN.md seções 5.1, 5.2.
+DESIGN.md seção 5.2.
 
-1. `TopBar.tsx`:
-   - Height 38px, bg-base SÓLIDO (sem blur)
-   - Border-bottom subtle
-   - Esquerda: badge "Ae" 24px gradient + nome empresa + dropdown
-   - Direita: relógio + sino notificações + **ThemeToggle** (importar de `lib/theme/theme-toggle`) + avatar
+⚠️ Esta etapa é grande — TopBar V2 é sofisticada (19KB).
 
-2. Dropdowns (5.2): bg-elevated + glass-border + radius-lg + shadow-lg + blur-heavy 40px backdrop. Items hover glass-bg-hover.
+1. **Container** 49px height, var(--bg-base) sólido, border-bottom subtle.
 
-Commit: `style(top-bar): sólida + theme toggle integrado (REDESIGN-1 ETAPA-3)`
+2. **Esquerda:** Logo "ÆTHEREOS" 15px font-bold + GradientText "Enterprise OS v1.0.1" 10px (componente reusável).
+
+3. **Direita** (gap 8px):
+   - **Dropdown CNPJ** com 3 seções (Empresa ativa, Filiais, Grupo Econômico)
+   - Separador vertical 1px × 18px
+   - **TopBarSearch** animada (gooey filter + particles + gradient sweep + shimmer)
+   - **Messenger button** (MessageCircle 18px)
+   - **Notifications dropdown** (Bell 18px + badge ponto vermelho)
+   - **ThemeToggle** (Sun/Moon)
+   - **Avatar dropdown** com Configurações + Sair
+
+4. Dropdowns seguem padrão de glass-blur-heavy + bg-elevated + glass-border.
+
+5. **GradientText** componente em `components/ui/gradient-text.tsx`:
+
+```tsx
+export function GradientText({ text, className, gradient, transition }: {...}) {
+  return (
+    <motion.span
+      className={cn('bg-clip-text text-transparent', className)}
+      style={{ backgroundImage: gradient, backgroundSize: '200% auto' }}
+      animate={{ backgroundPosition: ['0% center', '200% center'] }}
+      transition={transition}
+    >
+      {text}
+    </motion.span>
+  );
+}
+```
+
+Commit: `style(top-bar): 49px sólida + search animada + CNPJ dropdown + theme toggle (REDESIGN-1 ETAPA-3)`
 
 ---
 
-### ETAPA 4 — TabBar (45min)
+### ETAPA 4 — TabBar (40px) (45min)
 
 DESIGN.md seção 5.3.
 
-1. Height 40px, bg-base, border-bottom subtle
-2. Tabs 32px, radius-md
-3. Inativa: transparent + tertiary; hover glass-bg-hover
-4. Ativa: glass-bg + glass-border + shadow-sm + ícone full opacity cor do app
-5. Pinned: só ícone 36px
-6. Botão [+]: Plus tertiary
-7. Drag-drop @dnd-kit (preservar)
-8. Animação spring nas entradas
+1. Container 40px var(--bg-base) + border-bottom subtle (quando há apps abertos), `padding 0 8px gap 4`.
+2. Tabs 32px radius-md.
+3. **Pinned (Mesa) mostra "Home" texto** (não só ícone).
+4. Não-pinned: ícone 14px cor-app + título 12px font-medium truncate max-w-120 + × 14px on-hover.
+5. Inativa: transparent + texto tertiary.
+6. Ativa: glass-bg + glass-border + shadow-sm + texto primary + ícone full opacity. **Sem borda inferior colorida.**
+7. Lógica: Tab Mesa pinned esconde quando não há outros apps. TabBar fica `absolute top-0 z-10 transparent` quando Mesa ativa.
+8. Drag-drop @dnd-kit (preservar do V1).
+9. **Botão Widgets** (texto 11px em pill h-7 px-2.5 border-glass) à direita quando Mesa ativa.
 
-Commit: `style(tab-bar): tabs Sequoia-style com glass em ativa (REDESIGN-1 ETAPA-4)`
-
----
-
-### ETAPA 5 — Dock + Prefetch (1h)
-
-DESIGN.md seção 5.5 + regra R12.
-
-1. Container glass-bg + blur-heavy + border + radius-dock + shadow-dock
-2. Ícones 44px com Lucide 24px cor app
-3. Magnification spring 400/25 (vizinhos 1.15, 2º grau 1.05, hover 1.35)
-4. Respeitar `prefers-reduced-motion`
-5. Dot indicador app aberto
-6. Separadores antes de Magic Store e Admin
-7. Tooltip 600ms delay
-
-8. **PREFETCH (R12):**
-   - Em `apps/shell-commercial/src/apps/registry.ts`, adicionar `APP_PREFETCH` map
-   - `onMouseEnter` no DockIcon dispara `prefetchApp(app.id)`
-   - Set `prefetchedApps` evita download duplo
-   - Cobrir TODOS apps do `APP_REGISTRY`
-
-Manter `data-testid="dock-app-{id}"` (validado E2E).
-
-Commit: `style(dock): glass + magnification + prefetch chunks (REDESIGN-1 ETAPA-5)`
+Commit: `style(tab-bar): 40px com Mesa pinned "Home" + Widgets button (REDESIGN-1 ETAPA-4)`
 
 ---
 
-### ETAPA 6 — AppFrame + AppLoader + ErrorBoundary (1h)
+### ETAPA 5 — Dock (80px com magnification 48→72 + limelight + menus) (2h)
 
-DESIGN.md seção 5.6 + regras R11, R13, R14.
+DESIGN.md seção 5.5. **Componente mais complexo — 26KB no V2.**
 
-1. `AppFrame.tsx`: `h-full`, transparent bg, padding 0, TabPane opacity 0→1 150ms
-2. **`AppLoader.tsx` — SKELETON ESTRUTURAL** (R11):
-   - Apps com `hasInternalNav: true`: skeleton sidebar 220px + breadcrumb + cards placeholder
-   - Apps simples: ícone + "Carregando" centralizado
-   - Usar utility classes `.skeleton-bg`, `.skeleton-bg-card`, `.skeleton-border`
-3. `ErrorBoundary.tsx`: bg-elevated + border-glass + radius-xl + shadow-lg + AlertCircle red + "Recarregar app" + "Reportar bug"
-4. `SectionFallback.tsx` componente reutilizável pra Suspense interno
+1. **Container** 80px height, `bottom-8 left-1/2 -translate-x-1/2`, `bg-background/90 dark:bg-[#0f151b]/90 backdrop-blur-2xl shadow-2xl border border-border/50 rounded-2xl px-4 pb-4`. Hidden em mobile.
 
-Commit: `style(app-frame): skeleton estrutural + error boundary canônicos (REDESIGN-1 ETAPA-6)`
+2. **DockIcon** com magnification:
+   - `useTransform(distance, [-150, 0, 150], [48, 72, 48])` width/height
+   - `useTransform(distance, [-150, 0, 150], [24, 36, 24])` icon
+   - `useSpring({ mass: 0.1, stiffness: 150, damping: 12 })`
+   - Container align-end (ícones crescem pra cima)
+   - Tooltip com fade in/out 0.15s
+   - Prefetch onMouseEnter
+   - Right-click context menu (Abrir, Adicionar na Mesa)
+
+3. **Limelight indicator** (tab ativa): barra horizontal 8×4 primary + cone gradient apontando.
+
+4. **Hover classes específicas por app id** (mapa HOVER_CLASSES — DESIGN.md 5.5).
+
+5. **DockMenuIcon** (3 pontos EllipsisVertical):
+   - Same magnification
+   - Click abre popup: "Ocultar dock" (red), "Todos os Apps", "Suporte" (green)
+
+6. **Hidden state:** botão "Mostrar dock" `fixed bottom-4 left-1/2`.
+
+7. **DockDashboardMenu:** Dashboard tem submenu (Visão Geral / Métricas / Atividade) via portal.
+
+8. **DockMobile** (`<md:hidden`): hamburger LayoutGrid bottom-right + expand vertical com stagger.
+
+9. **APP_PREFETCH** em `apps/shell-commercial/src/apps/registry.ts` cobrindo TODOS apps.
+
+Manter `data-testid="dock-app-{id}"` (E2E).
+
+Commit: `style(dock): 80px magnification 48→72 + limelight + menus + prefetch (REDESIGN-1 ETAPA-5)`
 
 ---
 
-### ETAPA 7 — AppShell (sidebar + main) (1h)
+### ETAPA 6 — AppFrame + AppLoader + AppDisabledScreen + ErrorBoundary (1.5h)
 
-DESIGN.md seção 5.7.
+DESIGN.md seções 5.6, 5.7, 5.8.
+
+1. **`AppFrame.tsx`:**
+
+```tsx
+<div className="flex-1 overflow-hidden relative" style={{ background: 'var(--bg-base)' }}>
+  {tabs.map((tab) => <TabPane key={tab.id} ... />)}
+</div>
+```
+
+2. **`TabPane`** memoizado com `visibility: hidden` + `pointerEvents: none` (não unmount).
+
+3. **`AppLoader`** com skeleton estrutural — copiar literal de DESIGN.md 5.7.
+
+4. **`AppDisabledScreen`** novo componente (DESIGN.md 5.8) — quando `app.requiresCompany && !isAppEnabled`:
+   - Ícone 36px com bg cor-app/15 em circle 80×80
+   - Lock 14px no canto bottom-right
+   - "X não está ativado" h2 16px primary
+   - Descrição 13px secondary
+   - CTA "Ir ao Magic Store" sky-500/15
+
+5. **`ErrorBoundary`:** bg-elevated + glass-border + radius-xl + AlertCircle red + "Recarregar app" + "Reportar bug".
+
+6. `isAppEnabled(app, enabledModules, isAdmin)` helper em `registry.ts`.
+
+Commit: `style(app-frame): TabPane visibility + skeleton estrutural + AppDisabledScreen (REDESIGN-1 ETAPA-6)`
+
+---
+
+### ETAPA 7 — AppShell (AppLayout + AppSidebar + AppContent + AppHeader) (1.5h)
+
+DESIGN.md seção 5.9.
 
 1. `packages/ui-shell/src/components/app-shell/`:
-   - AppSidebar 220px (collapsible 56px), bg-base, border-right subtle
-   - Items 34px, radius-md, hover glass-bg-hover
-   - **Ativo:** bg cor-do-app/0.1 + border-left 2px cor-do-app
-   - AppContent bg-elevated, padding 24px, max-width 1200px
-   - AppHeader título 18px + ações + border-bottom subtle
+
+**AppLayout:** flex h-full w-full overflow-hidden + AppSidebar + AppContent.
+
+**AppSidebar:** 220px (collapsible 56px), bg-base, border-right subtle, padding 12px 8px. Toggle no fim com PanelLeftClose/Open. Items 34px com **active state apenas como `bg ${appColor}1a` + ícone/texto cor-app** (R12 — sem border-left). Groups com header uppercase 10px tertiary.
+
+**AppContent:** flex-1 overflow-y-auto, bg-elevated, **padding 24 24 144 24** (R: bottom 144px pra dock). Max-width 1200px. Scrollbar custom 6px.
+
+**AppHeader (interno do app):** flex justify-between, h1 18px font-semibold primary + subtitle 13px secondary, ações direita ghost/outline, border-bottom subtle pad-bottom 16 mb-6.
 
 8 apps usam — propaga.
 
-Commit: `style(ui-shell): AppShell V2 com active app-colored (REDESIGN-1 ETAPA-7)`
+Commit: `style(ui-shell): AppLayout/Sidebar/Content/Header V2 (REDESIGN-1 ETAPA-7)`
 
 ---
 
-### ETAPA 8 — Primitivas UI (Button, Input, Select, etc) (1.5h)
+### ETAPA 8 — Primitivas UI (Button, Input, Badge, Card, etc) (2h)
 
-DESIGN.md seções 5.8, 5.9.
+DESIGN.md seções 5.13, 5.14, 5.15, 5.17, 5.21, 5.22.
 
 Criar/atualizar em `apps/shell-commercial/src/components/ui/`:
 
-- `button.tsx` — variants primary/secondary/ghost/danger; sizes sm/md/lg
-- `input.tsx`
-- `select.tsx` — Radix
-- `checkbox.tsx`
-- `radio.tsx`
-- `switch.tsx` — Radix
-- `textarea.tsx`
-- `label.tsx`
-- `badge.tsx` — variantes success/warning/error/info/neutral
+- **`button.tsx`** — variants default/destructive/outline/secondary/ghost/link, sizes sm/default/lg/icon. **NÃO usar `hover-elevate`** (Replit-only). Usar `hover:brightness-110 active:scale-[0.98]` com tokens.
+- **`input.tsx`** — h-9, bg-surface, border-default, focus border-focus + ring blue/30
+- **`label.tsx`** — text-[12px] font-medium secondary
+- **`badge.tsx`** — variantes success/warning/error/info/neutral
+- **`card.tsx`** — CardRoot, CardHeader, CardContent, CardFooter
+- **`empty.tsx`** — Empty/EmptyHeader/EmptyMedia/EmptyTitle/EmptyDescription/EmptyContent (copiar exato de V2)
+- **`skeleton.tsx`** — `animate-pulse rounded-md bg-primary/10`
+- **`select.tsx`**, **`checkbox.tsx`**, **`radio.tsx`**, **`switch.tsx`**, **`textarea.tsx`** — Radix-based
 
-⚠️ **Validar em ambos modos** — variantes danger e badges precisam ter cores que funcionam tanto em fundo escuro quanto claro.
+⚠️ Validar **em ambos modos** — destructive, badges precisam funcionar em fundo dark e light.
 
-Commit: `style(ui): primitivas canônicas dark+light validadas (REDESIGN-1 ETAPA-8)`
+Commit: `style(ui): primitivas V2 dark+light validadas (REDESIGN-1 ETAPA-8)`
 
 ---
 
-### ETAPA 9 — Cards, Tabelas, Modais, Drawers, Toasts (1h)
+### ETAPA 9 — Tabelas, Dialogs, Drawers, Toasts, Popover, DropdownMenu, Command (1.5h)
 
-DESIGN.md seções 5.10-5.15.
+DESIGN.md seções 5.16, 5.18, 5.19, 5.20, 5.11.
 
-- `card.tsx` (CardRoot/Header/Content/Footer)
-- `table.tsx` — header bg-surface uppercase 11px tertiary
-- `dialog.tsx` — overlay bg-black/60 (em light bg-black/40) + content
-- `drawer.tsx` — slide-in da direita, 480/640px
-- `toast.tsx` — bottom-right
-- `popover.tsx` — Radix
+- **`table.tsx`** — header bg-surface uppercase 11px tertiary, rows border-bottom subtle hover glass-bg-hover
+- **`dialog.tsx`** — overlay bg-black/60 backdrop-blur-md (em light: bg-black/40) + content bg-elevated glass-border radius-xl shadow-lg. Spring entrada.
+- **`drawer.tsx`** — slide-in da direita 480/640px
+- **`toast.tsx`** — bottom-right 380px max-w
+- **`popover.tsx`** — Radix
+- **`dropdown-menu.tsx`** — Radix com glass-blur-heavy
+- **`command.tsx`** — base shadcn pra CommandPalette
 
 Animações framer-motion. Validar ambos modos.
 
-Commit: `style(ui): cards, tabelas, modais, drawers, toasts canônicos (REDESIGN-1 ETAPA-9)`
+Commit: `style(ui): tabelas, dialogs, drawers, toasts, popovers (REDESIGN-1 ETAPA-9)`
 
 ---
 
-### ETAPA 10 — Aplicar nos 8 apps (2-3h)
+### ETAPA 10 — CommandPalette (Cmd+K) (1h)
+
+DESIGN.md seção 5.11. **Componente novo no V1.**
+
+1. Criar `apps/shell-commercial/src/components/os/CommandPalette.tsx` baseado em V2.
+2. Modal `fixed inset-0 z-[200] pt-[18vh]` + backdrop bg-black/60 blur-md.
+3. Container max-w-[580px] rounded-2xl com style purple sutil (`rgba(139,92,246,0.15)` border).
+4. Animated gradient border glow + top shimmer line.
+5. Search input + Sparkles quando query + kbd ESC.
+6. CommandGroups: Apps + Ações.
+7. Items com ícone 8×8 (bg cor-app/20) + nome 13px.
+8. Footer com kbd ↑↓ navegar / ↵ abrir / ⌘K busca.
+9. Ctrl+K / Cmd+K abre globalmente em `OSDesktop.tsx`.
+
+⚠️ **Conflito Cmd+K:** V2 tem AEAIModal e CommandPalette com mesmo shortcut. No V1, **CommandPalette ganha Cmd+K**, AEAIModal usa botão dedicado no Dock OU Cmd+J.
+
+Commit: `feat(command-palette): Cmd+K spotlight novo em V1 (REDESIGN-1 ETAPA-10)`
+
+---
+
+### ETAPA 11 — Onboarding Wizard (4 steps) (1.5h)
+
+DESIGN.md seção 5.10.
+
+1. Overlay bg-black/70 backdrop-blur-[24px].
+2. Card max-w-xl bg-elevated glass-border radius-xl shadow-lg.
+3. **Progress dots** com Check em completed, ping em active, dot pequeno em future + linha 16px.
+4. Step icon 10×10 circle gradient azul + ícone 18px white.
+5. **Step 0 (Empresa):** Nome Fantasia + Telefone.
+6. **Step 1 (Endereço):** CEP + Número + Logradouro + Bairro + Cidade + UF (com BrasilAPI lookup).
+7. **Step 2 (Produtos):** Search NCM com 3 botões (Compro/Vendo/Ambos) + lista selecionados.
+8. **Step 3 (Tudo pronto!):** Rocket pulse + summary + CTA "Começar a usar".
+9. Botões footer: Voltar (ghost), Próximo (gradient blue), Pular (link tertiary só no step 2 → 3).
+10. AnimatePresence mode="wait" com slide horizontal entre steps.
+
+Commit: `style(onboarding): wizard 4-steps V2 com BrasilAPI + NCM search (REDESIGN-1 ETAPA-11)`
+
+---
+
+### ETAPA 12 — Aplicar nos 8 apps existentes V1 (3-4h)
+
+V1 tem 10 apps; foco visual em 8: Drive, Pessoas, Chat, Configurações, RH, Magic Store, Governança, Auditoria.
 
 Para cada app:
 
 1. Remover cores hardcoded (`bg-zinc-800`, `text-violet-400`)
 2. Substituir por tokens (`bg-[var(--bg-surface)]`, `text-[var(--text-primary)]`)
-3. Substituir botões/inputs/cards/tables locais pelas primitivas
-4. Aplicar skeleton estrutural (R11)
-5. Aplicar `key` em Suspense interno (R13)
-6. Manter título consistente (R14)
-7. Validar smoke + **validar em ambos modos**
+3. Aplicar primitivas das ETAPAS 8-9
+4. Skeleton estrutural via `AppLoader` (R13)
+5. `key` em Suspense interno (R15)
+6. Título consistente loading/error/success (R16)
+7. Sidebar items com active state V2-style (R12)
+8. Validar smoke + **AMBOS modos**
 
-Apps:
+Commits separados:
 
-- `style(drive): aplicar V2 (REDESIGN-1 ETAPA-10.1)`
-- `style(pessoas): aplicar V2 (REDESIGN-1 ETAPA-10.2)`
-- `style(chat): aplicar V2 (REDESIGN-1 ETAPA-10.3)`
-- `style(configuracoes): aplicar V2 + adicionar toggle theme (REDESIGN-1 ETAPA-10.4)` — esta etapa também crava UI do toggle em settings
-- `style(rh): aplicar V2 (REDESIGN-1 ETAPA-10.5)`
-- `style(magic-store): aplicar V2 (REDESIGN-1 ETAPA-10.6)`
-- `style(governanca): aplicar V2 (REDESIGN-1 ETAPA-10.7)`
-- `style(auditoria): aplicar V2 (REDESIGN-1 ETAPA-10.8)`
+- `style(drive): aplicar V2 (REDESIGN-1 ETAPA-12.1)`
+- `style(pessoas): aplicar V2 (REDESIGN-1 ETAPA-12.2)`
+- `style(chat): aplicar V2 (REDESIGN-1 ETAPA-12.3)`
+- `style(configuracoes): aplicar V2 + Theme toggle UI (REDESIGN-1 ETAPA-12.4)`
+- `style(rh): aplicar V2 (REDESIGN-1 ETAPA-12.5)`
+- `style(magic-store): aplicar V2 (REDESIGN-1 ETAPA-12.6)`
+- `style(governanca): aplicar V2 (REDESIGN-1 ETAPA-12.7)`
+- `style(auditoria): aplicar V2 (REDESIGN-1 ETAPA-12.8)`
 
-⚠️ **Atenção a cores de app em light:** algumas (ex: amarelo flúor `#f0fc05` Comércio) podem perder contraste em fundo branco. Documentar pendência em `KNOWN_LIMITATIONS.md` se ajuste não trivial — não bloquear sprint.
+⚠️ Cores de app em light: amarelo flúor `#f0fc05` (Comércio) pode perder contraste. Documentar pendência se ajuste não trivial.
 
 ---
 
-### ETAPA 11 — Login + Register + Onboarding + Staff (1h)
+### ETAPA 13 — Login + Register + Staff (1h)
 
-- `routes/login.tsx` — card centered max-w-sm, bg-elevated, border-glass, radius-xl, padding 32px
-- `routes/register.tsx` — same + preview CNPJ card
+- `routes/login.tsx` — card centered max-w-sm bg-elevated glass-border radius-xl shadow-lg padding 32px
+- `routes/register.tsx` — same + preview CNPJ card glass quando válido
 - `routes/select-company.tsx`
-- `components/os/OnboardingWizard.tsx` — overlay bg-black/70 backdrop-blur-xl + card + progress dots + AnimatePresence
 - `routes/staff.tsx`
 
 Aplicar tokens, primitivas. Validar ambos modos.
 
-Commit: `style(routes): login, register, select-company, staff, onboarding canônicos (REDESIGN-1 ETAPA-11)`
+Commit: `style(routes): login/register/select-company/staff canônicos (REDESIGN-1 ETAPA-13)`
 
 ---
 
-### ETAPA 12 — Validação final + commit consolidado (45min)
+### ETAPA 14 — Validação final (45min)
 
 1. Build limpo:
 
 ```bash
-cd ~/Projetos/aethereos
 pkill -9 -f vite 2>/dev/null
-rm -rf apps/shell-commercial/node_modules/.vite
-rm -rf apps/shell-commercial/dist 2>/dev/null
+rm -rf apps/shell-commercial/node_modules/.vite apps/shell-commercial/dist 2>/dev/null
 pnpm --filter=@aethereos/shell-commercial build 2>&1 | tail -20
 ```
 
-2. Subir Vite limpo:
+2. Subir:
 
 ```bash
 nohup pnpm --filter=@aethereos/shell-commercial dev > /tmp/redesign-final.log 2>&1 &
@@ -487,97 +604,96 @@ pnpm test:smoke
 set -a; source tooling/e2e/.env.local; set +a; pnpm test:e2e:full
 ```
 
-E2E pode precisar ajuste de seletores. Corrigir testes (não features).
+E2E pode precisar ajustes de seletor.
 
-4. Atualizar `SPRINT_LOG.md` com seção REDESIGN-1.
+4. Atualizar `SPRINT_LOG.md` + `KNOWN_LIMITATIONS.md`.
 
-5. Atualizar `KNOWN_LIMITATIONS.md` se houver pendências (cores de app em light, etc).
-
-6. Commit final: `chore: encerramento sprint redesign-1 — V2 design system + light mode aplicados`
+5. Commit final: `chore: encerramento sprint redesign-1 V2-real aplicado dark+light`
 
 ---
 
 ## VALIDAÇÃO VISUAL HUMANA OBRIGATÓRIA
 
-⚠️ **Validar em AMBOS modos.**
-
-Humano abre browser anônimo, login, e valida:
+Validar **em AMBOS modos** (toggle no TopBar).
 
 ### Modo Dark (default)
 
-#### Críticos (4 itens)
+#### Críticos
 
-- [ ] **Background dark sólido** (`#09090b`) com gradient sutil nos cantos
-- [ ] **TopBar SÓLIDA** sem blur (linha sutil embaixo)
-- [ ] **Dock visível com glass blur 40px** + magnification suave
+- [ ] **Background slate-tinted** `#0f151b` (não preto puro)
+- [ ] **TopBar 49px SÓLIDA** sem blur, com logo "ÆTHEREOS" + GradientText "Enterprise OS v1.0.1"
+- [ ] **Dock 80px** com magnification suave 48→72px + limelight indicator na tab ativa
 - [ ] **Drive + RH + Magic Store** abrem com visual consistente
 
 #### Visual
 
-- [ ] Mesa com 6 wallpapers selecionáveis
-- [ ] DesktopIcons com glass + label legível + hover scale
-- [ ] TabBar tab ativa em glass-bg + cor do app
-- [ ] Dock dot indicador nos apps abertos
-- [ ] Tooltip Dock após 600ms hover
-- [ ] Separadores no Dock
-- [ ] AppShell sidebar mais escura que conteúdo
-- [ ] Item ativo na sidebar com border-left 2px cor app
+- [ ] Mesa com 6 wallpapers (default/aurora/ocean/midnight/minimal/mesh)
+- [ ] DesktopIcons 56×56 glass + label legível com text-shadow
+- [ ] TabBar tab ativa em glass-bg + cor-app no ícone (sem borda inferior colorida)
+- [ ] Tab Mesa pinned mostra "Home" texto
+- [ ] **Sidebar item ativo** com `bg ${appColor}1a` + texto/ícone cor-app (sem border-left)
+- [ ] AppContent padding bottom 144px (não cobre Dock)
+- [ ] AppHeader com border-bottom subtle
+- [ ] Dock context menu (right-click): Abrir, Adicionar na Mesa
+- [ ] Dock 3-pontos menu: Ocultar dock, Todos os Apps, Suporte
+- [ ] **AppDisabledScreen** quando módulo não ativo (CTA Magic Store)
+- [ ] **CommandPalette Cmd+K** abre com busca animada + apps + ações
+- [ ] Onboarding wizard 4 steps com progress dots + transições
 
 ### Modo Light
 
-Toggle pra Light mode. Validar:
+Toggle pra Light. Validar:
 
 #### Críticos
 
-- [ ] **Background off-white** (`#fafaf9`) com gradient sutil nos cantos
-- [ ] **TopBar SÓLIDA** branca sem blur
-- [ ] **Dock visível** com glass black 2.5% opacity + magnification
-- [ ] **Drive + RH + Magic Store** abrem com visual consistente
+- [ ] **Background off-white** `#fafaf9` (não branco puro)
+- [ ] **TopBar SÓLIDA branca** sem blur
+- [ ] **Dock visível** com glass black 2.5% + magnification
+- [ ] Apps com visual consistente
 
 #### Visual
 
-- [ ] Wallpapers light (versões claras dos 6)
-- [ ] DesktopIcons com glass adaptado + label com text-shadow branco
-- [ ] TabBar tab ativa em glass black
-- [ ] AppShell sidebar mais escura que conteúdo (que é branco puro)
-- [ ] Cards bg branco puro com border subtle
-- [ ] Texto preto (não puro #000) sobre fundo claro
-
-### Toggle e persistência
-
-- [ ] Toggle no TopBar alterna instantaneamente
-- [ ] Refresh mantém tema escolhido (sem flash)
-- [ ] localStorage `aethereos-theme` persistido
+- [ ] Wallpapers light (versões claras)
+- [ ] DesktopIcons label com text-shadow branco
+- [ ] Cards bg branco puro + border subtle
+- [ ] Texto preto não puro (rgba 0,0,0,0.92)
+- [ ] Sidebar mais escura que conteúdo branco
 
 ### UX rules (ambos modos)
 
-- [ ] **Skeleton estrutural** (não loader genérico) em cada app
-- [ ] **Prefetch funciona** — hover no Dock → app abre instantâneo na 2ª vez
-- [ ] **Suspense com key** — sem flash de conteúdo anterior
+- [ ] **Skeleton estrutural** (sidebar 220px + breadcrumb + cards)
+- [ ] **Prefetch funciona** — hover Dock → app abre instantâneo na 2ª vez
+- [ ] **Suspense com key** — sem flash anterior ao trocar seção
 - [ ] **Títulos consistentes** loading/error/success
 
-### Tipografia e cor
+### Tipografia
 
-- [ ] Inter renderiza no corpo
-- [ ] Outfit renderiza nos h1-h3
-- [ ] Sem cores neon
-- [ ] Sem cores hardcoded (`bg-zinc-X` etc)
-- [ ] Contraste OK em ambos modos
-- [ ] Focus rings visíveis
+- [ ] Inter no corpo
+- [ ] Outfit nos h1-h3 e ÆTHEREOS
+- [ ] JetBrains Mono em kbd shortcuts
 
 ### Funcional
 
 - [ ] Login funciona
 - [ ] CRUD em RH funciona
 - [ ] Magic Store cards + drawer
-- [ ] Onboarding wizard avança
+- [ ] Onboarding wizard avança e completa
 - [ ] Drive lista files
 - [ ] Logout funciona
+- [ ] Cmd+K abre CommandPalette
+
+### Persistência
+
+- [ ] Toggle no TopBar alterna instantaneamente
+- [ ] Refresh mantém tema (sem flash)
+- [ ] localStorage `aethereos-theme` persistido
 
 ### Acessibilidade
 
 - [ ] Toggle Theme tem aria-label correto e aria-pressed
 - [ ] `prefers-reduced-motion` desabilita magnification
+- [ ] Focus rings visíveis em todos os botões/inputs
+- [ ] Contraste OK em ambos modos (text-tertiary ≥ 4.5:1 sobre bg-base)
 
 Se algum item falhar, voltar para etapa correspondente.
 
@@ -585,10 +701,10 @@ Se algum item falhar, voltar para etapa correspondente.
 
 ## SE ALGO QUEBRAR FUNCIONALMENTE
 
-R6 é regra inflexível. Se algum app quebrar:
+R6 inflexível. Se app quebrar:
 
 1. Investigar e consertar
-2. Reverter commit específico daquele app, dívida em `KNOWN_LIMITATIONS.md`, prosseguir
+2. Reverter commit específico, dívida em `KNOWN_LIMITATIONS.md`, prosseguir
 
 Não bloquear sprint inteiro por um app quebrado.
 
@@ -597,10 +713,10 @@ Não bloquear sprint inteiro por um app quebrado.
 ## PROMPT DE RETOMADA
 
 ```
-Estou retomando Sprint REDESIGN-1 (V2-based dark+light) no Aethereos.
+Estou retomando Sprint REDESIGN-1 (V2-real dark+light) no Aethereos.
 
 Antes de qualquer ação:
-1. Lê DESIGN.md inteiro na raiz (canon V2-based v2.0)
+1. Lê DESIGN.md inteiro na raiz (canon V2-real v3.0)
 2. Lê SPRINT_LOG.md
 3. cat REDESIGN_DIAGNOSIS.md (se existir)
 4. git log --oneline -15
@@ -608,17 +724,23 @@ Antes de qualquer ação:
 6. Continua dali
 
 Lembrar:
-- DESIGN.md v2.0 é canon V2-based dark + light
-- Default é DARK, toggle Dark/Light em Settings + TopBar
-- TopBar SÓLIDA em ambos modos (regra cravada V2)
-- Skeleton estrutural obrigatório
+- DESIGN.md v3.0 é canon V2-real (extraído do código V2 verbatim)
+- Default DARK, toggle Dark/Light em Settings + TopBar
+- TopBar SÓLIDA sem blur, 49px
+- TabBar tab ativa SEM borda inferior colorida
+- Sidebar item ativo SEM border-left, só bg cor-app/0.1
+- Dock 80px com magnification 48→72 + limelight
+- CommandPalette Cmd+K (componente novo no V1)
+- AppDisabledScreen (componente novo no V1)
+- Skeleton estrutural literal de DESIGN.md 5.7
 - Prefetch chunks no Dock obrigatório
-- Suspense com key em conteúdo dinâmico
-- Validação visual humana em AMBOS modos é gate obrigatório
+- Suspense com key
+- Validação humana em AMBOS modos
 - Sem features novas, sem mexer em lógica
-- Sem push para origin sem aprovação humana
+- Sem push pra origin sem aprovação humana
 
-Referência V2 viva em ~/Projetos/aethereos-v2 (canon visual, mas só tem dark — light foi extensão neste sprint).
+V2 referência viva em ~/Projetos/aethereos-v2/artifacts/aethereos/
+V2 NÃO tem light mode — light é extensão neste sprint.
 ```
 
-Salve este arquivo como `SPRINT_REDESIGN_1_PROMPT.md` na raiz do projeto antes de começar.
+Salvar como `SPRINT_REDESIGN_1_PROMPT.md` na raiz do projeto.
