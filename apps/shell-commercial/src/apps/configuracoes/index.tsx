@@ -94,20 +94,70 @@ const TAB_LABELS: Record<TabId, string> = {
 
 // ─── Design primitives ────────────────────────────────────────────────────────
 
-function ContentHeader({ children }: { children: React.ReactNode }) {
+function ContentHeader({
+  icon: Icon,
+  iconBg,
+  iconColor,
+  title,
+  subtitle,
+}: {
+  icon: typeof UserCircle;
+  iconBg: string;
+  iconColor: string;
+  title: string;
+  subtitle: string;
+}) {
   return (
-    <h1
+    <div
       style={{
-        fontSize: 20,
-        fontWeight: 700,
-        color: "var(--text-primary)",
-        letterSpacing: "-0.03em",
-        fontFamily: "var(--font-display)",
-        marginBottom: 24,
+        display: "flex",
+        alignItems: "center",
+        gap: 18,
+        marginBottom: 28,
+        paddingBottom: 24,
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
       }}
     >
-      {children}
-    </h1>
+      <div
+        style={{
+          width: 56,
+          height: 56,
+          borderRadius: 16,
+          background: iconBg,
+          border: "1px solid rgba(255,255,255,0.08)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        <Icon size={28} style={{ color: iconColor }} strokeWidth={1.5} />
+      </div>
+      <div>
+        <h1
+          style={{
+            fontSize: 26,
+            fontWeight: 700,
+            color: "var(--text-primary)",
+            letterSpacing: "-0.03em",
+            fontFamily: "var(--font-display)",
+            lineHeight: 1.15,
+          }}
+        >
+          {title}
+        </h1>
+        <p
+          style={{
+            fontSize: 13,
+            color: "var(--text-secondary)",
+            marginTop: 4,
+            lineHeight: 1.4,
+          }}
+        >
+          {subtitle}
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -530,7 +580,13 @@ function TabPerfil() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <ContentHeader>Perfil</ContentHeader>
+      <ContentHeader
+        icon={UserCircle}
+        iconBg="rgba(99,102,241,0.22)"
+        iconColor="#818cf8"
+        title="Perfil"
+        subtitle="Gerencie suas informações pessoais e preferências de conta"
+      />
 
       <div>
         <SectionLabel>Informações pessoais</SectionLabel>
@@ -676,7 +732,13 @@ function TabEmpresa() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <ContentHeader>Empresa</ContentHeader>
+      <ContentHeader
+        icon={Building2}
+        iconBg="rgba(6,182,212,0.22)"
+        iconColor="#22d3ee"
+        title="Empresa"
+        subtitle="Configure os dados e identidade da sua organização"
+      />
 
       <div>
         <SectionLabel>Perfil da empresa</SectionLabel>
@@ -773,7 +835,13 @@ function UsageBar({ used, limit }: { used: number; limit: number }) {
 function TabPlano() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <ContentHeader>Plano</ContentHeader>
+      <ContentHeader
+        icon={CreditCard}
+        iconBg="rgba(16,185,129,0.22)"
+        iconColor="#34d399"
+        title="Plano"
+        subtitle="Acompanhe sua assinatura, limites e uso de recursos"
+      />
 
       <div>
         <SectionLabel>Assinatura atual</SectionLabel>
@@ -847,7 +915,13 @@ function TabSistema() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <ContentHeader>Sistema</ContentHeader>
+      <ContentHeader
+        icon={SlidersHorizontal}
+        iconBg="rgba(100,116,139,0.22)"
+        iconColor="#94a3b8"
+        title="Sistema"
+        subtitle="Configurações avançadas, exportação de dados e controles administrativos"
+      />
 
       <div>
         <SectionLabel>Dados</SectionLabel>
@@ -938,7 +1012,13 @@ function TabIntegracoes() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <ContentHeader>Integrações</ContentHeader>
+      <ContentHeader
+        icon={Plug}
+        iconBg="rgba(245,158,11,0.22)"
+        iconColor="#fbbf24"
+        title="Integrações"
+        subtitle="Conecte o Aethereos a serviços externos e ferramentas da sua stack"
+      />
 
       {groups.map((group) => {
         const items = INTEGRATIONS.filter((i) => i.group === group);
