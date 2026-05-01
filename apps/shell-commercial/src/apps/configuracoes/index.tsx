@@ -1424,6 +1424,9 @@ function TabPerfil({
   // Profile data
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [cargo, setCargo] = useState("");
+  const [area, setArea] = useState("");
+  const [setor, setSetor] = useState("");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">(
     "idle",
   );
@@ -1492,10 +1495,16 @@ function TabPerfil({
   // Refs so debounce callback always reads latest values
   const nameRef = useRef(name);
   const phoneRef = useRef(phone);
+  const cargoRef = useRef(cargo);
+  const areaRef = useRef(area);
+  const setorRef = useRef(setor);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initializedRef = useRef(false);
   nameRef.current = name;
   phoneRef.current = phone;
+  cargoRef.current = cargo;
+  areaRef.current = area;
+  setorRef.current = setor;
 
   // Password change
   const [newPwd, setNewPwd] = useState("");
@@ -1547,17 +1556,26 @@ function TabPerfil({
 
     void drivers.data
       .from("profiles")
-      .select("phone,full_name")
+      .select("phone,full_name,position,area,department")
       .eq("id", userId)
       .maybeSingle()
       .then(
         ({
           data,
         }: {
-          data: { phone: string | null; full_name: string | null } | null;
+          data: {
+            phone: string | null;
+            full_name: string | null;
+            position: string | null;
+            area: string | null;
+            department: string | null;
+          } | null;
         }) => {
           if (data === null) return;
           if (data.phone !== null) setPhone(data.phone);
+          if (data.position !== null) setCargo(data.position);
+          if (data.area !== null) setArea(data.area);
+          if (data.department !== null) setSetor(data.department);
           // Se o display_name de settings vier vazio, cai pro full_name de profiles
           if (data.full_name !== null) {
             setName((prev) => (prev === "" ? (data.full_name ?? "") : prev));
@@ -1591,7 +1609,12 @@ function TabPerfil({
         }
         await drivers.data
           .from("profiles")
-          .update({ phone: phoneRef.current !== "" ? phoneRef.current : null })
+          .update({
+            phone: phoneRef.current !== "" ? phoneRef.current : null,
+            position: cargoRef.current !== "" ? cargoRef.current : null,
+            area: areaRef.current !== "" ? areaRef.current : null,
+            department: setorRef.current !== "" ? setorRef.current : null,
+          })
           .eq("id", userId);
         void drivers.scp.publishEvent("platform.settings.updated", {
           scope: "user",
@@ -1658,7 +1681,7 @@ function TabPerfil({
           >
             <SettingInput value={email ?? ""} readOnly />
           </SettingRow>
-          <SettingRow label="Celular Corporativo" last>
+          <SettingRow label="Celular Corporativo">
             <SettingInput
               value={phone}
               onChange={(value) => {
@@ -1667,6 +1690,36 @@ function TabPerfil({
               }}
               type="tel"
               placeholder="(00) 00000-0000"
+            />
+          </SettingRow>
+          <SettingRow label="Cargo">
+            <SettingInput
+              value={cargo}
+              onChange={(value) => {
+                setCargo(value);
+                triggerAutoSave();
+              }}
+              placeholder="Ex: Gerente de Vendas"
+            />
+          </SettingRow>
+          <SettingRow label="Área">
+            <SettingInput
+              value={area}
+              onChange={(value) => {
+                setArea(value);
+                triggerAutoSave();
+              }}
+              placeholder="Ex: Comercial"
+            />
+          </SettingRow>
+          <SettingRow label="Setor" last>
+            <SettingInput
+              value={setor}
+              onChange={(value) => {
+                setSetor(value);
+                triggerAutoSave();
+              }}
+              placeholder="Ex: B2B"
             />
           </SettingRow>
         </SettingGroup>
