@@ -92,7 +92,7 @@ const NAV_SECTIONS: NavSection[] = [
 ];
 
 const TAB_LABELS: Record<TabId, string> = {
-  home: "Início",
+  home: "Painel de Configurações",
   "minha-empresa": "Minha Empresa",
   perfil: "Meu Perfil",
   notificacoes: "Notificações",
@@ -2468,7 +2468,7 @@ function Sidebar({
 
   if (collapsed) {
     const allItems: { id: TabId; label: string; icon: typeof User }[] = [
-      { id: "home", label: "Início", icon: Home },
+      { id: "home", label: "Painel de Configurações", icon: Home },
       ...NAV_SECTIONS.flatMap((s) => s.items),
     ];
     return (
@@ -2546,7 +2546,7 @@ function Sidebar({
       <button
         type="button"
         onClick={() => onSelect("home")}
-        aria-label="Início"
+        aria-label="Painel de Configurações"
         aria-current={active === "home" ? "page" : undefined}
         style={{
           display: "flex",
@@ -2965,7 +2965,7 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
             lineHeight: 1.2,
           }}
         >
-          Início
+          Painel de Configurações
         </h1>
         <p
           style={{
