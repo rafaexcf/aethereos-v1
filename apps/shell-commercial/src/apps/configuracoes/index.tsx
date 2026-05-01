@@ -25,6 +25,7 @@ import {
   Globe,
   ArrowRight,
   Monitor,
+  Building2,
 } from "lucide-react";
 import { useSessionStore } from "../../stores/session";
 import { useDrivers } from "../../lib/drivers-context";
@@ -40,6 +41,7 @@ import {
 
 type TabId =
   | "home"
+  | "minha-empresa"
   | "perfil"
   | "notificacoes"
   | "dados-privacidade"
@@ -66,6 +68,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     label: "Conta",
     items: [
+      { id: "minha-empresa", label: "Minha Empresa", icon: Building2 },
       { id: "perfil", label: "Meu Perfil", icon: User },
       { id: "notificacoes", label: "Notificações", icon: Bell },
       { id: "dados-privacidade", label: "Dados e Privacidade", icon: FileText },
@@ -90,6 +93,7 @@ const NAV_SECTIONS: NavSection[] = [
 
 const TAB_LABELS: Record<TabId, string> = {
   home: "Início",
+  "minha-empresa": "Minha Empresa",
   perfil: "Meu Perfil",
   notificacoes: "Notificações",
   "dados-privacidade": "Dados e Privacidade",
@@ -588,6 +592,374 @@ function ComingSoonBanner({ message }: { message?: string }) {
           {message ?? "Esta seção estará disponível em breve."}
         </p>
       </div>
+    </div>
+  );
+}
+
+// ─── Tab: Minha Empresa (CNPJ + dados PJ) ────────────────────────────────────
+
+interface CnpjPreview {
+  cnpj: string;
+  razao_social: string;
+  nome_fantasia: string | null;
+  situacao: string;
+  atividade_principal: string;
+  municipio: string;
+  uf: string;
+}
+
+function maskCnpj(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 14);
+  return digits
+    .replace(/^(\d{2})(\d)/, "$1.$2")
+    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1/$2")
+    .replace(/(\d{4})(\d)/, "$1-$2");
+}
+
+function TabMinhaEmpresa() {
+  const drivers = useDrivers();
+  const { activeCompanyId } = useSessionStore();
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+
+  const [cnpjDisplay, setCnpjDisplay] = useState("");
+  const [cnpjPreview, setCnpjPreview] = useState<CnpjPreview | null>(null);
+  const [cnpjLoading, setCnpjLoading] = useState(false);
+  const [cnpjError, setCnpjError] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [tradeName, setTradeName] = useState("");
+  const [companyEmail, setCompanyEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [saveState, setSaveState] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
+
+  const cnpjLookupAbort = useRef<AbortController | null>(null);
+  const initializedRef = useRef(false);
+
+  // Hydrate from companies table
+  useEffect(() => {
+    if (drivers === null || activeCompanyId === null) return;
+    void drivers.data
+      .from("companies")
+      .select("name,cnpj,cnpj_data,trade_name,email,phone")
+      .eq("id", activeCompanyId)
+      .single()
+      .then(
+        ({
+          data,
+        }: {
+          data: {
+            name: string | null;
+            cnpj: string | null;
+            cnpj_data: CnpjPreview | null;
+            trade_name: string | null;
+            email: string | null;
+            phone: string | null;
+          } | null;
+        }) => {
+          if (data === null) {
+            initializedRef.current = true;
+            return;
+          }
+          if (data.name !== null) setName(data.name);
+          if (data.cnpj !== null) setCnpjDisplay(maskCnpj(data.cnpj));
+          if (data.cnpj_data !== null) setCnpjPreview(data.cnpj_data);
+          if (data.trade_name !== null) setTradeName(data.trade_name);
+          if (data.email !== null) setCompanyEmail(data.email);
+          if (data.phone !== null) setPhone(data.phone);
+          initializedRef.current = true;
+        },
+      );
+  }, [drivers, activeCompanyId]);
+
+  async function lookupCnpj(cnpj: string) {
+    if (cnpjLookupAbort.current) cnpjLookupAbort.current.abort();
+    cnpjLookupAbort.current = new AbortController();
+
+    setCnpjLoading(true);
+    setCnpjError(null);
+    try {
+      const res = await fetch(
+        `${supabaseUrl}/functions/v1/cnpj-lookup?cnpj=${cnpj}`,
+        {
+          headers: { apikey: anonKey },
+          signal: cnpjLookupAbort.current.signal,
+        },
+      );
+      if (!res.ok) {
+        setCnpjError("CNPJ não encontrado");
+      } else {
+        const data = (await res.json()) as CnpjPreview;
+        setCnpjPreview(data);
+        // Auto-preencher razão social e nome fantasia caso estejam vazios
+        if (name === "" && data.razao_social !== "") setName(data.razao_social);
+        if (tradeName === "" && data.nome_fantasia !== null)
+          setTradeName(data.nome_fantasia);
+      }
+    } catch (err) {
+      if ((err as { name?: string }).name !== "AbortError") {
+        setCnpjError("Erro ao consultar CNPJ");
+      }
+    } finally {
+      setCnpjLoading(false);
+    }
+  }
+
+  function handleCnpjChange(value: string) {
+    const masked = maskCnpj(value);
+    setCnpjDisplay(masked);
+    setCnpjPreview(null);
+    setCnpjError(null);
+
+    const digits = masked.replace(/\D/g, "");
+    if (digits.length === 14) {
+      void lookupCnpj(digits);
+    }
+  }
+
+  async function handleSave() {
+    if (drivers === null || activeCompanyId === null) return;
+
+    const cnpjDigits = cnpjDisplay.replace(/\D/g, "");
+    if (cnpjDigits.length !== 14) {
+      setCnpjError("CNPJ deve ter 14 dígitos");
+      setSaveState("error");
+      setTimeout(() => setSaveState("idle"), 2000);
+      return;
+    }
+
+    setSaveState("saving");
+
+    const payload: Record<string, unknown> = {
+      cnpj: cnpjDigits,
+      cnpj_data: cnpjPreview,
+      name,
+      trade_name: tradeName !== "" ? tradeName : null,
+      email: companyEmail !== "" ? companyEmail : null,
+      phone: phone !== "" ? phone : null,
+    };
+
+    const { error } = await drivers.data
+      .from("companies")
+      .update(payload)
+      .eq("id", activeCompanyId);
+
+    if (error !== null && error !== undefined) {
+      setSaveState("error");
+      setTimeout(() => setSaveState("idle"), 2000);
+      return;
+    }
+
+    void drivers.scp.publishEvent("platform.settings.updated", {
+      scope: "company",
+      scope_id: activeCompanyId,
+      key: "company_profile",
+      updated_by: useSessionStore.getState().userId ?? "",
+    });
+
+    setSaveState("saved");
+    setTimeout(() => setSaveState("idle"), 2000);
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <ContentHeader
+        icon={Building2}
+        iconBg="rgba(6,182,212,0.22)"
+        iconColor="#22d3ee"
+        title="Minha Empresa"
+        subtitle="Cadastro fiscal e dados da pessoa jurídica"
+      />
+
+      {/* Identificação fiscal */}
+      <div>
+        <SectionLabel>Identificação fiscal</SectionLabel>
+        <SettingGroup>
+          <SettingRow
+            label="CNPJ"
+            sublabel="Digite os 14 dígitos para consulta automática"
+            last
+          >
+            <div style={{ position: "relative", width: 220 }}>
+              <input
+                type="text"
+                value={cnpjDisplay}
+                onChange={(e) => handleCnpjChange(e.target.value)}
+                placeholder="00.000.000/0000-00"
+                inputMode="numeric"
+                autoComplete="off"
+                data-1p-ignore="true"
+                data-lpignore="true"
+                style={{
+                  width: "100%",
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.10)",
+                  borderRadius: 8,
+                  padding: "7px 32px 7px 11px",
+                  fontSize: 13,
+                  fontFamily: "var(--font-mono)",
+                  color: "var(--text-primary)",
+                  outline: "none",
+                  transition: "border-color 120ms ease, box-shadow 120ms ease",
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(99,102,241,0.65)";
+                  e.currentTarget.style.boxShadow =
+                    "0 0 0 3px rgba(99,102,241,0.12)";
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)";
+                  e.currentTarget.style.boxShadow = "none";
+                }}
+              />
+              {cnpjLoading && (
+                <Loader2
+                  size={14}
+                  className="animate-spin"
+                  style={{
+                    position: "absolute",
+                    right: 10,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    color: "var(--text-tertiary)",
+                  }}
+                />
+              )}
+            </div>
+          </SettingRow>
+        </SettingGroup>
+
+        {cnpjError !== null && (
+          <p
+            style={{
+              fontSize: 12,
+              color: "#f87171",
+              marginTop: 8,
+              paddingLeft: 2,
+            }}
+          >
+            {cnpjError}
+          </p>
+        )}
+
+        {cnpjPreview !== null && (
+          <div
+            style={{
+              marginTop: 12,
+              padding: 16,
+              borderRadius: 12,
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.07)",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+                gap: 12,
+                marginBottom: 8,
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: "var(--text-primary)",
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  {cnpjPreview.razao_social}
+                </p>
+                {cnpjPreview.nome_fantasia !== null && (
+                  <p
+                    style={{
+                      fontSize: 12,
+                      color: "var(--text-secondary)",
+                      marginTop: 2,
+                    }}
+                  >
+                    {cnpjPreview.nome_fantasia}
+                  </p>
+                )}
+              </div>
+              <Badge
+                variant={
+                  cnpjPreview.situacao.toUpperCase() === "ATIVA"
+                    ? "success"
+                    : "neutral"
+                }
+              >
+                {cnpjPreview.situacao}
+              </Badge>
+            </div>
+            <p
+              style={{
+                fontSize: 12,
+                color: "var(--text-tertiary)",
+                marginTop: 6,
+                lineHeight: 1.5,
+              }}
+            >
+              {cnpjPreview.atividade_principal}
+            </p>
+            <p
+              style={{
+                fontSize: 11,
+                color: "var(--text-tertiary)",
+                marginTop: 4,
+              }}
+            >
+              {cnpjPreview.municipio} – {cnpjPreview.uf}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Dados da empresa */}
+      <div>
+        <SectionLabel>Dados da empresa</SectionLabel>
+        <SettingGroup>
+          <SettingRow label="Razão social">
+            <SettingInput value={name} onChange={setName} />
+          </SettingRow>
+          <SettingRow label="Nome fantasia">
+            <SettingInput
+              value={tradeName}
+              onChange={setTradeName}
+              placeholder="(opcional)"
+            />
+          </SettingRow>
+          <SettingRow label="E-mail corporativo">
+            <SettingInput
+              value={companyEmail}
+              onChange={setCompanyEmail}
+              type="email"
+              placeholder="contato@empresa.com"
+            />
+          </SettingRow>
+          <SettingRow label="Telefone" last>
+            <SettingInput
+              value={phone}
+              onChange={setPhone}
+              placeholder="(00) 00000-0000"
+            />
+          </SettingRow>
+        </SettingGroup>
+      </div>
+
+      <SaveRow>
+        <PrimaryButton
+          onClick={() => void handleSave()}
+          disabled={saveState === "saving"}
+        >
+          <SaveLabel state={saveState} label="Salvar alterações" />
+        </PrimaryButton>
+      </SaveRow>
     </div>
   );
 }
@@ -2811,6 +3183,8 @@ function TabContent({
   switch (id) {
     case "home":
       return <TabHome onSelect={onSelect} />;
+    case "minha-empresa":
+      return <TabMinhaEmpresa />;
     case "perfil":
       return <TabPerfil />;
     case "notificacoes":
