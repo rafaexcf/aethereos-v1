@@ -291,14 +291,17 @@ export function TopBar({ companyName, onSignOut }: TopBarProps) {
         data-testid="topbar"
         role="banner"
         aria-label="topbar"
-        className="flex shrink-0 items-center justify-between px-4"
+        className="flex items-center justify-between px-4"
         style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
           height: 42,
           background: "rgba(6,9,18,0.81)",
           backdropFilter: "blur(var(--blur-dock))",
           WebkitBackdropFilter: "blur(var(--blur-dock))",
           borderBottom: "1px solid var(--glass-border)",
-          position: "relative",
           zIndex: 50,
         }}
       >

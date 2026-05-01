@@ -78,8 +78,9 @@ export function OSDesktop() {
   return (
     <div
       data-testid="os-desktop"
-      className="flex flex-col h-screen w-screen overflow-hidden"
+      className="flex flex-col h-screen w-screen overflow-hidden relative"
       style={{
+        paddingTop: 42,
         background: [
           "radial-gradient(ellipse 160% 75% at 10% -10%, rgba(99,77,255,0.65) 0%, transparent 50%)",
           "radial-gradient(ellipse 80% 65% at 92% 5%, rgba(14,165,233,0.50) 0%, transparent 45%)",
