@@ -99,7 +99,7 @@ function DesktopIcon({ item }: { item: MesaItem }) {
 }
 
 export function MesaApp() {
-  const { layout, wallpaper, fetchLayout } = useMesaStore();
+  const { layout, wallpaper, wallpaperUrl, fetchLayout } = useMesaStore();
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     visible: false,
     x: 0,
@@ -121,7 +121,7 @@ export function MesaApp() {
     return () => document.removeEventListener("click", handleClick);
   }, [contextMenu.visible]);
 
-  const wallpaperStyle = getWallpaperStyle(wallpaper);
+  const wallpaperStyle = getWallpaperStyle(wallpaper, wallpaperUrl);
   const icons = layout.filter((item) => item.type === "icon");
 
   return (

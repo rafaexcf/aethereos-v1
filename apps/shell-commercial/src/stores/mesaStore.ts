@@ -9,6 +9,18 @@ export const WALLPAPERS = [
   "midnight",
   "minimal",
   "mesh",
+  "sunset",
+  "forest",
+  "lavender",
+  "cherry",
+  "slate",
+  "gold",
+  "ruby",
+  "emerald",
+  "sapphire",
+  "cosmic",
+  "volcano",
+  "arctic",
 ] as const;
 export type WallpaperId = (typeof WALLPAPERS)[number];
 
@@ -19,9 +31,34 @@ export const WALLPAPER_NAMES: Record<WallpaperId, string> = {
   midnight: "Meia-Noite",
   minimal: "Minimal",
   mesh: "Mesh",
+  sunset: "Pôr do Sol",
+  forest: "Floresta",
+  lavender: "Lavanda",
+  cherry: "Cerejeira",
+  slate: "Ardósia",
+  gold: "Dourado",
+  ruby: "Rubi",
+  emerald: "Esmeralda",
+  sapphire: "Safira",
+  cosmic: "Cósmico",
+  volcano: "Vulcão",
+  arctic: "Ártico",
 };
 
-export function getWallpaperStyle(id: string): React.CSSProperties {
+export const CUSTOM_WALLPAPER_ID = "custom";
+
+export function getWallpaperStyle(
+  id: string,
+  customUrl: string | null = null,
+): React.CSSProperties {
+  if (id === CUSTOM_WALLPAPER_ID && customUrl !== null && customUrl !== "") {
+    return {
+      backgroundImage: `url("${customUrl}")`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+    };
+  }
   return { background: `var(--wallpaper-${id}, var(--bg-base))` };
 }
 
@@ -87,6 +124,8 @@ const DEFAULT_LAYOUT: MesaItem[] = [
 interface MesaState {
   layout: MesaItem[];
   wallpaper: string;
+  /** URL pública do wallpaper customizado quando wallpaper === "custom" */
+  wallpaperUrl: string | null;
   isLoading: boolean;
   hasLoaded: boolean;
 }
@@ -95,21 +134,30 @@ interface MesaActions {
   fetchLayout: () => Promise<void>;
   updateLayout: (layout: MesaItem[], wallpaper?: string) => void;
   setWallpaper: (wallpaper: string) => void;
+  /** Define wallpaper como custom apontando para uma URL (já uploaded) */
+  setCustomWallpaper: (url: string) => void;
+  /** Limpa wallpaper customizado e cai pro default */
+  clearCustomWallpaper: () => void;
 }
 
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
-function scheduleSave(layout: MesaItem[], wallpaper: string) {
+function scheduleSave(
+  layout: MesaItem[],
+  wallpaper: string,
+  wallpaperUrl: string | null,
+) {
   if (saveTimeout !== null) clearTimeout(saveTimeout);
   saveTimeout = setTimeout(() => {
     saveTimeout = null;
-    void persistLayout(layout, wallpaper);
+    void persistLayout(layout, wallpaper, wallpaperUrl);
   }, 1000);
 }
 
 async function persistLayout(
   layout: MesaItem[],
   wallpaper: string,
+  wallpaperUrl: string | null,
 ): Promise<void> {
   const { drivers, userId, activeCompanyId } = useSessionStore.getState();
   if (drivers === null || userId === null || activeCompanyId === null) return;
@@ -120,6 +168,7 @@ async function persistLayout(
       company_id: activeCompanyId,
       layout,
       wallpaper,
+      wallpaper_url: wallpaperUrl,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "user_id,company_id" },
@@ -130,8 +179,8 @@ if (typeof window !== "undefined") {
   window.addEventListener("beforeunload", () => {
     if (saveTimeout !== null) {
       clearTimeout(saveTimeout);
-      const { layout, wallpaper } = useMesaStore.getState();
-      void persistLayout(layout, wallpaper);
+      const { layout, wallpaper, wallpaperUrl } = useMesaStore.getState();
+      void persistLayout(layout, wallpaper, wallpaperUrl);
     }
   });
 }
@@ -139,6 +188,7 @@ if (typeof window !== "undefined") {
 export const useMesaStore = create<MesaState & MesaActions>((set, get) => ({
   layout: DEFAULT_LAYOUT,
   wallpaper: DEFAULT_WALLPAPER,
+  wallpaperUrl: null,
   isLoading: false,
   hasLoaded: false,
 
@@ -153,16 +203,21 @@ export const useMesaStore = create<MesaState & MesaActions>((set, get) => ({
 
     const { data } = await drivers.data
       .from("mesa_layouts")
-      .select("layout, wallpaper")
+      .select("layout, wallpaper, wallpaper_url")
       .eq("user_id", userId)
       .eq("company_id", activeCompanyId)
       .maybeSingle();
 
     if (data !== null && data !== undefined) {
+      const row = data as {
+        layout: MesaItem[];
+        wallpaper: string;
+        wallpaper_url: string | null;
+      };
       set({
-        layout: (data as { layout: MesaItem[]; wallpaper: string }).layout,
-        wallpaper: (data as { layout: MesaItem[]; wallpaper: string })
-          .wallpaper,
+        layout: row.layout,
+        wallpaper: row.wallpaper,
+        wallpaperUrl: row.wallpaper_url ?? null,
         isLoading: false,
         hasLoaded: true,
       });
@@ -175,12 +230,24 @@ export const useMesaStore = create<MesaState & MesaActions>((set, get) => ({
     const current = get();
     const nextWallpaper = wallpaper ?? current.wallpaper;
     set({ layout, wallpaper: nextWallpaper });
-    scheduleSave(layout, nextWallpaper);
+    scheduleSave(layout, nextWallpaper, current.wallpaperUrl);
   },
 
   setWallpaper: (wallpaper) => {
-    const { layout } = get();
+    const { layout, wallpaperUrl } = get();
     set({ wallpaper });
-    scheduleSave(layout, wallpaper);
+    scheduleSave(layout, wallpaper, wallpaperUrl);
+  },
+
+  setCustomWallpaper: (url) => {
+    const { layout } = get();
+    set({ wallpaper: CUSTOM_WALLPAPER_ID, wallpaperUrl: url });
+    scheduleSave(layout, CUSTOM_WALLPAPER_ID, url);
+  },
+
+  clearCustomWallpaper: () => {
+    const { layout } = get();
+    set({ wallpaper: DEFAULT_WALLPAPER, wallpaperUrl: null });
+    scheduleSave(layout, DEFAULT_WALLPAPER, null);
   },
 }));

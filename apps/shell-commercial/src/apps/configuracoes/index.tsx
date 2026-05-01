@@ -26,6 +26,8 @@ import {
   ArrowRight,
   Monitor,
   Building2,
+  ImagePlus,
+  Trash2,
 } from "lucide-react";
 import { useSessionStore } from "../../stores/session";
 import { useDrivers } from "../../lib/drivers-context";
@@ -35,6 +37,7 @@ import {
   WALLPAPERS,
   WALLPAPER_NAMES,
   getWallpaperStyle,
+  CUSTOM_WALLPAPER_ID,
 } from "../../stores/mesaStore";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -2050,13 +2053,68 @@ function TabMesa() {
 // ─── Tab: Aparência ───────────────────────────────────────────────────────────
 
 function TabAparencia() {
+  const drivers = useDrivers();
+  const { userId, activeCompanyId } = useSessionStore();
   const wallpaper = useMesaStore((s) => s.wallpaper);
+  const wallpaperUrl = useMesaStore((s) => s.wallpaperUrl);
   const setWallpaper = useMesaStore((s) => s.setWallpaper);
+  const setCustomWallpaper = useMesaStore((s) => s.setCustomWallpaper);
+  const clearCustomWallpaper = useMesaStore((s) => s.clearCustomWallpaper);
   const fetchLayout = useMesaStore((s) => s.fetchLayout);
+
+  const [customUploading, setCustomUploading] = useState(false);
+  const [customError, setCustomError] = useState<string | null>(null);
+  const customInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     void fetchLayout();
   }, [fetchLayout]);
+
+  const isCustomActive = wallpaper === CUSTOM_WALLPAPER_ID;
+  const hasCustomImage = wallpaperUrl !== null && wallpaperUrl !== "";
+
+  async function handleCustomUpload(file: File) {
+    if (drivers === null || userId === null || activeCompanyId === null) return;
+    setCustomError(null);
+    if (!ACCEPTED_IMG_TYPES.includes(file.type)) {
+      setCustomError("Formato inválido. Use JPG, PNG, WebP ou GIF.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setCustomError("Arquivo maior que 5 MB.");
+      return;
+    }
+
+    setCustomUploading(true);
+    await syncDataClientSession(drivers);
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "jpg";
+    const path = `${userId}-${activeCompanyId}.${ext}`;
+    const client = drivers.data.getClient();
+    const { error: upErr } = await client.storage
+      .from("user-wallpapers")
+      .upload(path, file, { upsert: true, contentType: file.type });
+    if (upErr !== null) {
+      setCustomError(upErr.message);
+      setCustomUploading(false);
+      return;
+    }
+    const { data: pub } = client.storage
+      .from("user-wallpapers")
+      .getPublicUrl(path);
+    setCustomWallpaper(`${pub.publicUrl}?v=${Date.now()}`);
+    setCustomUploading(false);
+  }
+
+  function pickCustomFile() {
+    customInputRef.current?.click();
+  }
+
+  function handleCustomFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file === undefined) return;
+    void handleCustomUpload(file);
+    e.target.value = "";
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -2107,7 +2165,7 @@ function TabAparencia() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: `repeat(${WALLPAPERS.length}, 1fr)`,
+            gridTemplateColumns: "repeat(6, 1fr)",
             gap: 10,
           }}
         >
@@ -2133,7 +2191,7 @@ function TabAparencia() {
               >
                 <div
                   style={{
-                    height: 96,
+                    height: 84,
                     borderRadius: 12,
                     ...getWallpaperStyle(id),
                     border: isActive
@@ -2161,7 +2219,161 @@ function TabAparencia() {
               </button>
             );
           })}
+
+          {/* Tile custom — upload de foto própria */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+              position: "relative",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                if (hasCustomImage) {
+                  setCustomWallpaper(wallpaperUrl ?? "");
+                } else {
+                  pickCustomFile();
+                }
+              }}
+              aria-label={
+                hasCustomImage
+                  ? "Plano de fundo personalizado"
+                  : "Adicionar foto"
+              }
+              disabled={customUploading}
+              style={{
+                position: "relative",
+                height: 84,
+                borderRadius: 12,
+                border: hasCustomImage
+                  ? isCustomActive
+                    ? "2px solid #818cf8"
+                    : "1px solid rgba(255,255,255,0.10)"
+                  : "1px dashed rgba(255,255,255,0.20)",
+                background: hasCustomImage
+                  ? `url("${wallpaperUrl}") center/cover no-repeat`
+                  : "rgba(255,255,255,0.04)",
+                boxShadow:
+                  isCustomActive && hasCustomImage
+                    ? "0 0 0 3px rgba(99,102,241,0.20)"
+                    : "none",
+                cursor: customUploading ? "wait" : "pointer",
+                padding: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "var(--text-tertiary)",
+                transition:
+                  "border-color 120ms ease, box-shadow 120ms ease, background 120ms ease",
+              }}
+              onMouseEnter={(e) => {
+                if (!hasCustomImage && !customUploading)
+                  e.currentTarget.style.background = "rgba(255,255,255,0.07)";
+              }}
+              onMouseLeave={(e) => {
+                if (!hasCustomImage && !customUploading)
+                  e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+              }}
+            >
+              {customUploading ? (
+                <Loader2
+                  size={20}
+                  className="animate-spin"
+                  style={{ color: "rgba(255,255,255,0.85)" }}
+                />
+              ) : hasCustomImage ? null : (
+                <ImagePlus size={20} strokeWidth={1.6} />
+              )}
+            </button>
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: isCustomActive ? 500 : 400,
+                color: isCustomActive
+                  ? "var(--text-primary)"
+                  : "var(--text-tertiary)",
+                textAlign: "center",
+              }}
+            >
+              {hasCustomImage ? "Personalizado" : "Adicionar"}
+            </span>
+            {hasCustomImage && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  clearCustomWallpaper();
+                }}
+                aria-label="Remover wallpaper personalizado"
+                title="Remover"
+                style={{
+                  position: "absolute",
+                  top: 6,
+                  right: 6,
+                  width: 22,
+                  height: 22,
+                  borderRadius: "50%",
+                  background: "rgba(6,9,18,0.85)",
+                  border: "1px solid rgba(255,255,255,0.20)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  color: "rgba(255,255,255,0.85)",
+                  padding: 0,
+                  backdropFilter: "blur(6px)",
+                  transition: "background 120ms ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(239,68,68,0.85)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(6,9,18,0.85)";
+                }}
+              >
+                <Trash2 size={11} strokeWidth={2} />
+              </button>
+            )}
+          </div>
         </div>
+
+        {customError !== null && (
+          <p
+            style={{
+              fontSize: 11,
+              color: "#f87171",
+              marginTop: 8,
+              paddingLeft: 2,
+            }}
+          >
+            {customError}
+          </p>
+        )}
+
+        {hasCustomImage && (
+          <p
+            style={{
+              fontSize: 11,
+              color: "var(--text-tertiary)",
+              marginTop: 8,
+              paddingLeft: 2,
+            }}
+          >
+            Para trocar a foto personalizada, clique em remover (ícone na tile)
+            e envie outra.
+          </p>
+        )}
+
+        <input
+          ref={customInputRef}
+          type="file"
+          accept={ACCEPTED_IMG_TYPES.join(",")}
+          onChange={handleCustomFileChange}
+          style={{ display: "none" }}
+        />
       </div>
     </div>
   );
