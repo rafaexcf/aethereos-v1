@@ -1189,7 +1189,9 @@ export function ConfiguracoesApp() {
           padding: 28,
         }}
       >
-        <div style={{ maxWidth: 560 }}>{TAB_CONTENT[active]}</div>
+        <div style={{ maxWidth: 952, margin: "0 auto" }}>
+          {TAB_CONTENT[active]}
+        </div>
       </main>
     </div>
   );
