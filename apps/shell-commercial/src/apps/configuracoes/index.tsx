@@ -1967,13 +1967,13 @@ export function ConfiguracoesApp() {
         aria-label={collapsed ? "Expandir sidebar" : "Colapsar sidebar"}
         style={{
           position: "absolute",
-          left: (collapsed ? SIDEBAR_ICON_W : SIDEBAR_W) - 10,
+          left: (collapsed ? SIDEBAR_ICON_W : SIDEBAR_W) - 14,
           top: "50%",
           transform: "translateY(-50%)",
           transition: "left 250ms ease",
           zIndex: 10,
-          width: 20,
-          height: 20,
+          width: 28,
+          height: 28,
           borderRadius: "50%",
           display: "flex",
           alignItems: "center",
