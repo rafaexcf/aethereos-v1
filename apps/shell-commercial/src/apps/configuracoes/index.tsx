@@ -1074,7 +1074,7 @@ function Sidebar({
   return (
     <aside
       style={{
-        width: 220,
+        width: 253,
         flexShrink: 0,
         background: "rgba(15,21,27,0.82)",
         borderRight: "1px solid rgba(255,255,255,0.06)",
