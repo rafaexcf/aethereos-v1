@@ -69,6 +69,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useDockStore } from "../../stores/dockStore";
 import { APP_REGISTRY } from "../registry";
+import { GlareHover } from "../../components/ui/glare-hover";
 import { useSessionStore } from "../../stores/session";
 import { useDrivers } from "../../lib/drivers-context";
 import { AnimatedThemeToggler } from "../../components/ui/animated-theme-toggler";
@@ -4436,17 +4437,22 @@ function TabPlanos() {
           {PLANS.map((plan) => {
             const isCurrent = plan.id === CURRENT_PLAN_ID;
             return (
-              <div
+              <GlareHover
                 key={plan.id}
+                background={
+                  isCurrent ? plan.accentBg : "rgba(255,255,255,0.03)"
+                }
+                color={plan.color as `#${string}`}
+                opacity={isCurrent ? 0.25 : 0.15}
+                duration={500}
+                playOnce
                 style={{
                   borderRadius: 10,
                   padding: "12px 10px",
                   display: "flex",
                   flexDirection: "column",
                   gap: 10,
-                  background: isCurrent
-                    ? plan.accentBg
-                    : "rgba(255,255,255,0.03)",
+                  width: "100%",
                   border: isCurrent
                     ? `1px solid ${plan.accentBorder}`
                     : "1px solid rgba(255,255,255,0.07)",
@@ -4470,6 +4476,7 @@ function TabPlanos() {
                       fontWeight: 700,
                       color: "#fff",
                       letterSpacing: "0.05em",
+                      zIndex: 20,
                     }}
                   >
                     {(plan as { trial?: boolean }).trial === true
@@ -4616,7 +4623,7 @@ function TabPlanos() {
                     {plan.id === "enterprise" ? "Falar c/ vendas" : "Upgrade"}
                   </button>
                 )}
-              </div>
+              </GlareHover>
             );
           })}
         </div>
