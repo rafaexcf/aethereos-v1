@@ -4619,6 +4619,131 @@ function TabPlanos() {
   );
 }
 
+// ─── VersionCard (shared — usado em TabSobre e no tile Home) ─────────────────
+
+interface VersionCardData {
+  /** caminho para imagem (ex: /aethereos-logo.png) */
+  logoSrc?: string;
+  /** ícone lucide quando não há logo */
+  icon?: typeof User;
+  iconBg?: string;
+  iconColor?: string;
+  /** ex: "ÆTHEREOS OS" */
+  name: string;
+  /** codinome da release, ex: "Armstrong" */
+  codename?: string;
+  /** ex: "1.0.0-beta" */
+  version: string;
+  /** ex: "Produção · sa-east-1" */
+  env?: string;
+  /** cor de destaque para a pill do codinome */
+  accent?: string;
+}
+
+function VersionCardInner({
+  logoSrc,
+  icon: Icon,
+  iconBg = "rgba(100,116,139,0.22)",
+  iconColor = "#94a3b8",
+  name,
+  codename,
+  version,
+  env,
+  accent = "#6366f1",
+}: VersionCardData) {
+  return (
+    <>
+      {/* Logo ou ícone */}
+      {logoSrc !== undefined ? (
+        <img
+          src={logoSrc}
+          alt=""
+          style={{ width: 34, height: 34, objectFit: "contain", flexShrink: 0 }}
+        />
+      ) : Icon !== undefined ? (
+        <TileIcon Icon={Icon} color={iconColor} bg={iconBg} size={34} />
+      ) : null}
+
+      <div style={{ flex: 1 }} />
+
+      {/* Codinome pill */}
+      {codename !== undefined && (
+        <span
+          style={{
+            display: "inline-block",
+            padding: "2px 7px",
+            borderRadius: 999,
+            background: `${accent}22`,
+            border: `1px solid ${accent}44`,
+            fontSize: 9,
+            fontWeight: 700,
+            color: accent,
+            letterSpacing: "0.07em",
+            textTransform: "uppercase",
+            marginBottom: 4,
+            alignSelf: "flex-start",
+          }}
+        >
+          {codename}
+        </span>
+      )}
+
+      {/* Nome */}
+      <p
+        style={{
+          fontSize: 12,
+          fontWeight: 700,
+          color: "var(--text-primary)",
+          letterSpacing: "-0.01em",
+          lineHeight: 1.2,
+        }}
+      >
+        {name}
+      </p>
+
+      {/* Versão */}
+      <p
+        style={{
+          marginTop: 3,
+          fontFamily: "var(--font-mono)",
+          fontSize: 10,
+          color: "var(--text-secondary)",
+        }}
+      >
+        {version}
+      </p>
+
+      {/* Ambiente */}
+      {env !== undefined && (
+        <p
+          style={{
+            marginTop: 2,
+            fontSize: 9,
+            color: "var(--text-tertiary)",
+          }}
+        >
+          {env}
+        </p>
+      )}
+    </>
+  );
+}
+
+function VersionCard(props: VersionCardData) {
+  return (
+    <div
+      style={{
+        ...TILE_BASE,
+        display: "flex",
+        flexDirection: "column",
+        minHeight: 150,
+      }}
+    >
+      <VersionCardInner {...props} />
+    </div>
+  );
+}
+
 // ─── Tab: Sobre ───────────────────────────────────────────────────────────────
 
 function TabSobre() {
@@ -4683,7 +4808,7 @@ function TabSobre() {
         iconUrl="/aethereos-logo.png"
         noContainer
         title="Sistema ÆTHEREOS"
-        subtitle="Enterprise OS 1.0.0-beta"
+        subtitle="Enterprise OS 1.0.0-beta · Armstrong"
       />
 
       <div>
@@ -4714,25 +4839,29 @@ function TabSobre() {
       </div>
 
       <div>
-        <SectionLabel>Plataforma</SectionLabel>
-        <SettingGroup>
-          <SettingRow label="Plataforma">
-            <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-              AETHEREOS OS
-            </span>
-          </SettingRow>
-          <SettingRow label="Versão">
-            <MonoCode>1.0.0-beta</MonoCode>
-          </SettingRow>
-          <SettingRow label="Protocolo SCP">
-            <MonoCode>v1.0</MonoCode>
-          </SettingRow>
-          <SettingRow label="Ambiente" last>
-            <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-              Produção · sa-east-1
-            </span>
-          </SettingRow>
-        </SettingGroup>
+        <SectionLabel>Versões</SectionLabel>
+        <div
+          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}
+        >
+          <VersionCard
+            logoSrc="/aethereos-logo.png"
+            name="ÆTHEREOS OS"
+            codename="Armstrong"
+            version="1.0.0-beta"
+            env="Produção · sa-east-1"
+            accent="#6366f1"
+          />
+          <VersionCard
+            icon={Network}
+            iconBg="rgba(6,182,212,0.18)"
+            iconColor="#22d3ee"
+            name="SCP"
+            codename="Protocolo"
+            version="v1.0"
+            env="Online · sa-east-1"
+            accent="#06b6d4"
+          />
+        </div>
       </div>
     </div>
   );
@@ -5930,7 +6059,7 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
           </p>
         </button>
 
-        {/* ── Sobre (1×1) ── */}
+        {/* ── Sobre / Versão (1×1) — espelho do VersionCard ── */}
         <button
           type="button"
           onClick={() => onSelect("sobre")}
@@ -5941,6 +6070,8 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
             cursor: "pointer",
             textAlign: "left",
             transition: "background 160ms ease, border-color 160ms ease",
+            display: "flex",
+            flexDirection: "column",
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.background = "rgba(255,255,255,0.06)";
@@ -5951,27 +6082,14 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
             e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)";
           }}
         >
-          <TileIcon Icon={Info} color="#94a3b8" bg="rgba(100,116,139,0.20)" />
-          <div style={{ flex: 1 }} />
-          <p
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: "var(--text-primary)",
-              letterSpacing: "-0.01em",
-            }}
-          >
-            Versão
-          </p>
-          <p
-            style={{
-              fontSize: 11,
-              color: "var(--text-tertiary)",
-              marginTop: 2,
-            }}
-          >
-            Aethereos v0.1.0
-          </p>
+          <VersionCardInner
+            logoSrc="/aethereos-logo.png"
+            name="ÆTHEREOS OS"
+            codename="Armstrong"
+            version="1.0.0-beta"
+            env="Produção · sa-east-1"
+            accent="#6366f1"
+          />
         </button>
       </div>
     </div>
