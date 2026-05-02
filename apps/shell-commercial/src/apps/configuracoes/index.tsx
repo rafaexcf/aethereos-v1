@@ -2966,12 +2966,6 @@ function TabDadosPrivacidade() {
         <SectionLabel>LGPD &amp; Compliance</SectionLabel>
         <SettingGroup>
           <SettingRow
-            label="Seus direitos"
-            sublabel="Acesso, correção, portabilidade e eliminação de dados pessoais"
-          >
-            <Badge variant="success">Em conformidade</Badge>
-          </SettingRow>
-          <SettingRow
             label="Status de conformidade"
             sublabel="LGPD · SOC 2 em preparação · dados residentes no Brasil"
             last
