@@ -4,23 +4,21 @@ import type { MesaItem } from "../types/os";
 
 export const WALLPAPERS = [
   "design-3",
-  "black-hole",
   "design-2",
+  "black-hole",
   "galaxy",
   "art-1",
   "art-2",
-  "art-3",
 ] as const;
 export type WallpaperId = (typeof WALLPAPERS)[number];
 
 export const WALLPAPER_NAMES: Record<WallpaperId, string> = {
-  "design-3": "Marca 3",
+  "design-3": "Wallpaper 1",
+  "design-2": "Wallpaper 2",
   "black-hole": "Buraco Negro",
-  "design-2": "Marca 2",
   galaxy: "Galáxia",
-  "art-1": "Arte 1",
-  "art-2": "Arte 2",
-  "art-3": "Arte 3",
+  "art-1": "Terra",
+  "art-2": "Aether",
 };
 
 export const CUSTOM_WALLPAPER_ID = "custom";

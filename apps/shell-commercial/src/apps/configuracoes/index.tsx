@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import {
   User,
   Bell,
@@ -36,6 +37,10 @@ import {
   HardDrive,
   Network,
   Users,
+  AlertTriangle,
+  Sun,
+  Moon,
+  ChevronDown,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import type { LucideProps } from "lucide-react";
@@ -65,6 +70,7 @@ import {
   getWallpaperStyle,
   CUSTOM_WALLPAPER_ID,
 } from "../../stores/mesaStore";
+import { DDI_OPTIONS } from "../../data/ddi-options";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -101,7 +107,7 @@ const NAV_SECTIONS: NavSection[] = [
       { id: "minha-empresa", label: "Minha Empresa", icon: Building2 },
       { id: "perfil", label: "Meu Perfil", icon: User },
       { id: "notificacoes", label: "Notificações", icon: Bell },
-      { id: "dados-privacidade", label: "Dados e Privacidade", icon: FileText },
+      { id: "dados-privacidade", label: "Privacidade", icon: FileText },
     ],
   },
   {
@@ -127,7 +133,7 @@ const TAB_LABELS: Record<TabId, string> = {
   "minha-empresa": "Minha Empresa",
   perfil: "Meu Perfil",
   notificacoes: "Notificações",
-  "dados-privacidade": "Dados e Privacidade",
+  "dados-privacidade": "Privacidade",
   dock: "Dock",
   mesa: "Mesa",
   aparencia: "Aparência",
@@ -142,12 +148,17 @@ function ContentHeader({
   icon: Icon,
   iconBg,
   iconColor,
+  iconUrl,
+  noContainer,
   title,
   subtitle,
 }: {
   icon: typeof User;
   iconBg: string;
   iconColor: string;
+  iconUrl?: string | null;
+  /** Quando true com iconUrl, exibe a imagem diretamente sem container/borda */
+  noContainer?: boolean;
   title: string;
   subtitle: string;
 }) {
@@ -162,21 +173,43 @@ function ContentHeader({
         borderBottom: "1px solid rgba(255,255,255,0.06)",
       }}
     >
-      <div
-        style={{
-          width: 56,
-          height: 56,
-          borderRadius: 16,
-          background: iconBg,
-          border: "1px solid rgba(255,255,255,0.08)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}
-      >
-        <Icon size={28} style={{ color: iconColor }} strokeWidth={1.5} />
-      </div>
+      {noContainer && iconUrl != null ? (
+        <img
+          src={iconUrl}
+          alt=""
+          style={{
+            width: 112,
+            height: 112,
+            objectFit: "contain",
+            flexShrink: 0,
+          }}
+        />
+      ) : (
+        <div
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: 16,
+            background: iconUrl != null ? "transparent" : iconBg,
+            border: "1px solid rgba(255,255,255,0.08)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+            overflow: "hidden",
+          }}
+        >
+          {iconUrl != null ? (
+            <img
+              src={iconUrl}
+              alt=""
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          ) : (
+            <Icon size={28} style={{ color: iconColor }} strokeWidth={1.5} />
+          )}
+        </div>
+      )}
       <div>
         <h1
           style={{
@@ -241,11 +274,13 @@ function SettingRow({
   label,
   sublabel,
   last,
+  danger,
   children,
 }: {
   label: string;
   sublabel?: string;
   last?: boolean;
+  danger?: boolean;
   children?: React.ReactNode;
 }) {
   return (
@@ -268,7 +303,12 @@ function SettingRow({
           minWidth: 0,
         }}
       >
-        <span style={{ fontSize: 13, color: "var(--text-primary)" }}>
+        <span
+          style={{
+            fontSize: 13,
+            color: danger ? "var(--status-error)" : "var(--text-primary)",
+          }}
+        >
           {label}
         </span>
         {sublabel !== undefined && (
@@ -348,45 +388,305 @@ function SettingInput({
   );
 }
 
-function SettingSelect({
+// ─── SmartSelect — dropdown com busca, scroll e posicionamento inteligente ────
+
+interface SmartSelectOption {
+  value: string;
+  label: string;
+  /** Texto auxiliar de busca (ex: nome do país para o DDI) */
+  name?: string;
+  /** Ícone/imagem exibido antes do label no trigger e na lista */
+  icon?: React.ReactNode;
+}
+
+interface SmartSelectProps {
+  value: string;
+  onChange: (v: string) => void;
+  options: SmartSelectOption[];
+  placeholder?: string;
+  width?: number | string;
+  /** Mostra campo de busca. Default true quando options.length > 5 */
+  searchable?: boolean;
+}
+
+function SmartSelect({
   value,
   onChange,
   options,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  options: { value: string; label: string }[];
-}) {
+  placeholder = "Selecionar",
+  width = 220,
+  searchable,
+}: SmartSelectProps) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [dropStyle, setDropStyle] = useState<React.CSSProperties>({});
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const shouldSearch = searchable ?? options.length > 5;
+
+  const selected = options.find((o) => o.value === value);
+  const filtered =
+    query.trim() === ""
+      ? options
+      : options.filter((o) => {
+          const q = query.toLowerCase();
+          return (
+            o.label.toLowerCase().includes(q) ||
+            (o.name ?? "").toLowerCase().includes(q)
+          );
+        });
+
+  const close = useCallback(() => {
+    setOpen(false);
+    setQuery("");
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    const onDown = (e: MouseEvent) => {
+      if (
+        triggerRef.current &&
+        !triggerRef.current.contains(e.target as Node) &&
+        !(e.target as HTMLElement).closest("[data-smart-select-portal]")
+      )
+        close();
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onDown);
+    };
+  }, [open, close]);
+
+  useEffect(() => {
+    if (open) setTimeout(() => searchRef.current?.focus(), 0);
+  }, [open]);
+
+  function handleOpen() {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const dropW = typeof width === "number" ? width : rect.width;
+    const dropH = Math.min(
+      filtered.length * 36 + (shouldSearch ? 44 : 8) + 8,
+      288,
+    );
+    const spaceBelow = vh - rect.bottom - 8;
+    const spaceAbove = rect.top - 8;
+    const openAbove = spaceBelow < dropH && spaceAbove > spaceBelow;
+    const leftPos = rect.left + dropW > vw ? vw - dropW - 8 : rect.left;
+    setDropStyle({
+      position: "fixed",
+      top: openAbove ? rect.top - dropH - 4 : rect.bottom + 4,
+      left: leftPos,
+      width: dropW,
+      zIndex: 9999,
+    });
+    setOpen(true);
+  }
+
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      style={{
-        width: 220,
-        background: "rgba(255,255,255,0.06)",
-        border: "1px solid rgba(255,255,255,0.10)",
-        borderRadius: 8,
-        padding: "7px 11px",
-        fontSize: 13,
-        color: "var(--text-primary)",
-        outline: "none",
-        cursor: "pointer",
-        transition: "border-color 120ms ease",
-      }}
-      onFocus={(e) => {
-        e.currentTarget.style.borderColor = "rgba(99,102,241,0.65)";
-      }}
-      onBlur={(e) => {
-        e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)";
-      }}
-    >
-      {options.map((o) => (
-        <option key={o.value} value={o.value} style={{ background: "#1e2530" }}>
-          {o.label}
-        </option>
-      ))}
-    </select>
+    <>
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => (open ? close() : handleOpen())}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 6,
+          width,
+          background: open
+            ? "rgba(255,255,255,0.08)"
+            : "rgba(255,255,255,0.06)",
+          border: open
+            ? "1px solid rgba(99,102,241,0.65)"
+            : "1px solid rgba(255,255,255,0.10)",
+          borderRadius: 8,
+          padding: "7px 10px 7px 11px",
+          fontSize: 13,
+          color: selected ? "var(--text-primary)" : "var(--text-tertiary)",
+          cursor: "pointer",
+          outline: "none",
+          transition: "border-color 120ms ease, background 120ms ease",
+          boxShadow: open ? "0 0 0 3px rgba(99,102,241,0.12)" : "none",
+        }}
+      >
+        <span
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            overflow: "hidden",
+            minWidth: 0,
+          }}
+        >
+          {selected?.icon}
+          <span
+            style={{
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {selected ? selected.label : placeholder}
+          </span>
+        </span>
+        <ChevronDown
+          size={13}
+          strokeWidth={2}
+          style={{
+            flexShrink: 0,
+            color: "var(--text-tertiary)",
+            transform: open ? "rotate(180deg)" : "none",
+            transition: "transform 150ms ease",
+          }}
+        />
+      </button>
+
+      {open &&
+        createPortal(
+          <div
+            data-smart-select-portal
+            style={{
+              ...dropStyle,
+              background: "var(--bg-elevated)",
+              border: "1px solid rgba(255,255,255,0.10)",
+              borderRadius: 10,
+              boxShadow: "var(--shadow-lg)",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }}
+          >
+            {shouldSearch && (
+              <div
+                style={{
+                  padding: "8px 8px 4px",
+                  borderBottom: "1px solid rgba(255,255,255,0.07)",
+                }}
+              >
+                <div style={{ position: "relative" }}>
+                  <Search
+                    size={12}
+                    style={{
+                      position: "absolute",
+                      left: 9,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      color: "var(--text-tertiary)",
+                      pointerEvents: "none",
+                    }}
+                  />
+                  <input
+                    ref={searchRef}
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Buscar…"
+                    style={{
+                      width: "100%",
+                      background: "rgba(255,255,255,0.05)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      borderRadius: 6,
+                      padding: "5px 8px 5px 28px",
+                      fontSize: 12,
+                      color: "var(--text-primary)",
+                      outline: "none",
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+            <div
+              style={{ overflowY: "auto", maxHeight: 240, padding: "4px 0" }}
+            >
+              {filtered.length === 0 ? (
+                <div
+                  style={{
+                    padding: "10px 12px",
+                    fontSize: 12,
+                    color: "var(--text-tertiary)",
+                  }}
+                >
+                  Nenhum resultado
+                </div>
+              ) : (
+                filtered.map((o) => (
+                  <button
+                    key={o.value}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      onChange(o.value);
+                      close();
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      width: "100%",
+                      padding: "8px 12px",
+                      fontSize: 13,
+                      color:
+                        o.value === value
+                          ? "var(--text-primary)"
+                          : "var(--text-secondary)",
+                      background:
+                        o.value === value
+                          ? "rgba(99,102,241,0.14)"
+                          : "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      transition: "background 80ms ease",
+                      fontWeight: o.value === value ? 500 : 400,
+                    }}
+                    onMouseEnter={(e) => {
+                      if (o.value !== value)
+                        e.currentTarget.style.background =
+                          "rgba(255,255,255,0.05)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background =
+                        o.value === value
+                          ? "rgba(99,102,241,0.14)"
+                          : "transparent";
+                    }}
+                  >
+                    <span
+                      style={{ display: "flex", alignItems: "center", gap: 8 }}
+                    >
+                      {o.icon}
+                      <span>{o.label}</span>
+                    </span>
+                    {o.value === value && (
+                      <Check
+                        size={12}
+                        strokeWidth={2.5}
+                        style={{ color: "#818cf8", flexShrink: 0 }}
+                      />
+                    )}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
   );
+}
+
+/** Alias mantém compatibilidade com os usos existentes de SettingSelect */
+function SettingSelect(props: SmartSelectProps) {
+  return <SmartSelect {...props} />;
 }
 
 function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
@@ -877,6 +1177,14 @@ function maskCnpj(raw: string): string {
     .replace(/(\d{4})(\d)/, "$1-$2");
 }
 
+function maskCpf(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 11);
+  return digits
+    .replace(/^(\d{3})(\d)/, "$1.$2")
+    .replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3")
+    .replace(/\.(\d{3})(\d)/, ".$1-$2");
+}
+
 function TabMinhaEmpresa({
   logoUrl,
   setLogoUrl,
@@ -889,6 +1197,11 @@ function TabMinhaEmpresa({
 
   const [cnpjDisplay, setCnpjDisplay] = useState("");
   const [cnpjPreview, setCnpjPreview] = useState<CnpjPreview | null>(null);
+  const [createdAt, setCreatedAt] = useState<string | null>(null);
+  const [founder, setFounder] = useState<{
+    name: string;
+    email: string;
+  } | null>(null);
   const [logoUploading, setLogoUploading] = useState(false);
   const [logoError, setLogoError] = useState<string | null>(null);
 
@@ -956,7 +1269,7 @@ function TabMinhaEmpresa({
     if (drivers === null || activeCompanyId === null) return;
     void drivers.data
       .from("companies")
-      .select("cnpj,cnpj_data")
+      .select("cnpj,cnpj_data,created_at")
       .eq("id", activeCompanyId)
       .single()
       .then(
@@ -966,13 +1279,55 @@ function TabMinhaEmpresa({
           data: {
             cnpj: string | null;
             cnpj_data: CnpjPreview | null;
+            created_at: string | null;
           } | null;
         }) => {
           if (data === null) return;
           if (data.cnpj !== null) setCnpjDisplay(maskCnpj(data.cnpj));
           if (data.cnpj_data !== null) setCnpjPreview(data.cnpj_data);
+          if (data.created_at !== null)
+            setCreatedAt(
+              new Date(data.created_at).toLocaleDateString("pt-BR", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              }),
+            );
         },
       );
+  }, [drivers, activeCompanyId]);
+
+  // Busca o fundador (role='owner') para exibir no cadastro
+  useEffect(() => {
+    if (drivers === null || activeCompanyId === null) return;
+    void (async () => {
+      const { data: ownerRow } = await drivers.data
+        .from("users")
+        .select("id,email,display_name")
+        .eq("company_id", activeCompanyId)
+        .eq("role", "owner")
+        .maybeSingle();
+      if (ownerRow === null) return;
+      const owner = ownerRow as {
+        id: string;
+        email: string;
+        display_name: string | null;
+      };
+      let name = owner.display_name ?? "";
+      const { data: profile } = await drivers.data
+        .from("profiles")
+        .select("full_name")
+        .eq("id", owner.id)
+        .maybeSingle();
+      if (profile !== null) {
+        const p = profile as { full_name: string | null };
+        if (p.full_name !== null && p.full_name !== "") name = p.full_name;
+      }
+      setFounder({
+        name: name !== "" ? name : owner.email,
+        email: owner.email,
+      });
+    })();
   }, [drivers, activeCompanyId]);
 
   return (
@@ -981,59 +1336,62 @@ function TabMinhaEmpresa({
         icon={Building2}
         iconBg="rgba(6,182,212,0.22)"
         iconColor="#22d3ee"
+        iconUrl={logoUrl}
         title="Minha Empresa"
-        subtitle="Cadastro fiscal e dados da pessoa jurídica"
+        subtitle="Dados cadastrais da pessoa jurídica"
       />
 
-      {/* Logo da empresa */}
-      <ImageUploadCard
-        url={logoUrl}
-        onUpload={(f) => void handleLogoUpload(f)}
-        onRemove={() => void handleLogoRemove()}
-        shape="square"
-        fallback={
-          <Building2
-            size={32}
-            style={{ color: "rgba(255,255,255,0.6)" }}
-            strokeWidth={1.5}
-          />
-        }
-        title="Logo da empresa"
-        helper="JPG, PNG, WebP ou GIF até 2 MB"
-        uploading={logoUploading}
-        error={logoError}
-      />
-
-      {/* Identificação fiscal */}
+      {/* Cadastro Empresarial */}
       <div>
-        <SectionLabel>Identificação fiscal</SectionLabel>
-        <SettingGroup>
-          <SettingRow
-            label="CNPJ"
-            sublabel="Não é possível alterar após o cadastro"
-            last
-          >
-            <input
-              type="text"
-              value={cnpjDisplay}
-              readOnly
-              data-1p-ignore="true"
-              data-lpignore="true"
-              style={{
-                width: 220,
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.05)",
-                borderRadius: 8,
-                padding: "7px 11px",
-                fontSize: 13,
-                fontFamily: "var(--font-mono)",
-                color: "var(--text-secondary)",
-                cursor: "not-allowed",
-                outline: "none",
-              }}
+        <SectionLabel>Cadastro Empresarial</SectionLabel>
+
+        <ImageUploadCard
+          url={logoUrl}
+          onUpload={(f) => void handleLogoUpload(f)}
+          onRemove={() => void handleLogoRemove()}
+          shape="square"
+          fallback={
+            <Building2
+              size={32}
+              style={{ color: "rgba(255,255,255,0.6)" }}
+              strokeWidth={1.5}
             />
-          </SettingRow>
-        </SettingGroup>
+          }
+          title="Logo da empresa"
+          helper="JPG, PNG, WebP ou GIF até 2 MB"
+          uploading={logoUploading}
+          error={logoError}
+        />
+
+        <div style={{ marginTop: 12 }}>
+          <SettingGroup>
+            <SettingRow
+              label="CNPJ"
+              sublabel="Não é possível alterar após o cadastro"
+              last
+            >
+              <input
+                type="text"
+                value={cnpjDisplay}
+                readOnly
+                data-1p-ignore="true"
+                data-lpignore="true"
+                style={{
+                  width: 220,
+                  background: "rgba(255,255,255,0.03)",
+                  border: "1px solid rgba(255,255,255,0.05)",
+                  borderRadius: 8,
+                  padding: "7px 11px",
+                  fontSize: 13,
+                  fontFamily: "var(--font-mono)",
+                  color: "var(--text-secondary)",
+                  cursor: "not-allowed",
+                  outline: "none",
+                }}
+              />
+            </SettingRow>
+          </SettingGroup>
+        </div>
 
         {cnpjPreview !== null && (
           <div
@@ -1109,6 +1467,47 @@ function TabMinhaEmpresa({
           </div>
         )}
       </div>
+
+      {/* Cadastro da empresa */}
+      {(createdAt !== null || founder !== null) && (
+        <div>
+          <SectionLabel>Cadastro</SectionLabel>
+          <SettingGroup>
+            {createdAt !== null && (
+              <SettingRow label="Cadastrado em" last={founder === null}>
+                <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+                  {createdAt}
+                </span>
+              </SettingRow>
+            )}
+            {founder !== null && (
+              <SettingRow label="Por" last>
+                <div style={{ textAlign: "right" }}>
+                  <span
+                    style={{
+                      display: "block",
+                      fontSize: 13,
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    {founder.name}
+                  </span>
+                  <span
+                    style={{
+                      display: "block",
+                      fontSize: 11,
+                      color: "var(--text-tertiary)",
+                      marginTop: 1,
+                    }}
+                  >
+                    {founder.email}
+                  </span>
+                </div>
+              </SettingRow>
+            )}
+          </SettingGroup>
+        </div>
+      )}
 
       {/* Cadastro completo (placeholder — destino criado depois) */}
       <button
@@ -1186,6 +1585,188 @@ function TabMinhaEmpresa({
 }
 
 // ─── Tab: Perfil (informações + senha + sessão + proteções) ──────────────────
+
+function ChangePasswordDialog({
+  open,
+  onClose,
+  drivers,
+  userId,
+}: {
+  open: boolean;
+  onClose: () => void;
+  drivers: ReturnType<typeof useDrivers>;
+  userId: string | null;
+}) {
+  const [newPwd, setNewPwd] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pwdState, setPwdState] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
+
+  const v = {
+    length: newPwd.length >= 8,
+    upper: /[A-Z]/.test(newPwd),
+    number: /[0-9]/.test(newPwd),
+    special: /[^A-Za-z0-9]/.test(newPwd),
+    match: newPwd.length > 0 && newPwd === confirmPwd,
+  };
+  const canSave = v.length && v.upper && v.number && v.special && v.match;
+
+  function handleClose() {
+    setNewPwd("");
+    setConfirmPwd("");
+    setShowNew(false);
+    setShowConfirm(false);
+    setPwdState("idle");
+    onClose();
+  }
+
+  async function handleSave() {
+    if (!canSave || drivers === null || userId === null) return;
+    setPwdState("saving");
+    const client = drivers.data.getClient();
+    const { error } = await client.auth.updateUser({ password: newPwd });
+    if (error !== null && error !== undefined) {
+      setPwdState("error");
+      setTimeout(() => setPwdState("idle"), 2500);
+      return;
+    }
+    setPwdState("saved");
+    setTimeout(() => {
+      handleClose();
+    }, 1200);
+  }
+
+  if (!open) return null;
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1000,
+        background: "var(--bg-overlay)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        backdropFilter: "blur(4px)",
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleClose();
+      }}
+    >
+      <div
+        style={{
+          background: "var(--bg-elevated)",
+          border: "1px solid var(--border-default)",
+          borderRadius: 16,
+          padding: "28px 32px",
+          width: 380,
+          boxShadow: "var(--shadow-lg)",
+          display: "flex",
+          flexDirection: "column",
+          gap: 20,
+        }}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <span
+            style={{
+              fontSize: 15,
+              fontWeight: 600,
+              color: "var(--text-primary)",
+            }}
+          >
+            Alterar senha
+          </span>
+          <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+            A nova senha será aplicada à sua conta Aethereos.
+          </span>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <label
+              style={{
+                fontSize: 11,
+                color: "var(--text-secondary)",
+                fontWeight: 500,
+              }}
+            >
+              Nova senha
+            </label>
+            <PwdInput
+              value={newPwd}
+              onChange={setNewPwd}
+              show={showNew}
+              onToggle={() => setShowNew((s) => !s)}
+              placeholder="Nova senha"
+            />
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            <label
+              style={{
+                fontSize: 11,
+                color: "var(--text-secondary)",
+                fontWeight: 500,
+              }}
+            >
+              Confirmar senha
+            </label>
+            <PwdInput
+              value={confirmPwd}
+              onChange={setConfirmPwd}
+              show={showConfirm}
+              onToggle={() => setShowConfirm((s) => !s)}
+              placeholder="Confirmar nova senha"
+            />
+          </div>
+        </div>
+
+        {newPwd.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            <PasswordBadge ok={v.length} label="8+ caracteres" />
+            <PasswordBadge ok={v.upper} label="Maiúscula" />
+            <PasswordBadge ok={v.number} label="Número" />
+            <PasswordBadge ok={v.special} label="Especial" />
+            <PasswordBadge ok={v.match} label="Coincidem" />
+          </div>
+        )}
+
+        {pwdState === "error" && (
+          <span style={{ fontSize: 12, color: "var(--status-error)" }}>
+            Erro ao alterar a senha. Tente novamente.
+          </span>
+        )}
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <button
+            type="button"
+            onClick={handleClose}
+            style={{
+              background: "transparent",
+              border: "1px solid var(--border-default)",
+              borderRadius: 8,
+              padding: "7px 16px",
+              fontSize: 13,
+              color: "var(--text-secondary)",
+              cursor: "pointer",
+            }}
+          >
+            Cancelar
+          </button>
+          <PrimaryButton
+            onClick={() => void handleSave()}
+            disabled={!canSave || pwdState !== "idle"}
+          >
+            <SaveLabel state={pwdState} label="Alterar senha" />
+          </PrimaryButton>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function detectBrowser(): string {
   const ua = navigator.userAgent;
@@ -1298,11 +1879,16 @@ function TabPerfil({
   const [cargo, setCargo] = useState("");
   const [area, setArea] = useState("");
   const [setor, setSetor] = useState("");
+  const [sexo, setSexo] = useState("");
+  const [cpf, setCpf] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [ddi, setDdi] = useState("+55");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">(
     "idle",
   );
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [showPwdDialog, setShowPwdDialog] = useState(false);
 
   async function handleAvatarUpload(file: File) {
     if (drivers === null || userId === null) return;
@@ -1369,6 +1955,10 @@ function TabPerfil({
   const cargoRef = useRef(cargo);
   const areaRef = useRef(area);
   const setorRef = useRef(setor);
+  const sexoRef = useRef(sexo);
+  const cpfRef = useRef(cpf);
+  const birthDateRef = useRef(birthDate);
+  const ddiRef = useRef(ddi);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initializedRef = useRef(false);
   nameRef.current = name;
@@ -1376,30 +1966,10 @@ function TabPerfil({
   cargoRef.current = cargo;
   areaRef.current = area;
   setorRef.current = setor;
-
-  // Password change
-  const [newPwd, setNewPwd] = useState("");
-  const [confirmPwd, setConfirmPwd] = useState("");
-  const [showNew, setShowNew] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [pwdState, setPwdState] = useState<
-    "idle" | "saving" | "saved" | "error"
-  >("idle");
-
-  const v = {
-    length: newPwd.length >= 8,
-    upper: /[A-Z]/.test(newPwd),
-    number: /[0-9]/.test(newPwd),
-    special: /[^A-Za-z0-9]/.test(newPwd),
-    match: newPwd.length > 0 && newPwd === confirmPwd,
-  };
-  const canSave = v.length && v.upper && v.number && v.special && v.match;
-
-  const today = new Date().toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
+  sexoRef.current = sexo;
+  cpfRef.current = cpf;
+  birthDateRef.current = birthDate;
+  ddiRef.current = ddi;
 
   useEffect(() => {
     if (drivers === null || userId === null) return;
@@ -1427,7 +1997,7 @@ function TabPerfil({
 
     void drivers.data
       .from("profiles")
-      .select("phone,full_name,position,area,department")
+      .select("phone,full_name,position,area,department,data")
       .eq("id", userId)
       .maybeSingle()
       .then(
@@ -1440,6 +2010,7 @@ function TabPerfil({
             position: string | null;
             area: string | null;
             department: string | null;
+            data: Record<string, unknown> | null;
           } | null;
         }) => {
           if (data === null) return;
@@ -1447,9 +2018,16 @@ function TabPerfil({
           if (data.position !== null) setCargo(data.position);
           if (data.area !== null) setArea(data.area);
           if (data.department !== null) setSetor(data.department);
-          // Se o display_name de settings vier vazio, cai pro full_name de profiles
           if (data.full_name !== null) {
             setName((prev) => (prev === "" ? (data.full_name ?? "") : prev));
+          }
+          if (data.data !== null && data.data !== undefined) {
+            if (typeof data.data["sexo"] === "string")
+              setSexo(data.data["sexo"]);
+            if (typeof data.data["cpf"] === "string") setCpf(data.data["cpf"]);
+            if (typeof data.data["birth_date"] === "string")
+              setBirthDate(data.data["birth_date"]);
+            if (typeof data.data["ddi"] === "string") setDdi(data.data["ddi"]);
           }
         },
       );
@@ -1478,6 +2056,12 @@ function TabPerfil({
             .from("settings")
             .upsert(s, { onConflict: "scope,scope_id,key" });
         }
+        const extraData: Record<string, string> = {};
+        if (sexoRef.current !== "") extraData["sexo"] = sexoRef.current;
+        if (cpfRef.current !== "") extraData["cpf"] = cpfRef.current;
+        if (birthDateRef.current !== "")
+          extraData["birth_date"] = birthDateRef.current;
+        extraData["ddi"] = ddiRef.current;
         await drivers.data
           .from("profiles")
           .update({
@@ -1485,6 +2069,7 @@ function TabPerfil({
             position: cargoRef.current !== "" ? cargoRef.current : null,
             area: areaRef.current !== "" ? areaRef.current : null,
             department: setorRef.current !== "" ? setorRef.current : null,
+            data: Object.keys(extraData).length > 0 ? extraData : null,
           })
           .eq("id", userId);
         void drivers.scp.publishEvent("platform.settings.updated", {
@@ -1505,65 +2090,142 @@ function TabPerfil({
         icon={User}
         iconBg="rgba(99,102,241,0.22)"
         iconColor="#818cf8"
+        iconUrl={avatarUrl}
         title="Meu Perfil"
         subtitle="Informações pessoais, senha e proteções da conta"
-      />
-
-      {/* Foto de perfil */}
-      <ImageUploadCard
-        url={avatarUrl}
-        onUpload={(f) => void handleAvatarUpload(f)}
-        onRemove={() => void handleAvatarRemove()}
-        shape="circle"
-        fallback={
-          <span
-            style={{
-              color: "rgba(255,255,255,0.92)",
-              fontSize: 26,
-              fontWeight: 700,
-              letterSpacing: "0.02em",
-            }}
-          >
-            {email !== null ? email.slice(0, 2).toUpperCase() : "??"}
-          </span>
-        }
-        title="Foto de perfil"
-        helper="JPG, PNG, WebP ou GIF até 2 MB"
-        uploading={avatarUploading}
-        error={avatarError}
       />
 
       {/* Informações pessoais */}
       <div>
         <SectionLabel>Informações pessoais</SectionLabel>
+
+        {/* Foto de perfil dentro da seção */}
+        <ImageUploadCard
+          url={avatarUrl}
+          onUpload={(f) => void handleAvatarUpload(f)}
+          onRemove={() => void handleAvatarRemove()}
+          shape="circle"
+          fallback={
+            <span
+              style={{
+                color: "rgba(255,255,255,0.92)",
+                fontSize: 26,
+                fontWeight: 700,
+                letterSpacing: "0.02em",
+              }}
+            >
+              {email !== null ? email.slice(0, 2).toUpperCase() : "??"}
+            </span>
+          }
+          title="Foto de perfil"
+          helper="JPG, PNG, WebP ou GIF até 2 MB"
+          uploading={avatarUploading}
+          error={avatarError}
+        />
+
+        <div style={{ marginTop: 12 }}>
+          <SettingGroup>
+            <SettingRow label="Nome Completo">
+              <SettingInput
+                value={name}
+                onChange={(value) => {
+                  setName(value);
+                  triggerAutoSave();
+                }}
+              />
+            </SettingRow>
+            <SettingRow label="Email Corporativo">
+              <SettingInput value={email ?? ""} readOnly />
+            </SettingRow>
+            <SettingRow label="Celular Corporativo">
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <SmartSelect
+                  value={ddi}
+                  onChange={(v) => {
+                    setDdi(v);
+                    triggerAutoSave();
+                  }}
+                  width={110}
+                  options={DDI_OPTIONS}
+                />
+                <SettingInput
+                  value={phone}
+                  onChange={(value) => {
+                    setPhone(value);
+                    triggerAutoSave();
+                  }}
+                  type="tel"
+                  placeholder="(00) 00000-0000"
+                />
+              </div>
+            </SettingRow>
+            <SettingRow label="Sexo">
+              <div style={{ display: "flex", gap: 4 }}>
+                {(["masculino", "feminino"] as const).map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => {
+                      setSexo(sexo === opt ? "" : opt);
+                      triggerAutoSave();
+                    }}
+                    style={{
+                      padding: "6px 14px",
+                      borderRadius: 8,
+                      fontSize: 13,
+                      cursor: "pointer",
+                      transition:
+                        "background 120ms ease, border-color 120ms ease, color 120ms ease",
+                      border:
+                        sexo === opt
+                          ? "1px solid rgba(99,102,241,0.5)"
+                          : "1px solid rgba(255,255,255,0.10)",
+                      background:
+                        sexo === opt
+                          ? "rgba(99,102,241,0.18)"
+                          : "rgba(255,255,255,0.04)",
+                      color: sexo === opt ? "#a5b4fc" : "var(--text-secondary)",
+                      fontWeight: sexo === opt ? 500 : 400,
+                    }}
+                  >
+                    {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </SettingRow>
+            <SettingRow label="CPF">
+              <SettingInput
+                value={cpf}
+                onChange={(value) => {
+                  setCpf(maskCpf(value));
+                  triggerAutoSave();
+                }}
+                placeholder="000.000.000-00"
+              />
+            </SettingRow>
+            <SettingRow label="Data de nascimento" last>
+              <SettingInput
+                value={birthDate}
+                onChange={(value) => {
+                  setBirthDate(value);
+                  triggerAutoSave();
+                }}
+                type="date"
+                placeholder="dd/mm/aaaa"
+              />
+            </SettingRow>
+          </SettingGroup>
+        </div>
+      </div>
+
+      {/* Informações profissionais */}
+      <div>
+        <SectionLabel>Informações profissionais</SectionLabel>
         <SettingGroup>
-          <SettingRow label="Nome Completo">
-            <SettingInput
-              value={name}
-              onChange={(value) => {
-                setName(value);
-                triggerAutoSave();
-              }}
-            />
-          </SettingRow>
           <SettingRow
-            label="Email Corporativo"
-            sublabel="Vinculado ao IdP — altere via Supabase Auth"
+            label="Cargo"
+            sublabel="Seu título ou função dentro da empresa"
           >
-            <SettingInput value={email ?? ""} readOnly />
-          </SettingRow>
-          <SettingRow label="Celular Corporativo">
-            <SettingInput
-              value={phone}
-              onChange={(value) => {
-                setPhone(value);
-                triggerAutoSave();
-              }}
-              type="tel"
-              placeholder="(00) 00000-0000"
-            />
-          </SettingRow>
-          <SettingRow label="Cargo">
             <SettingInput
               value={cargo}
               onChange={(value) => {
@@ -1573,7 +2235,7 @@ function TabPerfil({
               placeholder="Ex: Gerente de Vendas"
             />
           </SettingRow>
-          <SettingRow label="Área">
+          <SettingRow label="Área" sublabel="Departamento ou área de atuação">
             <SettingInput
               value={area}
               onChange={(value) => {
@@ -1583,7 +2245,11 @@ function TabPerfil({
               placeholder="Ex: Comercial"
             />
           </SettingRow>
-          <SettingRow label="Setor" last>
+          <SettingRow
+            label="Setor"
+            sublabel="Segmento ou subdivisão do departamento"
+            last
+          >
             <SettingInput
               value={setor}
               onChange={(value) => {
@@ -1596,94 +2262,50 @@ function TabPerfil({
         </SettingGroup>
       </div>
 
-      <SaveRow>
-        <PrimaryButton
-          onClick={triggerAutoSave}
-          disabled={saveState === "saving"}
-        >
-          <SaveLabel state={saveState} label="Salvar alterações" />
-        </PrimaryButton>
-      </SaveRow>
-
       {/* Alterar senha */}
       <div>
         <SectionLabel>Alterar senha</SectionLabel>
         <SettingGroup>
-          <SettingRow label="Nova senha">
-            <PwdInput
-              value={newPwd}
-              onChange={setNewPwd}
-              show={showNew}
-              onToggle={() => setShowNew((s) => !s)}
-              placeholder="Nova senha"
-            />
-          </SettingRow>
-          <SettingRow label="Confirmar senha" last>
-            <PwdInput
-              value={confirmPwd}
-              onChange={setConfirmPwd}
-              show={showConfirm}
-              onToggle={() => setShowConfirm((s) => !s)}
-              placeholder="Confirmar nova senha"
-            />
-          </SettingRow>
-        </SettingGroup>
-
-        {newPwd.length > 0 && (
-          <div
-            style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}
+          <SettingRow
+            label="Senha"
+            sublabel="Defina uma nova senha para sua conta"
+            last
           >
-            <PasswordBadge ok={v.length} label="8+ caracteres" />
-            <PasswordBadge ok={v.upper} label="Maiúscula" />
-            <PasswordBadge ok={v.number} label="Número" />
-            <PasswordBadge ok={v.special} label="Especial" />
-            <PasswordBadge ok={v.match} label="Coincidem" />
-          </div>
-        )}
-
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            marginTop: 14,
-          }}
-        >
-          <PrimaryButton
-            onClick={() => {
-              setPwdState("saving");
-              setTimeout(() => {
-                setPwdState("saved");
-                setTimeout(() => setPwdState("idle"), 2000);
-              }, 800);
-            }}
-            disabled={!canSave || pwdState !== "idle"}
-          >
-            <SaveLabel state={pwdState} label="Alterar senha" />
-          </PrimaryButton>
-        </div>
-      </div>
-
-      {/* Sessão atual */}
-      <div>
-        <SectionLabel>Sessão atual</SectionLabel>
-        <SettingGroup>
-          <SettingRow label="Navegador">
-            <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-              {detectBrowser()}
-            </span>
-          </SettingRow>
-          <SettingRow label="E-mail da conta">
-            <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-              {email ?? "—"}
-            </span>
-          </SettingRow>
-          <SettingRow label="Última atividade" last>
-            <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-              {today}
-            </span>
+            <button
+              type="button"
+              onClick={() => setShowPwdDialog(true)}
+              style={{
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.10)",
+                borderRadius: 8,
+                padding: "7px 16px",
+                fontSize: 13,
+                color: "var(--text-primary)",
+                cursor: "pointer",
+                transition: "background 120ms ease, border-color 120ms ease",
+                whiteSpace: "nowrap",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.10)";
+                e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+                e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)";
+              }}
+            >
+              Alterar senha
+            </button>
           </SettingRow>
         </SettingGroup>
       </div>
+
+      <ChangePasswordDialog
+        open={showPwdDialog}
+        onClose={() => setShowPwdDialog(false)}
+        drivers={drivers}
+        userId={userId}
+      />
 
       {/* Proteção adicional */}
       <div>
@@ -1718,6 +2340,16 @@ function TabPerfil({
           </SettingRow>
         </SettingGroup>
       </div>
+
+      {/* Salvar — fim da tela */}
+      <SaveRow>
+        <PrimaryButton
+          onClick={triggerAutoSave}
+          disabled={saveState === "saving"}
+        >
+          <SaveLabel state={saveState} label="Salvar alterações" />
+        </PrimaryButton>
+      </SaveRow>
     </div>
   );
 }
@@ -1727,6 +2359,10 @@ function TabPerfil({
 const NOTIF_DEFAULTS = {
   email_notifications: true,
   push_notifications: false,
+  app_notifications: true,
+  whatsapp_notifications: false,
+  telegram_notifications: false,
+  sms_notifications: false,
   notify_new_match: true,
   notify_rfq_response: true,
   notify_order_status: true,
@@ -1827,6 +2463,17 @@ function TabNotificacoes() {
         <SectionLabel>Canais de entrega</SectionLabel>
         <SettingGroup>
           <SettingRow
+            label="Notificações no App"
+            sublabel="Alertas dentro da plataforma Aethereos"
+          >
+            <Toggle
+              on={prefs.app_notifications}
+              onToggle={() =>
+                update("app_notifications", !prefs.app_notifications)
+              }
+            />
+          </SettingRow>
+          <SettingRow
             label="Notificações por e-mail"
             sublabel="Receba alertas no seu endereço de e-mail"
           >
@@ -1840,7 +2487,6 @@ function TabNotificacoes() {
           <SettingRow
             label="Notificações push"
             sublabel="Alertas em tempo real no navegador"
-            last
           >
             <Toggle
               on={prefs.push_notifications}
@@ -1849,56 +2495,38 @@ function TabNotificacoes() {
               }
             />
           </SettingRow>
-        </SettingGroup>
-      </div>
-
-      <div>
-        <SectionLabel>Alertas por módulo</SectionLabel>
-        <SettingGroup>
-          <SettingRow label="Novos matches comerciais">
+          <SettingRow
+            label="Notificações no WhatsApp"
+            sublabel="Receba mensagens no WhatsApp vinculado à conta"
+          >
             <Toggle
-              on={prefs.notify_new_match}
+              on={prefs.whatsapp_notifications}
               onToggle={() =>
-                update("notify_new_match", !prefs.notify_new_match)
+                update("whatsapp_notifications", !prefs.whatsapp_notifications)
               }
             />
           </SettingRow>
-          <SettingRow label="Respostas de cotações">
+          <SettingRow
+            label="Notificações no Telegram"
+            sublabel="Receba mensagens via bot do Telegram"
+          >
             <Toggle
-              on={prefs.notify_rfq_response}
+              on={prefs.telegram_notifications}
               onToggle={() =>
-                update("notify_rfq_response", !prefs.notify_rfq_response)
+                update("telegram_notifications", !prefs.telegram_notifications)
               }
             />
           </SettingRow>
-          <SettingRow label="Status de pedidos">
+          <SettingRow
+            label="Notificações SMS"
+            sublabel="Receba alertas por SMS no celular cadastrado"
+            last
+          >
             <Toggle
-              on={prefs.notify_order_status}
+              on={prefs.sms_notifications}
               onToggle={() =>
-                update("notify_order_status", !prefs.notify_order_status)
+                update("sms_notifications", !prefs.sms_notifications)
               }
-            />
-          </SettingRow>
-          <SettingRow label="Contas a vencer">
-            <Toggle
-              on={prefs.notify_payment_due}
-              onToggle={() =>
-                update("notify_payment_due", !prefs.notify_payment_due)
-              }
-            />
-          </SettingRow>
-          <SettingRow label="Ações de RH">
-            <Toggle
-              on={prefs.notify_hr_action}
-              onToggle={() =>
-                update("notify_hr_action", !prefs.notify_hr_action)
-              }
-            />
-          </SettingRow>
-          <SettingRow label="Atualizações do sistema" last>
-            <Toggle
-              on={prefs.notify_system}
-              onToggle={() => update("notify_system", !prefs.notify_system)}
             />
           </SettingRow>
         </SettingGroup>
@@ -1907,7 +2535,7 @@ function TabNotificacoes() {
   );
 }
 
-// ─── Tab: Dados e Privacidade ─────────────────────────────────────────────────
+// ─── Tab: Privacidade ─────────────────────────────────────────────────
 
 const STORED_DATA_ITEMS = [
   "Perfil pessoal",
@@ -1918,11 +2546,262 @@ const STORED_DATA_ITEMS = [
   "Arquivos e documentos",
 ];
 
+function DeleteAccountDialog({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  const [requested, setRequested] = useState(false);
+
+  function handleConfirm() {
+    setRequested(true);
+    setTimeout(() => {
+      setRequested(false);
+      onClose();
+    }, 1800);
+  }
+
+  if (!open) return null;
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(0,0,0,0.55)",
+        backdropFilter: "blur(6px)",
+        WebkitBackdropFilter: "blur(6px)",
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 440,
+          margin: "0 16px",
+          background: "var(--bg-elevated)",
+          border: "1px solid rgba(239,68,68,0.25)",
+          borderRadius: 16,
+          boxShadow:
+            "0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(239,68,68,0.12)",
+          overflow: "hidden",
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 14,
+            padding: "24px 24px 20px",
+            borderBottom: "1px solid rgba(255,255,255,0.06)",
+          }}
+        >
+          <div
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: "rgba(239,68,68,0.14)",
+              border: "1px solid rgba(239,68,68,0.25)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            <AlertTriangle
+              size={20}
+              style={{ color: "#ef4444" }}
+              strokeWidth={1.8}
+            />
+          </div>
+          <div>
+            <p
+              style={{
+                fontSize: 15,
+                fontWeight: 600,
+                color: "var(--text-primary)",
+                marginBottom: 4,
+                fontFamily: "var(--font-display)",
+              }}
+            >
+              Solicitar exclusão de conta
+            </p>
+            <p
+              style={{
+                fontSize: 12,
+                color: "var(--text-tertiary)",
+                lineHeight: 1.5,
+              }}
+            >
+              Leia atentamente antes de continuar.
+            </p>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div
+          style={{
+            padding: "20px 24px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 14,
+          }}
+        >
+          <p
+            style={{
+              fontSize: 13,
+              color: "var(--text-secondary)",
+              lineHeight: 1.65,
+            }}
+          >
+            Tem certeza que deseja solicitar a exclusão da sua conta? Esta ação
+            irá{" "}
+            <strong style={{ color: "var(--text-primary)" }}>
+              deletar todos os seus dados e registros
+            </strong>{" "}
+            na plataforma.
+          </p>
+          <p
+            style={{
+              fontSize: 13,
+              color: "var(--text-secondary)",
+              lineHeight: 1.65,
+            }}
+          >
+            <strong style={{ color: "#ef4444" }}>
+              Esta ação não pode ser desfeita.
+            </strong>{" "}
+            Seus dados serão perdidos permanentemente e não poderão ser
+            recuperados.
+          </p>
+
+          {/* Disclaimer */}
+          <div
+            style={{
+              background: "rgba(245,158,11,0.08)",
+              border: "1px solid rgba(245,158,11,0.2)",
+              borderRadius: 10,
+              padding: "12px 14px",
+              display: "flex",
+              gap: 10,
+              alignItems: "flex-start",
+            }}
+          >
+            <AlertTriangle
+              size={14}
+              style={{ color: "#f59e0b", flexShrink: 0, marginTop: 1 }}
+              strokeWidth={1.8}
+            />
+            <p
+              style={{
+                fontSize: 12,
+                color: "rgba(245,158,11,0.9)",
+                lineHeight: 1.6,
+                margin: 0,
+              }}
+            >
+              Esta solicitação necessita de{" "}
+              <strong>aprovação do gestor da empresa</strong> em que você está
+              cadastrado. Apenas após a aprovação do gestor a exclusão será
+              processada.
+            </p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: 8,
+            padding: "16px 24px",
+            borderTop: "1px solid rgba(255,255,255,0.06)",
+          }}
+        >
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              padding: "8px 16px",
+              borderRadius: 8,
+              border: "1px solid rgba(255,255,255,0.10)",
+              background: "transparent",
+              color: "var(--text-secondary)",
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: "pointer",
+              transition: "background 120ms ease, color 120ms ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+              e.currentTarget.style.color = "var(--text-primary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "var(--text-secondary)";
+            }}
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={requested}
+            style={{
+              padding: "8px 16px",
+              borderRadius: 8,
+              border: "1px solid rgba(239,68,68,0.4)",
+              background: requested
+                ? "rgba(239,68,68,0.25)"
+                : "rgba(239,68,68,0.14)",
+              color: requested ? "rgba(239,68,68,0.6)" : "#ef4444",
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: requested ? "default" : "pointer",
+              transition: "background 120ms ease, color 120ms ease",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+            onMouseEnter={(e) => {
+              if (!requested)
+                e.currentTarget.style.background = "rgba(239,68,68,0.22)";
+            }}
+            onMouseLeave={(e) => {
+              if (!requested)
+                e.currentTarget.style.background = "rgba(239,68,68,0.14)";
+            }}
+          >
+            {requested ? (
+              <>
+                <Check size={13} strokeWidth={2} />
+                Solicitado
+              </>
+            ) : (
+              "Sim, solicitar exclusão"
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TabDadosPrivacidade() {
   const { email, userId, activeCompanyId } = useSessionStore();
   const drivers = useDrivers();
   const [exported, setExported] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   async function handleExport() {
     const payload: Record<string, unknown> = {
@@ -1960,16 +2839,22 @@ function TabDadosPrivacidade() {
         icon={FileText}
         iconBg="rgba(6,182,212,0.22)"
         iconColor="#22d3ee"
-        title="Dados e Privacidade"
+        title="Privacidade"
         subtitle="Controle seus dados pessoais conforme a LGPD (Lei 13.709/2018)"
       />
 
       <div>
-        <SectionLabel>LGPD</SectionLabel>
+        <SectionLabel>LGPD &amp; Compliance</SectionLabel>
         <SettingGroup>
           <SettingRow
             label="Seus direitos"
             sublabel="Acesso, correção, portabilidade e eliminação de dados pessoais"
+          >
+            <Badge variant="success">Em conformidade</Badge>
+          </SettingRow>
+          <SettingRow
+            label="Status de conformidade"
+            sublabel="LGPD · SOC 2 em preparação · dados residentes no Brasil"
             last
           >
             <Badge variant="success">Em conformidade</Badge>
@@ -2014,33 +2899,20 @@ function TabDadosPrivacidade() {
           <SettingRow
             label="Solicitar exclusão de conta"
             sublabel="Um administrador será notificado para processar a solicitação"
+            danger
             last
           >
-            {deleteConfirm ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
-                  Confirmar?
-                </span>
-                <InlineButton
-                  danger
-                  onClick={() => {
-                    setDeleteConfirm(false);
-                  }}
-                >
-                  Sim, solicitar
-                </InlineButton>
-                <InlineButton onClick={() => setDeleteConfirm(false)}>
-                  Cancelar
-                </InlineButton>
-              </div>
-            ) : (
-              <InlineButton danger onClick={() => setDeleteConfirm(true)}>
-                Solicitar exclusão
-              </InlineButton>
-            )}
+            <InlineButton danger onClick={() => setShowDeleteDialog(true)}>
+              Solicitar exclusão
+            </InlineButton>
           </SettingRow>
         </SettingGroup>
       </div>
+
+      <DeleteAccountDialog
+        open={showDeleteDialog}
+        onClose={() => setShowDeleteDialog(false)}
+      />
     </div>
   );
 }
@@ -2339,6 +3211,171 @@ function TabMesa() {
   );
 }
 
+// ─── Theme mode selector (pill toggle: Sol / Lua) ────────────────────────────
+
+function ThemeModeSelector() {
+  const [isDark, setIsDark] = useState(() =>
+    document.documentElement.classList.contains("dark"),
+  );
+  const toggleRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const update = () =>
+      setIsDark(document.documentElement.classList.contains("dark"));
+    const observer = new MutationObserver(update);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  function toggle() {
+    const toDark = !isDark;
+
+    const applyTheme = () => {
+      document.documentElement.classList.toggle("dark", toDark);
+      localStorage.setItem("theme", toDark ? "dark" : "light");
+    };
+
+    if (typeof document.startViewTransition !== "function") {
+      applyTheme();
+      return;
+    }
+
+    const root = document.documentElement;
+    root.dataset["magicuiThemeVt"] = "active";
+    root.style.setProperty("--magicui-theme-toggle-vt-duration", "400ms");
+    const cleanup = () => {
+      delete root.dataset["magicuiThemeVt"];
+      root.style.removeProperty("--magicui-theme-toggle-vt-duration");
+    };
+
+    const transition = document.startViewTransition(applyTheme);
+    if (typeof transition?.finished?.finally === "function") {
+      transition.finished.finally(cleanup);
+    } else {
+      cleanup();
+    }
+
+    const ready = transition?.ready;
+    if (
+      ready &&
+      typeof ready.then === "function" &&
+      toggleRef.current !== null
+    ) {
+      const { top, left, width, height } =
+        toggleRef.current.getBoundingClientRect();
+      const cx = left + width / 2;
+      const cy = top + height / 2;
+      const vw = window.visualViewport?.width ?? window.innerWidth;
+      const vh = window.visualViewport?.height ?? window.innerHeight;
+      const r = Math.hypot(Math.max(cx, vw - cx), Math.max(cy, vh - cy));
+      ready.then(() => {
+        document.documentElement.animate(
+          {
+            clipPath: [
+              `circle(0px at ${cx}px ${cy}px)`,
+              `circle(${r}px at ${cx}px ${cy}px)`,
+            ],
+          },
+          {
+            duration: 400,
+            easing: "ease-in-out",
+            fill: "forwards",
+            pseudoElement: "::view-transition-new(root)",
+          },
+        );
+      });
+    }
+  }
+
+  const TRACK_W = 72;
+  const TRACK_H = 32;
+  const THUMB_SIZE = 24;
+  const THUMB_TRAVEL = TRACK_W - THUMB_SIZE - 8;
+
+  return (
+    <button
+      ref={toggleRef}
+      type="button"
+      role="switch"
+      aria-checked={isDark}
+      onClick={toggle}
+      style={{
+        position: "relative",
+        width: TRACK_W,
+        height: TRACK_H,
+        borderRadius: TRACK_H / 2,
+        border: "1px solid rgba(255,255,255,0.12)",
+        background: isDark
+          ? "linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)"
+          : "linear-gradient(135deg, #fde68a 0%, #fbbf24 100%)",
+        cursor: "pointer",
+        transition: "background 350ms ease, border-color 350ms ease",
+        padding: 0,
+        outline: "none",
+        flexShrink: 0,
+      }}
+      onFocus={(e) => {
+        e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.35)";
+      }}
+      onBlur={(e) => {
+        e.currentTarget.style.boxShadow = "none";
+      }}
+    >
+      {/* Sun icon — left side */}
+      <Sun
+        size={13}
+        strokeWidth={2}
+        style={{
+          position: "absolute",
+          left: 8,
+          top: "50%",
+          transform: "translateY(-50%)",
+          color: isDark ? "rgba(255,255,255,0.25)" : "rgba(120,60,0,0.7)",
+          transition: "color 350ms ease, opacity 350ms ease",
+          pointerEvents: "none",
+        }}
+      />
+      {/* Moon icon — right side */}
+      <Moon
+        size={12}
+        strokeWidth={2}
+        style={{
+          position: "absolute",
+          right: 8,
+          top: "50%",
+          transform: "translateY(-50%)",
+          color: isDark ? "rgba(199,210,254,0.8)" : "rgba(255,255,255,0.3)",
+          transition: "color 350ms ease, opacity 350ms ease",
+          pointerEvents: "none",
+        }}
+      />
+      {/* Thumb */}
+      <span
+        style={{
+          position: "absolute",
+          top: (TRACK_H - THUMB_SIZE) / 2 - 1,
+          left: isDark ? THUMB_TRAVEL + 4 : 4,
+          width: THUMB_SIZE,
+          height: THUMB_SIZE,
+          borderRadius: "50%",
+          background: isDark
+            ? "linear-gradient(135deg, #818cf8 0%, #6366f1 100%)"
+            : "linear-gradient(135deg, #ffffff 0%, #fef3c7 100%)",
+          boxShadow: isDark
+            ? "0 2px 8px rgba(99,102,241,0.5)"
+            : "0 2px 8px rgba(0,0,0,0.18)",
+          transition:
+            "left 350ms cubic-bezier(0.34,1.56,0.64,1), background 350ms ease, box-shadow 350ms ease",
+          pointerEvents: "none",
+        }}
+      />
+    </button>
+  );
+}
+
 // ─── Tab: Aparência ───────────────────────────────────────────────────────────
 
 function TabAparencia() {
@@ -2423,28 +3460,7 @@ function TabAparencia() {
             sublabel="Alterna com animação entre os modos"
             last
           >
-            <AnimatedThemeToggler
-              variant="circle"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 38,
-                height: 38,
-                borderRadius: 10,
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.10)",
-                color: "var(--text-primary)",
-                cursor: "pointer",
-                transition: "background 120ms ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(255,255,255,0.11)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "rgba(255,255,255,0.06)";
-              }}
-            />
+            <ThemeModeSelector />
           </SettingRow>
         </SettingGroup>
       </div>
@@ -2870,6 +3886,9 @@ function TabPlanos() {
       <div>
         <SectionLabel>Plano atual</SectionLabel>
         <SettingGroup>
+          <SettingRow label="Status da conta">
+            <Badge variant="success">Ativo</Badge>
+          </SettingRow>
           <SettingRow label="Tipo de plano">
             <Badge variant="warning">Trial</Badge>
           </SettingRow>
@@ -2985,11 +4004,8 @@ function TabPlanos() {
 // ─── Tab: Sobre ───────────────────────────────────────────────────────────────
 
 function TabSobre() {
-  const { userId, activeCompanyId } = useSessionStore();
+  const { userId } = useSessionStore();
   const drivers = useDrivers();
-  const [company, setCompany] = useState<{ name: string; slug: string } | null>(
-    null,
-  );
 
   // Language preference (movido de Meu Perfil)
   const [lang, setLang] = useState("pt-BR");
@@ -2998,18 +4014,6 @@ function TabSobre() {
   >("idle");
   const langInitializedRef = useRef(false);
   const langTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (drivers === null || activeCompanyId === null) return;
-    drivers.data
-      .from("companies")
-      .select("name,slug")
-      .eq("id", activeCompanyId)
-      .single()
-      .then(({ data }) => {
-        if (data !== null) setCompany(data as { name: string; slug: string });
-      });
-  }, [drivers, activeCompanyId]);
 
   useEffect(() => {
     if (drivers === null || userId === null) return;
@@ -3058,8 +4062,10 @@ function TabSobre() {
         icon={Info}
         iconBg="rgba(100,116,139,0.22)"
         iconColor="#94a3b8"
-        title="Sistema"
-        subtitle="Idioma, informações da plataforma e do plano contratado"
+        iconUrl="/aethereos-logo.png"
+        noContainer
+        title="Sistema ÆTHEREOS"
+        subtitle="Enterprise OS 1.0.0-beta"
       />
 
       <div>
@@ -3110,38 +4116,6 @@ function TabSobre() {
           </SettingRow>
         </SettingGroup>
       </div>
-
-      {company !== null && (
-        <div>
-          <SectionLabel>Empresa</SectionLabel>
-          <SettingGroup>
-            <SettingRow label="Nome">
-              <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-                {company.name}
-              </span>
-            </SettingRow>
-            <SettingRow label="ID da empresa">
-              <MonoCode>{activeCompanyId ?? "—"}</MonoCode>
-            </SettingRow>
-            <SettingRow label="Status" last>
-              <Badge variant="success">Ativo</Badge>
-            </SettingRow>
-          </SettingGroup>
-        </div>
-      )}
-
-      <div>
-        <SectionLabel>Compliance</SectionLabel>
-        <SettingGroup>
-          <SettingRow
-            label="Status de conformidade"
-            sublabel="LGPD · SOC 2 em preparação · dados residentes no Brasil"
-            last
-          >
-            <Badge variant="success">Em conformidade</Badge>
-          </SettingRow>
-        </SettingGroup>
-      </div>
     </div>
   );
 }
@@ -3152,7 +4126,6 @@ const ASIDE_STYLE = {
   width: "100%",
   height: "100%",
   background: "rgba(15,21,27,0.82)",
-  borderRight: "1px solid rgba(255,255,255,0.06)",
   display: "flex",
   flexDirection: "column" as const,
   overflowY: "auto" as const,
@@ -3406,7 +4379,7 @@ function Sidebar({
       </div>
 
       {/* Navigation */}
-      <nav style={{ flex: 1, padding: "4px 8px 16px" }}>
+      <nav style={{ flex: 1, padding: "4px 0 16px 8px" }}>
         {filtered.map((section, sectionIdx) => (
           <div
             key={section.label}
@@ -3439,23 +4412,32 @@ function Sidebar({
                     gap: 10,
                     width: "100%",
                     padding: "6px 8px",
-                    borderRadius: 8,
-                    border: isSelected
-                      ? "1px solid rgba(255,255,255,0.06)"
-                      : "1px solid transparent",
-                    background: isSelected
-                      ? "rgba(255,255,255,0.08)"
-                      : "transparent",
-                    color: isSelected
-                      ? "var(--text-primary)"
-                      : "var(--text-secondary)",
                     fontSize: 13,
-                    fontWeight: isSelected ? 500 : 400,
                     cursor: "pointer",
                     textAlign: "left",
                     transition:
                       "background 120ms ease, color 120ms ease, border-color 120ms ease",
                     marginBottom: 2,
+                    ...(isSelected
+                      ? {
+                          borderRadius: "8px 0 0 8px",
+                          borderTop: "1px solid rgba(255,255,255,0.08)",
+                          borderLeft: "1px solid rgba(255,255,255,0.08)",
+                          borderBottom: "1px solid rgba(255,255,255,0.08)",
+                          borderRight: "none",
+                          background: "var(--bg-elevated)",
+                          color: "var(--text-primary)",
+                          fontWeight: 500,
+                          marginRight: 0,
+                        }
+                      : {
+                          borderRadius: 8,
+                          border: "1px solid transparent",
+                          background: "transparent",
+                          color: "var(--text-secondary)",
+                          fontWeight: 400,
+                          marginRight: 8,
+                        }),
                   }}
                   onMouseEnter={(e) => {
                     if (!isSelected) {
@@ -3941,27 +4923,18 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
           >
             Idioma
           </p>
-          <select
-            value={lang}
-            onChange={(e) => setLang(e.target.value)}
-            style={{
-              marginTop: 6,
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.10)",
-              borderRadius: 8,
-              padding: "6px 8px",
-              fontSize: 12,
-              color: "var(--text-primary)",
-              outline: "none",
-              cursor: "pointer",
-              appearance: "none",
-            }}
-            aria-label="Idioma"
-          >
-            <option value="pt-BR">Português</option>
-            <option value="en-US">English</option>
-            <option value="es-ES">Español</option>
-          </select>
+          <div style={{ marginTop: 6 }}>
+            <SmartSelect
+              value={lang}
+              onChange={setLang}
+              searchable={false}
+              options={[
+                { value: "pt-BR", label: "Português (Brasil)" },
+                { value: "en-US", label: "English (US)" },
+                { value: "es-ES", label: "Español" },
+              ]}
+            />
+          </div>
           <p
             style={{
               fontSize: 11,
