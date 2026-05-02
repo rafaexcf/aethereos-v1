@@ -9,16 +9,6 @@ export const WALLPAPERS = [
   "design-2",
   "design-3",
   "midnight",
-  "mesh",
-  "sunset",
-  "forest",
-  "lavender",
-  "cherry",
-  "gold",
-  "ruby",
-  "emerald",
-  "sapphire",
-  "cosmic",
 ] as const;
 export type WallpaperId = (typeof WALLPAPERS)[number];
 
@@ -29,16 +19,6 @@ export const WALLPAPER_NAMES: Record<WallpaperId, string> = {
   "design-2": "Marca 2",
   "design-3": "Marca 3",
   midnight: "Meia-Noite",
-  mesh: "Mesh",
-  sunset: "Pôr do Sol",
-  forest: "Floresta",
-  lavender: "Lavanda",
-  cherry: "Cerejeira",
-  gold: "Dourado",
-  ruby: "Rubi",
-  emerald: "Esmeralda",
-  sapphire: "Safira",
-  cosmic: "Cósmico",
 };
 
 export const CUSTOM_WALLPAPER_ID = "custom";

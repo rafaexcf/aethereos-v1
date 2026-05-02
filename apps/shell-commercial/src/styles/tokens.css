@@ -42,19 +42,6 @@ html.dark {
   /* Wallpapers dark */
   --wallpaper-default: #050510 url("/wallpapers/default-black-hole.png") center/cover no-repeat;
   --wallpaper-midnight: radial-gradient(circle at 30% 20%, #1a1040 0%, #0a0a18 60%, #050508 100%);
-  --wallpaper-mesh: radial-gradient(ellipse at 20% 50%, rgba(29, 78, 216, 0.15) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 50%, rgba(124, 58, 237, 0.15) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 100%, rgba(16, 185, 129, 0.1) 0%, transparent 50%),
-    #0f151b;
-  --wallpaper-sunset: linear-gradient(135deg, #7c2d12 0%, #ea580c 50%, #fbbf24 100%);
-  --wallpaper-forest: radial-gradient(ellipse at center, #064e3b 0%, #022c22 50%, #052e16 100%);
-  --wallpaper-lavender: linear-gradient(135deg, #312e81 0%, #4338ca 50%, #6366f1 100%);
-  --wallpaper-cherry: radial-gradient(ellipse at top, #831843 0%, #500724 50%, #3f0517 100%);
-  --wallpaper-gold: radial-gradient(circle at 50% 30%, #92400e 0%, #451a03 60%, #1c0a02 100%);
-  --wallpaper-ruby: radial-gradient(ellipse at 30% 50%, #7f1d1d 0%, #450a0a 50%, #1c0303 100%);
-  --wallpaper-emerald: linear-gradient(135deg, #064e3b 0%, #047857 50%, #059669 100%);
-  --wallpaper-sapphire: radial-gradient(circle at 70% 30%, #1e3a8a 0%, #0c2461 50%, #050b25 100%);
-  --wallpaper-cosmic: radial-gradient(ellipse at 30% 30%, #4c1d95 0%, #1e1b4b 50%, #0a0a14 100%);
   --wallpaper-purple: #1a0a2e url("/wallpapers/purple-haze.jpg") center/cover no-repeat;
   --wallpaper-design-1: #050510 url("/wallpapers/design-1.png") center/cover no-repeat;
   --wallpaper-design-2: #050510 url("/wallpapers/design-2.png") center/cover no-repeat;
@@ -137,19 +124,6 @@ html.light {
   /* Wallpapers light */
   --wallpaper-default: #050510 url("/wallpapers/default-black-hole.png") center/cover no-repeat;
   --wallpaper-midnight: radial-gradient(circle at 30% 20%, #f0e8ff 0%, #fafaf9 60%, #ffffff 100%);
-  --wallpaper-mesh: radial-gradient(ellipse at 20% 50%, rgba(219, 234, 254, 0.5) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 50%, rgba(237, 233, 254, 0.5) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 100%, rgba(209, 250, 229, 0.4) 0%, transparent 50%),
-    #fafaf9;
-  --wallpaper-sunset: linear-gradient(135deg, #ffe4cc 0%, #ffcd9a 50%, #ffe9b8 100%);
-  --wallpaper-forest: radial-gradient(ellipse at center, #d1fae5 0%, #ecfdf5 50%, #f0fdf4 100%);
-  --wallpaper-lavender: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 50%, #a5b4fc 100%);
-  --wallpaper-cherry: radial-gradient(ellipse at top, #fce7f3 0%, #fbcfe8 50%, #fdf2f8 100%);
-  --wallpaper-gold: radial-gradient(circle at 50% 30%, #fef3c7 0%, #fde68a 60%, #fcd34d 100%);
-  --wallpaper-ruby: radial-gradient(ellipse at 30% 50%, #fee2e2 0%, #fecaca 50%, #fca5a5 100%);
-  --wallpaper-emerald: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 50%, #6ee7b7 100%);
-  --wallpaper-sapphire: radial-gradient(circle at 70% 30%, #dbeafe 0%, #bfdbfe 50%, #93c5fd 100%);
-  --wallpaper-cosmic: radial-gradient(ellipse at 30% 30%, #ede9fe 0%, #e0e7ff 50%, #f5f3ff 100%);
   --wallpaper-purple: #1a0a2e url("/wallpapers/purple-haze.jpg") center/cover no-repeat;
   --wallpaper-design-1: #050510 url("/wallpapers/design-1.png") center/cover no-repeat;
   --wallpaper-design-2: #050510 url("/wallpapers/design-2.png") center/cover no-repeat;
