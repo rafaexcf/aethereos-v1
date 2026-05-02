@@ -56,7 +56,7 @@ import {
 } from "@dnd-kit/core";
 import {
   SortableContext,
-  verticalListSortingStrategy,
+  horizontalListSortingStrategy,
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -3039,17 +3039,27 @@ function TabDadosPrivacidade() {
 
 // ─── Tab: Dock ────────────────────────────────────────────────────────────────
 
-function DockAppIcon({ iconName, color }: { iconName: string; color: string }) {
+function DockAppIcon({
+  iconName,
+  color,
+  size = 32,
+}: {
+  iconName: string;
+  color: string;
+  size?: number;
+}) {
   const Icon =
     (
       LucideIcons as unknown as Record<string, React.ComponentType<LucideProps>>
     )[iconName] ?? LucideIcons.Box;
+  const iconPx = Math.round(size * 0.44);
+  const radius = Math.round(size * 0.28);
   return (
     <div
       style={{
-        width: 32,
-        height: 32,
-        borderRadius: 8,
+        width: size,
+        height: size,
+        borderRadius: radius,
         background: `${color}20`,
         border: `1px solid ${color}38`,
         display: "flex",
@@ -3058,12 +3068,12 @@ function DockAppIcon({ iconName, color }: { iconName: string; color: string }) {
         flexShrink: 0,
       }}
     >
-      <Icon size={16} style={{ color }} strokeWidth={1.7} />
+      <Icon size={iconPx} style={{ color }} strokeWidth={1.7} />
     </div>
   );
 }
 
-function SortableDockRow({
+function SortableDockCard({
   appId,
   onRemove,
 }: {
@@ -3082,63 +3092,66 @@ function SortableDockRow({
 
   if (app === undefined) return null;
 
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    padding: "10px 14px",
-    borderBottom: "1px solid rgba(255,255,255,0.05)",
-    background: isDragging ? "rgba(255,255,255,0.04)" : "transparent",
-  };
-
   return (
-    <div ref={setNodeRef} style={style}>
-      <button
-        type="button"
-        {...attributes}
-        {...listeners}
-        aria-label="Arrastar para reordenar"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "transparent",
-          border: "none",
-          padding: 4,
-          margin: -4,
-          cursor: isDragging ? "grabbing" : "grab",
-          color: "var(--text-tertiary)",
-          touchAction: "none",
-        }}
-      >
-        <GripVertical size={16} strokeWidth={1.6} />
-      </button>
-      <DockAppIcon iconName={app.icon} color={app.color} />
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.4 : 1,
+        position: "relative",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 6,
+        padding: "10px 6px 8px",
+        width: 72,
+        borderRadius: 12,
+        background: isDragging
+          ? "rgba(255,255,255,0.06)"
+          : "rgba(255,255,255,0.03)",
+        border: "1px solid rgba(255,255,255,0.07)",
+        cursor: isDragging ? "grabbing" : "grab",
+        userSelect: "none",
+        touchAction: "none",
+      }}
+      {...attributes}
+      {...listeners}
+    >
+      <DockAppIcon iconName={app.icon} color={app.color} size={44} />
       <span
         style={{
-          flex: 1,
-          fontSize: 13,
+          fontSize: 10,
           fontWeight: 500,
-          color: "var(--text-primary)",
+          color: "var(--text-secondary)",
+          textAlign: "center",
+          maxWidth: 60,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
         }}
       >
         {app.name}
       </span>
       <button
         type="button"
-        onClick={() => onRemove(appId)}
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove(appId);
+        }}
+        onPointerDown={(e) => e.stopPropagation()}
         aria-label={`Remover ${app.name} do dock`}
         style={{
+          position: "absolute",
+          top: 4,
+          right: 4,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          width: 28,
-          height: 28,
-          borderRadius: 8,
-          background: "rgba(255,255,255,0.06)",
+          width: 18,
+          height: 18,
+          borderRadius: 5,
+          background: "rgba(255,255,255,0.08)",
           border: "1px solid rgba(255,255,255,0.10)",
           cursor: "pointer",
           color: "var(--text-tertiary)",
@@ -3147,17 +3160,17 @@ function SortableDockRow({
             "background 120ms ease, border-color 120ms ease, color 120ms ease",
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = "rgba(239,68,68,0.14)";
-          e.currentTarget.style.borderColor = "rgba(239,68,68,0.28)";
+          e.currentTarget.style.background = "rgba(239,68,68,0.20)";
+          e.currentTarget.style.borderColor = "rgba(239,68,68,0.35)";
           e.currentTarget.style.color = "#f87171";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+          e.currentTarget.style.background = "rgba(255,255,255,0.08)";
           e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)";
           e.currentTarget.style.color = "var(--text-tertiary)";
         }}
       >
-        <Minus size={13} strokeWidth={2} />
+        <Minus size={9} strokeWidth={2.5} />
       </button>
     </div>
   );
@@ -3220,20 +3233,22 @@ function TabDock() {
             >
               <SortableContext
                 items={order}
-                strategy={verticalListSortingStrategy}
+                strategy={horizontalListSortingStrategy}
               >
-                <div>
-                  {order.map((id, idx) => (
-                    <div
+                <div
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 8,
+                    padding: 12,
+                  }}
+                >
+                  {order.map((id) => (
+                    <SortableDockCard
                       key={id}
-                      style={
-                        idx === order.length - 1
-                          ? { ["--last-row" as string]: "true" }
-                          : undefined
-                      }
-                    >
-                      <SortableDockRow appId={id} onRemove={removeApp} />
-                    </div>
+                      appId={id}
+                      onRemove={removeApp}
+                    />
                   ))}
                 </div>
               </SortableContext>
@@ -3246,66 +3261,92 @@ function TabDock() {
         <div>
           <SectionLabel>Apps fora da dock ({available.length})</SectionLabel>
           <SettingGroup>
-            {available.map((app, idx) => (
-              <div
-                key={app.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  padding: "8px 16px",
-                  borderBottom:
-                    idx === available.length - 1
-                      ? "none"
-                      : "1px solid rgba(255,255,255,0.05)",
-                }}
-              >
-                <DockAppIcon iconName={app.icon} color={app.color} />
-                <span
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 8,
+                padding: 12,
+              }}
+            >
+              {available.map((app) => (
+                <div
+                  key={app.id}
                   style={{
-                    flex: 1,
-                    fontSize: 13,
-                    fontWeight: 500,
-                    color: "var(--text-secondary)",
-                  }}
-                >
-                  {app.name}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => addApp(app.id)}
-                  aria-label={`Adicionar ${app.name} à dock`}
-                  style={{
+                    position: "relative",
                     display: "flex",
+                    flexDirection: "column",
                     alignItems: "center",
-                    justifyContent: "center",
-                    width: 28,
-                    height: 28,
-                    borderRadius: 8,
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.10)",
-                    cursor: "pointer",
-                    color: "var(--text-tertiary)",
-                    padding: 0,
-                    transition:
-                      "background 120ms ease, border-color 120ms ease, color 120ms ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "rgba(99,102,241,0.14)";
-                    e.currentTarget.style.borderColor = "rgba(99,102,241,0.28)";
-                    e.currentTarget.style.color = "#a5b4fc";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "rgba(255,255,255,0.06)";
-                    e.currentTarget.style.borderColor =
-                      "rgba(255,255,255,0.10)";
-                    e.currentTarget.style.color = "var(--text-tertiary)";
+                    gap: 6,
+                    padding: "10px 6px 8px",
+                    width: 72,
+                    borderRadius: 12,
+                    background: "rgba(255,255,255,0.02)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                    opacity: 0.75,
                   }}
                 >
-                  <Plus size={13} strokeWidth={2} />
-                </button>
-              </div>
-            ))}
+                  <DockAppIcon
+                    iconName={app.icon}
+                    color={app.color}
+                    size={44}
+                  />
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 500,
+                      color: "var(--text-tertiary)",
+                      textAlign: "center",
+                      maxWidth: 60,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {app.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => addApp(app.id)}
+                    aria-label={`Adicionar ${app.name} à dock`}
+                    style={{
+                      position: "absolute",
+                      top: 4,
+                      right: 4,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 18,
+                      height: 18,
+                      borderRadius: 5,
+                      background: "rgba(255,255,255,0.08)",
+                      border: "1px solid rgba(255,255,255,0.10)",
+                      cursor: "pointer",
+                      color: "var(--text-tertiary)",
+                      padding: 0,
+                      transition:
+                        "background 120ms ease, border-color 120ms ease, color 120ms ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background =
+                        "rgba(99,102,241,0.20)";
+                      e.currentTarget.style.borderColor =
+                        "rgba(99,102,241,0.35)";
+                      e.currentTarget.style.color = "#a5b4fc";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background =
+                        "rgba(255,255,255,0.08)";
+                      e.currentTarget.style.borderColor =
+                        "rgba(255,255,255,0.10)";
+                      e.currentTarget.style.color = "var(--text-tertiary)";
+                    }}
+                  >
+                    <Plus size={9} strokeWidth={2.5} />
+                  </button>
+                </div>
+              ))}
+            </div>
           </SettingGroup>
         </div>
       )}
