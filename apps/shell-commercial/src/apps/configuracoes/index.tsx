@@ -43,6 +43,13 @@ import {
   ChevronDown,
   Lock,
   Minus,
+  Github,
+  HelpCircle,
+  BookOpen,
+  Lightbulb,
+  MessageSquare,
+  Rocket,
+  ExternalLink,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import type { LucideProps } from "lucide-react";
@@ -4717,10 +4724,6 @@ interface VersionCardData {
 }
 
 function VersionCardInner({
-  logoSrc,
-  icon: Icon,
-  iconBg = "rgba(100,116,139,0.22)",
-  iconColor = "#94a3b8",
   name,
   codename,
   version,
@@ -4728,25 +4731,21 @@ function VersionCardInner({
   accent = "#6366f1",
 }: VersionCardData) {
   return (
-    <>
-      {/* Logo ou ícone */}
-      {logoSrc !== undefined ? (
-        <img
-          src={logoSrc}
-          alt=""
-          style={{ width: 34, height: 34, objectFit: "contain", flexShrink: 0 }}
-        />
-      ) : Icon !== undefined ? (
-        <TileIcon Icon={Icon} color={iconColor} bg={iconBg} size={34} />
-      ) : null}
-
-      <div style={{ flex: 1 }} />
-
-      {/* Codinome pill */}
+    <div
+      style={{
+        position: "relative",
+        display: "flex",
+        flexDirection: "column",
+        flex: 1,
+      }}
+    >
+      {/* Codinome badge — canto superior direito */}
       {codename !== undefined && (
         <span
           style={{
-            display: "inline-block",
+            position: "absolute",
+            top: 0,
+            right: 0,
             padding: "2px 7px",
             borderRadius: 999,
             background: `${accent}22`,
@@ -4756,13 +4755,13 @@ function VersionCardInner({
             color: accent,
             letterSpacing: "0.07em",
             textTransform: "uppercase",
-            marginBottom: 4,
-            alignSelf: "flex-start",
           }}
         >
           {codename}
         </span>
       )}
+
+      <div style={{ flex: 1 }} />
 
       {/* Nome */}
       <p
@@ -4801,7 +4800,7 @@ function VersionCardInner({
           {env}
         </p>
       )}
-    </>
+    </div>
   );
 }
 
@@ -4875,6 +4874,8 @@ function TabSobre() {
     }, 800);
   }
 
+  const [betaEnrolled, setBetaEnrolled] = useState(false);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <ContentHeader
@@ -4887,6 +4888,30 @@ function TabSobre() {
         subtitle="Enterprise OS 1.0.0-beta · Armstrong"
       />
 
+      {/* Versões — primeiro */}
+      <div>
+        <SectionLabel>Versões</SectionLabel>
+        <div
+          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}
+        >
+          <VersionCard
+            name="ÆTHEREOS OS"
+            codename="Armstrong"
+            version="1.0.0-beta"
+            env="Produção · sa-east-1"
+            accent="#6366f1"
+          />
+          <VersionCard
+            name="SCP"
+            codename="Protocolo"
+            version="v1.0"
+            env="Online · sa-east-1"
+            accent="#06b6d4"
+          />
+        </div>
+      </div>
+
+      {/* Idioma — segundo */}
       <div>
         <SectionLabel>Idioma</SectionLabel>
         <SettingGroup>
@@ -4914,30 +4939,82 @@ function TabSobre() {
         </SettingGroup>
       </div>
 
+      {/* Projeto */}
       <div>
-        <SectionLabel>Versões</SectionLabel>
-        <div
-          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}
-        >
-          <VersionCard
-            logoSrc="/aethereos-logo.png"
-            name="ÆTHEREOS OS"
-            codename="Armstrong"
-            version="1.0.0-beta"
-            env="Produção · sa-east-1"
-            accent="#6366f1"
-          />
-          <VersionCard
-            icon={Network}
-            iconBg="rgba(6,182,212,0.18)"
-            iconColor="#22d3ee"
-            name="SCP"
-            codename="Protocolo"
-            version="v1.0"
-            env="Online · sa-east-1"
-            accent="#06b6d4"
-          />
-        </div>
+        <SectionLabel>Projeto</SectionLabel>
+        <SettingGroup>
+          <SettingRow
+            label="GitHub"
+            sublabel="Código-fonte aberto, issues e contribuições"
+            last
+          >
+            <InlineButton
+              onClick={() =>
+                window.open(
+                  "https://github.com/aethereos",
+                  "_blank",
+                  "noopener,noreferrer",
+                )
+              }
+            >
+              <ExternalLink size={11} style={{ marginRight: 4 }} />
+              Abrir
+            </InlineButton>
+          </SettingRow>
+        </SettingGroup>
+      </div>
+
+      {/* Ajuda */}
+      <div>
+        <SectionLabel>Ajuda</SectionLabel>
+        <SettingGroup>
+          <SettingRow
+            label="FAQ"
+            sublabel="Perguntas frequentes sobre o Aethereos"
+          >
+            <InlineButton onClick={() => {}}>Ver</InlineButton>
+          </SettingRow>
+          <SettingRow
+            label="Tutoriais"
+            sublabel="Guias passo a passo para cada módulo"
+          >
+            <InlineButton onClick={() => {}}>Ver</InlineButton>
+          </SettingRow>
+          <SettingRow
+            label="Dicas"
+            sublabel="Atalhos, recursos ocultos e boas práticas"
+            last
+          >
+            <InlineButton onClick={() => {}}>Ver</InlineButton>
+          </SettingRow>
+        </SettingGroup>
+      </div>
+
+      {/* Comunidade */}
+      <div>
+        <SectionLabel>Comunidade</SectionLabel>
+        <SettingGroup>
+          <SettingRow
+            label="Fale conosco"
+            sublabel="Envie uma mensagem direto ao time de desenvolvedores"
+          >
+            <InlineButton onClick={() => {}}>Enviar</InlineButton>
+          </SettingRow>
+          <SettingRow
+            label="Programa de desenvolvedores beta"
+            sublabel={
+              betaEnrolled
+                ? "Inscrito — você recebe atualizações antecipadas"
+                : "Acesse funcionalidades antes do lançamento oficial"
+            }
+            last
+          >
+            <Toggle
+              on={betaEnrolled}
+              onToggle={() => setBetaEnrolled((v) => !v)}
+            />
+          </SettingRow>
+        </SettingGroup>
       </div>
     </div>
   );
@@ -6159,7 +6236,6 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
           }}
         >
           <VersionCardInner
-            logoSrc="/aethereos-logo.png"
             name="ÆTHEREOS OS"
             codename="Armstrong"
             version="1.0.0-beta"
