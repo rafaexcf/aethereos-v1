@@ -4748,81 +4748,77 @@ function VersionCardInner({
   return (
     <div
       style={{
+        position: "relative",
         display: "flex",
         flexDirection: "column",
         flex: 1,
+        justifyContent: "space-between",
       }}
     >
-      <div style={{ flex: 1 }} />
+      {/* Badge — canto superior direito */}
+      {codename !== undefined && (
+        <span
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            padding: "2px 8px",
+            borderRadius: 999,
+            background: `${accent}22`,
+            border: `1px solid ${accent}44`,
+            fontSize: 10,
+            fontWeight: 700,
+            color: accent,
+            letterSpacing: "0.07em",
+            textTransform: "uppercase",
+          }}
+        >
+          {codename}
+        </span>
+      )}
 
-      {/* Nome + badge na mesma linha */}
-      <div
+      {/* Topo — nome */}
+      <p
         style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          flexWrap: "wrap",
+          fontSize: 18,
+          fontWeight: 700,
+          fontFamily: "var(--font-display)",
+          color: "var(--text-primary)",
+          letterSpacing: "-0.03em",
+          lineHeight: 1.1,
+          margin: 0,
+          paddingRight: codename !== undefined ? 80 : 0,
         }}
       >
+        {name}
+      </p>
+
+      {/* Rodapé — versão + ambiente */}
+      <div>
         <p
           style={{
-            fontSize: 18,
-            fontWeight: 700,
-            fontFamily: "var(--font-display)",
-            color: "var(--text-primary)",
-            letterSpacing: "-0.03em",
-            lineHeight: 1.1,
+            fontFamily: "var(--font-mono)",
+            fontSize: 15,
+            fontWeight: 600,
+            color: "var(--text-secondary)",
+            letterSpacing: "-0.02em",
             margin: 0,
           }}
         >
-          {name}
+          {version}
         </p>
-        {codename !== undefined && (
-          <span
+        {env !== undefined && (
+          <p
             style={{
-              padding: "2px 8px",
-              borderRadius: 999,
-              background: `${accent}22`,
-              border: `1px solid ${accent}44`,
-              fontSize: 10,
-              fontWeight: 700,
-              color: accent,
-              letterSpacing: "0.07em",
-              textTransform: "uppercase",
-              flexShrink: 0,
+              fontSize: 13,
+              color: "var(--text-tertiary)",
+              margin: "3px 0 0",
             }}
           >
-            {codename}
-          </span>
+            {env}
+          </p>
         )}
       </div>
-
-      {/* Versão */}
-      <p
-        style={{
-          marginTop: 4,
-          fontFamily: "var(--font-mono)",
-          fontSize: 15,
-          fontWeight: 600,
-          color: "var(--text-secondary)",
-          letterSpacing: "-0.02em",
-        }}
-      >
-        {version}
-      </p>
-
-      {/* Ambiente */}
-      {env !== undefined && (
-        <p
-          style={{
-            marginTop: 3,
-            fontSize: 13,
-            color: "var(--text-tertiary)",
-          }}
-        >
-          {env}
-        </p>
-      )}
     </div>
   );
 }
