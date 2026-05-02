@@ -10,6 +10,7 @@ import {
   NotificationBell,
   type NotificationItem,
 } from "../components/NotificationBell";
+import { NotificationCenter } from "../components/NotificationCenter";
 import { useWindowsStore } from "../stores/windows";
 import { APP_REGISTRY, getApp } from "../lib/app-registry";
 import { CopilotDrawer } from "../apps/copilot/index";
@@ -40,32 +41,113 @@ function DesktopPage() {
   const [outboxCount, setOutboxCount] = useState<number | null>(null);
   const [showComercioDash, setShowComercioDash] = useState(false);
   const [copilotOpen, setCopilotOpen] = useState(false);
+  const [notifCenterOpen, setNotifCenterOpen] = useState(false);
 
   const dashboardsFlag = useFeatureFlag("feature.experimental.dashboards");
   const { setFlag } = useFeatureFlagsContext();
 
   const [notifications, setNotifications] = useState<NotificationItem[]>([
     {
-      id: "demo-1",
+      id: "notif-1",
       type: "success",
       title: "Sprint 5 concluído",
       body: "LiteLLM, Langfuse, Unleash, OTel e notificações estão operacionais.",
       read_at: null,
       created_at: new Date(),
+      app: "Sistema",
+      context: "sistema",
     },
     {
-      id: "demo-2",
+      id: "notif-2",
       type: "info",
       title: "Feature flags ativas",
       body: "Unleash está configurado e pronto para segmentação por tenant.",
       read_at: null,
-      created_at: new Date(Date.now() - 60_000),
+      created_at: new Date(Date.now() - 3 * 60_000),
+      app: "Sistema",
+      context: "sistema",
+    },
+    {
+      id: "notif-3",
+      type: "info",
+      title: "Nova proposta do Copilot",
+      body: "Criar pasta 'Contratos Q2' no Drive — aguardando sua aprovação.",
+      read_at: new Date(Date.now() - 30 * 60_000),
+      created_at: new Date(Date.now() - 45 * 60_000),
+      app: "Copilot",
+      context: "sistema",
+    },
+    {
+      id: "notif-4",
+      type: "warning",
+      title: "Limite de API próximo",
+      body: "80% do limite mensal de chamadas de API atingido. Considere fazer upgrade do plano.",
+      read_at: null,
+      created_at: new Date(Date.now() - 2 * 3600_000),
+      app: "Sistema",
+      context: "sistema",
+    },
+    {
+      id: "notif-5",
+      type: "success",
+      title: "Venda concluída",
+      body: "Pedido #4521 de R$ 1.280,00 confirmado e pagamento aprovado.",
+      read_at: null,
+      created_at: new Date(Date.now() - 26 * 3600_000),
+      app: "Comércio",
+      context: "comercio",
+    },
+    {
+      id: "notif-6",
+      type: "error",
+      title: "Falha na integração Shopify",
+      body: "Erro ao sincronizar estoque: timeout na API após 3 tentativas. Verifique as credenciais.",
+      read_at: new Date(Date.now() - 20 * 3600_000),
+      created_at: new Date(Date.now() - 27 * 3600_000),
+      app: "Integrações",
+      context: "comercio",
+    },
+    {
+      id: "notif-7",
+      type: "info",
+      title: "Novo membro adicionado",
+      body: "Maria Silva foi adicionada ao workspace com perfil de Colaborador.",
+      read_at: null,
+      created_at: new Date(Date.now() - 3 * 86400_000),
+      app: "Pessoas",
+      context: "sistema",
+    },
+    {
+      id: "notif-8",
+      type: "warning",
+      title: "Certificado SSL expirando",
+      body: "O certificado de idp.aethereos.com expira em 14 dias. Renove antes do vencimento.",
+      read_at: new Date(Date.now() - 2 * 86400_000),
+      created_at: new Date(Date.now() - 4 * 86400_000),
+      app: "Sistema",
+      context: "sistema",
+    },
+    {
+      id: "notif-9",
+      type: "success",
+      title: "Relatório financeiro gerado",
+      body: "Fechamento de abril exportado com sucesso em PDF e XLSX.",
+      read_at: null,
+      created_at: new Date(Date.now() - 5 * 86400_000),
+      app: "Financeiro",
+      context: "financeiro",
     },
   ]);
 
   const handleMarkRead = useCallback((ids: string[]) => {
     setNotifications((prev) =>
       prev.map((n) => (ids.includes(n.id) ? { ...n, read_at: new Date() } : n)),
+    );
+  }, []);
+
+  const handleMarkAllRead = useCallback(() => {
+    setNotifications((prev) =>
+      prev.map((n) => ({ ...n, read_at: n.read_at ?? new Date() })),
     );
   }, []);
 
@@ -141,6 +223,7 @@ function DesktopPage() {
             <NotificationBell
               notifications={notifications}
               onMarkRead={handleMarkRead}
+              onExpand={() => setNotifCenterOpen(true)}
             />
             <button
               type="button"
@@ -281,6 +364,15 @@ function DesktopPage() {
           </div>
         )}
       </main>
+
+      {/* Central de Notificações — portal sobre tudo */}
+      <NotificationCenter
+        open={notifCenterOpen}
+        notifications={notifications}
+        onClose={() => setNotifCenterOpen(false)}
+        onMarkRead={handleMarkRead}
+        onMarkAllRead={handleMarkAllRead}
+      />
 
       {/* AI Copilot Drawer — global, não está no Dock */}
       {drivers !== null && (
