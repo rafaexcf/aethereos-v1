@@ -42,6 +42,7 @@ import {
   Moon,
   ChevronDown,
   Lock,
+  Minus,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import type { LucideProps } from "lucide-react";
@@ -3131,21 +3132,26 @@ function SortableDockRow({
           width: 28,
           height: 28,
           borderRadius: 8,
-          background: "rgba(239,68,68,0.10)",
-          border: "1px solid rgba(239,68,68,0.18)",
+          background: "rgba(255,255,255,0.06)",
+          border: "1px solid rgba(255,255,255,0.10)",
           cursor: "pointer",
-          color: "#f87171",
+          color: "var(--text-tertiary)",
           padding: 0,
-          transition: "background 120ms ease",
+          transition:
+            "background 120ms ease, border-color 120ms ease, color 120ms ease",
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = "rgba(239,68,68,0.20)";
+          e.currentTarget.style.background = "rgba(239,68,68,0.14)";
+          e.currentTarget.style.borderColor = "rgba(239,68,68,0.28)";
+          e.currentTarget.style.color = "#f87171";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = "rgba(239,68,68,0.10)";
+          e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+          e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)";
+          e.currentTarget.style.color = "var(--text-tertiary)";
         }}
       >
-        <Trash2 size={13} strokeWidth={1.8} />
+        <Minus size={13} strokeWidth={2} />
       </button>
     </div>
   );
@@ -3232,14 +3238,33 @@ function TabDock() {
 
       {available.length > 0 && (
         <div>
-          <SectionLabel>Apps disponíveis</SectionLabel>
+          <SectionLabel>Apps fora da dock ({available.length})</SectionLabel>
           <SettingGroup>
             {available.map((app, idx) => (
-              <SettingRow
+              <div
                 key={app.id}
-                label={app.name}
-                last={idx === available.length - 1}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "8px 16px",
+                  borderBottom:
+                    idx === available.length - 1
+                      ? "none"
+                      : "1px solid rgba(255,255,255,0.05)",
+                }}
               >
+                <DockAppIcon iconName={app.icon} color={app.color} />
+                <span
+                  style={{
+                    flex: 1,
+                    fontSize: 13,
+                    fontWeight: 500,
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  {app.name}
+                </span>
                 <button
                   type="button"
                   onClick={() => addApp(app.id)}
@@ -3247,28 +3272,33 @@ function TabDock() {
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: 6,
-                    background: "rgba(99,102,241,0.16)",
-                    border: "1px solid rgba(99,102,241,0.30)",
+                    justifyContent: "center",
+                    width: 28,
+                    height: 28,
                     borderRadius: 8,
-                    padding: "6px 12px",
-                    fontSize: 12,
-                    fontWeight: 500,
-                    color: "#a5b4fc",
+                    background: "rgba(255,255,255,0.06)",
+                    border: "1px solid rgba(255,255,255,0.10)",
                     cursor: "pointer",
-                    transition: "background 120ms ease",
+                    color: "var(--text-tertiary)",
+                    padding: 0,
+                    transition:
+                      "background 120ms ease, border-color 120ms ease, color 120ms ease",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "rgba(99,102,241,0.24)";
+                    e.currentTarget.style.background = "rgba(99,102,241,0.14)";
+                    e.currentTarget.style.borderColor = "rgba(99,102,241,0.28)";
+                    e.currentTarget.style.color = "#a5b4fc";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "rgba(99,102,241,0.16)";
+                    e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+                    e.currentTarget.style.borderColor =
+                      "rgba(255,255,255,0.10)";
+                    e.currentTarget.style.color = "var(--text-tertiary)";
                   }}
                 >
-                  <Plus size={12} strokeWidth={2} />
-                  Adicionar
+                  <Plus size={13} strokeWidth={2} />
                 </button>
-              </SettingRow>
+              </div>
             ))}
           </SettingGroup>
         </div>
