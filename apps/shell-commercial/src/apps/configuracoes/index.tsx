@@ -5000,8 +5000,8 @@ function TabSobre() {
                 )
               }
             >
-              <ExternalLink size={11} style={{ marginRight: 4 }} />
               Abrir
+              <ExternalLink size={11} style={{ marginLeft: 4 }} />
             </InlineButton>
           </SettingRow>
         </SettingGroup>
