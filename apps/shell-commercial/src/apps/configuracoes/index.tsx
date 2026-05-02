@@ -792,6 +792,9 @@ function InlineButton({
       type="button"
       onClick={onClick}
       style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 5,
         background: danger ? "rgba(239,68,68,0.12)" : "rgba(255,255,255,0.06)",
         border: danger
           ? "1px solid rgba(239,68,68,0.20)"
@@ -4479,7 +4482,7 @@ function TabPlanos() {
                 <div>
                   <p
                     style={{
-                      fontSize: 16,
+                      fontSize: 13,
                       fontWeight: 700,
                       color: isCurrent ? plan.color : "var(--text-secondary)",
                       letterSpacing: "0.06em",
@@ -4997,7 +5000,7 @@ function TabSobre() {
               }
             >
               Abrir
-              <ExternalLink size={11} style={{ marginLeft: 4 }} />
+              <ExternalLink size={11} />
             </InlineButton>
           </SettingRow>
         </SettingGroup>
