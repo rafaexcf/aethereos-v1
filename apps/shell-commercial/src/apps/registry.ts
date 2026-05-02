@@ -107,10 +107,10 @@ export const APP_REGISTRY: OSApp[] = [
   },
   {
     id: "ae-ai",
-    name: "AE AI",
+    name: "Aether AI",
     icon: "Bot",
     color: "#8b5cf6",
-    component: makePlaceholder("AE AI"),
+    component: makePlaceholder("Aether AI"),
     showInDock: true,
     closeable: false,
     hasInternalNav: false,

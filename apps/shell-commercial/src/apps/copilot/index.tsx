@@ -13,6 +13,8 @@
  *        kernel.copilot_conversations + emissão SCP (agent.copilot.*)
  */
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ShineBorder } from "../../components/ui/shine-border";
 import { instrumentedChat } from "@aethereos/kernel";
 import { isInvariantOperation } from "@aethereos/kernel";
 import { COPILOT_INTENT_SCHEMAS } from "@aethereos/scp-registry";
@@ -379,7 +381,7 @@ export function CopilotDrawer({
   const [loading, setLoading] = useState(false);
   const [isDegraded, setIsDegraded] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const conversationId = useRef<string | null>(null);
   const agentId = useRef<string | null>(null);
@@ -864,183 +866,451 @@ export function CopilotDrawer({
 
   const pendingProposals = proposals.filter((p) => p.status === "pending");
 
-  if (!open) return null;
-
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-40 bg-black/20"
-        onClick={onClose}
-        aria-hidden
-      />
-
-      {/* Drawer */}
-      <div className="fixed right-0 top-0 z-50 flex h-screen w-[420px] flex-col border-l border-zinc-700 bg-zinc-900 shadow-2xl">
-        {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-zinc-800 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">🤖</span>
-            <span className="text-sm font-semibold text-zinc-100">
-              AI Copilot
-            </span>
-            {isDegraded && (
-              <span className="rounded-full bg-yellow-900/40 px-2 py-0.5 text-xs text-yellow-400">
-                modo degenerado
-              </span>
-            )}
-            {pendingProposals.length > 0 && (
-              <span className="rounded-full bg-violet-600/40 px-2 py-0.5 text-xs text-violet-300">
-                {pendingProposals.length} aguardando
-              </span>
-            )}
-          </div>
-          <button
-            type="button"
+    <AnimatePresence>
+      {open && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            key="ai-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[60]"
+            style={{
+              background: "rgba(0,0,0,0.72)",
+              backdropFilter: "blur(4px)",
+              WebkitBackdropFilter: "blur(4px)",
+            }}
             onClick={onClose}
-            className="text-zinc-500 hover:text-zinc-300"
-            aria-label="Fechar Copilot"
+            aria-hidden
+          />
+
+          {/* Modal centralizado */}
+          <motion.div
+            key="ai-modal"
+            initial={{ opacity: 0, scale: 0.92, y: 40 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.94, y: 20 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed z-[61] flex flex-col"
+            style={{
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: "min(680px, 94vw)",
+              height: "min(600px, 82vh)",
+              borderRadius: 20,
+              background: "rgba(8,10,18,0.96)",
+              boxShadow:
+                "0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.06)",
+              overflow: "hidden",
+              position: "relative",
+            }}
           >
-            ✕
-          </button>
-        </div>
-
-        {/* P15 budget badge */}
-        <div className="shrink-0 border-b border-zinc-800/50 bg-zinc-950/50 px-4 py-1.5">
-          <p className="text-xs text-zinc-600">
-            Budget: 2 000 in / 1 000 out · actor: agent · autonomy: 0 (shadow) ·{" "}
-            <span className="font-mono text-zinc-700">
-              {(conversationId.current ?? "carregando").slice(0, 8)}
-            </span>
-          </p>
-        </div>
-
-        {/* Mensagens + proposals */}
-        <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">
-          {messages.length === 0 && (
-            <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
-              <span className="text-4xl">🤖</span>
-              <p className="text-sm font-medium text-zinc-300">
-                Olá! Sou o Copilot do Aethereos.
-              </p>
-              <p className="text-xs text-zinc-500 max-w-xs">
-                Posso ajudar com Drive, Pessoas, Chat e Configurações. Ações
-                requerem sua aprovação via Shadow Mode.
-              </p>
-              <div className="flex flex-wrap justify-center gap-2 pt-2">
-                {[
-                  "Criar uma pasta no Drive",
-                  "Adicionar pessoa",
-                  "Criar canal de suporte",
-                  "Enviar notificação para a equipe",
-                ].map((hint) => (
-                  <button
-                    key={hint}
-                    type="button"
-                    onClick={() => setDraft(hint)}
-                    className="rounded-full border border-zinc-700 px-3 py-1 text-xs text-zinc-400 hover:border-violet-500 hover:text-violet-300"
-                  >
-                    {hint}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {messages.map((msg) => {
-            const relatedProposal =
-              msg.proposalId !== undefined
-                ? proposals.find((p) => p.id === msg.proposalId)
-                : undefined;
-
-            return (
-              <div
-                key={msg.id}
-                className={[
-                  "flex flex-col gap-2",
-                  msg.role === "user" ? "items-end" : "items-start",
-                ].join(" ")}
-              >
-                <div
-                  className={[
-                    "max-w-[88%] rounded-xl px-3 py-2 text-sm",
-                    msg.role === "user"
-                      ? "bg-violet-600 text-white"
-                      : msg.isDegraded
-                        ? "border border-yellow-800/40 bg-zinc-800 text-yellow-300"
-                        : "bg-zinc-800 text-zinc-100",
-                  ].join(" ")}
-                >
-                  {msg.content}
-                </div>
-                {msg.model !== undefined && msg.model !== "degraded" && (
-                  <span className="text-xs text-zinc-700 font-mono">
-                    {msg.model}
-                  </span>
-                )}
-                {relatedProposal !== undefined && (
-                  <div className="w-full max-w-[88%]">
-                    <ActionApprovalPanel
-                      proposal={relatedProposal}
-                      onApprove={handleApprove}
-                      onReject={handleReject}
-                    />
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {loading && (
-            <div className="flex items-start">
-              <div className="flex gap-1 rounded-xl bg-zinc-800 px-3 py-2">
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500 [animation-delay:0ms]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500 [animation-delay:150ms]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-zinc-500 [animation-delay:300ms]" />
-              </div>
-            </div>
-          )}
-
-          <div ref={bottomRef} />
-        </div>
-
-        {/* Input */}
-        <div className="shrink-0 border-t border-zinc-800 bg-zinc-900 px-4 py-3">
-          <div className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 focus-within:border-violet-500">
-            <input
-              ref={inputRef}
-              type="text"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  void handleSend();
-                }
-              }}
-              placeholder={
-                historyLoaded
-                  ? "Pergunte ou peça uma ação ao Copilot…"
-                  : "Carregando histórico…"
-              }
-              disabled={loading || !historyLoaded}
-              className="flex-1 bg-transparent text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none"
+            {/* ShineBorder — efeito de borda animado */}
+            <ShineBorder
+              borderWidth={1.5}
+              duration={10}
+              shineColor={["#8b5cf6", "#a78bfa", "#c4b5fd", "#7c3aed"]}
             />
-            <button
-              type="button"
-              onClick={() => void handleSend()}
-              disabled={draft.trim().length === 0 || loading || !historyLoaded}
-              className="shrink-0 rounded-md bg-violet-600 px-3 py-1 text-xs font-medium text-white hover:bg-violet-500 disabled:opacity-40"
+
+            {/* Header */}
+            <div
+              className="flex shrink-0 items-center justify-between px-5 py-4"
+              style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
             >
-              Enviar
-            </button>
-          </div>
-          <p className="mt-1 text-xs text-zinc-700">
-            Enter para enviar · Cmd+K para fechar · ações exigem aprovação
-            humana
-          </p>
-        </div>
-      </div>
-    </>
+              <div className="flex items-center gap-3">
+                <div
+                  style={{
+                    width: 30,
+                    height: 30,
+                    borderRadius: 8,
+                    background: "rgba(139,92,246,0.20)",
+                    border: "1px solid rgba(139,92,246,0.35)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: 15,
+                  }}
+                >
+                  ✦
+                </div>
+                <div>
+                  <span
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: "rgba(255,255,255,0.95)",
+                      letterSpacing: "-0.01em",
+                    }}
+                  >
+                    Aether AI
+                  </span>
+                  {isDegraded && (
+                    <span
+                      style={{
+                        marginLeft: 8,
+                        padding: "1px 7px",
+                        borderRadius: 999,
+                        background: "rgba(234,179,8,0.15)",
+                        border: "1px solid rgba(234,179,8,0.3)",
+                        fontSize: 10,
+                        color: "#fbbf24",
+                        fontWeight: 600,
+                      }}
+                    >
+                      modo degenerado
+                    </span>
+                  )}
+                  {pendingProposals.length > 0 && (
+                    <span
+                      style={{
+                        marginLeft: 6,
+                        padding: "1px 7px",
+                        borderRadius: 999,
+                        background: "rgba(139,92,246,0.18)",
+                        border: "1px solid rgba(139,92,246,0.35)",
+                        fontSize: 10,
+                        color: "#c4b5fd",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {pendingProposals.length} aguardando
+                    </span>
+                  )}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 8,
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  color: "rgba(255,255,255,0.45)",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 14,
+                  transition: "background 120ms, color 120ms",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(255,255,255,0.10)";
+                  e.currentTarget.style.color = "rgba(255,255,255,0.8)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+                  e.currentTarget.style.color = "rgba(255,255,255,0.45)";
+                }}
+                aria-label="Fechar Aether AI"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Mensagens */}
+            <div
+              className="flex flex-1 flex-col gap-3 overflow-y-auto px-5 py-4"
+              style={{ minHeight: 0 }}
+            >
+              {messages.length === 0 && (
+                <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+                  <div
+                    style={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: 14,
+                      background: "rgba(139,92,246,0.15)",
+                      border: "1px solid rgba(139,92,246,0.3)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 24,
+                    }}
+                  >
+                    ✦
+                  </div>
+                  <div>
+                    <p
+                      style={{
+                        fontSize: 15,
+                        fontWeight: 600,
+                        color: "rgba(255,255,255,0.9)",
+                        marginBottom: 6,
+                      }}
+                    >
+                      Olá! Sou o Aether AI.
+                    </p>
+                    <p
+                      style={{
+                        fontSize: 13,
+                        color: "rgba(255,255,255,0.4)",
+                        maxWidth: 340,
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      Posso ajudar com Drive, Pessoas, Chat e Configurações.
+                      Ações requerem sua aprovação.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-2 pt-1">
+                    {[
+                      "Criar uma pasta no Drive",
+                      "Adicionar pessoa",
+                      "Criar canal de suporte",
+                      "Enviar notificação para a equipe",
+                    ].map((hint) => (
+                      <button
+                        key={hint}
+                        type="button"
+                        onClick={() => setDraft(hint)}
+                        style={{
+                          borderRadius: 999,
+                          border: "1px solid rgba(255,255,255,0.10)",
+                          padding: "5px 12px",
+                          fontSize: 12,
+                          color: "rgba(255,255,255,0.45)",
+                          cursor: "pointer",
+                          background: "transparent",
+                          transition: "border-color 120ms, color 120ms",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor =
+                            "rgba(139,92,246,0.6)";
+                          e.currentTarget.style.color = "#c4b5fd";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor =
+                            "rgba(255,255,255,0.10)";
+                          e.currentTarget.style.color =
+                            "rgba(255,255,255,0.45)";
+                        }}
+                      >
+                        {hint}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {messages.map((msg) => {
+                const relatedProposal =
+                  msg.proposalId !== undefined
+                    ? proposals.find((p) => p.id === msg.proposalId)
+                    : undefined;
+
+                return (
+                  <div
+                    key={msg.id}
+                    className={[
+                      "flex flex-col gap-2",
+                      msg.role === "user" ? "items-end" : "items-start",
+                    ].join(" ")}
+                  >
+                    <div
+                      style={{
+                        maxWidth: "88%",
+                        borderRadius: 14,
+                        padding: "10px 14px",
+                        fontSize: 13,
+                        lineHeight: 1.55,
+                        ...(msg.role === "user"
+                          ? {
+                              background: "rgba(139,92,246,0.85)",
+                              color: "#fff",
+                            }
+                          : msg.isDegraded
+                            ? {
+                                background: "rgba(255,255,255,0.04)",
+                                border: "1px solid rgba(234,179,8,0.25)",
+                                color: "#fde68a",
+                              }
+                            : {
+                                background: "rgba(255,255,255,0.05)",
+                                border: "1px solid rgba(255,255,255,0.07)",
+                                color: "rgba(255,255,255,0.88)",
+                              }),
+                      }}
+                    >
+                      {msg.content}
+                    </div>
+                    {msg.model !== undefined && msg.model !== "degraded" && (
+                      <span
+                        style={{
+                          fontSize: 10,
+                          color: "rgba(255,255,255,0.2)",
+                          fontFamily: "var(--font-mono)",
+                        }}
+                      >
+                        {msg.model}
+                      </span>
+                    )}
+                    {relatedProposal !== undefined && (
+                      <div style={{ width: "100%", maxWidth: "88%" }}>
+                        <ActionApprovalPanel
+                          proposal={relatedProposal}
+                          onApprove={handleApprove}
+                          onReject={handleReject}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {loading && (
+                <div className="flex items-start">
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 5,
+                      borderRadius: 14,
+                      padding: "10px 14px",
+                      background: "rgba(255,255,255,0.05)",
+                      border: "1px solid rgba(255,255,255,0.07)",
+                    }}
+                  >
+                    {[0, 150, 300].map((delay) => (
+                      <span
+                        key={delay}
+                        className="animate-bounce rounded-full"
+                        style={{
+                          width: 6,
+                          height: 6,
+                          background: "rgba(139,92,246,0.7)",
+                          animationDelay: `${delay}ms`,
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div ref={bottomRef} />
+            </div>
+
+            {/* Input — ChatGPT style */}
+            <div
+              className="shrink-0 px-4 pb-4 pt-3"
+              style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+            >
+              <div
+                style={{
+                  position: "relative",
+                  borderRadius: 14,
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.09)",
+                  transition: "border-color 150ms",
+                }}
+                onFocusCapture={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor =
+                    "rgba(139,92,246,0.5)";
+                }}
+                onBlurCapture={(e) => {
+                  (e.currentTarget as HTMLElement).style.borderColor =
+                    "rgba(255,255,255,0.09)";
+                }}
+              >
+                <textarea
+                  ref={inputRef}
+                  rows={1}
+                  value={draft}
+                  onChange={(e) => {
+                    setDraft(e.target.value);
+                    e.target.style.height = "auto";
+                    e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      void handleSend();
+                    }
+                  }}
+                  placeholder={
+                    historyLoaded
+                      ? "Pergunte ou peça uma ação ao Aether AI…"
+                      : "Carregando histórico…"
+                  }
+                  disabled={loading || !historyLoaded}
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    resize: "none",
+                    background: "transparent",
+                    border: "none",
+                    outline: "none",
+                    padding: "13px 52px 13px 16px",
+                    fontSize: 13,
+                    color: "rgba(255,255,255,0.9)",
+                    lineHeight: 1.5,
+                    maxHeight: 120,
+                    overflowY: "auto",
+                    fontFamily: "inherit",
+                  }}
+                  className="placeholder-zinc-600"
+                />
+                <button
+                  type="button"
+                  onClick={() => void handleSend()}
+                  disabled={
+                    draft.trim().length === 0 || loading || !historyLoaded
+                  }
+                  style={{
+                    position: "absolute",
+                    right: 10,
+                    bottom: 10,
+                    width: 32,
+                    height: 32,
+                    borderRadius: 9,
+                    background:
+                      draft.trim().length > 0
+                        ? "rgba(139,92,246,0.9)"
+                        : "rgba(255,255,255,0.07)",
+                    border: "none",
+                    cursor: draft.trim().length > 0 ? "pointer" : "default",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "background 150ms",
+                    opacity: loading || !historyLoaded ? 0.4 : 1,
+                  }}
+                  aria-label="Enviar"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="12" y1="19" x2="12" y2="5" />
+                    <polyline points="5 12 12 5 19 12" />
+                  </svg>
+                </button>
+              </div>
+              <p
+                style={{
+                  marginTop: 6,
+                  fontSize: 10,
+                  color: "rgba(255,255,255,0.18)",
+                  textAlign: "center",
+                }}
+              >
+                Enter para enviar · Shift+Enter nova linha · ações exigem
+                aprovação humana
+              </p>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 }
