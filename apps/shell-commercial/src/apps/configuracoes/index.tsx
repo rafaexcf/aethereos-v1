@@ -4748,56 +4748,61 @@ function VersionCardInner({
   return (
     <div
       style={{
-        position: "relative",
         display: "flex",
         flexDirection: "column",
         flex: 1,
       }}
     >
-      {/* Codinome badge — canto superior direito */}
-      {codename !== undefined && (
-        <span
-          style={{
-            position: "absolute",
-            top: 0,
-            right: 0,
-            padding: "3px 10px",
-            borderRadius: 999,
-            background: `${accent}22`,
-            border: `1px solid ${accent}44`,
-            fontSize: 11,
-            fontWeight: 700,
-            color: accent,
-            letterSpacing: "0.07em",
-            textTransform: "uppercase",
-          }}
-        >
-          {codename}
-        </span>
-      )}
-
       <div style={{ flex: 1 }} />
 
-      {/* Nome */}
-      <p
+      {/* Nome + badge na mesma linha */}
+      <div
         style={{
-          fontSize: 36,
-          fontWeight: 700,
-          fontFamily: "var(--font-display)",
-          color: "var(--text-primary)",
-          letterSpacing: "-0.03em",
-          lineHeight: 1.1,
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          flexWrap: "wrap",
         }}
       >
-        {name}
-      </p>
+        <p
+          style={{
+            fontSize: 18,
+            fontWeight: 700,
+            fontFamily: "var(--font-display)",
+            color: "var(--text-primary)",
+            letterSpacing: "-0.03em",
+            lineHeight: 1.1,
+            margin: 0,
+          }}
+        >
+          {name}
+        </p>
+        {codename !== undefined && (
+          <span
+            style={{
+              padding: "2px 8px",
+              borderRadius: 999,
+              background: `${accent}22`,
+              border: `1px solid ${accent}44`,
+              fontSize: 10,
+              fontWeight: 700,
+              color: accent,
+              letterSpacing: "0.07em",
+              textTransform: "uppercase",
+              flexShrink: 0,
+            }}
+          >
+            {codename}
+          </span>
+        )}
+      </div>
 
       {/* Versão */}
       <p
         style={{
-          marginTop: 6,
+          marginTop: 4,
           fontFamily: "var(--font-mono)",
-          fontSize: 30,
+          fontSize: 15,
           fontWeight: 600,
           color: "var(--text-secondary)",
           letterSpacing: "-0.02em",
@@ -4810,8 +4815,8 @@ function VersionCardInner({
       {env !== undefined && (
         <p
           style={{
-            marginTop: 4,
-            fontSize: 27,
+            marginTop: 3,
+            fontSize: 13,
             color: "var(--text-tertiary)",
           }}
         >
@@ -4829,7 +4834,7 @@ function VersionCard(props: VersionCardData) {
         ...TILE_BASE,
         display: "flex",
         flexDirection: "column",
-        minHeight: 240,
+        minHeight: 160,
       }}
     >
       <VersionCardInner {...props} />
