@@ -40,8 +40,6 @@ html.dark {
   --topbar-bg: rgba(15, 21, 27, 0.65);
 
   /* Wallpapers dark */
-  --wallpaper-design-1: #050510 url("/wallpapers/design-1.png") center/cover no-repeat;
-  --wallpaper-design-2: #050510 url("/wallpapers/design-2.png") center/cover no-repeat;
   --wallpaper-design-3: #050510 url("/wallpapers/design-3.png") center/cover no-repeat;
 
   /* HSL tokens — shadcn/Tailwind v4 (≈ slate-tinted dark) */
@@ -119,8 +117,6 @@ html.light {
   --topbar-bg: rgba(250, 250, 249, 0.80);
 
   /* Wallpapers light */
-  --wallpaper-design-1: #050510 url("/wallpapers/design-1.png") center/cover no-repeat;
-  --wallpaper-design-2: #050510 url("/wallpapers/design-2.png") center/cover no-repeat;
   --wallpaper-design-3: #050510 url("/wallpapers/design-3.png") center/cover no-repeat;
 
   /* HSL tokens — shadcn/Tailwind v4 */
