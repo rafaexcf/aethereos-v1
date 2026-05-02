@@ -3878,39 +3878,117 @@ function TabAparencia() {
 
 const INTEGRATIONS = [
   {
+    id: "stripe",
     name: "Stripe",
     description: "Gateway de pagamentos",
-    status: "ativo" as const,
+    logo: "/integrations/stripe.svg",
+    logoBg: "#635BFF",
     group: "Financeiro",
+    comingSoon: false,
+    defaultEnabled: true,
   },
   {
+    id: "hubspot",
+    name: "HubSpot",
+    description: "CRM e automação de marketing",
+    logo: "/integrations/hubspot.svg",
+    logoBg: "#FF7A59",
+    group: "Financeiro",
+    comingSoon: false,
+    defaultEnabled: false,
+  },
+  {
+    id: "slack",
     name: "Slack",
-    description: "Notificações em canais Slack",
-    status: "disponivel" as const,
+    description: "Notificações em canais",
+    logo: "/integrations/slack.svg",
+    logoBg: "#4A154B",
     group: "Comunicação",
+    comingSoon: false,
+    defaultEnabled: false,
   },
   {
-    name: "Email (SMTP)",
-    description: "Envio de e-mails transacionais",
-    status: "disponivel" as const,
-    group: "Comunicação",
-  },
-  {
-    name: "WhatsApp Business",
+    id: "whatsapp",
+    name: "WhatsApp",
     description: "Atendimento via WhatsApp",
-    status: "em-breve" as const,
+    logo: "/integrations/whatsapp.svg",
+    logoBg: "#25D366",
     group: "Comunicação",
+    comingSoon: false,
+    defaultEnabled: false,
   },
   {
-    name: "ERP (SAP/TOTVS)",
-    description: "Sincronização com sistema ERP",
-    status: "em-breve" as const,
-    group: "Infraestrutura",
+    id: "mailchimp",
+    name: "Mailchimp",
+    description: "Email marketing e automações",
+    logo: "/integrations/mailchimp.svg",
+    logoBg: "#FFE01B",
+    group: "Comunicação",
+    comingSoon: false,
+    defaultEnabled: false,
   },
-];
+  {
+    id: "zapier",
+    name: "Zapier",
+    description: "Automação entre apps",
+    logo: "/integrations/zapier.svg",
+    logoBg: "#FF4A00",
+    group: "Automação",
+    comingSoon: false,
+    defaultEnabled: false,
+  },
+  {
+    id: "notion",
+    name: "Notion",
+    description: "Wikis e bases de conhecimento",
+    logo: "/integrations/notion.svg",
+    logoBg: "#ffffff",
+    group: "Automação",
+    comingSoon: false,
+    defaultEnabled: false,
+  },
+  {
+    id: "github",
+    name: "GitHub",
+    description: "Repositórios e pull requests",
+    logo: "/integrations/github.svg",
+    logoBg: "#181717",
+    group: "Automação",
+    comingSoon: false,
+    defaultEnabled: false,
+  },
+  {
+    id: "google-workspace",
+    name: "Google",
+    description: "Drive, Gmail e Calendar",
+    logo: "/integrations/google-workspace.svg",
+    logoBg: "#ffffff",
+    group: "Produtividade",
+    comingSoon: true,
+    defaultEnabled: false,
+  },
+  {
+    id: "totvs",
+    name: "TOTVS",
+    description: "Sincronização com ERP",
+    logo: "/integrations/totvs.svg",
+    logoBg: "#E30613",
+    group: "Produtividade",
+    comingSoon: true,
+    defaultEnabled: false,
+  },
+] as const;
 
 function TabIntegracoes() {
+  const [enabled, setEnabled] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(INTEGRATIONS.map((i) => [i.id, i.defaultEnabled])),
+  );
+
   const groups = Array.from(new Set(INTEGRATIONS.map((i) => i.group)));
+
+  function toggle(id: string) {
+    setEnabled((prev) => ({ ...prev, [id]: !prev[id] }));
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -3927,26 +4005,121 @@ function TabIntegracoes() {
         return (
           <div key={group}>
             <SectionLabel>{group}</SectionLabel>
-            <SettingGroup>
-              {items.map((intg, idx) => (
-                <SettingRow
-                  key={intg.name}
-                  label={intg.name}
-                  sublabel={intg.description}
-                  last={idx === items.length - 1}
-                >
-                  {intg.status === "ativo" && (
-                    <Badge variant="success">Ativo</Badge>
-                  )}
-                  {intg.status === "disponivel" && (
-                    <InlineButton onClick={() => {}}>Configurar</InlineButton>
-                  )}
-                  {intg.status === "em-breve" && (
-                    <Badge variant="neutral">Em breve</Badge>
-                  )}
-                </SettingRow>
-              ))}
-            </SettingGroup>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
+                gap: 8,
+              }}
+            >
+              {items.map((intg) => {
+                const isOn = enabled[intg.id] ?? false;
+                const soon = intg.comingSoon;
+                return (
+                  <div
+                    key={intg.id}
+                    style={{
+                      position: "relative",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      padding: "16px 10px 12px",
+                      borderRadius: 12,
+                      background: isOn
+                        ? "rgba(255,255,255,0.06)"
+                        : "rgba(255,255,255,0.03)",
+                      border: isOn
+                        ? "1px solid rgba(255,255,255,0.12)"
+                        : "1px solid rgba(255,255,255,0.07)",
+                      opacity: soon ? 0.5 : 1,
+                      gap: 8,
+                      transition:
+                        "background 150ms ease, border-color 150ms ease",
+                    }}
+                  >
+                    {/* Em breve badge */}
+                    {soon && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 6,
+                          right: 6,
+                          padding: "1px 5px",
+                          borderRadius: 4,
+                          background: "rgba(255,255,255,0.12)",
+                          fontSize: 8,
+                          fontWeight: 600,
+                          color: "var(--text-tertiary)",
+                          letterSpacing: "0.04em",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Em breve
+                      </div>
+                    )}
+
+                    {/* Logo container */}
+                    <div
+                      style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: 10,
+                        background: intg.logoBg,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        overflow: "hidden",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <img
+                        src={intg.logo}
+                        alt={intg.name}
+                        style={{
+                          width: 26,
+                          height: 26,
+                          objectFit: "contain",
+                        }}
+                      />
+                    </div>
+
+                    {/* Name */}
+                    <p
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: "var(--text-primary)",
+                        textAlign: "center",
+                        lineHeight: 1.2,
+                      }}
+                    >
+                      {intg.name}
+                    </p>
+
+                    {/* Description */}
+                    <p
+                      style={{
+                        fontSize: 9,
+                        color: "var(--text-tertiary)",
+                        textAlign: "center",
+                        lineHeight: 1.3,
+                        flex: 1,
+                      }}
+                    >
+                      {intg.description}
+                    </p>
+
+                    {/* Toggle */}
+                    <Toggle
+                      on={isOn}
+                      onToggle={() => {
+                        if (!soon) toggle(intg.id);
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </div>
         );
       })}
