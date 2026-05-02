@@ -154,6 +154,7 @@ function ContentHeader({
   noContainer,
   title,
   subtitle,
+  right,
 }: {
   icon: typeof User;
   iconBg: string;
@@ -163,6 +164,7 @@ function ContentHeader({
   noContainer?: boolean;
   title: string;
   subtitle: string;
+  right?: React.ReactNode;
 }) {
   return (
     <div
@@ -173,6 +175,7 @@ function ContentHeader({
         marginBottom: 28,
         paddingBottom: 24,
         borderBottom: "1px solid rgba(255,255,255,0.06)",
+        justifyContent: "space-between",
       }}
     >
       {noContainer && iconUrl != null ? (
@@ -212,7 +215,7 @@ function ContentHeader({
           )}
         </div>
       )}
-      <div>
+      <div style={{ flex: 1, minWidth: 0 }}>
         <h1
           style={{
             fontSize: 26,
@@ -236,6 +239,9 @@ function ContentHeader({
           {subtitle}
         </p>
       </div>
+      {right !== undefined && right !== null && (
+        <div style={{ flexShrink: 0 }}>{right}</div>
+      )}
     </div>
   );
 }
@@ -4005,6 +4011,73 @@ function UsageRow({
   );
 }
 
+const PLANS = [
+  {
+    id: "gratuito",
+    name: "Gratuito",
+    price: "R$ 0",
+    period: "/mês",
+    color: "#64748b",
+    accentBg: "rgba(100,116,139,0.12)",
+    accentBorder: "rgba(100,116,139,0.28)",
+    features: [
+      "1 usuário",
+      "1 GB armazenamento",
+      "10 mil chamadas API/mês",
+      "Apps básicos",
+    ],
+  },
+  {
+    id: "starter",
+    name: "Starter",
+    price: "R$ 49",
+    period: "/mês",
+    color: "#0ea5e9",
+    accentBg: "rgba(14,165,233,0.10)",
+    accentBorder: "rgba(14,165,233,0.25)",
+    features: [
+      "5 usuários",
+      "10 GB armazenamento",
+      "100 mil chamadas API/mês",
+      "Apps essenciais",
+    ],
+  },
+  {
+    id: "pro",
+    name: "Pro",
+    price: "R$ 149",
+    period: "/mês",
+    color: "#6366f1",
+    accentBg: "rgba(99,102,241,0.12)",
+    accentBorder: "rgba(99,102,241,0.40)",
+    features: [
+      "15 usuários",
+      "25 GB armazenamento",
+      "500 mil chamadas API/mês",
+      "AI Copilot incluso",
+    ],
+    trial: true,
+    trialDays: 30,
+  },
+  {
+    id: "enterprise",
+    name: "Enterprise",
+    price: "Custom",
+    period: "",
+    color: "#10b981",
+    accentBg: "rgba(16,185,129,0.10)",
+    accentBorder: "rgba(16,185,129,0.25)",
+    features: [
+      "Usuários ilimitados",
+      "Storage ilimitado",
+      "API ilimitada",
+      "SLA dedicado",
+    ],
+  },
+] as const;
+
+const CURRENT_PLAN_ID = "pro";
+
 function TabPlanos() {
   // Mock data — TODO: ligar a billing/metrics real (Lago + métricas LiteLLM)
   const usage = {
@@ -4023,32 +4096,207 @@ function TabPlanos() {
         iconColor="#34d399"
         title="Planos"
         subtitle="Plano contratado, consumo do ciclo atual e limites"
+        right={<Badge variant="success">Ativo</Badge>}
       />
 
-      {/* Plano atual (movido do Sistema) */}
+      {/* Cards de plano — grade 2×2 */}
       <div>
-        <SectionLabel>Plano atual</SectionLabel>
-        <SettingGroup>
-          <SettingRow label="Status da conta">
-            <Badge variant="success">Ativo</Badge>
-          </SettingRow>
-          <SettingRow label="Tipo de plano">
-            <Badge variant="warning">Trial</Badge>
-          </SettingRow>
-          <SettingRow
-            label="Expira em"
-            sublabel="Após esse período é necessário escolher um plano"
-          >
-            <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-              30 dias
-            </span>
-          </SettingRow>
-          <SettingRow label="Ciclo de cobrança" last>
-            <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-              Mensal
-            </span>
-          </SettingRow>
-        </SettingGroup>
+        <SectionLabel>Escolha seu plano</SectionLabel>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 10,
+          }}
+        >
+          {PLANS.map((plan) => {
+            const isCurrent = plan.id === CURRENT_PLAN_ID;
+            return (
+              <div
+                key={plan.id}
+                style={{
+                  borderRadius: 14,
+                  padding: 18,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 14,
+                  background: isCurrent
+                    ? plan.accentBg
+                    : "rgba(255,255,255,0.03)",
+                  border: isCurrent
+                    ? `1px solid ${plan.accentBorder}`
+                    : "1px solid rgba(255,255,255,0.07)",
+                  boxShadow: isCurrent
+                    ? `0 0 0 1px ${plan.accentBorder}, 0 4px 20px rgba(0,0,0,0.3)`
+                    : "none",
+                  position: "relative",
+                  minHeight: 220,
+                }}
+              >
+                {/* Badge plano atual */}
+                {isCurrent && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 12,
+                      right: 12,
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      background: plan.color,
+                      fontSize: 10,
+                      fontWeight: 600,
+                      color: "#fff",
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    {(plan as { trial?: boolean }).trial === true
+                      ? "TRIAL"
+                      : "ATUAL"}
+                  </div>
+                )}
+
+                {/* Nome + preço */}
+                <div>
+                  <p
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: isCurrent ? plan.color : "var(--text-secondary)",
+                      letterSpacing: "0.04em",
+                      textTransform: "uppercase",
+                      marginBottom: 6,
+                    }}
+                  >
+                    {plan.name}
+                  </p>
+                  <div
+                    style={{ display: "flex", alignItems: "baseline", gap: 3 }}
+                  >
+                    <span
+                      style={{
+                        fontSize: plan.price === "Custom" ? 20 : 26,
+                        fontWeight: 700,
+                        color: "var(--text-primary)",
+                        fontFamily: "var(--font-display)",
+                        letterSpacing: "-0.02em",
+                      }}
+                    >
+                      {plan.price}
+                    </span>
+                    {plan.period !== "" && (
+                      <span
+                        style={{ fontSize: 12, color: "var(--text-tertiary)" }}
+                      >
+                        {plan.period}
+                      </span>
+                    )}
+                  </div>
+                  {(plan as { trialDays?: number }).trialDays !== undefined && (
+                    <p
+                      style={{
+                        fontSize: 11,
+                        color: "var(--text-tertiary)",
+                        marginTop: 3,
+                      }}
+                    >
+                      Trial expira em{" "}
+                      {(plan as { trialDays?: number }).trialDays} dias
+                    </p>
+                  )}
+                </div>
+
+                {/* Features */}
+                <ul
+                  style={{
+                    listStyle: "none",
+                    padding: 0,
+                    margin: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 6,
+                    flex: 1,
+                  }}
+                >
+                  {plan.features.map((f) => (
+                    <li
+                      key={f}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 7,
+                        fontSize: 12,
+                        color: "var(--text-secondary)",
+                      }}
+                    >
+                      <Check
+                        size={11}
+                        strokeWidth={2.5}
+                        style={{
+                          color: isCurrent
+                            ? plan.color
+                            : "var(--text-tertiary)",
+                          flexShrink: 0,
+                        }}
+                      />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+
+                {/* CTA */}
+                {isCurrent ? (
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: plan.color,
+                      fontWeight: 500,
+                      textAlign: "center",
+                      padding: "7px 0",
+                      borderRadius: 8,
+                      border: `1px solid ${plan.accentBorder}`,
+                      background: "transparent",
+                    }}
+                  >
+                    Plano ativo
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {}}
+                    style={{
+                      padding: "7px 0",
+                      borderRadius: 8,
+                      fontSize: 12,
+                      fontWeight: 500,
+                      cursor: "pointer",
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.10)",
+                      color: "var(--text-secondary)",
+                      transition:
+                        "background 140ms ease, border-color 140ms ease, color 140ms ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = plan.accentBg;
+                      e.currentTarget.style.borderColor = plan.accentBorder;
+                      e.currentTarget.style.color = plan.color;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background =
+                        "rgba(255,255,255,0.06)";
+                      e.currentTarget.style.borderColor =
+                        "rgba(255,255,255,0.10)";
+                      e.currentTarget.style.color = "var(--text-secondary)";
+                    }}
+                  >
+                    {plan.id === "enterprise"
+                      ? "Falar com vendas"
+                      : "Fazer upgrade"}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Consumo */}
@@ -4135,11 +4383,6 @@ function TabPlanos() {
           </SettingRow>
         </SettingGroup>
       </div>
-
-      {/* CTA upgrade */}
-      <SaveRow>
-        <PrimaryButton onClick={() => {}}>Fazer upgrade do plano</PrimaryButton>
-      </SaveRow>
     </div>
   );
 }
