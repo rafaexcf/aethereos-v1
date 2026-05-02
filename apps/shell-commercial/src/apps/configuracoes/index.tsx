@@ -4301,17 +4301,27 @@ function UsageRow({
         <span style={{ fontSize: 13, color: "var(--text-primary)" }}>
           {label}
         </span>
-        <p
+      </div>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-end",
+          gap: 4,
+          flexShrink: 0,
+        }}
+      >
+        <UsageBar used={used} limit={limit} />
+        <span
           style={{
-            fontSize: 11,
+            fontSize: 10,
             color: "var(--text-tertiary)",
-            marginTop: 2,
+            fontFamily: "var(--font-mono)",
           }}
         >
-          {fmt(used)} de {fmt(limit)} {unit}
-        </p>
+          {fmt(used)} / {fmt(limit)} {unit}
+        </span>
       </div>
-      <UsageBar used={used} limit={limit} />
     </div>
   );
 }
@@ -4464,7 +4474,7 @@ function TabPlanos() {
                 <div>
                   <p
                     style={{
-                      fontSize: 11,
+                      fontSize: 13,
                       fontWeight: 700,
                       color: isCurrent ? plan.color : "var(--text-secondary)",
                       letterSpacing: "0.06em",
@@ -4479,7 +4489,7 @@ function TabPlanos() {
                   >
                     <span
                       style={{
-                        fontSize: plan.price === "Custom" ? 17 : 20,
+                        fontSize: plan.price === "Custom" ? 19 : 24,
                         fontWeight: 700,
                         color: "var(--text-primary)",
                         fontFamily: "var(--font-display)",
@@ -4490,7 +4500,7 @@ function TabPlanos() {
                     </span>
                     {plan.period !== "" && (
                       <span
-                        style={{ fontSize: 11, color: "var(--text-tertiary)" }}
+                        style={{ fontSize: 12, color: "var(--text-tertiary)" }}
                       >
                         {plan.period}
                       </span>
@@ -4499,7 +4509,7 @@ function TabPlanos() {
                   {(plan as { trialDays?: number }).trialDays !== undefined && (
                     <p
                       style={{
-                        fontSize: 10,
+                        fontSize: 11,
                         color: "var(--text-tertiary)",
                         marginTop: 2,
                       }}
@@ -4518,7 +4528,7 @@ function TabPlanos() {
                     margin: 0,
                     display: "flex",
                     flexDirection: "column",
-                    gap: 4,
+                    gap: 5,
                     flex: 1,
                   }}
                 >
@@ -4529,13 +4539,13 @@ function TabPlanos() {
                         display: "flex",
                         alignItems: "flex-start",
                         gap: 5,
-                        fontSize: 11,
+                        fontSize: 12,
                         color: "var(--text-secondary)",
                         lineHeight: 1.4,
                       }}
                     >
                       <Check
-                        size={10}
+                        size={11}
                         strokeWidth={2.5}
                         style={{
                           color: isCurrent
@@ -4554,11 +4564,11 @@ function TabPlanos() {
                 {isCurrent ? (
                   <div
                     style={{
-                      fontSize: 11,
+                      fontSize: 12,
                       color: plan.color,
                       fontWeight: 600,
                       textAlign: "center",
-                      padding: "5px 0",
+                      padding: "6px 0",
                       borderRadius: 6,
                       border: `1px solid ${plan.accentBorder}`,
                       background: "transparent",
@@ -4571,9 +4581,9 @@ function TabPlanos() {
                     type="button"
                     onClick={() => {}}
                     style={{
-                      padding: "5px 0",
+                      padding: "6px 0",
                       borderRadius: 6,
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: 500,
                       cursor: "pointer",
                       background: "rgba(255,255,255,0.06)",
