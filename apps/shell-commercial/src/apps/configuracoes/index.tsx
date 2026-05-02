@@ -1703,6 +1703,7 @@ function ChangePasswordDialog({
               show={showNew}
               onToggle={() => setShowNew((s) => !s)}
               placeholder="Digite a nova senha"
+              width="100%"
             />
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -1721,6 +1722,7 @@ function ChangePasswordDialog({
               show={showConfirm}
               onToggle={() => setShowConfirm((s) => !s)}
               placeholder="Repita a nova senha"
+              width="100%"
             />
           </div>
 
@@ -1876,15 +1878,17 @@ function PwdInput({
   show,
   onToggle,
   placeholder,
+  width = 220,
 }: {
   value: string;
   onChange: (v: string) => void;
   show: boolean;
   onToggle: () => void;
   placeholder: string;
+  width?: number | string;
 }) {
   return (
-    <div style={{ position: "relative", width: 220 }}>
+    <div style={{ position: "relative", width }}>
       <input
         type={show ? "text" : "password"}
         value={value}
