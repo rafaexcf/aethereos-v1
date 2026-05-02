@@ -41,6 +41,12 @@ html.dark {
 
   /* Wallpapers dark */
   --wallpaper-design-3: #050510 url("/wallpapers/design-3.png") center/cover no-repeat;
+  --wallpaper-black-hole: #050510 url("/wallpapers/black-hole.png") center/cover no-repeat;
+  --wallpaper-design-2: #050510 url("/wallpapers/design-2.png") center/cover no-repeat;
+  --wallpaper-galaxy: #050510 url("/wallpapers/galaxy.jpg") center/cover no-repeat;
+  --wallpaper-art-1: #050510 url("/wallpapers/art-1.jpg") center/cover no-repeat;
+  --wallpaper-art-2: #050510 url("/wallpapers/art-2.jpg") center/cover no-repeat;
+  --wallpaper-art-3: #050510 url("/wallpapers/art-3.jpg") center/cover no-repeat;
 
   /* HSL tokens — shadcn/Tailwind v4 (≈ slate-tinted dark) */
   --background: 210 24% 8%;
@@ -118,6 +124,12 @@ html.light {
 
   /* Wallpapers light */
   --wallpaper-design-3: #050510 url("/wallpapers/design-3.png") center/cover no-repeat;
+  --wallpaper-black-hole: #050510 url("/wallpapers/black-hole.png") center/cover no-repeat;
+  --wallpaper-design-2: #050510 url("/wallpapers/design-2.png") center/cover no-repeat;
+  --wallpaper-galaxy: #050510 url("/wallpapers/galaxy.jpg") center/cover no-repeat;
+  --wallpaper-art-1: #050510 url("/wallpapers/art-1.jpg") center/cover no-repeat;
+  --wallpaper-art-2: #050510 url("/wallpapers/art-2.jpg") center/cover no-repeat;
+  --wallpaper-art-3: #050510 url("/wallpapers/art-3.jpg") center/cover no-repeat;
 
   /* HSL tokens — shadcn/Tailwind v4 */
   --background: 60 5% 98%;

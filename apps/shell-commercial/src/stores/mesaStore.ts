@@ -2,11 +2,25 @@ import { create } from "zustand";
 import { useSessionStore } from "./session";
 import type { MesaItem } from "../types/os";
 
-export const WALLPAPERS = ["design-3"] as const;
+export const WALLPAPERS = [
+  "design-3",
+  "black-hole",
+  "design-2",
+  "galaxy",
+  "art-1",
+  "art-2",
+  "art-3",
+] as const;
 export type WallpaperId = (typeof WALLPAPERS)[number];
 
 export const WALLPAPER_NAMES: Record<WallpaperId, string> = {
   "design-3": "Marca 3",
+  "black-hole": "Buraco Negro",
+  "design-2": "Marca 2",
+  galaxy: "Galáxia",
+  "art-1": "Arte 1",
+  "art-2": "Arte 2",
+  "art-3": "Arte 3",
 };
 
 export const CUSTOM_WALLPAPER_ID = "custom";
