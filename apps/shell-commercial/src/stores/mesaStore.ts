@@ -19,7 +19,7 @@ export const WALLPAPERS = [
 export type WallpaperId = (typeof WALLPAPERS)[number];
 
 export const WALLPAPER_NAMES: Record<WallpaperId, string> = {
-  default: "Cosmos",
+  default: "Buraco Negro",
   midnight: "Meia-Noite",
   mesh: "Mesh",
   sunset: "Pôr do Sol",

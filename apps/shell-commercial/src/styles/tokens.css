@@ -40,7 +40,7 @@ html.dark {
   --topbar-bg: rgba(15, 21, 27, 0.65);
 
   /* Wallpapers dark */
-  --wallpaper-default: radial-gradient(ellipse at top, #1a1a3e 0%, #0a0a1a 50%, #050510 100%);
+  --wallpaper-default: #050510 url("/wallpapers/default-black-hole.png") center/cover no-repeat;
   --wallpaper-midnight: radial-gradient(circle at 30% 20%, #1a1040 0%, #0a0a18 60%, #050508 100%);
   --wallpaper-mesh: radial-gradient(ellipse at 20% 50%, rgba(29, 78, 216, 0.15) 0%, transparent 50%),
     radial-gradient(ellipse at 80% 50%, rgba(124, 58, 237, 0.15) 0%, transparent 50%),
@@ -131,7 +131,7 @@ html.light {
   --topbar-bg: rgba(250, 250, 249, 0.80);
 
   /* Wallpapers light */
-  --wallpaper-default: radial-gradient(ellipse at top, #f4f4f0 0%, #fafaf9 50%, #ffffff 100%);
+  --wallpaper-default: #050510 url("/wallpapers/default-black-hole.png") center/cover no-repeat;
   --wallpaper-midnight: radial-gradient(circle at 30% 20%, #f0e8ff 0%, #fafaf9 60%, #ffffff 100%);
   --wallpaper-mesh: radial-gradient(ellipse at 20% 50%, rgba(219, 234, 254, 0.5) 0%, transparent 50%),
     radial-gradient(ellipse at 80% 50%, rgba(237, 233, 254, 0.5) 0%, transparent 50%),
