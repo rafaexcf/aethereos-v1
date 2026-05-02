@@ -3877,6 +3877,7 @@ function TabAparencia() {
 // ─── Tab: Integrações ─────────────────────────────────────────────────────────
 
 const INTEGRATIONS = [
+  // Financeiro
   {
     id: "stripe",
     name: "Stripe",
@@ -3897,6 +3898,17 @@ const INTEGRATIONS = [
     comingSoon: false,
     defaultEnabled: false,
   },
+  {
+    id: "shopify",
+    name: "Shopify",
+    description: "E-commerce e vendas online",
+    logo: "/integrations/shopify.svg",
+    logoBg: "#96BF48",
+    group: "Financeiro",
+    comingSoon: true,
+    defaultEnabled: false,
+  },
+  // Comunicação
   {
     id: "slack",
     name: "Slack",
@@ -3922,11 +3934,22 @@ const INTEGRATIONS = [
     name: "Mailchimp",
     description: "Email marketing e automações",
     logo: "/integrations/mailchimp.svg",
-    logoBg: "#FFE01B",
+    logoBg: "#241c15",
     group: "Comunicação",
     comingSoon: false,
     defaultEnabled: false,
   },
+  {
+    id: "discord",
+    name: "Discord",
+    description: "Comunidade e suporte",
+    logo: "/integrations/discord.svg",
+    logoBg: "#5865F2",
+    group: "Comunicação",
+    comingSoon: true,
+    defaultEnabled: false,
+  },
+  // Automação
   {
     id: "zapier",
     name: "Zapier",
@@ -3942,7 +3965,7 @@ const INTEGRATIONS = [
     name: "Notion",
     description: "Wikis e bases de conhecimento",
     logo: "/integrations/notion.svg",
-    logoBg: "#ffffff",
+    logoBg: "#191919",
     group: "Automação",
     comingSoon: false,
     defaultEnabled: false,
@@ -3958,11 +3981,82 @@ const INTEGRATIONS = [
     defaultEnabled: false,
   },
   {
+    id: "linear",
+    name: "Linear",
+    description: "Gestão de issues e sprints",
+    logo: "/integrations/linear.svg",
+    logoBg: "#5E6AD2",
+    group: "Automação",
+    comingSoon: true,
+    defaultEnabled: false,
+  },
+  {
+    id: "clickup",
+    name: "ClickUp",
+    description: "Projetos e tarefas",
+    logo: "/integrations/clickup.svg",
+    logoBg: "#7B68EE",
+    group: "Automação",
+    comingSoon: true,
+    defaultEnabled: false,
+  },
+  // Produtividade
+  {
     id: "google-workspace",
     name: "Google",
     description: "Drive, Gmail e Calendar",
     logo: "/integrations/google-workspace.svg",
-    logoBg: "#ffffff",
+    logoBg: "#202124",
+    group: "Produtividade",
+    comingSoon: true,
+    defaultEnabled: false,
+  },
+  {
+    id: "figma",
+    name: "Figma",
+    description: "Design colaborativo",
+    logo: "/integrations/figma.svg",
+    logoBg: "#F24E1E",
+    group: "Produtividade",
+    comingSoon: true,
+    defaultEnabled: false,
+  },
+  {
+    id: "zoom",
+    name: "Zoom",
+    description: "Videoconferências e reuniões",
+    logo: "/integrations/zoom.svg",
+    logoBg: "#2D8CFF",
+    group: "Produtividade",
+    comingSoon: true,
+    defaultEnabled: false,
+  },
+  {
+    id: "asana",
+    name: "Asana",
+    description: "Gestão de tarefas e equipes",
+    logo: "/integrations/asana.svg",
+    logoBg: "#F06A6A",
+    group: "Produtividade",
+    comingSoon: true,
+    defaultEnabled: false,
+  },
+  {
+    id: "trello",
+    name: "Trello",
+    description: "Quadros Kanban e fluxos",
+    logo: "/integrations/trello.svg",
+    logoBg: "#0079BF",
+    group: "Produtividade",
+    comingSoon: true,
+    defaultEnabled: false,
+  },
+  {
+    id: "jira",
+    name: "Jira",
+    description: "Rastreamento de issues ágeis",
+    logo: "/integrations/jira.svg",
+    logoBg: "#0052CC",
     group: "Produtividade",
     comingSoon: true,
     defaultEnabled: false,
@@ -4008,7 +4102,7 @@ function TabIntegracoes() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
+                gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))",
                 gap: 8,
               }}
             >
@@ -4023,16 +4117,18 @@ function TabIntegracoes() {
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
-                      padding: "16px 10px 12px",
+                      justifyContent: "space-between",
+                      padding: "14px 10px 12px",
                       borderRadius: 12,
+                      aspectRatio: "1",
                       background: isOn
                         ? "rgba(255,255,255,0.06)"
                         : "rgba(255,255,255,0.03)",
                       border: isOn
                         ? "1px solid rgba(255,255,255,0.12)"
                         : "1px solid rgba(255,255,255,0.07)",
-                      opacity: soon ? 0.5 : 1,
-                      gap: 8,
+                      opacity: soon ? 0.55 : 1,
+                      gap: 6,
                       transition:
                         "background 150ms ease, border-color 150ms ease",
                     }}
@@ -4042,12 +4138,12 @@ function TabIntegracoes() {
                       <div
                         style={{
                           position: "absolute",
-                          top: 6,
-                          right: 6,
-                          padding: "1px 5px",
+                          top: 5,
+                          right: 5,
+                          padding: "1px 4px",
                           borderRadius: 4,
-                          background: "rgba(255,255,255,0.12)",
-                          fontSize: 8,
+                          background: "rgba(255,255,255,0.10)",
+                          fontSize: 7,
                           fontWeight: 600,
                           color: "var(--text-tertiary)",
                           letterSpacing: "0.04em",
@@ -4061,9 +4157,9 @@ function TabIntegracoes() {
                     {/* Logo container */}
                     <div
                       style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: 10,
+                        width: 46,
+                        height: 46,
+                        borderRadius: 11,
                         background: intg.logoBg,
                         display: "flex",
                         alignItems: "center",
@@ -4076,8 +4172,8 @@ function TabIntegracoes() {
                         src={intg.logo}
                         alt={intg.name}
                         style={{
-                          width: 26,
-                          height: 26,
+                          width: 28,
+                          height: 28,
                           objectFit: "contain",
                         }}
                       />
@@ -4091,22 +4187,10 @@ function TabIntegracoes() {
                         color: "var(--text-primary)",
                         textAlign: "center",
                         lineHeight: 1.2,
+                        margin: 0,
                       }}
                     >
                       {intg.name}
-                    </p>
-
-                    {/* Description */}
-                    <p
-                      style={{
-                        fontSize: 9,
-                        color: "var(--text-tertiary)",
-                        textAlign: "center",
-                        lineHeight: 1.3,
-                        flex: 1,
-                      }}
-                    >
-                      {intg.description}
                     </p>
 
                     {/* Toggle */}
