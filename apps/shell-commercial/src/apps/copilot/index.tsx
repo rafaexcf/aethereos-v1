@@ -890,15 +890,14 @@ export function CopilotDrawer({
           {/* Gaveta — abre acima da Dock */}
           <motion.div
             key="ai-modal"
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, x: "-50%", y: 24 }}
+            animate={{ opacity: 1, x: "-50%", y: 0 }}
+            exit={{ opacity: 0, x: "-50%", y: 16 }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
             className="fixed z-[61] flex flex-col"
             style={{
               bottom: 100,
               left: "50%",
-              transform: "translateX(-50%)",
               width: "min(680px, 88vw)",
               height: "min(520px, 72vh)",
               borderRadius: 16,
@@ -906,7 +905,6 @@ export function CopilotDrawer({
               boxShadow:
                 "0 -4px 40px rgba(0,0,0,0.5), 0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.07)",
               overflow: "hidden",
-              position: "fixed",
             }}
           >
             {/* ShineBorder — efeito de borda animado */}
