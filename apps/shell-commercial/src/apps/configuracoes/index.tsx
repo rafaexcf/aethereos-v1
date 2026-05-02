@@ -2233,36 +2233,79 @@ function TabPerfil({
             </SettingRow>
             <SettingRow label="Sexo">
               <div style={{ display: "flex", gap: 4 }}>
-                {(["masculino", "feminino"] as const).map((opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => {
-                      setSexo(sexo === opt ? "" : opt);
-                      triggerAutoSave();
-                    }}
-                    style={{
-                      padding: "6px 14px",
-                      borderRadius: 8,
-                      fontSize: 13,
-                      cursor: "pointer",
-                      transition:
-                        "background 120ms ease, border-color 120ms ease, color 120ms ease",
-                      border:
-                        sexo === opt
-                          ? "1px solid rgba(99,102,241,0.5)"
-                          : "1px solid rgba(255,255,255,0.10)",
-                      background:
-                        sexo === opt
-                          ? "rgba(99,102,241,0.18)"
-                          : "rgba(255,255,255,0.04)",
-                      color: sexo === opt ? "#a5b4fc" : "var(--text-secondary)",
-                      fontWeight: sexo === opt ? 500 : 400,
-                    }}
-                  >
-                    {opt.charAt(0).toUpperCase() + opt.slice(1)}
-                  </button>
-                ))}
+                {(
+                  [
+                    {
+                      value: "masculino",
+                      activeBorder: "rgba(99,102,241,0.5)",
+                      activeBg: "rgba(99,102,241,0.18)",
+                      activeColor: "#a5b4fc",
+                      hoverBorder: "rgba(99,102,241,0.25)",
+                      hoverBg: "rgba(99,102,241,0.08)",
+                    },
+                    {
+                      value: "feminino",
+                      activeBorder: "rgba(244,63,94,0.5)",
+                      activeBg: "rgba(244,63,94,0.18)",
+                      activeColor: "#fda4af",
+                      hoverBorder: "rgba(244,63,94,0.30)",
+                      hoverBg: "rgba(244,63,94,0.10)",
+                    },
+                  ] as const
+                ).map(
+                  ({
+                    value: opt,
+                    activeBorder,
+                    activeBg,
+                    activeColor,
+                    hoverBorder,
+                    hoverBg,
+                  }) => {
+                    const selected = sexo === opt;
+                    return (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => {
+                          setSexo(sexo === opt ? "" : opt);
+                          triggerAutoSave();
+                        }}
+                        onMouseEnter={(e) => {
+                          if (selected) return;
+                          e.currentTarget.style.background = hoverBg;
+                          e.currentTarget.style.borderColor = hoverBorder;
+                        }}
+                        onMouseLeave={(e) => {
+                          if (selected) return;
+                          e.currentTarget.style.background =
+                            "rgba(255,255,255,0.04)";
+                          e.currentTarget.style.borderColor =
+                            "rgba(255,255,255,0.10)";
+                        }}
+                        style={{
+                          padding: "6px 14px",
+                          borderRadius: 8,
+                          fontSize: 13,
+                          cursor: "pointer",
+                          transition:
+                            "background 120ms ease, border-color 120ms ease, color 120ms ease",
+                          border: selected
+                            ? `1px solid ${activeBorder}`
+                            : "1px solid rgba(255,255,255,0.10)",
+                          background: selected
+                            ? activeBg
+                            : "rgba(255,255,255,0.04)",
+                          color: selected
+                            ? activeColor
+                            : "var(--text-secondary)",
+                          fontWeight: selected ? 500 : 400,
+                        }}
+                      >
+                        {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                      </button>
+                    );
+                  },
+                )}
               </div>
             </SettingRow>
             <SettingRow label="CPF">
