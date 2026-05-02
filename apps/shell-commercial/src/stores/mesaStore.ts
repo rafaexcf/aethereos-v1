@@ -4,6 +4,10 @@ import type { MesaItem } from "../types/os";
 
 export const WALLPAPERS = [
   "default",
+  "purple",
+  "design-1",
+  "design-2",
+  "design-3",
   "midnight",
   "mesh",
   "sunset",
@@ -20,6 +24,10 @@ export type WallpaperId = (typeof WALLPAPERS)[number];
 
 export const WALLPAPER_NAMES: Record<WallpaperId, string> = {
   default: "Buraco Negro",
+  purple: "Roxo",
+  "design-1": "Marca 1",
+  "design-2": "Marca 2",
+  "design-3": "Marca 3",
   midnight: "Meia-Noite",
   mesh: "Mesh",
   sunset: "Pôr do Sol",
