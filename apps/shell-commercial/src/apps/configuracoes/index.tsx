@@ -1398,189 +1398,137 @@ function TabMinhaEmpresa({
           <div
             style={{
               marginTop: 12,
-              padding: 16,
               borderRadius: 12,
               background: "rgba(255,255,255,0.04)",
               border: "1px solid rgba(255,255,255,0.07)",
+              overflow: "hidden",
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                justifyContent: "space-between",
-                gap: 12,
-                marginBottom: 8,
-              }}
-            >
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: "var(--text-primary)",
-                    letterSpacing: "-0.01em",
-                  }}
-                >
-                  {cnpjPreview.razao_social}
-                </p>
-                {cnpjPreview.nome_fantasia !== null && (
+            {/* Card body */}
+            <div style={{ padding: 16 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  marginBottom: 8,
+                }}
+              >
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <p
                     style={{
-                      fontSize: 12,
-                      color: "var(--text-secondary)",
-                      marginTop: 2,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: "var(--text-primary)",
+                      letterSpacing: "-0.01em",
                     }}
                   >
-                    {cnpjPreview.nome_fantasia}
+                    {cnpjPreview.razao_social}
                   </p>
-                )}
+                  {cnpjPreview.nome_fantasia !== null && (
+                    <p
+                      style={{
+                        fontSize: 12,
+                        color: "var(--text-secondary)",
+                        marginTop: 2,
+                      }}
+                    >
+                      {cnpjPreview.nome_fantasia}
+                    </p>
+                  )}
+                </div>
+                <Badge
+                  variant={
+                    cnpjPreview.situacao.toUpperCase() === "ATIVA"
+                      ? "success"
+                      : "neutral"
+                  }
+                >
+                  {cnpjPreview.situacao}
+                </Badge>
               </div>
-              <Badge
-                variant={
-                  cnpjPreview.situacao.toUpperCase() === "ATIVA"
-                    ? "success"
-                    : "neutral"
-                }
+              <p
+                style={{
+                  fontSize: 12,
+                  color: "var(--text-tertiary)",
+                  marginTop: 6,
+                  lineHeight: 1.5,
+                }}
               >
-                {cnpjPreview.situacao}
-              </Badge>
+                {cnpjPreview.atividade_principal}
+              </p>
+              <p
+                style={{
+                  fontSize: 11,
+                  color: "var(--text-tertiary)",
+                  marginTop: 4,
+                }}
+              >
+                {cnpjPreview.municipio} – {cnpjPreview.uf}
+              </p>
+
+              {/* Ver cadastro completo */}
+              <button
+                type="button"
+                onClick={() => {
+                  // TODO: navegar para o cadastro completo quando a rota existir
+                }}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  marginTop: 12,
+                  padding: "5px 10px",
+                  borderRadius: 6,
+                  background: "rgba(34,211,238,0.08)",
+                  border: "1px solid rgba(34,211,238,0.18)",
+                  color: "#22d3ee",
+                  fontSize: 12,
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  transition: "background 150ms ease, border-color 150ms ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(34,211,238,0.14)";
+                  e.currentTarget.style.borderColor = "rgba(34,211,238,0.30)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(34,211,238,0.08)";
+                  e.currentTarget.style.borderColor = "rgba(34,211,238,0.18)";
+                }}
+              >
+                <FileText size={11} strokeWidth={1.8} />
+                Ver cadastro completo
+                <ArrowRight size={11} strokeWidth={1.8} />
+              </button>
             </div>
-            <p
-              style={{
-                fontSize: 12,
-                color: "var(--text-tertiary)",
-                marginTop: 6,
-                lineHeight: 1.5,
-              }}
-            >
-              {cnpjPreview.atividade_principal}
-            </p>
-            <p
-              style={{
-                fontSize: 11,
-                color: "var(--text-tertiary)",
-                marginTop: 4,
-              }}
-            >
-              {cnpjPreview.municipio} – {cnpjPreview.uf}
-            </p>
+
+            {/* Footer strip */}
+            {(createdAt !== null || founder !== null) && (
+              <div
+                style={{
+                  padding: "8px 16px",
+                  borderTop: "1px solid rgba(255,255,255,0.05)",
+                  background: "rgba(0,0,0,0.10)",
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: 11,
+                    color: "var(--text-tertiary)",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {"Cadastrado"}
+                  {createdAt !== null ? ` em ${createdAt}` : ""}
+                  {founder !== null ? ` por ${founder.name}` : ""}
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
-
-      {/* Cadastro da empresa */}
-      {(createdAt !== null || founder !== null) && (
-        <div>
-          <SectionLabel>Cadastro</SectionLabel>
-          <SettingGroup>
-            {createdAt !== null && (
-              <SettingRow label="Cadastrado em" last={founder === null}>
-                <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-                  {createdAt}
-                </span>
-              </SettingRow>
-            )}
-            {founder !== null && (
-              <SettingRow label="Por" last>
-                <div style={{ textAlign: "right" }}>
-                  <span
-                    style={{
-                      display: "block",
-                      fontSize: 13,
-                      color: "var(--text-secondary)",
-                    }}
-                  >
-                    {founder.name}
-                  </span>
-                  <span
-                    style={{
-                      display: "block",
-                      fontSize: 11,
-                      color: "var(--text-tertiary)",
-                      marginTop: 1,
-                    }}
-                  >
-                    {founder.email}
-                  </span>
-                </div>
-              </SettingRow>
-            )}
-          </SettingGroup>
-        </div>
-      )}
-
-      {/* Cadastro completo (placeholder — destino criado depois) */}
-      <button
-        type="button"
-        onClick={() => {
-          // TODO: navegar para o cadastro completo da empresa quando a rota existir
-        }}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 14,
-          padding: 18,
-          borderRadius: 12,
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid rgba(255,255,255,0.07)",
-          cursor: "pointer",
-          textAlign: "left",
-          width: "100%",
-          transition: "background 160ms ease, border-color 160ms ease",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = "rgba(255,255,255,0.06)";
-          e.currentTarget.style.borderColor = "rgba(255,255,255,0.14)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-          e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)";
-        }}
-      >
-        <div
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 10,
-            background: "rgba(6,182,212,0.18)",
-            border: "1px solid #22d3ee38",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
-          <FileText size={18} style={{ color: "#22d3ee" }} strokeWidth={1.7} />
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: "var(--text-primary)",
-              letterSpacing: "-0.01em",
-            }}
-          >
-            Ver cadastro completo
-          </p>
-          <p
-            style={{
-              fontSize: 11,
-              color: "var(--text-tertiary)",
-              marginTop: 3,
-              lineHeight: 1.4,
-            }}
-          >
-            Endereço, regime tributário, sócios e documentos complementares
-          </p>
-        </div>
-        <ArrowRight
-          size={14}
-          style={{ color: "var(--text-tertiary)", flexShrink: 0 }}
-          strokeWidth={1.8}
-        />
-      </button>
     </div>
   );
 }
