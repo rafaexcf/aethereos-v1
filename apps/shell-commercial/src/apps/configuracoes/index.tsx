@@ -41,6 +41,7 @@ import {
   Sun,
   Moon,
   ChevronDown,
+  Lock,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import type { LucideProps } from "lucide-react";
@@ -1647,11 +1648,12 @@ function ChangePasswordDialog({
         position: "fixed",
         inset: 0,
         zIndex: 1000,
-        background: "var(--bg-overlay)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        backdropFilter: "blur(4px)",
+        background: "rgba(0,0,0,0.55)",
+        backdropFilter: "blur(6px)",
+        WebkitBackdropFilter: "blur(6px)",
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) handleClose();
@@ -1659,33 +1661,75 @@ function ChangePasswordDialog({
     >
       <div
         style={{
+          width: "100%",
+          maxWidth: 440,
+          margin: "0 16px",
           background: "var(--bg-elevated)",
-          border: "1px solid var(--border-default)",
+          border: "1px solid rgba(99,102,241,0.25)",
           borderRadius: 16,
-          padding: "28px 32px",
-          width: 380,
-          boxShadow: "var(--shadow-lg)",
-          display: "flex",
-          flexDirection: "column",
-          gap: 20,
+          boxShadow:
+            "0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(99,102,241,0.12)",
+          overflow: "hidden",
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 14,
+            padding: "24px 24px 20px",
+            borderBottom: "1px solid rgba(255,255,255,0.06)",
+          }}
+        >
+          <div
             style={{
-              fontSize: 15,
-              fontWeight: 600,
-              color: "var(--text-primary)",
+              width: 40,
+              height: 40,
+              borderRadius: 10,
+              background: "rgba(99,102,241,0.14)",
+              border: "1px solid rgba(99,102,241,0.25)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
             }}
           >
-            Alterar senha
-          </span>
-          <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-            A nova senha será aplicada à sua conta Aethereos.
-          </span>
+            <Lock size={18} style={{ color: "#818cf8" }} strokeWidth={1.8} />
+          </div>
+          <div>
+            <p
+              style={{
+                fontSize: 15,
+                fontWeight: 600,
+                color: "var(--text-primary)",
+                marginBottom: 4,
+                fontFamily: "var(--font-display)",
+              }}
+            >
+              Alterar senha
+            </p>
+            <p
+              style={{
+                fontSize: 12,
+                color: "var(--text-tertiary)",
+                lineHeight: 1.5,
+              }}
+            >
+              A nova senha será aplicada imediatamente à sua conta.
+            </p>
+          </div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {/* Body */}
+        <div
+          style={{
+            padding: "20px 24px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 14,
+          }}
+        >
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             <label
               style={{
@@ -1701,7 +1745,7 @@ function ChangePasswordDialog({
               onChange={setNewPwd}
               show={showNew}
               onToggle={() => setShowNew((s) => !s)}
-              placeholder="Nova senha"
+              placeholder="Digite a nova senha"
             />
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -1712,56 +1756,127 @@ function ChangePasswordDialog({
                 fontWeight: 500,
               }}
             >
-              Confirmar senha
+              Confirmar nova senha
             </label>
             <PwdInput
               value={confirmPwd}
               onChange={setConfirmPwd}
               show={showConfirm}
               onToggle={() => setShowConfirm((s) => !s)}
-              placeholder="Confirmar nova senha"
+              placeholder="Repita a nova senha"
             />
           </div>
+
+          {newPwd.length > 0 && (
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 6,
+                paddingTop: 2,
+              }}
+            >
+              <PasswordBadge ok={v.length} label="8+ caracteres" />
+              <PasswordBadge ok={v.upper} label="Maiúscula" />
+              <PasswordBadge ok={v.number} label="Número" />
+              <PasswordBadge ok={v.special} label="Especial" />
+              <PasswordBadge ok={v.match} label="Coincidem" />
+            </div>
+          )}
         </div>
 
-        {newPwd.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            <PasswordBadge ok={v.length} label="8+ caracteres" />
-            <PasswordBadge ok={v.upper} label="Maiúscula" />
-            <PasswordBadge ok={v.number} label="Número" />
-            <PasswordBadge ok={v.special} label="Especial" />
-            <PasswordBadge ok={v.match} label="Coincidem" />
+        {/* Footer */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 8,
+            padding: "16px 24px",
+            borderTop: "1px solid rgba(255,255,255,0.06)",
+          }}
+        >
+          {/* Error feedback — lado esquerdo */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {pwdState === "error" && (
+              <span
+                style={{
+                  fontSize: 12,
+                  color: "var(--status-error)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 5,
+                }}
+              >
+                <AlertTriangle size={12} strokeWidth={2} />
+                Erro ao alterar a senha. Tente novamente.
+              </span>
+            )}
           </div>
-        )}
 
-        {pwdState === "error" && (
-          <span style={{ fontSize: 12, color: "var(--status-error)" }}>
-            Erro ao alterar a senha. Tente novamente.
-          </span>
-        )}
-
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-          <button
-            type="button"
-            onClick={handleClose}
-            style={{
-              background: "transparent",
-              border: "1px solid var(--border-default)",
-              borderRadius: 8,
-              padding: "7px 16px",
-              fontSize: 13,
-              color: "var(--text-secondary)",
-              cursor: "pointer",
-            }}
-          >
-            Cancelar
-          </button>
-          <PrimaryButton
-            onClick={() => void handleSave()}
-            disabled={!canSave || pwdState !== "idle"}
-          >
-            <SaveLabel state={pwdState} label="Alterar senha" />
-          </PrimaryButton>
+          {/* Botões — lado direito */}
+          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            <button
+              type="button"
+              onClick={handleClose}
+              style={{
+                padding: "8px 16px",
+                borderRadius: 8,
+                border: "1px solid rgba(255,255,255,0.10)",
+                background: "transparent",
+                color: "var(--text-secondary)",
+                fontSize: 13,
+                fontWeight: 500,
+                cursor: "pointer",
+                transition: "background 120ms ease, color 120ms ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+                e.currentTarget.style.color = "var(--text-primary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = "var(--text-secondary)";
+              }}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleSave()}
+              disabled={!canSave || pwdState !== "idle"}
+              style={{
+                padding: "8px 16px",
+                borderRadius: 8,
+                border: "1px solid rgba(99,102,241,0.4)",
+                background:
+                  !canSave || pwdState !== "idle"
+                    ? "rgba(99,102,241,0.08)"
+                    : "rgba(99,102,241,0.18)",
+                color:
+                  !canSave || pwdState !== "idle"
+                    ? "rgba(129,140,248,0.45)"
+                    : "#818cf8",
+                fontSize: 13,
+                fontWeight: 500,
+                cursor: !canSave || pwdState !== "idle" ? "default" : "pointer",
+                transition: "background 120ms ease, color 120ms ease",
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+              onMouseEnter={(e) => {
+                if (canSave && pwdState === "idle")
+                  e.currentTarget.style.background = "rgba(99,102,241,0.28)";
+              }}
+              onMouseLeave={(e) => {
+                if (canSave && pwdState === "idle")
+                  e.currentTarget.style.background = "rgba(99,102,241,0.18)";
+              }}
+            >
+              <SaveLabel state={pwdState} label="Alterar senha" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
