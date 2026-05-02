@@ -4457,7 +4457,7 @@ function TabPlanos() {
                 <div>
                   <p
                     style={{
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: 700,
                       color: isCurrent ? plan.color : "var(--text-secondary)",
                       letterSpacing: "0.06em",
@@ -4472,7 +4472,7 @@ function TabPlanos() {
                   >
                     <span
                       style={{
-                        fontSize: plan.price === "Custom" ? 15 : 18,
+                        fontSize: plan.price === "Custom" ? 17 : 20,
                         fontWeight: 700,
                         color: "var(--text-primary)",
                         fontFamily: "var(--font-display)",
@@ -4483,7 +4483,7 @@ function TabPlanos() {
                     </span>
                     {plan.period !== "" && (
                       <span
-                        style={{ fontSize: 10, color: "var(--text-tertiary)" }}
+                        style={{ fontSize: 11, color: "var(--text-tertiary)" }}
                       >
                         {plan.period}
                       </span>
@@ -4492,7 +4492,7 @@ function TabPlanos() {
                   {(plan as { trialDays?: number }).trialDays !== undefined && (
                     <p
                       style={{
-                        fontSize: 9,
+                        fontSize: 10,
                         color: "var(--text-tertiary)",
                         marginTop: 2,
                       }}
@@ -4522,13 +4522,13 @@ function TabPlanos() {
                         display: "flex",
                         alignItems: "flex-start",
                         gap: 5,
-                        fontSize: 10,
+                        fontSize: 11,
                         color: "var(--text-secondary)",
                         lineHeight: 1.4,
                       }}
                     >
                       <Check
-                        size={9}
+                        size={10}
                         strokeWidth={2.5}
                         style={{
                           color: isCurrent
@@ -4547,7 +4547,7 @@ function TabPlanos() {
                 {isCurrent ? (
                   <div
                     style={{
-                      fontSize: 10,
+                      fontSize: 11,
                       color: plan.color,
                       fontWeight: 600,
                       textAlign: "center",
@@ -4566,7 +4566,7 @@ function TabPlanos() {
                     style={{
                       padding: "5px 0",
                       borderRadius: 6,
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: 500,
                       cursor: "pointer",
                       background: "rgba(255,255,255,0.06)",
@@ -4595,24 +4595,6 @@ function TabPlanos() {
             );
           })}
         </div>
-      </div>
-
-      {/* Recorrência automática */}
-      <div>
-        <SectionLabel>Cobrança</SectionLabel>
-        <SettingGroup>
-          <SettingRow
-            label="Recorrência automática"
-            sublabel={
-              autoRenew
-                ? "Renovação automática de pagamento está ativada"
-                : "Renovação automática de pagamento está desativada"
-            }
-            last
-          >
-            <Toggle on={autoRenew} onToggle={() => setAutoRenew((v) => !v)} />
-          </SettingRow>
-        </SettingGroup>
       </div>
 
       {/* Consumo */}
@@ -4693,9 +4675,19 @@ function TabPlanos() {
           <SettingRow
             label="Endereço de cobrança"
             sublabel="Usado nas notas fiscais"
-            last
           >
             <InlineButton onClick={() => {}}>Configurar</InlineButton>
+          </SettingRow>
+          <SettingRow
+            label="Recorrência automática"
+            sublabel={
+              autoRenew
+                ? "Renovação automática de pagamento está ativada"
+                : "Renovação automática de pagamento está desativada"
+            }
+            last
+          >
+            <Toggle on={autoRenew} onToggle={() => setAutoRenew((v) => !v)} />
           </SettingRow>
         </SettingGroup>
       </div>
