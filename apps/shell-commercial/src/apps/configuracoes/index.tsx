@@ -4120,6 +4120,7 @@ const PLANS = [
 const CURRENT_PLAN_ID = "pro";
 
 function TabPlanos() {
+  const [autoRenew, setAutoRenew] = useState(true);
   // Mock data — TODO: ligar a billing/metrics real (Lago + métricas LiteLLM)
   const usage = {
     apiCalls: { used: 24_350, limit: 100_000, unit: "chamadas" },
@@ -4140,14 +4141,14 @@ function TabPlanos() {
         right={<Badge variant="success">Ativo</Badge>}
       />
 
-      {/* Cards de plano — grade 2×2 */}
+      {/* Cards de plano — linha única com 4 colunas */}
       <div>
         <SectionLabel>Escolha seu plano</SectionLabel>
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 10,
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: 8,
           }}
         >
           {PLANS.map((plan) => {
@@ -4156,11 +4157,11 @@ function TabPlanos() {
               <div
                 key={plan.id}
                 style={{
-                  borderRadius: 14,
-                  padding: 18,
+                  borderRadius: 10,
+                  padding: "12px 10px",
                   display: "flex",
                   flexDirection: "column",
-                  gap: 14,
+                  gap: 10,
                   background: isCurrent
                     ? plan.accentBg
                     : "rgba(255,255,255,0.03)",
@@ -4168,10 +4169,9 @@ function TabPlanos() {
                     ? `1px solid ${plan.accentBorder}`
                     : "1px solid rgba(255,255,255,0.07)",
                   boxShadow: isCurrent
-                    ? `0 0 0 1px ${plan.accentBorder}, 0 4px 20px rgba(0,0,0,0.3)`
+                    ? `0 0 0 1px ${plan.accentBorder}, 0 4px 16px rgba(0,0,0,0.25)`
                     : "none",
                   position: "relative",
-                  minHeight: 220,
                 }}
               >
                 {/* Badge plano atual */}
@@ -4179,15 +4179,15 @@ function TabPlanos() {
                   <div
                     style={{
                       position: "absolute",
-                      top: 12,
-                      right: 12,
-                      padding: "2px 8px",
+                      top: 8,
+                      right: 8,
+                      padding: "1px 6px",
                       borderRadius: 999,
                       background: plan.color,
-                      fontSize: 10,
-                      fontWeight: 600,
+                      fontSize: 9,
+                      fontWeight: 700,
                       color: "#fff",
-                      letterSpacing: "0.04em",
+                      letterSpacing: "0.05em",
                     }}
                   >
                     {(plan as { trial?: boolean }).trial === true
@@ -4200,22 +4200,22 @@ function TabPlanos() {
                 <div>
                   <p
                     style={{
-                      fontSize: 13,
-                      fontWeight: 600,
+                      fontSize: 10,
+                      fontWeight: 700,
                       color: isCurrent ? plan.color : "var(--text-secondary)",
-                      letterSpacing: "0.04em",
+                      letterSpacing: "0.06em",
                       textTransform: "uppercase",
-                      marginBottom: 6,
+                      marginBottom: 4,
                     }}
                   >
                     {plan.name}
                   </p>
                   <div
-                    style={{ display: "flex", alignItems: "baseline", gap: 3 }}
+                    style={{ display: "flex", alignItems: "baseline", gap: 2 }}
                   >
                     <span
                       style={{
-                        fontSize: plan.price === "Custom" ? 20 : 26,
+                        fontSize: plan.price === "Custom" ? 15 : 18,
                         fontWeight: 700,
                         color: "var(--text-primary)",
                         fontFamily: "var(--font-display)",
@@ -4226,7 +4226,7 @@ function TabPlanos() {
                     </span>
                     {plan.period !== "" && (
                       <span
-                        style={{ fontSize: 12, color: "var(--text-tertiary)" }}
+                        style={{ fontSize: 10, color: "var(--text-tertiary)" }}
                       >
                         {plan.period}
                       </span>
@@ -4235,13 +4235,13 @@ function TabPlanos() {
                   {(plan as { trialDays?: number }).trialDays !== undefined && (
                     <p
                       style={{
-                        fontSize: 11,
+                        fontSize: 9,
                         color: "var(--text-tertiary)",
-                        marginTop: 3,
+                        marginTop: 2,
                       }}
                     >
-                      Trial expira em{" "}
-                      {(plan as { trialDays?: number }).trialDays} dias
+                      Expira em {(plan as { trialDays?: number }).trialDays}{" "}
+                      dias
                     </p>
                   )}
                 </div>
@@ -4254,7 +4254,7 @@ function TabPlanos() {
                     margin: 0,
                     display: "flex",
                     flexDirection: "column",
-                    gap: 6,
+                    gap: 4,
                     flex: 1,
                   }}
                 >
@@ -4263,20 +4263,22 @@ function TabPlanos() {
                       key={f}
                       style={{
                         display: "flex",
-                        alignItems: "center",
-                        gap: 7,
-                        fontSize: 12,
+                        alignItems: "flex-start",
+                        gap: 5,
+                        fontSize: 10,
                         color: "var(--text-secondary)",
+                        lineHeight: 1.4,
                       }}
                     >
                       <Check
-                        size={11}
+                        size={9}
                         strokeWidth={2.5}
                         style={{
                           color: isCurrent
                             ? plan.color
                             : "var(--text-tertiary)",
                           flexShrink: 0,
+                          marginTop: 2,
                         }}
                       />
                       {f}
@@ -4288,12 +4290,12 @@ function TabPlanos() {
                 {isCurrent ? (
                   <div
                     style={{
-                      fontSize: 12,
+                      fontSize: 10,
                       color: plan.color,
-                      fontWeight: 500,
+                      fontWeight: 600,
                       textAlign: "center",
-                      padding: "7px 0",
-                      borderRadius: 8,
+                      padding: "5px 0",
+                      borderRadius: 6,
                       border: `1px solid ${plan.accentBorder}`,
                       background: "transparent",
                     }}
@@ -4305,9 +4307,9 @@ function TabPlanos() {
                     type="button"
                     onClick={() => {}}
                     style={{
-                      padding: "7px 0",
-                      borderRadius: 8,
-                      fontSize: 12,
+                      padding: "5px 0",
+                      borderRadius: 6,
+                      fontSize: 10,
                       fontWeight: 500,
                       cursor: "pointer",
                       background: "rgba(255,255,255,0.06)",
@@ -4329,15 +4331,31 @@ function TabPlanos() {
                       e.currentTarget.style.color = "var(--text-secondary)";
                     }}
                   >
-                    {plan.id === "enterprise"
-                      ? "Falar com vendas"
-                      : "Fazer upgrade"}
+                    {plan.id === "enterprise" ? "Falar c/ vendas" : "Upgrade"}
                   </button>
                 )}
               </div>
             );
           })}
         </div>
+      </div>
+
+      {/* Recorrência automática */}
+      <div>
+        <SectionLabel>Cobrança</SectionLabel>
+        <SettingGroup>
+          <SettingRow
+            label="Recorrência automática"
+            sublabel={
+              autoRenew
+                ? "Renovação automática de pagamento está ativada"
+                : "Renovação automática de pagamento está desativada"
+            }
+            last
+          >
+            <Toggle on={autoRenew} onToggle={() => setAutoRenew((v) => !v)} />
+          </SettingRow>
+        </SettingGroup>
       </div>
 
       {/* Consumo */}
