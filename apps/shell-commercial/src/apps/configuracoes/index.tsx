@@ -4479,7 +4479,7 @@ function TabPlanos() {
                 <div>
                   <p
                     style={{
-                      fontSize: 13,
+                      fontSize: 16,
                       fontWeight: 700,
                       color: isCurrent ? plan.color : "var(--text-secondary)",
                       letterSpacing: "0.06em",
@@ -4494,7 +4494,7 @@ function TabPlanos() {
                   >
                     <span
                       style={{
-                        fontSize: plan.price === "Custom" ? 19 : 24,
+                        fontSize: plan.price === "Custom" ? 23 : 29,
                         fontWeight: 700,
                         color: "var(--text-primary)",
                         fontFamily: "var(--font-display)",
@@ -4505,7 +4505,7 @@ function TabPlanos() {
                     </span>
                     {plan.period !== "" && (
                       <span
-                        style={{ fontSize: 12, color: "var(--text-tertiary)" }}
+                        style={{ fontSize: 14, color: "var(--text-tertiary)" }}
                       >
                         {plan.period}
                       </span>
@@ -4514,7 +4514,7 @@ function TabPlanos() {
                   {(plan as { trialDays?: number }).trialDays !== undefined && (
                     <p
                       style={{
-                        fontSize: 11,
+                        fontSize: 13,
                         color: "var(--text-tertiary)",
                         marginTop: 2,
                       }}
@@ -4544,13 +4544,13 @@ function TabPlanos() {
                         display: "flex",
                         alignItems: "flex-start",
                         gap: 5,
-                        fontSize: 12,
+                        fontSize: 14,
                         color: "var(--text-secondary)",
                         lineHeight: 1.4,
                       }}
                     >
                       <Check
-                        size={11}
+                        size={13}
                         strokeWidth={2.5}
                         style={{
                           color: isCurrent
@@ -4569,7 +4569,7 @@ function TabPlanos() {
                 {isCurrent ? (
                   <div
                     style={{
-                      fontSize: 12,
+                      fontSize: 14,
                       color: plan.color,
                       fontWeight: 600,
                       textAlign: "center",
@@ -4588,7 +4588,7 @@ function TabPlanos() {
                     style={{
                       padding: "6px 0",
                       borderRadius: 6,
-                      fontSize: 12,
+                      fontSize: 14,
                       fontWeight: 500,
                       cursor: "pointer",
                       background: "rgba(255,255,255,0.06)",
