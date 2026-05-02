@@ -1469,39 +1469,47 @@ function TabMinhaEmpresa({
               </p>
 
               {/* Ver cadastro completo */}
-              <button
-                type="button"
-                onClick={() => {
-                  // TODO: navegar para o cadastro completo quando a rota existir
-                }}
+              <div
                 style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 5,
+                  display: "flex",
+                  justifyContent: "flex-end",
                   marginTop: 12,
-                  padding: "5px 10px",
-                  borderRadius: 6,
-                  background: "rgba(34,211,238,0.08)",
-                  border: "1px solid rgba(34,211,238,0.18)",
-                  color: "#22d3ee",
-                  fontSize: 12,
-                  fontWeight: 500,
-                  cursor: "pointer",
-                  transition: "background 150ms ease, border-color 150ms ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "rgba(34,211,238,0.14)";
-                  e.currentTarget.style.borderColor = "rgba(34,211,238,0.30)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "rgba(34,211,238,0.08)";
-                  e.currentTarget.style.borderColor = "rgba(34,211,238,0.18)";
                 }}
               >
-                <FileText size={11} strokeWidth={1.8} />
-                Ver cadastro completo
-                <ArrowRight size={11} strokeWidth={1.8} />
-              </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    // TODO: navegar para o cadastro completo quando a rota existir
+                  }}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 5,
+                    padding: "5px 10px",
+                    borderRadius: 6,
+                    background: "rgba(34,211,238,0.08)",
+                    border: "1px solid rgba(34,211,238,0.18)",
+                    color: "#22d3ee",
+                    fontSize: 12,
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    transition:
+                      "background 150ms ease, border-color 150ms ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(34,211,238,0.14)";
+                    e.currentTarget.style.borderColor = "rgba(34,211,238,0.30)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "rgba(34,211,238,0.08)";
+                    e.currentTarget.style.borderColor = "rgba(34,211,238,0.18)";
+                  }}
+                >
+                  <FileText size={11} strokeWidth={1.8} />
+                  Ver cadastro completo
+                  <ArrowRight size={11} strokeWidth={1.8} />
+                </button>
+              </div>
             </div>
 
             {/* Footer strip */}
@@ -1518,6 +1526,7 @@ function TabMinhaEmpresa({
                     fontSize: 11,
                     color: "var(--text-tertiary)",
                     lineHeight: 1.5,
+                    textAlign: "right",
                   }}
                 >
                   {"Cadastrado"}
