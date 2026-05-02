@@ -12,7 +12,8 @@ import type { LucideProps } from "lucide-react";
 import type { ComponentType } from "react";
 import { Bell, CloudSun, Droplets, Wind, X } from "lucide-react";
 import { useOSStore } from "../../stores/osStore";
-import { getVisibleDockApps, prefetchApp } from "../../apps/registry";
+import { useDockStore } from "../../stores/dockStore";
+import { getApp, prefetchApp } from "../../apps/registry";
 import type { OSApp } from "../../types/os";
 
 const SPRING_CONFIG = { mass: 0.08, stiffness: 180, damping: 11 };
@@ -633,7 +634,10 @@ function DockIcon({
 export function Dock() {
   const tabs = useOSStore((s) => s.tabs);
   const activeTabId = useOSStore((s) => s.activeTabId);
-  const dockApps = getVisibleDockApps();
+  const order = useDockStore((s) => s.order);
+  const dockApps = order
+    .map((id) => getApp(id))
+    .filter((a): a is OSApp => a !== undefined);
   const mouseX = useMotionValue(Infinity);
 
   const openAppIds = new Set(tabs.map((t) => t.appId));

@@ -28,7 +28,28 @@ import {
   Building2,
   ImagePlus,
   Trash2,
+  GripVertical,
+  Plus,
+  RotateCcw,
 } from "lucide-react";
+import * as LucideIcons from "lucide-react";
+import type { LucideProps } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { useDockStore } from "../../stores/dockStore";
+import { APP_REGISTRY } from "../registry";
 import { useSessionStore } from "../../stores/session";
 import { useDrivers } from "../../lib/drivers-context";
 import { AnimatedThemeToggler } from "../../components/ui/animated-theme-toggler";
@@ -2018,7 +2039,150 @@ function TabDadosPrivacidade() {
 
 // ─── Tab: Dock ────────────────────────────────────────────────────────────────
 
+function DockAppIcon({ iconName, color }: { iconName: string; color: string }) {
+  const Icon =
+    (
+      LucideIcons as unknown as Record<string, React.ComponentType<LucideProps>>
+    )[iconName] ?? LucideIcons.Box;
+  return (
+    <div
+      style={{
+        width: 32,
+        height: 32,
+        borderRadius: 8,
+        background: `${color}20`,
+        border: `1px solid ${color}38`,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+      }}
+    >
+      <Icon size={16} style={{ color }} strokeWidth={1.7} />
+    </div>
+  );
+}
+
+function SortableDockRow({
+  appId,
+  onRemove,
+}: {
+  appId: string;
+  onRemove: (id: string) => void;
+}) {
+  const app = APP_REGISTRY.find((a) => a.id === appId);
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: appId });
+
+  if (app === undefined) return null;
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    padding: "10px 14px",
+    borderBottom: "1px solid rgba(255,255,255,0.05)",
+    background: isDragging ? "rgba(255,255,255,0.04)" : "transparent",
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        aria-label="Arrastar para reordenar"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "transparent",
+          border: "none",
+          padding: 4,
+          margin: -4,
+          cursor: isDragging ? "grabbing" : "grab",
+          color: "var(--text-tertiary)",
+          touchAction: "none",
+        }}
+      >
+        <GripVertical size={16} strokeWidth={1.6} />
+      </button>
+      <DockAppIcon iconName={app.icon} color={app.color} />
+      <span
+        style={{
+          flex: 1,
+          fontSize: 13,
+          fontWeight: 500,
+          color: "var(--text-primary)",
+        }}
+      >
+        {app.name}
+      </span>
+      <button
+        type="button"
+        onClick={() => onRemove(appId)}
+        aria-label={`Remover ${app.name} do dock`}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 28,
+          height: 28,
+          borderRadius: 8,
+          background: "rgba(239,68,68,0.10)",
+          border: "1px solid rgba(239,68,68,0.18)",
+          cursor: "pointer",
+          color: "#f87171",
+          padding: 0,
+          transition: "background 120ms ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "rgba(239,68,68,0.20)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "rgba(239,68,68,0.10)";
+        }}
+      >
+        <Trash2 size={13} strokeWidth={1.8} />
+      </button>
+    </div>
+  );
+}
+
 function TabDock() {
+  const order = useDockStore((s) => s.order);
+  const addApp = useDockStore((s) => s.addApp);
+  const removeApp = useDockStore((s) => s.removeApp);
+  const reorder = useDockStore((s) => s.reorder);
+  const reset = useDockStore((s) => s.reset);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (over === null || active.id === over.id) return;
+    const oldIndex = order.indexOf(active.id as string);
+    const newIndex = order.indexOf(over.id as string);
+    if (oldIndex === -1 || newIndex === -1) return;
+    reorder(oldIndex, newIndex);
+  }
+
+  // Apps disponíveis para adicionar: tudo exceto Mesa, admin-only e os já no dock.
+  const available = APP_REGISTRY.filter(
+    (a) => a.id !== "mesa" && a.requiresAdmin !== true && !order.includes(a.id),
+  );
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <ContentHeader
@@ -2026,9 +2190,126 @@ function TabDock() {
         iconBg="rgba(100,116,139,0.22)"
         iconColor="#94a3b8"
         title="Dock"
-        subtitle="Personalize os apps e a ordem de exibição na barra inferior"
+        subtitle="Reordene, adicione e remova apps da barra inferior"
       />
-      <ComingSoonBanner message="Arraste e reorganize os apps do Dock, adicione atalhos e oculte itens que não usa." />
+
+      <div>
+        <SectionLabel>Apps na dock ({order.length})</SectionLabel>
+        <SettingGroup>
+          {order.length === 0 ? (
+            <div
+              style={{
+                padding: "20px 16px",
+                fontSize: 12,
+                color: "var(--text-tertiary)",
+                textAlign: "center",
+              }}
+            >
+              Nenhum app na dock. Adicione abaixo.
+            </div>
+          ) : (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={order}
+                strategy={verticalListSortingStrategy}
+              >
+                <div>
+                  {order.map((id, idx) => (
+                    <div
+                      key={id}
+                      style={
+                        idx === order.length - 1
+                          ? { ["--last-row" as string]: "true" }
+                          : undefined
+                      }
+                    >
+                      <SortableDockRow appId={id} onRemove={removeApp} />
+                    </div>
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          )}
+        </SettingGroup>
+      </div>
+
+      {available.length > 0 && (
+        <div>
+          <SectionLabel>Apps disponíveis</SectionLabel>
+          <SettingGroup>
+            {available.map((app, idx) => (
+              <SettingRow
+                key={app.id}
+                label={app.name}
+                last={idx === available.length - 1}
+              >
+                <button
+                  type="button"
+                  onClick={() => addApp(app.id)}
+                  aria-label={`Adicionar ${app.name} à dock`}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    background: "rgba(99,102,241,0.16)",
+                    border: "1px solid rgba(99,102,241,0.30)",
+                    borderRadius: 8,
+                    padding: "6px 12px",
+                    fontSize: 12,
+                    fontWeight: 500,
+                    color: "#a5b4fc",
+                    cursor: "pointer",
+                    transition: "background 120ms ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(99,102,241,0.24)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "rgba(99,102,241,0.16)";
+                  }}
+                >
+                  <Plus size={12} strokeWidth={2} />
+                  Adicionar
+                </button>
+              </SettingRow>
+            ))}
+          </SettingGroup>
+        </div>
+      )}
+
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <button
+          type="button"
+          onClick={reset}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.10)",
+            borderRadius: 8,
+            padding: "7px 14px",
+            fontSize: 12,
+            fontWeight: 500,
+            color: "var(--text-secondary)",
+            cursor: "pointer",
+            transition: "background 120ms ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.11)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+          }}
+        >
+          <RotateCcw size={12} strokeWidth={2} />
+          Restaurar padrão
+        </button>
+      </div>
     </div>
   );
 }
