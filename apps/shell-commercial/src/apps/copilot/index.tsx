@@ -879,34 +879,34 @@ export function CopilotDrawer({
             transition={{ duration: 0.2 }}
             className="fixed inset-0 z-[60]"
             style={{
-              background: "rgba(0,0,0,0.72)",
-              backdropFilter: "blur(4px)",
-              WebkitBackdropFilter: "blur(4px)",
+              background: "rgba(0,0,0,0.45)",
+              backdropFilter: "blur(2px)",
+              WebkitBackdropFilter: "blur(2px)",
             }}
             onClick={onClose}
             aria-hidden
           />
 
-          {/* Modal centralizado */}
+          {/* Gaveta — abre acima da Dock */}
           <motion.div
             key="ai-modal"
-            initial={{ opacity: 0, scale: 0.92, y: 40 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.94, y: 20 }}
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
             className="fixed z-[61] flex flex-col"
             style={{
-              top: "50%",
+              bottom: 100,
               left: "50%",
-              transform: "translate(-50%, -50%)",
-              width: "min(680px, 94vw)",
-              height: "min(600px, 82vh)",
-              borderRadius: 20,
-              background: "rgba(8,10,18,0.96)",
+              transform: "translateX(-50%)",
+              width: "min(680px, 88vw)",
+              height: "min(520px, 72vh)",
+              borderRadius: 16,
+              background: "rgba(8,10,18,0.97)",
               boxShadow:
-                "0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.06)",
+                "0 -4px 40px rgba(0,0,0,0.5), 0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.07)",
               overflow: "hidden",
-              position: "relative",
+              position: "fixed",
             }}
           >
             {/* ShineBorder — efeito de borda animado */}
@@ -1263,7 +1263,8 @@ export function CopilotDrawer({
                   style={{
                     position: "absolute",
                     right: 10,
-                    bottom: 10,
+                    top: "50%",
+                    transform: "translateY(-50%)",
                     width: 32,
                     height: 32,
                     borderRadius: 9,
