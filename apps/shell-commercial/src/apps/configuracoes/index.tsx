@@ -290,12 +290,14 @@ function SettingRow({
   sublabel,
   last,
   danger,
+  icon,
   children,
 }: {
   label: string;
   sublabel?: string;
   last?: boolean;
   danger?: boolean;
+  icon?: React.ReactNode;
   children?: React.ReactNode;
 }) {
   return (
@@ -318,14 +320,17 @@ function SettingRow({
           minWidth: 0,
         }}
       >
-        <span
-          style={{
-            fontSize: 13,
-            color: danger ? "var(--status-error)" : "var(--text-primary)",
-          }}
-        >
-          {label}
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {icon !== undefined && icon}
+          <span
+            style={{
+              fontSize: 13,
+              color: danger ? "var(--status-error)" : "var(--text-primary)",
+            }}
+          >
+            {label}
+          </span>
+        </div>
         {sublabel !== undefined && (
           <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
             {sublabel}
@@ -4756,11 +4761,11 @@ function VersionCardInner({
             position: "absolute",
             top: 0,
             right: 0,
-            padding: "2px 7px",
+            padding: "3px 10px",
             borderRadius: 999,
             background: `${accent}22`,
             border: `1px solid ${accent}44`,
-            fontSize: 9,
+            fontSize: 11,
             fontWeight: 700,
             color: accent,
             letterSpacing: "0.07em",
@@ -4776,11 +4781,12 @@ function VersionCardInner({
       {/* Nome */}
       <p
         style={{
-          fontSize: 12,
+          fontSize: 36,
           fontWeight: 700,
+          fontFamily: "var(--font-display)",
           color: "var(--text-primary)",
-          letterSpacing: "-0.01em",
-          lineHeight: 1.2,
+          letterSpacing: "-0.03em",
+          lineHeight: 1.1,
         }}
       >
         {name}
@@ -4789,10 +4795,12 @@ function VersionCardInner({
       {/* Versão */}
       <p
         style={{
-          marginTop: 3,
+          marginTop: 6,
           fontFamily: "var(--font-mono)",
-          fontSize: 10,
+          fontSize: 30,
+          fontWeight: 600,
           color: "var(--text-secondary)",
+          letterSpacing: "-0.02em",
         }}
       >
         {version}
@@ -4802,8 +4810,8 @@ function VersionCardInner({
       {env !== undefined && (
         <p
           style={{
-            marginTop: 2,
-            fontSize: 9,
+            marginTop: 4,
+            fontSize: 27,
             color: "var(--text-tertiary)",
           }}
         >
@@ -4821,7 +4829,7 @@ function VersionCard(props: VersionCardData) {
         ...TILE_BASE,
         display: "flex",
         flexDirection: "column",
-        minHeight: 150,
+        minHeight: 240,
       }}
     >
       <VersionCardInner {...props} />
@@ -4956,6 +4964,26 @@ function TabSobre() {
           <SettingRow
             label="GitHub"
             sublabel="Código-fonte aberto, issues e contribuições"
+            icon={
+              <div
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: 6,
+                  background: "#181717",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <img
+                  src="/integrations/github.svg"
+                  alt="GitHub"
+                  style={{ width: 13, height: 13, objectFit: "contain" }}
+                />
+              </div>
+            }
             last
           >
             <InlineButton
