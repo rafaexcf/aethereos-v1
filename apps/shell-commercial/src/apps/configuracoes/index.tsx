@@ -31,6 +31,11 @@ import {
   GripVertical,
   Plus,
   RotateCcw,
+  CreditCard,
+  Cpu,
+  HardDrive,
+  Network,
+  Users,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import type { LucideProps } from "lucide-react";
@@ -73,6 +78,7 @@ type TabId =
   | "mesa"
   | "aparencia"
   | "integracoes"
+  | "planos"
   | "sobre";
 
 interface NavItem {
@@ -110,6 +116,7 @@ const NAV_SECTIONS: NavSection[] = [
     label: "Avançado",
     items: [
       { id: "integracoes", label: "Integrações", icon: Link2 },
+      { id: "planos", label: "Planos", icon: CreditCard },
       { id: "sobre", label: "Sistema", icon: Info },
     ],
   },
@@ -125,6 +132,7 @@ const TAB_LABELS: Record<TabId, string> = {
   mesa: "Mesa",
   aparencia: "Aparência",
   integracoes: "Integrações",
+  planos: "Planos",
   sobre: "Sistema",
 };
 
@@ -2740,6 +2748,240 @@ function TabIntegracoes() {
   );
 }
 
+// ─── Tab: Planos ──────────────────────────────────────────────────────────────
+
+function UsageBar({ used, limit }: { used: number; limit: number }) {
+  const pct = limit > 0 ? Math.min((used / limit) * 100, 100) : 0;
+  const color = pct > 80 ? "#ef4444" : pct > 50 ? "#f59e0b" : "#6366f1";
+  return (
+    <div
+      style={{
+        width: 140,
+        height: 5,
+        borderRadius: 999,
+        background: "rgba(255,255,255,0.08)",
+        overflow: "hidden",
+        flexShrink: 0,
+      }}
+    >
+      <div
+        style={{
+          width: `${pct}%`,
+          height: "100%",
+          background: color,
+          borderRadius: 999,
+          transition: "width 400ms ease",
+        }}
+      />
+    </div>
+  );
+}
+
+function UsageRow({
+  icon: Icon,
+  iconColor,
+  label,
+  used,
+  limit,
+  unit,
+  last,
+}: {
+  icon: typeof CreditCard;
+  iconColor: string;
+  label: string;
+  used: number;
+  limit: number;
+  unit: string;
+  last?: boolean;
+}) {
+  const fmt = (n: number) =>
+    n >= 1_000_000
+      ? `${(n / 1_000_000).toFixed(1)}M`
+      : n >= 1_000
+        ? `${(n / 1_000).toFixed(1)}K`
+        : n.toLocaleString("pt-BR");
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        minHeight: 56,
+        padding: "12px 16px",
+        borderBottom: last ? "none" : "1px solid rgba(255,255,255,0.05)",
+      }}
+    >
+      <div
+        style={{
+          width: 32,
+          height: 32,
+          borderRadius: 8,
+          background: `${iconColor}20`,
+          border: `1px solid ${iconColor}30`,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        <Icon size={15} style={{ color: iconColor }} strokeWidth={1.7} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ fontSize: 13, color: "var(--text-primary)" }}>
+          {label}
+        </span>
+        <p
+          style={{
+            fontSize: 11,
+            color: "var(--text-tertiary)",
+            marginTop: 2,
+          }}
+        >
+          {fmt(used)} de {fmt(limit)} {unit}
+        </p>
+      </div>
+      <UsageBar used={used} limit={limit} />
+    </div>
+  );
+}
+
+function TabPlanos() {
+  // Mock data — TODO: ligar a billing/metrics real (Lago + métricas LiteLLM)
+  const usage = {
+    apiCalls: { used: 24_350, limit: 100_000, unit: "chamadas" },
+    llmTokens: { used: 1_240_000, limit: 5_000_000, unit: "tokens" },
+    storage: { used: 4.2, limit: 25, unit: "GB" },
+    bandwidth: { used: 18.6, limit: 100, unit: "GB" },
+    users: { used: 3, limit: 10, unit: "usuários" },
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <ContentHeader
+        icon={CreditCard}
+        iconBg="rgba(16,185,129,0.22)"
+        iconColor="#34d399"
+        title="Planos"
+        subtitle="Plano contratado, consumo do ciclo atual e limites"
+      />
+
+      {/* Plano atual (movido do Sistema) */}
+      <div>
+        <SectionLabel>Plano atual</SectionLabel>
+        <SettingGroup>
+          <SettingRow label="Tipo de plano">
+            <Badge variant="warning">Trial</Badge>
+          </SettingRow>
+          <SettingRow
+            label="Expira em"
+            sublabel="Após esse período é necessário escolher um plano"
+          >
+            <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+              30 dias
+            </span>
+          </SettingRow>
+          <SettingRow label="Ciclo de cobrança" last>
+            <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+              Mensal
+            </span>
+          </SettingRow>
+        </SettingGroup>
+      </div>
+
+      {/* Consumo */}
+      <div>
+        <SectionLabel>Consumo este mês</SectionLabel>
+        <SettingGroup>
+          <UsageRow
+            icon={Network}
+            iconColor="#22d3ee"
+            label="Chamadas de API"
+            used={usage.apiCalls.used}
+            limit={usage.apiCalls.limit}
+            unit={usage.apiCalls.unit}
+          />
+          <UsageRow
+            icon={Cpu}
+            iconColor="#a78bfa"
+            label="Tokens LLM"
+            used={usage.llmTokens.used}
+            limit={usage.llmTokens.limit}
+            unit={usage.llmTokens.unit}
+          />
+          <UsageRow
+            icon={HardDrive}
+            iconColor="#fb923c"
+            label="Armazenamento"
+            used={usage.storage.used}
+            limit={usage.storage.limit}
+            unit={usage.storage.unit}
+          />
+          <UsageRow
+            icon={Network}
+            iconColor="#fbbf24"
+            label="Bandwidth"
+            used={usage.bandwidth.used}
+            limit={usage.bandwidth.limit}
+            unit={usage.bandwidth.unit}
+          />
+          <UsageRow
+            icon={Users}
+            iconColor="#818cf8"
+            label="Usuários ativos"
+            used={usage.users.used}
+            limit={usage.users.limit}
+            unit={usage.users.unit}
+            last
+          />
+        </SettingGroup>
+        <p
+          style={{
+            fontSize: 11,
+            color: "var(--text-tertiary)",
+            marginTop: 8,
+            paddingLeft: 2,
+          }}
+        >
+          Ciclo reinicia no dia 1º de cada mês. Limites podem ser alterados ao
+          mudar de plano.
+        </p>
+      </div>
+
+      {/* Histórico */}
+      <div>
+        <SectionLabel>Faturamento</SectionLabel>
+        <SettingGroup>
+          <SettingRow
+            label="Histórico de faturas"
+            sublabel="Veja todas as cobranças e baixe NFs"
+          >
+            <InlineButton onClick={() => {}}>Ver histórico</InlineButton>
+          </SettingRow>
+          <SettingRow
+            label="Forma de pagamento"
+            sublabel="Cartão, boleto ou Pix"
+          >
+            <Badge variant="neutral">Não configurado</Badge>
+          </SettingRow>
+          <SettingRow
+            label="Endereço de cobrança"
+            sublabel="Usado nas notas fiscais"
+            last
+          >
+            <InlineButton onClick={() => {}}>Configurar</InlineButton>
+          </SettingRow>
+        </SettingGroup>
+      </div>
+
+      {/* CTA upgrade */}
+      <SaveRow>
+        <PrimaryButton onClick={() => {}}>Fazer upgrade do plano</PrimaryButton>
+      </SaveRow>
+    </div>
+  );
+}
+
 // ─── Tab: Sobre ───────────────────────────────────────────────────────────────
 
 function TabSobre() {
@@ -2887,20 +3129,6 @@ function TabSobre() {
           </SettingGroup>
         </div>
       )}
-
-      <div>
-        <SectionLabel>Plano</SectionLabel>
-        <SettingGroup>
-          <SettingRow label="Tipo de plano">
-            <Badge variant="warning">Trial</Badge>
-          </SettingRow>
-          <SettingRow label="Expira em" last>
-            <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-              30 dias
-            </span>
-          </SettingRow>
-        </SettingGroup>
-      </div>
 
       <div>
         <SectionLabel>Compliance</SectionLabel>
@@ -4195,6 +4423,8 @@ function TabContent({
       return <TabAparencia />;
     case "integracoes":
       return <TabIntegracoes />;
+    case "planos":
+      return <TabPlanos />;
     case "sobre":
       return <TabSobre />;
   }
