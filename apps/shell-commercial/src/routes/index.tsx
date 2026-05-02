@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { rootRoute } from "./__root";
 import { useSessionStore } from "../stores/session";
 import { isEmbedMode } from "../lib/embed";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { EmbeddedApp } from "../components/EmbeddedApp";
 import { useFeatureFlag, useFeatureFlagsContext } from "@aethereos/ui-shell";
 import {
@@ -13,6 +13,7 @@ import {
 import { NotificationCenter } from "../components/NotificationCenter";
 import { AppsLauncher } from "../components/AppsLauncher";
 import { SupportModal } from "../components/SupportModal";
+import { NotificationToast } from "../components/NotificationToast";
 import { useWindowsStore } from "../stores/windows";
 import { APP_REGISTRY, getApp } from "../lib/app-registry";
 import { CopilotDrawer } from "../apps/copilot/index";
@@ -47,6 +48,7 @@ function DesktopPage() {
   const [appsOpen, setAppsOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [dockHidden, setDockHidden] = useState(false);
+  const [toastNotif, setToastNotif] = useState<NotificationItem | null>(null);
 
   const dashboardsFlag = useFeatureFlag("feature.experimental.dashboards");
   const { setFlag } = useFeatureFlagsContext();
@@ -156,6 +158,14 @@ function DesktopPage() {
     );
   }, []);
 
+  const handleToastDismiss = useCallback(
+    (id: string) => {
+      setToastNotif(null);
+      handleMarkRead([id]);
+    },
+    [handleMarkRead],
+  );
+
   useEffect(() => {
     if (userId === null) {
       void navigate({ to: "/login" });
@@ -175,6 +185,16 @@ function DesktopPage() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [copilotOpen]);
+
+  const toastShownRef = useRef(false);
+  useEffect(() => {
+    if (toastShownRef.current) return;
+    const first = notifications.find((n) => n.read_at === null);
+    if (first == null) return;
+    toastShownRef.current = true;
+    const t = setTimeout(() => setToastNotif(first), 1800);
+    return () => clearTimeout(t);
+  }, [notifications]);
 
   useEffect(() => {
     if (drivers === null || activeCompanyId === null) return;
@@ -402,6 +422,9 @@ function DesktopPage() {
 
       {/* Modal de suporte */}
       <SupportModal open={supportOpen} onClose={() => setSupportOpen(false)} />
+
+      {/* Toast de notificação — flutua acima da dock */}
+      <NotificationToast item={toastNotif} onDismiss={handleToastDismiss} />
 
       {/* AI Copilot Drawer — global, não está no Dock */}
       {drivers !== null && (

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { TopBar } from "./TopBar";
 import { TabBar } from "./TabBar";
@@ -9,6 +9,10 @@ import { useSessionStore } from "../../stores/session";
 import { useOSStore } from "../../stores/osStore";
 import { useMesaStore, getWallpaperStyle } from "../../stores/mesaStore";
 import { CopilotDrawer } from "../../apps/copilot/index";
+import { AppsLauncher } from "../AppsLauncher";
+import { SupportModal } from "../SupportModal";
+import { NotificationToast } from "../NotificationToast";
+import type { NotificationItem } from "../NotificationBell";
 
 export function OSDesktop() {
   const navigate = useNavigate();
@@ -21,10 +25,17 @@ export function OSDesktop() {
     setAvatarUrl,
   } = useSessionStore();
   const { aiModalOpen, closeAIModal } = useOSStore();
+  const appsLauncherOpen = useOSStore((s) => s.appsLauncherOpen);
+  const closeAppsLauncher = useOSStore((s) => s.closeAppsLauncher);
+  const supportOpen = useOSStore((s) => s.supportOpen);
+  const closeSupport = useOSStore((s) => s.closeSupport);
+  const openApp = useOSStore((s) => s.openApp);
   const fetchLayout = useMesaStore((s) => s.fetchLayout);
   const wallpaper = useMesaStore((s) => s.wallpaper);
   const wallpaperUrl = useMesaStore((s) => s.wallpaperUrl);
   const [companyName, setCompanyName] = useState<string | null>(null);
+  const [toastNotif, setToastNotif] = useState<NotificationItem | null>(null);
+  const toastShownRef = useRef(false);
   // null = loading, true = done, false = show wizard
   const [onboardingCompleted, setOnboardingCompleted] = useState<
     boolean | null
@@ -66,6 +77,23 @@ export function OSDesktop() {
       });
   }, [drivers, userId, setAvatarUrl]);
 
+  useEffect(() => {
+    if (toastShownRef.current) return;
+    toastShownRef.current = true;
+    const notif: NotificationItem = {
+      id: "os-welcome",
+      type: "success",
+      title: "Sistema pronto",
+      body: "Todos os módulos carregados. LiteLLM, Langfuse e Unleash operacionais.",
+      read_at: null,
+      created_at: new Date(),
+      app: "Sistema",
+      context: "sistema",
+    };
+    const t = setTimeout(() => setToastNotif(notif), 1800);
+    return () => clearTimeout(t);
+  }, []);
+
   const handleSignOut = useCallback(async () => {
     if (drivers === null) return;
     await drivers.auth.signOut();
@@ -95,6 +123,25 @@ export function OSDesktop() {
       </div>
 
       <Dock />
+
+      {/* Apps launcher */}
+      <AppsLauncher
+        open={appsLauncherOpen}
+        onClose={closeAppsLauncher}
+        onOpenApp={(id, label) => {
+          openApp(id, label);
+          closeAppsLauncher();
+        }}
+      />
+
+      {/* Modal de suporte */}
+      <SupportModal open={supportOpen} onClose={closeSupport} />
+
+      {/* Toast de notificação — flutua acima da dock */}
+      <NotificationToast
+        item={toastNotif}
+        onDismiss={() => setToastNotif(null)}
+      />
 
       {/* AI Copilot drawer */}
       {drivers !== null && (

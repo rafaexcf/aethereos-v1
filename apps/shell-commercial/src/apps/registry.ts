@@ -118,6 +118,20 @@ export const APP_REGISTRY: OSApp[] = [
     opensAsModal: true,
   },
   {
+    id: "calendar",
+    name: "Calendário",
+    icon: "CalendarDays",
+    color: "#8b5cf6",
+    component: React.lazy(() =>
+      import("./calendario/CalendarApp").then((m) => ({
+        default: m.CalendarApp,
+      })),
+    ),
+    showInDock: false,
+    closeable: true,
+    hasInternalNav: true,
+  },
+  {
     id: "governanca",
     name: "Governança",
     icon: "Shield",

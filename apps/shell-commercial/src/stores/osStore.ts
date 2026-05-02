@@ -7,6 +7,9 @@ interface OSState {
   dockOrder: string[];
   hiddenDockApps: string[];
   aiModalOpen: boolean;
+  dockHidden: boolean;
+  appsLauncherOpen: boolean;
+  supportOpen: boolean;
 }
 
 interface OSActions {
@@ -20,6 +23,11 @@ interface OSActions {
   toggleAIModal: () => void;
   openAIModal: () => void;
   closeAIModal: () => void;
+  toggleDockHidden: () => void;
+  openAppsLauncher: () => void;
+  closeAppsLauncher: () => void;
+  openSupport: () => void;
+  closeSupport: () => void;
 }
 
 const INITIAL_TABS: OSTab[] = [
@@ -58,10 +66,18 @@ export const useOSStore = create<OSState & OSActions>((set, get) => ({
   dockOrder: loadDockOrder(),
   hiddenDockApps: loadHiddenDockApps(),
   aiModalOpen: false,
+  dockHidden: false,
+  appsLauncherOpen: false,
+  supportOpen: false,
 
   toggleAIModal: () => set((s) => ({ aiModalOpen: !s.aiModalOpen })),
   openAIModal: () => set({ aiModalOpen: true }),
   closeAIModal: () => set({ aiModalOpen: false }),
+  toggleDockHidden: () => set((s) => ({ dockHidden: !s.dockHidden })),
+  openAppsLauncher: () => set({ appsLauncherOpen: true }),
+  closeAppsLauncher: () => set({ appsLauncherOpen: false }),
+  openSupport: () => set({ supportOpen: true }),
+  closeSupport: () => set({ supportOpen: false }),
 
   openApp: (appId, title) => {
     const { tabs, activeTabId } = get();

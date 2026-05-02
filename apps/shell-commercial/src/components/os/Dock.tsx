@@ -6,11 +6,18 @@ import {
   AnimatePresence,
   type MotionStyle,
 } from "framer-motion";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import * as LucideIcons from "lucide-react";
 import type { LucideProps } from "lucide-react";
 import type { ComponentType } from "react";
-import { Bell, CloudSun, Droplets, Wind, X } from "lucide-react";
+import { Bell, CalendarDays, CloudSun, Droplets, Wind, X } from "lucide-react";
+import {
+  MONTH_NAMES,
+  DAY_HEADERS_SHORT,
+  getMonthDays,
+  isSameDay,
+  todayMidnight,
+} from "../../apps/calendario/calendarUtils";
 import { useOSStore } from "../../stores/osStore";
 import { useDockStore } from "../../stores/dockStore";
 import { getApp, prefetchApp } from "../../apps/registry";
@@ -236,6 +243,461 @@ function DockWeatherWidget() {
           }}
         >
           {WEATHER_MOCK.temp}°
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* ── Widget de Data/Hora ────────────────────────────────────────────── */
+
+function DockClockWidget() {
+  const [now, setNow] = useState(new Date());
+  const [open, setOpen] = useState(false);
+  const [popYear, setPopYear] = useState(now.getFullYear());
+  const [popMonth, setPopMonth] = useState(now.getMonth());
+  const openApp = useOSStore((s) => s.openApp);
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const hh = now.getHours().toString().padStart(2, "0");
+  const mm = now.getMinutes().toString().padStart(2, "0");
+  const timeStr = `${hh}:${mm}`;
+
+  const dateStr = now.toLocaleDateString("pt-BR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+
+  const miniCells = getMonthDays(popYear, popMonth);
+  const todayMid = todayMidnight();
+
+  function popPrev() {
+    if (popMonth === 0) {
+      setPopYear((y) => y - 1);
+      setPopMonth(11);
+    } else setPopMonth((m) => m - 1);
+  }
+  function popNext() {
+    if (popMonth === 11) {
+      setPopYear((y) => y + 1);
+      setPopMonth(0);
+    } else setPopMonth((m) => m + 1);
+  }
+
+  return (
+    <div className="relative flex flex-col items-center">
+      {/* Popover */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            key="clock-popup"
+            initial={{ opacity: 0, y: 8, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 6, scale: 0.97 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 z-50"
+            style={{ ...WIDGET_POPUP_STYLE, width: 256 }}
+          >
+            {/* Time + date header */}
+            <div
+              style={{
+                padding: "14px 16px 12px",
+                borderBottom: "1px solid var(--border-subtle)",
+              }}
+            >
+              <p
+                style={{
+                  fontSize: 38,
+                  fontWeight: 700,
+                  letterSpacing: "-0.05em",
+                  color: "var(--text-primary)",
+                  lineHeight: 1,
+                }}
+              >
+                {timeStr}
+              </p>
+              <p
+                style={{
+                  fontSize: 11,
+                  color: "var(--text-secondary)",
+                  marginTop: 5,
+                  textTransform: "capitalize",
+                }}
+              >
+                {dateStr}
+              </p>
+            </div>
+
+            {/* Mini calendar */}
+            <div style={{ padding: "12px 14px 8px" }}>
+              {/* Mini header */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: 8,
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  {MONTH_NAMES[popMonth]} {popYear}
+                </span>
+                <div style={{ display: "flex", gap: 2 }}>
+                  <button
+                    type="button"
+                    onClick={popPrev}
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: 4,
+                      background: "transparent",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      color: "rgba(255,255,255,0.5)",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    ‹
+                  </button>
+                  <button
+                    type="button"
+                    onClick={popNext}
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: 4,
+                      background: "transparent",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      color: "rgba(255,255,255,0.5)",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    ›
+                  </button>
+                </div>
+              </div>
+
+              {/* Day headers */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(7, 1fr)",
+                  marginBottom: 3,
+                }}
+              >
+                {DAY_HEADERS_SHORT.map((h) => (
+                  <span
+                    key={h}
+                    style={{
+                      textAlign: "center",
+                      fontSize: 9,
+                      fontWeight: 600,
+                      color: "rgba(255,255,255,0.25)",
+                    }}
+                  >
+                    {h[0]}
+                  </span>
+                ))}
+              </div>
+
+              {/* Grid */}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(7, 1fr)",
+                  gap: "2px 0",
+                }}
+              >
+                {miniCells.map((cell, i) => {
+                  const isToday = isSameDay(cell.date, todayMid);
+                  return (
+                    <div
+                      key={i}
+                      style={{
+                        aspectRatio: "1",
+                        borderRadius: "50%",
+                        fontSize: 10,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: isToday ? "#8b5cf6" : "transparent",
+                        color: isToday
+                          ? "#fff"
+                          : !cell.isCurrentMonth
+                            ? "rgba(255,255,255,0.18)"
+                            : "rgba(255,255,255,0.7)",
+                        fontWeight: isToday ? 700 : 400,
+                      }}
+                    >
+                      {cell.date.getDate()}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Open calendar button */}
+            <div style={{ padding: "0 14px 14px" }}>
+              <button
+                type="button"
+                onClick={() => {
+                  openApp("calendar", "Calendário");
+                  setOpen(false);
+                }}
+                style={{
+                  width: "100%",
+                  padding: "8px",
+                  borderRadius: 8,
+                  background: "rgba(139,92,246,0.1)",
+                  border: "1px solid rgba(139,92,246,0.22)",
+                  color: "#a78bfa",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "background 120ms",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(139,92,246,0.2)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(139,92,246,0.1)";
+                }}
+              >
+                Abrir Calendário →
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Dock icon */}
+      <div
+        onClick={() => setOpen((v) => !v)}
+        className="flex flex-col items-center justify-center cursor-pointer transition-colors"
+        style={{
+          width: ICON_BASE,
+          height: ICON_BASE,
+          borderRadius: "var(--radius-lg)",
+          gap: 1,
+        }}
+        onMouseOver={(e) => {
+          (e.currentTarget as HTMLElement).style.background =
+            "var(--glass-bg-hover)";
+        }}
+        onMouseOut={(e) => {
+          (e.currentTarget as HTMLElement).style.background = open
+            ? "var(--glass-bg)"
+            : "transparent";
+        }}
+      >
+        <CalendarDays
+          size={18}
+          strokeWidth={1.4}
+          style={{ color: "rgba(255,255,255,0.65)" }}
+        />
+        <span
+          style={{
+            fontSize: 10,
+            fontWeight: 700,
+            color: "rgba(255,255,255,0.75)",
+            letterSpacing: "-0.03em",
+            lineHeight: 1,
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          {timeStr}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/* ── Menu do sistema (···) ──────────────────────────────────────────── */
+
+const SYSTEM_ITEMS = [
+  { label: "Ocultar Dock", icon: "▬", key: "dock" },
+  { label: "Todos os apps", icon: "⊞", key: "apps" },
+  { label: "Configurações", icon: "⚙", key: "settings" },
+  { label: "Suporte", icon: "🛟", key: "support" },
+] as const;
+
+function DockSystemMenuWidget() {
+  const [open, setOpen] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipTimeout, setTooltipTimeout] = useState<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+
+  const openApp = useOSStore((s) => s.openApp);
+  const toggleDockHidden = useOSStore((s) => s.toggleDockHidden);
+  const openAppsLauncher = useOSStore((s) => s.openAppsLauncher);
+  const openSupport = useOSStore((s) => s.openSupport);
+
+  function handleAction(key: (typeof SYSTEM_ITEMS)[number]["key"]) {
+    setOpen(false);
+    if (key === "dock") toggleDockHidden();
+    else if (key === "apps") openAppsLauncher();
+    else if (key === "settings") openApp("settings", "Configurações");
+    else if (key === "support") openSupport();
+  }
+
+  function handleMouseEnter() {
+    const t = setTimeout(() => setShowTooltip(true), 550);
+    setTooltipTimeout(t);
+  }
+  function handleMouseLeave() {
+    setShowTooltip(false);
+    if (tooltipTimeout !== null) {
+      clearTimeout(tooltipTimeout);
+      setTooltipTimeout(null);
+    }
+  }
+
+  return (
+    <div className="relative flex flex-col items-center">
+      {/* Tooltip */}
+      <AnimatePresence>
+        {showTooltip && !open && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.94 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 6, scale: 0.97 }}
+            transition={{ duration: 0.1 }}
+            className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 z-50 whitespace-nowrap pointer-events-none px-2.5 py-1"
+            style={{
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--glass-border)",
+              borderRadius: "var(--radius-md)",
+              boxShadow: "var(--shadow-md)",
+              color: "var(--text-primary)",
+              fontSize: 12,
+              fontWeight: 500,
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Menu do sistema
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Dropdown menu */}
+      <AnimatePresence>
+        {open && (
+          <>
+            <div
+              style={{ position: "fixed", inset: 0, zIndex: 250 }}
+              onClick={() => setOpen(false)}
+            />
+            <motion.div
+              key="sys-menu"
+              initial={{ opacity: 0, y: 6, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 4, scale: 0.97 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 z-[251]"
+              style={{
+                width: 196,
+                borderRadius: 12,
+                background: "rgba(10,12,22,0.98)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                boxShadow: "0 8px 40px rgba(0,0,0,0.65)",
+                padding: 5,
+                backdropFilter: "blur(24px)",
+                WebkitBackdropFilter: "blur(24px)",
+              }}
+            >
+              {SYSTEM_ITEMS.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => handleAction(item.key)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    padding: "9px 12px",
+                    borderRadius: 8,
+                    width: "100%",
+                    background: "transparent",
+                    border: "none",
+                    color: "rgba(255,255,255,0.72)",
+                    fontSize: 12,
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    textAlign: "left",
+                    transition: "background 100ms, color 100ms",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "rgba(139,92,246,0.14)";
+                    e.currentTarget.style.color = "#c4b5fd";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.color = "rgba(255,255,255,0.72)";
+                  }}
+                >
+                  <span
+                    style={{ fontSize: 15, width: 20, textAlign: "center" }}
+                  >
+                    {item.icon}
+                  </span>
+                  {item.label}
+                </button>
+              ))}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Dock icon */}
+      <div
+        onClick={() => setOpen((v) => !v)}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        className="flex flex-col items-center justify-center cursor-pointer"
+        style={{
+          width: ICON_BASE,
+          height: ICON_BASE,
+          borderRadius: "var(--radius-lg)",
+          gap: 2,
+          background: open ? "var(--glass-bg)" : "transparent",
+        }}
+        onMouseOver={(e) => {
+          (e.currentTarget as HTMLElement).style.background =
+            "var(--glass-bg-hover)";
+        }}
+        onMouseOut={(e) => {
+          (e.currentTarget as HTMLElement).style.background = open
+            ? "var(--glass-bg)"
+            : "transparent";
+        }}
+      >
+        <span
+          style={{
+            fontSize: 18,
+            color: "rgba(255,255,255,0.65)",
+            letterSpacing: "0.06em",
+            lineHeight: 1,
+            userSelect: "none",
+          }}
+        >
+          ···
         </span>
       </div>
     </div>
@@ -634,6 +1096,8 @@ function DockIcon({
 export function Dock() {
   const tabs = useOSStore((s) => s.tabs);
   const activeTabId = useOSStore((s) => s.activeTabId);
+  const dockHidden = useOSStore((s) => s.dockHidden);
+  const toggleDockHidden = useOSStore((s) => s.toggleDockHidden);
   const order = useDockStore((s) => s.order);
   const dockApps = order
     .map((id) => getApp(id))
@@ -644,46 +1108,91 @@ export function Dock() {
   const activeAppId = tabs.find((t) => t.id === activeTabId)?.appId;
 
   return (
-    <motion.div
-      className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50"
-      data-testid="dock"
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-    >
+    <>
+      {/* Strip de re-exibição — visível só quando dock está oculto */}
+      <AnimatePresence>
+        {dockHidden && (
+          <motion.button
+            key="dock-reveal"
+            type="button"
+            title="Mostrar Dock"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={toggleDockHidden}
+            style={{
+              position: "fixed",
+              bottom: 0,
+              left: "50%",
+              transform: "translateX(-50%)",
+              zIndex: 52,
+              padding: "3px 24px 5px",
+              borderRadius: "8px 8px 0 0",
+              background: "rgba(139,92,246,0.14)",
+              border: "1px solid rgba(139,92,246,0.22)",
+              borderBottom: "none",
+              cursor: "pointer",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+            }}
+          >
+            <div
+              style={{
+                width: 28,
+                height: 3,
+                borderRadius: 2,
+                background: "rgba(139,92,246,0.6)",
+              }}
+            />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
       <motion.div
-        onMouseMove={(e) => mouseX.set(e.pageX)}
-        onMouseLeave={() => mouseX.set(Infinity)}
-        className="flex items-end pb-3 pt-3 px-4"
-        style={{
-          gap: 10,
-          background: "rgba(6,9,18,0.81)",
-          backdropFilter: `blur(var(--blur-dock))`,
-          WebkitBackdropFilter: `blur(var(--blur-dock))`,
-          border: "1px solid var(--glass-border)",
-          borderRadius: "var(--radius-dock)",
-          boxShadow: "var(--shadow-dock)",
-        }}
+        className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50"
+        data-testid="dock"
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: dockHidden ? 0 : 1, y: dockHidden ? 80 : 0 }}
+        transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+        style={{ pointerEvents: dockHidden ? "none" : "auto" }}
       >
-        {/* Widget: Tempo (esquerda) */}
-        <DockWeatherWidget />
-        <DockDivider />
+        <motion.div
+          onMouseMove={(e) => mouseX.set(e.pageX)}
+          onMouseLeave={() => mouseX.set(Infinity)}
+          className="flex items-end pb-3 pt-3 px-4"
+          style={{
+            gap: 10,
+            background: "rgba(6,9,18,0.81)",
+            backdropFilter: `blur(var(--blur-dock))`,
+            WebkitBackdropFilter: `blur(var(--blur-dock))`,
+            border: "1px solid var(--glass-border)",
+            borderRadius: "var(--radius-dock)",
+            boxShadow: "var(--shadow-dock)",
+          }}
+        >
+          {/* Widget: Tempo (esquerda) */}
+          <DockWeatherWidget />
+          <DockClockWidget />
+          <DockDivider />
 
-        {/* Apps */}
-        {dockApps.map((app) => (
-          <DockIcon
-            key={app.id}
-            app={app}
-            mouseX={mouseX}
-            isOpen={openAppIds.has(app.id)}
-            isActiveTab={activeAppId === app.id}
-          />
-        ))}
+          {/* Apps */}
+          {dockApps.map((app) => (
+            <DockIcon
+              key={app.id}
+              app={app}
+              mouseX={mouseX}
+              isOpen={openAppIds.has(app.id)}
+              isActiveTab={activeAppId === app.id}
+            />
+          ))}
 
-        {/* Widget: Notificações (direita) */}
-        <DockDivider />
-        <DockNotifWidget />
+          {/* Widget: Menu do sistema + Notificações (direita) */}
+          <DockDivider />
+          <DockSystemMenuWidget />
+          <DockNotifWidget />
+        </motion.div>
       </motion.div>
-    </motion.div>
+    </>
   );
 }

@@ -23,6 +23,7 @@
     "@tanstack/react-router": "^1.114.0",
     "framer-motion": "^11.18.2",
     "lucide-react": "^0.469.0",
+    "motion": "^12.38.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zustand": "^5.0.0"
