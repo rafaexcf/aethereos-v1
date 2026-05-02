@@ -257,6 +257,156 @@ function NotificationCard({
 }
 
 // ---------------------------------------------------------------------------
+// SystemMenu — "···" dropdown no header da central
+// ---------------------------------------------------------------------------
+
+interface SystemMenuProps {
+  dockHidden: boolean;
+  onToggleDock: () => void;
+  onOpenApps: () => void;
+  onOpenSettings: () => void;
+  onOpenSupport: () => void;
+}
+
+function SystemMenu({
+  dockHidden,
+  onToggleDock,
+  onOpenApps,
+  onOpenSettings,
+  onOpenSupport,
+}: SystemMenuProps) {
+  const [open, setOpen] = useState(false);
+
+  const items = [
+    {
+      label: dockHidden ? "Mostrar Dock" : "Ocultar Dock",
+      icon: dockHidden ? "▭" : "▬",
+      onClick: () => {
+        setOpen(false);
+        onToggleDock();
+      },
+    },
+    {
+      label: "Todos os apps",
+      icon: "⊞",
+      onClick: () => {
+        setOpen(false);
+        onOpenApps();
+      },
+    },
+    {
+      label: "Configurações",
+      icon: "⚙",
+      onClick: () => {
+        setOpen(false);
+        onOpenSettings();
+      },
+    },
+    {
+      label: "Suporte",
+      icon: "🛟",
+      onClick: () => {
+        setOpen(false);
+        onOpenSupport();
+      },
+    },
+  ];
+
+  return (
+    <div style={{ position: "relative" }}>
+      <button
+        type="button"
+        onClick={() => setOpen((p) => !p)}
+        title="Menu do sistema"
+        style={{
+          width: 30,
+          height: 30,
+          borderRadius: 8,
+          background: open
+            ? "rgba(255,255,255,0.10)"
+            : "rgba(255,255,255,0.05)",
+          border: open
+            ? "1px solid rgba(255,255,255,0.15)"
+            : "1px solid rgba(255,255,255,0.07)",
+          color: "rgba(255,255,255,0.6)",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 16,
+          letterSpacing: "0.1em",
+          transition: "background 120ms, border-color 120ms",
+        }}
+      >
+        ···
+      </button>
+
+      {open && (
+        <>
+          {/* Click-away overlay — z acima do painel da central (201) */}
+          <div
+            style={{ position: "fixed", inset: 0, zIndex: 250 }}
+            onClick={() => setOpen(false)}
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: "calc(100% + 6px)",
+              left: 0,
+              zIndex: 251,
+              width: 196,
+              borderRadius: 10,
+              background: "rgba(14,16,26,0.98)",
+              border: "1px solid rgba(255,255,255,0.10)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.55)",
+              padding: 4,
+              overflow: "hidden",
+            }}
+          >
+            {items.map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                onClick={item.onClick}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: "8px 12px",
+                  borderRadius: 7,
+                  width: "100%",
+                  background: "transparent",
+                  border: "none",
+                  color: "rgba(255,255,255,0.72)",
+                  fontSize: 12,
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  textAlign: "left",
+                  transition: "background 100ms, color 100ms",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(139,92,246,0.14)";
+                  e.currentTarget.style.color = "#c4b5fd";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = "rgba(255,255,255,0.72)";
+                }}
+              >
+                <span style={{ fontSize: 14, width: 18, textAlign: "center" }}>
+                  {item.icon}
+                </span>
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // NotificationCenter
 // ---------------------------------------------------------------------------
 
@@ -266,6 +416,11 @@ export interface NotificationCenterProps {
   onClose: () => void;
   onMarkRead: (ids: string[]) => void;
   onMarkAllRead: () => void;
+  dockHidden: boolean;
+  onToggleDock: () => void;
+  onOpenApps: () => void;
+  onOpenSettings: () => void;
+  onOpenSupport: () => void;
 }
 
 export function NotificationCenter({
@@ -274,6 +429,11 @@ export function NotificationCenter({
   onClose,
   onMarkRead,
   onMarkAllRead,
+  dockHidden,
+  onToggleDock,
+  onOpenApps,
+  onOpenSettings,
+  onOpenSupport,
 }: NotificationCenterProps) {
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [filterType, setFilterType] = useState<FilterType>("all");
@@ -392,6 +552,13 @@ export function NotificationCenter({
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <SystemMenu
+                  dockHidden={dockHidden}
+                  onToggleDock={onToggleDock}
+                  onOpenApps={onOpenApps}
+                  onOpenSettings={onOpenSettings}
+                  onOpenSupport={onOpenSupport}
+                />
                 <span
                   style={{
                     fontSize: 15,

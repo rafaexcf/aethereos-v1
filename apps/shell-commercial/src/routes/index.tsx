@@ -11,6 +11,8 @@ import {
   type NotificationItem,
 } from "../components/NotificationBell";
 import { NotificationCenter } from "../components/NotificationCenter";
+import { AppsLauncher } from "../components/AppsLauncher";
+import { SupportModal } from "../components/SupportModal";
 import { useWindowsStore } from "../stores/windows";
 import { APP_REGISTRY, getApp } from "../lib/app-registry";
 import { CopilotDrawer } from "../apps/copilot/index";
@@ -42,6 +44,9 @@ function DesktopPage() {
   const [showComercioDash, setShowComercioDash] = useState(false);
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [notifCenterOpen, setNotifCenterOpen] = useState(false);
+  const [appsOpen, setAppsOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
+  const [dockHidden, setDockHidden] = useState(false);
 
   const dashboardsFlag = useFeatureFlag("feature.experimental.dashboards");
   const { setFlag } = useFeatureFlagsContext();
@@ -341,8 +346,8 @@ function DesktopPage() {
           )}
         </div>
 
-        {/* Dock — sempre visível no rodapé */}
-        {!isEmbedMode && (
+        {/* Dock — ocultável via menu do sistema */}
+        {!isEmbedMode && !dockHidden && (
           <div className="flex shrink-0 items-center justify-center gap-2 border-t border-zinc-800 bg-zinc-900 px-4 py-2">
             {APP_REGISTRY.map((app) => {
               const isOpen = windows.some((w) => w.appId === app.id);
@@ -372,7 +377,31 @@ function DesktopPage() {
         onClose={() => setNotifCenterOpen(false)}
         onMarkRead={handleMarkRead}
         onMarkAllRead={handleMarkAllRead}
+        dockHidden={dockHidden}
+        onToggleDock={() => setDockHidden((h) => !h)}
+        onOpenApps={() => {
+          setNotifCenterOpen(false);
+          setAppsOpen(true);
+        }}
+        onOpenSettings={() => {
+          setNotifCenterOpen(false);
+          toggleApp("configuracoes", "Configurações");
+        }}
+        onOpenSupport={() => {
+          setNotifCenterOpen(false);
+          setSupportOpen(true);
+        }}
       />
+
+      {/* Launcher de todos os apps */}
+      <AppsLauncher
+        open={appsOpen}
+        onClose={() => setAppsOpen(false)}
+        onOpenApp={(id, label) => toggleApp(id, label)}
+      />
+
+      {/* Modal de suporte */}
+      <SupportModal open={supportOpen} onClose={() => setSupportOpen(false)} />
 
       {/* AI Copilot Drawer — global, não está no Dock */}
       {drivers !== null && (
