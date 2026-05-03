@@ -21,6 +21,9 @@ export interface OSTab {
   title: string;
   isActive: boolean;
   isPinned: boolean;
+  splitAppId?: string;
+  splitTitle?: string;
+  splitRatio?: number;
 }
 
 export interface MesaItem {

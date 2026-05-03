@@ -17,6 +17,8 @@ interface SessionState {
   isPlatformAdmin: boolean;
   /** URL da foto de perfil (kernel.profiles.avatar_url) — null se não setada */
   avatarUrl: string | null;
+  /** true quando a UI está bloqueada (lock screen ativa). Sessão Supabase permanece viva. */
+  isLocked: boolean;
   drivers: CloudDrivers | null;
 }
 
@@ -34,10 +36,36 @@ interface SessionActions {
   }) => void;
   setActiveCompany: (companyId: string) => void;
   setAvatarUrl: (url: string | null) => void;
+  lock: () => void;
+  unlock: () => void;
   clearSession: () => void;
 }
 
 type SessionStore = SessionState & SessionActions;
+
+const LOCK_STORAGE_KEY = "aethereos:session:locked";
+
+function readPersistedLock(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.sessionStorage.getItem(LOCK_STORAGE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function writePersistedLock(locked: boolean): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (locked) {
+      window.sessionStorage.setItem(LOCK_STORAGE_KEY, "1");
+    } else {
+      window.sessionStorage.removeItem(LOCK_STORAGE_KEY);
+    }
+  } catch {
+    // sessionStorage indisponível (modo privado/SSR) — silencioso
+  }
+}
 
 const initialState: SessionState = {
   isBooted: false,
@@ -50,6 +78,7 @@ const initialState: SessionState = {
   isStaff: false,
   isPlatformAdmin: false,
   avatarUrl: null,
+  isLocked: readPersistedLock(),
   drivers: null,
 };
 
@@ -93,10 +122,23 @@ export const useSessionStore = create<SessionStore>((set) => ({
       return { activeCompanyId };
     }),
 
-  clearSession: () =>
+  lock: () => {
+    writePersistedLock(true);
+    set({ isLocked: true });
+  },
+
+  unlock: () => {
+    writePersistedLock(false);
+    set({ isLocked: false });
+  },
+
+  clearSession: () => {
+    writePersistedLock(false);
     set((state) => ({
       ...initialState,
       isBooted: state.isBooted,
       drivers: state.drivers,
-    })),
+      isLocked: false,
+    }));
+  },
 }));

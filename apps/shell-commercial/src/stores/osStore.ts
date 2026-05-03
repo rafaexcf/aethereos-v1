@@ -4,8 +4,6 @@ import type { OSTab } from "../types/os";
 interface OSState {
   tabs: OSTab[];
   activeTabId: string;
-  dockOrder: string[];
-  hiddenDockApps: string[];
   aiModalOpen: boolean;
   dockHidden: boolean;
   appsLauncherOpen: boolean;
@@ -17,9 +15,9 @@ interface OSActions {
   closeTab: (tabId: string) => void;
   focusTab: (tabId: string) => void;
   reorderTabs: (fromIndex: number, toIndex: number) => void;
-  setDockOrder: (order: string[]) => void;
-  setHiddenDockApps: (hidden: string[]) => void;
-  toggleDockApp: (appId: string) => void;
+  splitTab: (tabId: string, appId: string, title: string) => void;
+  unsplitTab: (tabId: string, side: "primary" | "split") => void;
+  setSplitRatio: (tabId: string, ratio: number) => void;
   toggleAIModal: () => void;
   openAIModal: () => void;
   closeAIModal: () => void;
@@ -40,31 +38,16 @@ const INITIAL_TABS: OSTab[] = [
   },
 ];
 
-function loadDockOrder(): string[] {
-  try {
-    const saved = localStorage.getItem("aethereos-dock-order");
-    if (saved) return JSON.parse(saved) as string[];
-  } catch {
-    // corrupt localStorage — use default
-  }
-  return [];
-}
-
-function loadHiddenDockApps(): string[] {
-  try {
-    const saved = localStorage.getItem("aethereos-hidden-dock-apps");
-    if (saved) return JSON.parse(saved) as string[];
-  } catch {
-    // corrupt localStorage — use default
-  }
-  return [];
+try {
+  localStorage.removeItem("aethereos-dock-order");
+  localStorage.removeItem("aethereos-hidden-dock-apps");
+} catch {
+  /* ignore */
 }
 
 export const useOSStore = create<OSState & OSActions>((set, get) => ({
   tabs: INITIAL_TABS,
   activeTabId: "mesa-tab",
-  dockOrder: loadDockOrder(),
-  hiddenDockApps: loadHiddenDockApps(),
   aiModalOpen: false,
   dockHidden: false,
   appsLauncherOpen: false,
@@ -146,25 +129,46 @@ export const useOSStore = create<OSState & OSActions>((set, get) => ({
     set({ tabs: result });
   },
 
-  setDockOrder: (order) => {
-    localStorage.setItem("aethereos-dock-order", JSON.stringify(order));
-    set({ dockOrder: order });
+  splitTab: (tabId, appId, title) => {
+    set((state) => ({
+      tabs: state.tabs.map((t) => {
+        if (t.id !== tabId) return t;
+        if (t.appId === appId) return t;
+        return {
+          ...t,
+          splitAppId: appId,
+          splitTitle: title,
+          splitRatio: t.splitRatio ?? 0.5,
+        };
+      }),
+    }));
   },
 
-  setHiddenDockApps: (hidden) => {
-    localStorage.setItem("aethereos-hidden-dock-apps", JSON.stringify(hidden));
-    set({ hiddenDockApps: hidden });
+  unsplitTab: (tabId, side) => {
+    set((state) => ({
+      tabs: state.tabs.map((t) => {
+        if (t.id !== tabId) return t;
+        if (t.splitAppId === undefined) return t;
+        const base: OSTab = {
+          id: t.id,
+          appId: side === "split" ? t.appId : t.splitAppId,
+          title: side === "split" ? t.title : (t.splitTitle ?? t.title),
+          isActive: t.isActive,
+          isPinned: t.isPinned,
+        };
+        return base;
+      }),
+    }));
   },
 
-  toggleDockApp: (appId) => {
-    const { hiddenDockApps } = get();
-    const newHidden = hiddenDockApps.includes(appId)
-      ? hiddenDockApps.filter((id) => id !== appId)
-      : [...hiddenDockApps, appId];
-    localStorage.setItem(
-      "aethereos-hidden-dock-apps",
-      JSON.stringify(newHidden),
-    );
-    set({ hiddenDockApps: newHidden });
+  setSplitRatio: (tabId, ratio) => {
+    const clamped = Math.min(0.75, Math.max(0.25, ratio));
+    set((state) => ({
+      tabs: state.tabs.map((t) =>
+        t.id === tabId && t.splitAppId !== undefined
+          ? { ...t, splitRatio: clamped }
+          : t,
+      ),
+    }));
   },
 }));

@@ -40,7 +40,7 @@ export function getWallpaperStyle(
 
 const DEFAULT_WALLPAPER = "design-3";
 
-const DEFAULT_LAYOUT: MesaItem[] = [
+export const DEFAULT_LAYOUT: MesaItem[] = [
   {
     id: "icon-drive",
     type: "icon",
