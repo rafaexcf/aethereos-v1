@@ -18,12 +18,10 @@ async function openRHApp(page: Page) {
   await expect(rhBtn).toBeVisible({ timeout: 8_000 });
   await rhBtn.click();
 
-  // Wait for RH app to render
-  await expect(
-    page
-      .locator('[data-testid="rh-app"]')
-      .or(page.locator("text=Colaboradores")),
-  ).toBeVisible({ timeout: 10_000 });
+  // Wait for RH app to render (testid only — text=Colaboradores aparece em multiplas locations)
+  await expect(page.locator('[data-testid="rh-app"]')).toBeVisible({
+    timeout: 10_000,
+  });
 }
 
 test.describe("rh app", () => {
@@ -56,11 +54,9 @@ test.describe("rh app", () => {
     await expect(newBtn).toBeVisible({ timeout: 5_000 });
     await newBtn.click();
 
-    // Form should appear
+    // Form heading "Novo colaborador" deve aparecer (case-insensitive — UI usa lowercase 'c')
     await expect(
-      page
-        .locator("text=Nome completo")
-        .or(page.locator("text=Novo Colaborador")),
+      page.getByRole("heading", { name: /novo colaborador/i }),
     ).toBeVisible({ timeout: 5_000 });
 
     // Fill required fields
@@ -94,12 +90,10 @@ test.describe("rh app", () => {
 
     await rows.first().click();
 
-    // Detail drawer or edit panel should appear
-    await expect(
-      page
-        .locator('[data-testid="employee-detail-drawer"]')
-        .or(page.locator("text=Editar")),
-    ).toBeVisible({ timeout: 5_000 });
+    // Drawer abre — botao Editar tem aria-label="Editar" (icone-only)
+    await expect(page.locator('[aria-label="Editar"]').first()).toBeVisible({
+      timeout: 5_000,
+    });
   });
 
   test("delete button is disabled for linked employee (has user_id)", async ({

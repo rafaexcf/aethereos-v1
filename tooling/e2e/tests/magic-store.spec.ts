@@ -18,12 +18,10 @@ async function openMagicStore(page: Page) {
   await expect(storeBtn).toBeVisible({ timeout: 8_000 });
   await storeBtn.click();
 
-  // Wait for Magic Store app to render
-  await expect(
-    page
-      .locator('[data-testid="magic-store-app"]')
-      .or(page.locator("text=Magic Store")),
-  ).toBeVisible({ timeout: 10_000 });
+  // Wait for Magic Store app to render (testid only — text=Magic Store aparece em tab+mesa+loading)
+  await expect(page.locator('[data-testid="magic-store-app"]')).toBeVisible({
+    timeout: 10_000,
+  });
 }
 
 test.describe("magic store", () => {
@@ -51,22 +49,27 @@ test.describe("magic store", () => {
   test("category filter changes visible cards", async ({ page }) => {
     await openMagicStore(page);
 
-    // Click "Em breve" filter
-    const comingSoonFilter = page.getByRole("button", { name: /em breve/i });
-    await expect(comingSoonFilter).toBeVisible({ timeout: 5_000 });
-    await comingSoonFilter.click();
+    // Sidebar tem categorias: Aplicativos | Plugins | Widgets | Integracoes | Distros
+    // Click Plugins (categoria "Em breve") e verifica que badge "Em breve" aparece
+    const pluginsFilter = page.getByRole("button", {
+      name: "Plugins",
+      exact: true,
+    });
+    await expect(pluginsFilter).toBeVisible({ timeout: 5_000 });
+    await pluginsFilter.click();
 
-    // "Em breve" badge should appear on visible cards
     await expect(page.locator("text=Em breve").first()).toBeVisible({
       timeout: 5_000,
     });
 
-    // Click "Beta" filter
-    const betaFilter = page.getByRole("button", { name: /^beta$/i });
-    await expect(betaFilter).toBeVisible({ timeout: 3_000 });
-    await betaFilter.click();
+    // Volta para Aplicativos — categoria com apps reais (verticais B2B com badge Beta)
+    const appsFilter = page.getByRole("button", {
+      name: "Aplicativos",
+      exact: true,
+    });
+    await expect(appsFilter).toBeVisible({ timeout: 3_000 });
+    await appsFilter.click();
 
-    // Beta badge should appear
     await expect(page.locator("text=Beta").first()).toBeVisible({
       timeout: 5_000,
     });
@@ -94,18 +97,9 @@ test.describe("magic store", () => {
     await expect(firstCard).toBeVisible({ timeout: 8_000 });
     await firstCard.click();
 
-    // Detail drawer should appear with "Sobre" section
-    await expect(
-      page
-        .locator("text=Sobre")
-        .or(page.locator('[data-testid="app-detail-drawer"]')),
-    ).toBeVisible({ timeout: 5_000 });
-
-    // Close button should be present
-    await expect(
-      page
-        .getByRole("button", { name: /fechar/i })
-        .or(page.locator('[aria-label="Fechar"]')),
-    ).toBeVisible({ timeout: 3_000 });
+    // Detail view (full-page replacement, nao modal) deve mostrar "Sobre este app"
+    await expect(page.locator("text=Sobre este app").first()).toBeVisible({
+      timeout: 5_000,
+    });
   });
 });

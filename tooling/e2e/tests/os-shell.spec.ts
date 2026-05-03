@@ -22,8 +22,8 @@ test.describe("os-shell paradigma OS", () => {
     const topbar = page.locator('[data-testid="topbar"]');
     await expect(topbar).toBeVisible();
 
-    // Aethereos logo present
-    await expect(topbar.locator("text=Aethereos")).toBeVisible();
+    // Wordmark present (ÆTHEREOS com Æ ligature)
+    await expect(topbar.locator("text=ÆTHEREOS")).toBeVisible();
   });
 
   test("Mesa is the default view (no TabBar visible initially)", async ({
