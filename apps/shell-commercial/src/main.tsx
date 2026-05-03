@@ -182,10 +182,14 @@ function SplashScreen({ onDone }: { onDone: () => void }) {
 
 // ─── App root ─────────────────────────────────────────────────────────────────
 
+const SKIP_SPLASH =
+  typeof window !== "undefined" &&
+  new URLSearchParams(window.location.search).has("skipSplash");
+
 function App() {
   const [booted, setBooted] = useState(false);
-  const [animDone, setAnimDone] = useState(false);
-  const [showSplash, setShowSplash] = useState(true);
+  const [animDone, setAnimDone] = useState(SKIP_SPLASH);
+  const [showSplash, setShowSplash] = useState(!SKIP_SPLASH);
   const [bootError, setBootError] = useState<string | null>(null);
 
   const handleAnimDone = useCallback(() => setAnimDone(true), []);
