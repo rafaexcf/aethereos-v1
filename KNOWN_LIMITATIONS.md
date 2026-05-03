@@ -26,6 +26,16 @@ Cada entry indica o sprint de origem e por que não foi corrigido agora.
 
 ---
 
+## KL-5 — Vercel deploy preview ainda nao configurado (Sprint 14 MX70)
+
+**Sintoma:** PRs nao geram URL de preview automatico em vercel.app.  
+**Causa:** MX70 do Sprint 14 estava marcado como opcional. A configuracao requer (1) conta Vercel ativa do humano, (2) `npx vercel login` interativo, (3) `npx vercel link` para associar o projeto, (4) variaveis de ambiente do shell-commercial no dashboard Vercel (VITE_SUPABASE_URL etc), (5) GitHub integration habilitada para preview em PRs. Nada disso pode ser feito por agente autonomo (R8 do CLAUDE.md + acoes visiveis externas).  
+**Impacto:** Sem preview URLs em PRs. Reviewers precisam rodar local pra validar visual.  
+**Fix futuro (Sprint 15):** humano roda os 5 passos acima. Build command: `pnpm --filter @aethereos/shell-commercial build`. Output: `apps/shell-commercial/dist`. Pode usar `vercel.json` na raiz para configuracao declarativa (preferivel a clicks no dashboard).  
+**Sprint de origem:** 14 (MX70 deferida).
+
+---
+
 ## KL-3 — 3 testes E2E de onboarding skipped (E2E_ONBOARDING_COMPANY_ID)
 
 **Sintoma:** `tooling/e2e/tests/onboarding.spec.ts` (3 testes) skipam quando a env var `E2E_ONBOARDING_COMPANY_ID` não está setada.  
