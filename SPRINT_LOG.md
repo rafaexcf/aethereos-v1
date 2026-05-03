@@ -5,6 +5,109 @@ Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
 
 ---
 
+# Sprint 14 — CI E2E + Resolve Skipped Tests
+
+Início: 2026-05-03
+Modelo: Claude Code (claude-sonnet-4-6, Sprint 14 N=1)
+Roadmap: `SPRINT_14_PROMPT.md` na raiz.
+
+## Origem
+
+Sprint 13 chegou em 28/32 passed + 4 skipped (KL-3 + KL-4) e CI sem job
+E2E. Sprint 14 fecha o ciclo: resolve os 4 skipped, sobe E2E pro CI, e
+defere Vercel preview pra Sprint 15 (requer interação humana).
+
+## Confirmação inicial
+
+- HEAD em `dc29b29` (Sprint 13 docs)
+- 28/32 E2E local, 0 failed, 4 skipped (KL-3 + KL-4 documentadas)
+- CI atual: 6 jobs paralelos sem E2E
+
+## Histórico de milestones (Sprint 14)
+
+| Milestone | Descrição                                                                                          | Status | Commit  |
+| --------- | -------------------------------------------------------------------------------------------------- | ------ | ------- |
+| MX66      | resolve KL-3: company onboarding seed + user dedicado + helper + env vars + step-indicator testids | DONE   | 72e7ba9 |
+| MX67      | resolve KL-4: helper waitForDesktopReady + os-shell:66 reescrito com Dock                          | DONE   | 80f5be7 |
+| MX68      | validação 32/32 green em 3 runs consecutivas                                                       | DONE   | fe4a413 |
+| MX69      | job e2e no GitHub Actions (supabase CLI + Playwright + seed)                                       | DONE   | 51c26bc |
+| MX70      | Vercel deploy preview — DEFERIDO para Sprint 15 (requer interação humana)                          | DONE   | 8225c1d |
+| MX71      | docs Sprint 14 + cleanup KNOWN_LIMITATIONS                                                         | DONE   | (este)  |
+
+## KL-3 (Sprint 13) RESOLVIDO em MX66
+
+`tooling/seed/src/companies.ts` ganha `SeedCompany.onboarding_completed?: boolean`.
+Nova company "Onboarding Test Co" (slug `onbtest`, id `10000000-...-99`,
+`onboarding_completed=false`). Novo user `onboarding.user@onbtest.test`
+pertencente exclusivamente à `onbtest` (login → 1 company → desktop →
+wizard auto-aparece). Novo helper `loginAsOnboardingUser` usa env vars
+`E2E_ONBOARDING_EMAIL/PASSWORD`. `OnboardingWizard.tsx` ganha
+`data-testid="step-indicator-{i}"` nos 3 indicadores. 3 testes saem
+de skipped → passing.
+
+## KL-4 (Sprint 13) RESOLVIDO em MX67
+
+Investigação via screenshot: Mesa renderiza só widgets (weather, etc),
+zero icons. `MesaApp.tsx` só renderiza `type==="icon"` como `<button>`;
+widgets são `<img>`/`<div>`. Outros testes da suite passavam vacuamente
+via `if (visible)` guards. Fix: reescrever os-shell:66 para abrir tab
+via Dock (apps fixos do registry) ao invés de Mesa icon. Novo helper
+`waitForDesktopReady` espera os-desktop + dock + 1 `dock-app-*` button
+(NÃO mesa-app button). 5/5 os-shell passam em 3 runs consecutivas.
+
+## E2E no CI (MX69)
+
+Novo job `E2E (Playwright)` em `.github/workflows/ci.yml`:
+
+1. depende de typecheck + lint (gates baratos primeiro)
+2. instala Supabase CLI via `supabase/setup-cli@v1`
+3. `supabase start` (Docker-in-Docker — runners ubuntu-latest têm Docker nativo)
+4. roda seed (cria 4 companies + 10 users + people + chat + ...)
+5. instala chromium do Playwright com `--with-deps`
+6. roda `playwright test` (auto-starta dev server via webServer config)
+7. upload `playwright-report/` + `test-results/` em failure (artifact 14d)
+8. `supabase stop --no-backup` em `always()`
+9. timeout-minutes: 20
+
+env vars hardcoded: keys deterministicas do supabase local (públicas,
+documentadas) + emails `.test` TLD.
+
+## Vercel preview (MX70 deferida)
+
+Documentada como KL-5. Requer 5 passos interativos do humano que agente
+autônomo não pode executar (R8 + ações visíveis externas):
+
+1. `npx vercel login`
+2. `npx vercel link`
+3. Configurar build/output/env vars
+4. Habilitar GitHub integration
+
+Sprint 15 deve criar `vercel.json` declarativo na raiz após humano
+fazer `vercel link`.
+
+## Resultado final
+
+```
+pnpm typecheck    → exit 0 (24 tasks)
+pnpm lint         → exit 0 (22 tasks)
+pnpm test:e2e:full → 32 passed, 0 failed, 0 skipped
+                    (3 runs consecutivas, ~22s cada)
+```
+
+KL-3 + KL-4 resolvidos. KL-5 documentada como deferida.
+
+## Dívidas para Sprint 15+
+
+1. Vercel deploy preview (KL-5)
+2. Validar CI E2E job no primeiro push pós-merge (potential Docker-in-Docker
+   issues no runner — fallback `continue-on-error: true` se necessário)
+3. KL-1 (singleton Supabase client) e KL-2 (scp-registry alias) seguem
+   abertas — não bloqueantes
+4. IaC Pulumi — pendente desde Sprint 9.6
+5. Deploy Supabase remoto — pendente desde Sprint 9.6
+
+---
+
 # Sprint 13 — Consolidação e Validação E2E
 
 Início: 2026-05-03
