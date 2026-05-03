@@ -1,7 +1,11 @@
 import { createPortal } from "react-dom";
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { APP_REGISTRY } from "../lib/app-registry";
+import * as LucideIcons from "lucide-react";
+import type { LucideProps } from "lucide-react";
+import type { ComponentType } from "react";
+import { X, Search } from "lucide-react";
+import { APP_REGISTRY } from "../apps/registry";
 
 interface AppsLauncherProps {
   open: boolean;
@@ -14,8 +18,10 @@ export function AppsLauncher({ open, onClose, onOpenApp }: AppsLauncherProps) {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return APP_REGISTRY;
-    return APP_REGISTRY.filter((a) => a.label.toLowerCase().includes(q));
+    // Exclude "mesa" (home tab, not a launchable app)
+    const all = APP_REGISTRY.filter((a) => a.id !== "mesa");
+    if (!q) return all;
+    return all.filter((a) => a.name.toLowerCase().includes(q));
   }, [search]);
 
   return createPortal(
@@ -52,16 +58,18 @@ export function AppsLauncher({ open, onClose, onOpenApp }: AppsLauncherProps) {
               zIndex: 203,
               bottom: 100,
               left: "50%",
-              width: "min(680px, 88vw)",
-              maxHeight: "min(480px, 68vh)",
-              borderRadius: 16,
-              background: "rgba(8,10,18,0.97)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              width: "min(720px, 90vw)",
+              maxHeight: "min(520px, 72vh)",
+              borderRadius: 18,
+              background: "rgba(6,9,18,0.96)",
+              border: "1px solid rgba(255,255,255,0.09)",
               boxShadow:
                 "0 -4px 40px rgba(0,0,0,0.5), 0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04)",
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",
+              backdropFilter: "blur(32px)",
+              WebkitBackdropFilter: "blur(32px)",
             }}
           >
             {/* Header */}
@@ -70,17 +78,18 @@ export function AppsLauncher({ open, onClose, onOpenApp }: AppsLauncherProps) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                padding: "14px 18px",
+                padding: "14px 18px 12px",
                 borderBottom: "1px solid rgba(255,255,255,0.07)",
                 flexShrink: 0,
               }}
             >
               <span
                 style={{
-                  fontSize: 14,
+                  fontSize: 13,
                   fontWeight: 700,
-                  color: "rgba(255,255,255,0.9)",
+                  color: "rgba(255,255,255,0.85)",
                   letterSpacing: "-0.01em",
+                  fontFamily: "var(--font-display)",
                 }}
               >
                 Todos os Apps
@@ -89,25 +98,49 @@ export function AppsLauncher({ open, onClose, onOpenApp }: AppsLauncherProps) {
                 type="button"
                 onClick={onClose}
                 style={{
-                  width: 28,
-                  height: 28,
+                  width: 26,
+                  height: 26,
                   borderRadius: 8,
                   background: "rgba(255,255,255,0.06)",
                   border: "1px solid rgba(255,255,255,0.08)",
-                  color: "rgba(255,255,255,0.45)",
+                  color: "rgba(255,255,255,0.40)",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: 14,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(255,255,255,0.10)";
+                  e.currentTarget.style.color = "rgba(255,255,255,0.70)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+                  e.currentTarget.style.color = "rgba(255,255,255,0.40)";
                 }}
               >
-                ✕
+                <X size={12} strokeWidth={2} />
               </button>
             </div>
 
             {/* Search */}
-            <div style={{ padding: "12px 18px 8px", flexShrink: 0 }}>
+            <div
+              style={{
+                padding: "10px 18px 8px",
+                flexShrink: 0,
+                position: "relative",
+              }}
+            >
+              <Search
+                size={13}
+                style={{
+                  position: "absolute",
+                  left: 32,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  color: "rgba(255,255,255,0.30)",
+                  pointerEvents: "none",
+                }}
+              />
               <input
                 autoFocus
                 value={search}
@@ -115,15 +148,22 @@ export function AppsLauncher({ open, onClose, onOpenApp }: AppsLauncherProps) {
                 placeholder="Buscar app…"
                 style={{
                   width: "100%",
-                  padding: "9px 14px",
+                  padding: "8px 14px 8px 34px",
                   borderRadius: 10,
                   background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.09)",
+                  border: "1px solid rgba(255,255,255,0.08)",
                   color: "rgba(255,255,255,0.85)",
                   fontSize: 13,
                   outline: "none",
                   fontFamily: "inherit",
                   boxSizing: "border-box",
+                  transition: "border-color 120ms ease",
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(139,92,246,0.45)";
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)";
                 }}
               />
             </div>
@@ -133,73 +173,138 @@ export function AppsLauncher({ open, onClose, onOpenApp }: AppsLauncherProps) {
               style={{
                 flex: 1,
                 overflowY: "auto",
-                padding: "8px 18px 20px",
+                padding: "6px 14px 22px",
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(128px, 1fr))",
-                gap: 10,
+                gridTemplateColumns: "repeat(auto-fill, minmax(92px, 1fr))",
+                gap: 4,
                 alignContent: "start",
+                scrollbarWidth: "none",
               }}
             >
-              {filtered.map((app) => (
-                <button
-                  key={app.id}
-                  type="button"
-                  onClick={() => {
-                    onOpenApp(app.id, app.label);
-                    onClose();
-                  }}
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    gap: 10,
-                    padding: "20px 12px",
-                    borderRadius: 12,
-                    background: "rgba(255,255,255,0.03)",
-                    border: "1px solid rgba(255,255,255,0.06)",
-                    cursor: "pointer",
-                    transition: "background 140ms, border-color 140ms",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "rgba(139,92,246,0.12)";
-                    e.currentTarget.style.borderColor = "rgba(139,92,246,0.28)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "rgba(255,255,255,0.03)";
-                    e.currentTarget.style.borderColor =
-                      "rgba(255,255,255,0.06)";
-                  }}
-                >
-                  <span style={{ fontSize: 34, lineHeight: 1 }}>
-                    {app.icon}
-                  </span>
-                  <span
+              {filtered.map((app) => {
+                const Icon =
+                  (
+                    LucideIcons as unknown as Record<
+                      string,
+                      ComponentType<LucideProps>
+                    >
+                  )[app.icon] ?? LucideIcons.Box;
+
+                return (
+                  <button
+                    key={app.id}
+                    type="button"
+                    onClick={() => {
+                      onOpenApp(app.id, app.name);
+                      onClose();
+                      setSearch("");
+                    }}
                     style={{
-                      fontSize: 12,
-                      fontWeight: 500,
-                      color: "rgba(255,255,255,0.72)",
-                      textAlign: "center",
-                      lineHeight: 1.3,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 7,
+                      padding: "12px 8px 10px",
+                      borderRadius: 12,
+                      background: "transparent",
+                      border: "1px solid transparent",
+                      cursor: "pointer",
+                      transition:
+                        "background 140ms ease, border-color 140ms ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background =
+                        "rgba(255,255,255,0.06)";
+                      e.currentTarget.style.borderColor =
+                        "rgba(255,255,255,0.09)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.borderColor = "transparent";
                     }}
                   >
-                    {app.label}
-                  </span>
-                </button>
-              ))}
+                    {/* Icon container — padrão Dock */}
+                    <div
+                      style={{
+                        width: 52,
+                        height: 52,
+                        borderRadius: "var(--radius-lg)",
+                        background: "rgba(255,255,255,0.06)",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        flexShrink: 0,
+                        transition:
+                          "background 140ms ease, border-color 140ms ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = `${app.color}28`;
+                        e.currentTarget.style.borderColor = `${app.color}44`;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background =
+                          "rgba(255,255,255,0.06)";
+                        e.currentTarget.style.borderColor =
+                          "rgba(255,255,255,0.08)";
+                      }}
+                    >
+                      <Icon
+                        size={24}
+                        strokeWidth={1.4}
+                        style={{ color: "rgba(255,255,255,0.75)" }}
+                      />
+                    </div>
+
+                    {/* Label */}
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 500,
+                        color: "rgba(255,255,255,0.60)",
+                        textAlign: "center",
+                        lineHeight: 1.25,
+                        maxWidth: "100%",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        letterSpacing: "-0.01em",
+                      }}
+                    >
+                      {app.name}
+                    </span>
+                  </button>
+                );
+              })}
 
               {filtered.length === 0 && (
                 <div
                   style={{
                     gridColumn: "1 / -1",
-                    paddingTop: 40,
+                    padding: "48px 0",
                     textAlign: "center",
-                    color: "rgba(255,255,255,0.25)",
+                    color: "rgba(255,255,255,0.22)",
                     fontSize: 13,
                   }}
                 >
                   Nenhum app encontrado
                 </div>
               )}
+            </div>
+
+            {/* Footer — contagem */}
+            <div
+              style={{
+                padding: "8px 18px 12px",
+                borderTop: "1px solid rgba(255,255,255,0.06)",
+                flexShrink: 0,
+                textAlign: "center",
+              }}
+            >
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.22)" }}>
+                {filtered.length} {filtered.length === 1 ? "app" : "apps"}{" "}
+                disponíveis
+              </span>
             </div>
           </motion.div>
         </>

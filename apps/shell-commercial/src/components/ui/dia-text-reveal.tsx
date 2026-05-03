@@ -7,7 +7,7 @@ import {
   useReducedMotion,
   useTransform,
   type HTMLMotionProps,
-} from "motion/react";
+} from "framer-motion";
 
 function cn(...classes: (string | undefined | null | false)[]) {
   return classes.filter(Boolean).join(" ");
@@ -54,7 +54,7 @@ function measureWidths(el: HTMLElement, texts: string[]) {
     width: "auto",
     whiteSpace: "nowrap",
   });
-  el.parentElement!.appendChild(ghost);
+  (el.parentElement ?? document.body).appendChild(ghost);
   const widths = texts.map((t) => {
     ghost.textContent = t;
     return ghost.getBoundingClientRect().width;
@@ -165,7 +165,7 @@ export function DiaTextReveal({
   const indexRef = useRef(0);
   const hasPlayedRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const playRef = useRef<() => void>(null!);
+  const playRef = useRef<(() => void) | null>(null);
   const stopRef = useRef<(() => void) | null>(null);
 
   const [activeIndex, setActiveIndex] = useState(0);
@@ -200,7 +200,7 @@ export function DiaTextReveal({
           const next = (indexRef.current + 1) % texts.length;
           indexRef.current = next;
           setActiveIndex(next);
-          playRef.current();
+          playRef.current?.();
         }, repeatDelay * 1000);
       },
     });
@@ -216,7 +216,7 @@ export function DiaTextReveal({
     if (startOnView && !isInView) return;
     if (once && hasPlayedRef.current) return;
     hasPlayedRef.current = true;
-    playRef.current();
+    playRef.current?.();
 
     return () => {
       stopRef.current?.();

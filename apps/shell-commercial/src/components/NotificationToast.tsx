@@ -1,8 +1,8 @@
 import { createPortal } from "react-dom";
-import { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import type { NotificationItem } from "./NotificationBell";
+import { useOSStore } from "../stores/osStore";
 
 interface NotificationToastProps {
   item: NotificationItem | null;
@@ -39,21 +39,21 @@ const TYPE_CONFIG: Record<
   },
 };
 
-const AUTO_DISMISS_MS = 5500;
+// Dock bottom: 20px (bottom-5) + dock height ~72px + 12px gap
+const BOTTOM_OFFSET = 104;
+
+// 420px × 1.3 = 546px
+const TOAST_WIDTH = "min(546px, 92vw)";
 
 export function NotificationToast({ item, onDismiss }: NotificationToastProps) {
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (item === null) return;
-    if (timerRef.current !== null) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => onDismiss(item.id), AUTO_DISMISS_MS);
-    return () => {
-      if (timerRef.current !== null) clearTimeout(timerRef.current);
-    };
-  }, [item, onDismiss]);
-
+  const openApp = useOSStore((s) => s.openApp);
   const cfg = item !== null ? TYPE_CONFIG[item.type] : null;
+
+  function handleNavigate() {
+    if (item === null || item.appId === undefined) return;
+    openApp(item.appId, item.app ?? item.appId);
+    onDismiss(item.id);
+  }
 
   return createPortal(
     <AnimatePresence>
@@ -66,9 +66,10 @@ export function NotificationToast({ item, onDismiss }: NotificationToastProps) {
           transition={{ duration: 0.24, ease: [0.16, 1, 0.3, 1] }}
           style={{
             position: "fixed",
-            bottom: 82,
+            bottom: BOTTOM_OFFSET,
             left: "50%",
-            width: "min(420px, 92vw)",
+            width: TOAST_WIDTH,
+            cursor: item.appId !== undefined ? "pointer" : "default",
             zIndex: 400,
             borderRadius: 14,
             background: "rgba(8,10,20,0.96)",
@@ -79,8 +80,8 @@ export function NotificationToast({ item, onDismiss }: NotificationToastProps) {
             overflow: "hidden",
           }}
         >
-          {/* Body */}
           <div
+            onClick={item.appId !== undefined ? handleNavigate : undefined}
             style={{
               padding: "13px 14px 14px",
               display: "flex",
@@ -177,6 +178,19 @@ export function NotificationToast({ item, onDismiss }: NotificationToastProps) {
               >
                 {item.body}
               </p>
+              {item.appId !== undefined && (
+                <p
+                  style={{
+                    fontSize: 11,
+                    color: cfg.color,
+                    marginTop: 6,
+                    fontWeight: 500,
+                    opacity: 0.8,
+                  }}
+                >
+                  Abrir {item.app ?? "app"} →
+                </p>
+              )}
             </div>
 
             {/* Close */}
@@ -209,18 +223,6 @@ export function NotificationToast({ item, onDismiss }: NotificationToastProps) {
               <X size={11} />
             </button>
           </div>
-
-          {/* Auto-dismiss progress bar */}
-          <motion.div
-            initial={{ scaleX: 1 }}
-            animate={{ scaleX: 0 }}
-            transition={{ duration: AUTO_DISMISS_MS / 1000, ease: "linear" }}
-            style={{
-              height: 2,
-              background: `linear-gradient(90deg, ${cfg.color}cc, ${cfg.color}44)`,
-              transformOrigin: "left center",
-            }}
-          />
         </motion.div>
       )}
     </AnimatePresence>,

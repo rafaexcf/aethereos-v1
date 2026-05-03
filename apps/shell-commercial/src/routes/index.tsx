@@ -17,6 +17,7 @@ import { NotificationToast } from "../components/NotificationToast";
 import { useWindowsStore } from "../stores/windows";
 import { APP_REGISTRY, getApp } from "../lib/app-registry";
 import { CopilotDrawer } from "../apps/copilot/index";
+import { UniversalSearch } from "../search/UniversalSearch";
 
 export const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -44,6 +45,7 @@ function DesktopPage() {
   const [outboxCount, setOutboxCount] = useState<number | null>(null);
   const [showComercioDash, setShowComercioDash] = useState(false);
   const [copilotOpen, setCopilotOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [notifCenterOpen, setNotifCenterOpen] = useState(false);
   const [appsOpen, setAppsOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
@@ -175,6 +177,10 @@ function DesktopPage() {
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === "i") {
         e.preventDefault();
         setCopilotOpen((prev) => !prev);
       }
@@ -426,7 +432,10 @@ function DesktopPage() {
       {/* Toast de notificação — flutua acima da dock */}
       <NotificationToast item={toastNotif} onDismiss={handleToastDismiss} />
 
-      {/* AI Copilot Drawer — global, não está no Dock */}
+      {/* Universal Search — Ctrl+K / Cmd+K */}
+      <UniversalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
+
+      {/* AI Copilot Drawer — Ctrl+I / Cmd+I (movido do Ctrl+K) */}
       {drivers !== null && (
         <CopilotDrawer
           open={copilotOpen}

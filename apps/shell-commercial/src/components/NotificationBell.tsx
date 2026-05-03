@@ -8,6 +8,7 @@ export interface NotificationItem {
   read_at: Date | null;
   created_at: Date;
   app?: string;
+  appId?: string;
   context?: string;
 }
 

@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "framer-motion";
+import { PlusSquare, LayoutGrid, Image, AlignLeft, Lock } from "lucide-react";
 import { TopBar } from "./TopBar";
 import { TabBar } from "./TabBar";
 import { AppFrame } from "./AppFrame";
 import { Dock } from "./Dock";
 import { OnboardingWizard } from "./OnboardingWizard";
+import { LockScreen } from "./LockScreen";
 import { useSessionStore } from "../../stores/session";
 import { useOSStore } from "../../stores/osStore";
 import { useMesaStore, getWallpaperStyle } from "../../stores/mesaStore";
@@ -13,7 +17,222 @@ import { AppsLauncher } from "../AppsLauncher";
 import { SupportModal } from "../SupportModal";
 import { NotificationToast } from "../NotificationToast";
 import type { NotificationItem } from "../NotificationBell";
+import { useNotificationsLifecycle } from "../../hooks/useNotify";
+import { useIdleLock } from "../../hooks/useIdleLock";
+import { useAutomationEngine } from "../../apps/automacoes/useAutomationEngine";
+import { useWorkspacePersistence } from "../../hooks/useWorkspacePersistence";
+import { useUserPreferencesLifecycle } from "../../hooks/useUserPreferencesLifecycle";
 
+const IDLE_LOCK_MINUTES = 15;
+
+// ─── Desktop context menu ─────────────────────────────────────────────────────
+
+interface ContextMenuState {
+  x: number;
+  y: number;
+}
+
+function DesktopContextMenu({
+  pos,
+  onClose,
+  onAddApp,
+  onWallpaper,
+}: {
+  pos: ContextMenuState;
+  onClose: () => void;
+  onAddApp: () => void;
+  onWallpaper: () => void;
+}) {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const [lockedPos, setLockedPos] = useState(false);
+
+  useEffect(() => {
+    function handleDown(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        onClose();
+      }
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("mousedown", handleDown);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleDown);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [onClose]);
+
+  // Clamp so the menu never overflows the viewport
+  const MENU_W = 220;
+  const MENU_H = 230;
+  const x = Math.min(pos.x, window.innerWidth - MENU_W - 8);
+  const y = Math.min(pos.y, window.innerHeight - MENU_H - 8);
+
+  const items = [
+    {
+      label: "Adicionar Widget",
+      icon: PlusSquare,
+      action: () => {
+        onClose();
+      },
+      disabled: true,
+    },
+    {
+      label: "Adicionar App",
+      icon: LayoutGrid,
+      action: () => {
+        onClose();
+        onAddApp();
+      },
+      disabled: false,
+    },
+    { separator: true },
+    {
+      label: "Papel de Parede",
+      icon: Image,
+      action: () => {
+        onClose();
+        onWallpaper();
+      },
+      disabled: false,
+    },
+    {
+      label: "Organizar Mesa",
+      icon: AlignLeft,
+      action: () => {
+        onClose();
+      },
+      disabled: true,
+    },
+    { separator: true },
+    {
+      label: lockedPos ? "Desbloquear Posição" : "Travar Posição",
+      icon: Lock,
+      action: () => {
+        setLockedPos((v) => !v);
+      },
+      disabled: false,
+      checked: lockedPos,
+    },
+  ] as const;
+
+  return createPortal(
+    <AnimatePresence>
+      <motion.div
+        ref={menuRef}
+        key="desktop-ctx"
+        initial={{ opacity: 0, scale: 0.96, y: -4 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.97 }}
+        transition={{ duration: 0.12, ease: [0.16, 1, 0.3, 1] }}
+        style={{
+          position: "fixed",
+          top: y,
+          left: x,
+          zIndex: 9999,
+          width: MENU_W,
+          background: "rgba(8,12,22,0.96)",
+          border: "1px solid rgba(255,255,255,0.10)",
+          borderRadius: 12,
+          backdropFilter: "blur(32px)",
+          WebkitBackdropFilter: "blur(32px)",
+          boxShadow:
+            "0 8px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.04)",
+          padding: "4px",
+          overflow: "hidden",
+        }}
+      >
+        {items.map((item, i) => {
+          if ("separator" in item) {
+            return (
+              <div
+                key={`sep-${i}`}
+                style={{
+                  height: 1,
+                  background: "rgba(255,255,255,0.07)",
+                  margin: "3px 0",
+                }}
+              />
+            );
+          }
+
+          const Icon = item.icon;
+          const isDisabled = item.disabled;
+
+          return (
+            <button
+              key={item.label}
+              type="button"
+              onClick={isDisabled ? undefined : item.action}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                width: "100%",
+                padding: "7px 10px",
+                borderRadius: 8,
+                background: "transparent",
+                border: "none",
+                color: isDisabled
+                  ? "rgba(255,255,255,0.25)"
+                  : "rgba(255,255,255,0.82)",
+                fontSize: 13,
+                fontWeight: 400,
+                cursor: isDisabled ? "default" : "pointer",
+                textAlign: "left",
+                transition: "background 100ms ease",
+              }}
+              onMouseEnter={(e) => {
+                if (!isDisabled)
+                  e.currentTarget.style.background = "rgba(255,255,255,0.07)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+              }}
+            >
+              <Icon
+                size={14}
+                strokeWidth={1.8}
+                style={{
+                  color: isDisabled
+                    ? "rgba(255,255,255,0.20)"
+                    : "rgba(255,255,255,0.50)",
+                  flexShrink: 0,
+                }}
+              />
+              <span style={{ flex: 1 }}>{item.label}</span>
+              {"checked" in item && item.checked && (
+                <span
+                  style={{ fontSize: 11, color: "#818cf8", fontWeight: 600 }}
+                >
+                  ✓
+                </span>
+              )}
+              {isDisabled && (
+                <span
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 600,
+                    padding: "1px 5px",
+                    borderRadius: 4,
+                    background: "rgba(255,255,255,0.06)",
+                    color: "rgba(255,255,255,0.22)",
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Em breve
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </motion.div>
+    </AnimatePresence>,
+    document.body,
+  );
+}
 export function OSDesktop() {
   const navigate = useNavigate();
   const {
@@ -27,9 +246,21 @@ export function OSDesktop() {
   const { aiModalOpen, closeAIModal } = useOSStore();
   const appsLauncherOpen = useOSStore((s) => s.appsLauncherOpen);
   const closeAppsLauncher = useOSStore((s) => s.closeAppsLauncher);
+  const openAppsLauncher = useOSStore((s) => s.openAppsLauncher);
   const supportOpen = useOSStore((s) => s.supportOpen);
   const closeSupport = useOSStore((s) => s.closeSupport);
   const openApp = useOSStore((s) => s.openApp);
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null);
+
+  // Bootstrap kernel.notifications loader + Realtime subscribe (kernel migration 20260502000011)
+  useNotificationsLifecycle();
+  useAutomationEngine();
+  useWorkspacePersistence();
+  useUserPreferencesLifecycle();
+  useIdleLock(IDLE_LOCK_MINUTES);
+
+  const isLocked = useSessionStore((s) => s.isLocked);
+
   const fetchLayout = useMesaStore((s) => s.fetchLayout);
   const wallpaper = useMesaStore((s) => s.wallpaper);
   const wallpaperUrl = useMesaStore((s) => s.wallpaperUrl);
@@ -82,12 +313,13 @@ export function OSDesktop() {
     toastShownRef.current = true;
     const notif: NotificationItem = {
       id: "os-welcome",
-      type: "success",
-      title: "Sistema pronto",
-      body: "Todos os módulos carregados. LiteLLM, Langfuse e Unleash operacionais.",
+      type: "info",
+      title: "Notificação persistente",
+      body: "Este container fica visível até ser fechado manualmente.",
       read_at: null,
       created_at: new Date(),
-      app: "Sistema",
+      app: "Configurações",
+      appId: "configuracoes",
       context: "sistema",
     };
     const t = setTimeout(() => setToastNotif(notif), 1800);
@@ -118,7 +350,13 @@ export function OSDesktop() {
 
       <TabBar />
 
-      <div className="flex-1 overflow-hidden relative">
+      <div
+        className="flex-1 overflow-hidden relative"
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setCtxMenu({ x: e.clientX, y: e.clientY });
+        }}
+      >
         <AppFrame />
       </div>
 
@@ -136,6 +374,19 @@ export function OSDesktop() {
 
       {/* Modal de suporte */}
       <SupportModal open={supportOpen} onClose={closeSupport} />
+
+      {/* Context menu da mesa */}
+      {ctxMenu !== null && (
+        <DesktopContextMenu
+          pos={ctxMenu}
+          onClose={() => setCtxMenu(null)}
+          onAddApp={() => openAppsLauncher()}
+          onWallpaper={() => {
+            openApp("configuracoes", "Configurações");
+            setCtxMenu(null);
+          }}
+        />
+      )}
 
       {/* Toast de notificação — flutua acima da dock */}
       <NotificationToast
@@ -171,6 +422,10 @@ export function OSDesktop() {
             onComplete={() => setOnboardingCompleted(true)}
           />
         )}
+
+      <AnimatePresence>
+        {isLocked && <LockScreen key="lockscreen" />}
+      </AnimatePresence>
     </div>
   );
 }

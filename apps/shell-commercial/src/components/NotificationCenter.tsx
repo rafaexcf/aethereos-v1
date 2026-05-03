@@ -491,7 +491,7 @@ export function NotificationCenter({
     });
     return DATE_GROUP_ORDER.filter((l) => map.has(l)).map((l) => ({
       label: l,
-      items: map.get(l)!,
+      items: map.get(l) ?? [],
     }));
   }, [filtered]);
 

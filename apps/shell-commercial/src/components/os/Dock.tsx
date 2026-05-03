@@ -10,7 +10,15 @@ import { useRef, useState, useEffect } from "react";
 import * as LucideIcons from "lucide-react";
 import type { LucideProps } from "lucide-react";
 import type { ComponentType } from "react";
-import { Bell, CalendarDays, CloudSun, Droplets, Wind, X } from "lucide-react";
+import {
+  Bell,
+  CalendarDays,
+  CloudSun,
+  Droplets,
+  LayoutGrid,
+  Wind,
+  X,
+} from "lucide-react";
 import {
   MONTH_NAMES,
   DAY_HEADERS_SHORT,
@@ -80,6 +88,7 @@ const WEATHER_MOCK = {
 function DockWeatherWidget() {
   const [open, setOpen] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const openApp = useOSStore((s) => s.openApp);
   const [tooltipTimeout, setTooltipTimeout] = useState<ReturnType<
     typeof setTimeout
   > | null>(null);
@@ -206,6 +215,35 @@ function DockWeatherWidget() {
                 </div>
               </div>
             </div>
+            <div style={{ padding: "0 12px 12px" }}>
+              <button
+                type="button"
+                onClick={() => {
+                  openApp("weather", "Tempo");
+                  setOpen(false);
+                }}
+                style={{
+                  width: "100%",
+                  padding: "8px",
+                  borderRadius: 8,
+                  background: "rgba(139,92,246,0.1)",
+                  border: "1px solid rgba(139,92,246,0.22)",
+                  color: "#a78bfa",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "background 120ms",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(139,92,246,0.2)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(139,92,246,0.1)";
+                }}
+              >
+                Abrir Tempo →
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -235,7 +273,7 @@ function DockWeatherWidget() {
         <CloudSun size={20} style={{ color: "#f59e0b" }} strokeWidth={1.4} />
         <span
           style={{
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: 600,
             color: "rgba(255,255,255,0.65)",
             letterSpacing: "-0.01em",
@@ -256,7 +294,24 @@ function DockClockWidget() {
   const [open, setOpen] = useState(false);
   const [popYear, setPopYear] = useState(now.getFullYear());
   const [popMonth, setPopMonth] = useState(now.getMonth());
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipTimeout, setTooltipTimeout] = useState<ReturnType<
+    typeof setTimeout
+  > | null>(null);
   const openApp = useOSStore((s) => s.openApp);
+
+  function handleMouseEnter() {
+    const t = setTimeout(() => setShowTooltip(true), 550);
+    setTooltipTimeout(t);
+  }
+
+  function handleMouseLeave() {
+    setShowTooltip(false);
+    if (tooltipTimeout !== null) {
+      clearTimeout(tooltipTimeout);
+      setTooltipTimeout(null);
+    }
+  }
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
@@ -264,8 +319,12 @@ function DockClockWidget() {
   }, []);
 
   const hh = now.getHours().toString().padStart(2, "0");
-  const mm = now.getMinutes().toString().padStart(2, "0");
-  const timeStr = `${hh}:${mm}`;
+  const min = now.getMinutes().toString().padStart(2, "0");
+  const timeStr = `${hh}:${min}`;
+
+  const dd = now.getDate().toString().padStart(2, "0");
+  const mo = (now.getMonth() + 1).toString().padStart(2, "0");
+  const dateLabel = `${dd}/${mo}`;
 
   const dateStr = now.toLocaleDateString("pt-BR", {
     weekday: "long",
@@ -486,9 +545,38 @@ function DockClockWidget() {
         )}
       </AnimatePresence>
 
+      {/* Tooltip */}
+      <AnimatePresence>
+        {showTooltip && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.94 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 6, scale: 0.97 }}
+            transition={{ duration: 0.1 }}
+            className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 z-50 whitespace-nowrap pointer-events-none px-2.5 py-1"
+            style={{
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--glass-border)",
+              borderRadius: "var(--radius-md)",
+              boxShadow: "var(--shadow-md)",
+              color: "var(--text-primary)",
+              fontSize: 12,
+              fontWeight: 500,
+              letterSpacing: "-0.01em",
+              backdropFilter: `blur(var(--blur-ui))`,
+              WebkitBackdropFilter: `blur(var(--blur-ui))`,
+            }}
+          >
+            Calendário
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Dock icon */}
       <div
         onClick={() => setOpen((v) => !v)}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
         className="flex flex-col items-center justify-center cursor-pointer transition-colors"
         style={{
           width: ICON_BASE,
@@ -513,15 +601,14 @@ function DockClockWidget() {
         />
         <span
           style={{
-            fontSize: 10,
-            fontWeight: 700,
-            color: "rgba(255,255,255,0.75)",
-            letterSpacing: "-0.03em",
+            fontSize: 11,
+            fontWeight: 600,
+            color: "rgba(255,255,255,0.65)",
+            letterSpacing: "-0.01em",
             lineHeight: 1,
-            fontVariantNumeric: "tabular-nums",
           }}
         >
-          {timeStr}
+          {dateLabel}
         </span>
       </div>
     </div>
@@ -688,17 +775,11 @@ function DockSystemMenuWidget() {
             : "transparent";
         }}
       >
-        <span
-          style={{
-            fontSize: 18,
-            color: "rgba(255,255,255,0.65)",
-            letterSpacing: "0.06em",
-            lineHeight: 1,
-            userSelect: "none",
-          }}
-        >
-          ···
-        </span>
+        <LayoutGrid
+          size={20}
+          strokeWidth={1.4}
+          style={{ color: "rgba(255,255,255,0.65)" }}
+        />
       </div>
     </div>
   );
@@ -730,6 +811,7 @@ const MOCK_NOTIFICATIONS = [
 function DockNotifWidget() {
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const openApp = useOSStore((s) => s.openApp);
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipTimeout, setTooltipTimeout] = useState<ReturnType<
     typeof setTimeout
@@ -884,6 +966,40 @@ function DockNotifWidget() {
                 ))}
               </div>
             )}
+            <div
+              style={{
+                padding: "8px 12px 12px",
+                borderTop: "1px solid var(--border-subtle)",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  openApp("notifications", "Notificações");
+                  setOpen(false);
+                }}
+                style={{
+                  width: "100%",
+                  padding: "8px",
+                  borderRadius: 8,
+                  background: "rgba(139,92,246,0.1)",
+                  border: "1px solid rgba(139,92,246,0.22)",
+                  color: "#a78bfa",
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "background 120ms",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(139,92,246,0.2)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(139,92,246,0.1)";
+                }}
+              >
+                Abrir Notificações →
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1171,9 +1287,9 @@ export function Dock() {
             boxShadow: "var(--shadow-dock)",
           }}
         >
-          {/* Widget: Tempo (esquerda) */}
+          {/* Widget: Tempo + Menu do sistema (esquerda) */}
           <DockWeatherWidget />
-          <DockClockWidget />
+          <DockSystemMenuWidget />
           <DockDivider />
 
           {/* Apps */}
@@ -1187,9 +1303,9 @@ export function Dock() {
             />
           ))}
 
-          {/* Widget: Menu do sistema + Notificações (direita) */}
+          {/* Widget: Calendário + Notificações (direita) */}
           <DockDivider />
-          <DockSystemMenuWidget />
+          <DockClockWidget />
           <DockNotifWidget />
         </motion.div>
       </motion.div>
