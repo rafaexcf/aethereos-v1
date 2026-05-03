@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { useDrivers } from "../../lib/drivers-context";
 import { useSessionStore } from "../../stores/session";
+import { moveToTrash } from "../../lib/trash";
 import { CardModal } from "./CardModal";
 import type { KanbanColumn, KanbanCard, KanbanLabel, Priority } from "./types";
 import {
@@ -813,7 +814,51 @@ export function BoardView({
   }
 
   async function handleDeleteColumn(colId: string) {
-    if (!drivers) return;
+    if (!drivers || !userId || !companyId) return;
+    const column = columns.find((c) => c.id === colId);
+    if (!column) return;
+
+    const colCards = cards.filter((c) => c.column_id === colId);
+    const cardIds = colCards.map((c) => c.id);
+
+    let cardLabels: Record<string, unknown>[] = [];
+    let checklistItems: Record<string, unknown>[] = [];
+    let comments: Record<string, unknown>[] = [];
+
+    if (cardIds.length > 0) {
+      const [clRes, ckRes, cmRes] = await Promise.all([
+        drivers.data
+          .from("kanban_card_labels")
+          .select("*")
+          .in("card_id", cardIds),
+        drivers.data
+          .from("kanban_checklist_items")
+          .select("*")
+          .in("card_id", cardIds),
+        drivers.data.from("kanban_comments").select("*").in("card_id", cardIds),
+      ]);
+      cardLabels = (clRes.data ?? []) as Record<string, unknown>[];
+      checklistItems = (ckRes.data ?? []) as Record<string, unknown>[];
+      comments = (cmRes.data ?? []) as Record<string, unknown>[];
+    }
+
+    await moveToTrash({
+      drivers,
+      userId,
+      companyId,
+      appId: "kanban-column",
+      itemType: "column",
+      itemName: column.name.trim() !== "" ? column.name : "(Sem nome)",
+      itemData: {
+        column: column as unknown as Record<string, unknown>,
+        cards: colCards as unknown as Record<string, unknown>[],
+        card_labels: cardLabels,
+        checklist_items: checklistItems,
+        comments,
+      },
+      originalId: column.id,
+    });
+
     await drivers.data.from("kanban_columns").delete().eq("id", colId);
     setColumns((p) => p.filter((c) => c.id !== colId));
     setCards((p) => p.filter((c) => c.column_id !== colId));

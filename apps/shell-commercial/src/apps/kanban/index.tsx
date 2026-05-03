@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useDrivers } from "../../lib/drivers-context";
 import { useSessionStore } from "../../stores/session";
+import { moveToTrash } from "../../lib/trash";
 import { BoardView } from "./BoardView";
 import type { KanbanBoard, KanbanCard } from "./types";
 import {
@@ -665,7 +666,67 @@ export function KanbanApp() {
   }
 
   async function deleteBoard(id: string) {
-    if (!drivers) return;
+    if (!drivers || !userId || !companyId) return;
+    const board = boards.find((b) => b.id === id);
+    if (!board) return;
+
+    const [colRes, cardRes, labelRes, activityRes] = await Promise.all([
+      drivers.data.from("kanban_columns").select("*").eq("board_id", id),
+      drivers.data.from("kanban_cards").select("*").eq("board_id", id),
+      drivers.data.from("kanban_labels").select("*").eq("board_id", id),
+      drivers.data.from("kanban_activity").select("*").eq("board_id", id),
+    ]);
+
+    const columns = (colRes.data ?? []) as Record<string, unknown>[];
+    const cards = (cardRes.data ?? []) as Record<string, unknown>[];
+    const labels = (labelRes.data ?? []) as Record<string, unknown>[];
+    const activity = (activityRes.data ?? []) as Record<string, unknown>[];
+
+    const cardIds = cards
+      .map((c) => c["id"])
+      .filter((v): v is string => typeof v === "string");
+
+    let cardLabels: Record<string, unknown>[] = [];
+    let checklistItems: Record<string, unknown>[] = [];
+    let comments: Record<string, unknown>[] = [];
+
+    if (cardIds.length > 0) {
+      const [clRes, ckRes, cmRes] = await Promise.all([
+        drivers.data
+          .from("kanban_card_labels")
+          .select("*")
+          .in("card_id", cardIds),
+        drivers.data
+          .from("kanban_checklist_items")
+          .select("*")
+          .in("card_id", cardIds),
+        drivers.data.from("kanban_comments").select("*").in("card_id", cardIds),
+      ]);
+      cardLabels = (clRes.data ?? []) as Record<string, unknown>[];
+      checklistItems = (ckRes.data ?? []) as Record<string, unknown>[];
+      comments = (cmRes.data ?? []) as Record<string, unknown>[];
+    }
+
+    await moveToTrash({
+      drivers,
+      userId,
+      companyId,
+      appId: "kanban-board",
+      itemType: "board",
+      itemName: board.name.trim() !== "" ? board.name : "(Sem nome)",
+      itemData: {
+        board: board as unknown as Record<string, unknown>,
+        columns,
+        cards,
+        labels,
+        card_labels: cardLabels,
+        checklist_items: checklistItems,
+        comments,
+        activity,
+      },
+      originalId: board.id,
+    });
+
     await drivers.data.from("kanban_boards").delete().eq("id", id);
     setBoards((p) => p.filter((b) => b.id !== id));
   }

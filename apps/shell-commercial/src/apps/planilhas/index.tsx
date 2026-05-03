@@ -10,9 +10,12 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  Trash2,
 } from "lucide-react";
 import { useDrivers } from "../../lib/drivers-context";
 import { useSessionStore } from "../../stores/session";
+import { DeleteConfirmModal } from "../../components/shared/DeleteConfirmModal";
+import { moveToTrash } from "../../lib/trash";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1104,6 +1107,12 @@ export function PlanilhasApp() {
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Delete state
+  const [deleteCandidate, setDeleteCandidate] = useState<Spreadsheet | null>(
+    null,
+  );
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
   // Derived: active spreadsheet object
   const activeSpreadsheet = useMemo(
     () => spreadsheets.find((s) => s.id === activeId) ?? null,
@@ -1268,6 +1277,37 @@ export function PlanilhasApp() {
       );
     } finally {
       setSaving(false);
+    }
+  }
+
+  // ─── Delete spreadsheet ─────────────────────────────────────────────────────
+
+  async function handleDeleteSpreadsheet(spreadsheet: Spreadsheet) {
+    if (!drivers || !userId || !companyId) return;
+    try {
+      await moveToTrash({
+        drivers,
+        userId,
+        companyId,
+        appId: "planilhas",
+        itemType: "spreadsheet",
+        itemName:
+          spreadsheet.name.trim() !== "" ? spreadsheet.name : "(Sem título)",
+        itemData: spreadsheet as unknown as Record<string, unknown>,
+        originalId: spreadsheet.id,
+      });
+      await drivers.data.from("spreadsheets").delete().eq("id", spreadsheet.id);
+      setSpreadsheets((prev) => {
+        const next = prev.filter((s) => s.id !== spreadsheet.id);
+        if (activeId === spreadsheet.id) {
+          const fallback = next[0]?.id ?? null;
+          setActiveId(fallback);
+        }
+        return next;
+      });
+      setDeleteCandidate(null);
+    } catch {
+      setDeleteCandidate(null);
     }
   }
 
@@ -1449,6 +1489,22 @@ export function PlanilhasApp() {
         overflow: "hidden",
       }}
     >
+      <DeleteConfirmModal
+        open={deleteCandidate !== null}
+        title="Excluir planilha"
+        message={
+          deleteCandidate !== null
+            ? `"${deleteCandidate.name.trim() !== "" ? deleteCandidate.name : "(Sem título)"}" será movida para a Lixeira. Você poderá restaurá-la em até 30 dias.`
+            : ""
+        }
+        confirmLabel="Mover para a Lixeira"
+        onConfirm={() => {
+          if (deleteCandidate !== null)
+            void handleDeleteSpreadsheet(deleteCandidate);
+        }}
+        onClose={() => setDeleteCandidate(null)}
+      />
+
       {/* ─── Sidebar ─── */}
       <div
         style={{
@@ -1590,54 +1646,103 @@ export function PlanilhasApp() {
                 ) : (
                   spreadsheets.map((sp) => {
                     const isActive = sp.id === activeId;
+                    const isHovered = hoveredId === sp.id;
                     return (
-                      <button
+                      <div
                         key={sp.id}
-                        type="button"
-                        onClick={() => setActiveId(sp.id)}
+                        onMouseEnter={() => setHoveredId(sp.id)}
+                        onMouseLeave={() => setHoveredId(null)}
                         style={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "flex-start",
+                          position: "relative",
                           width: "100%",
-                          padding: "8px 12px",
-                          background: isActive
-                            ? "rgba(16,185,129,0.10)"
-                            : "transparent",
-                          border: "none",
-                          borderLeft: isActive
-                            ? `2px solid ${ACCENT}`
-                            : "2px solid transparent",
-                          cursor: "pointer",
-                          textAlign: "left",
-                          gap: 2,
-                          transition: "background 100ms",
                         }}
                       >
-                        <span
+                        <button
+                          type="button"
+                          onClick={() => setActiveId(sp.id)}
                           style={{
-                            fontSize: 13,
-                            color: isActive
-                              ? "var(--text-primary)"
-                              : "var(--text-secondary)",
-                            fontWeight: isActive ? 600 : 400,
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            maxWidth: "100%",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "flex-start",
+                            width: "100%",
+                            padding: "8px 36px 8px 12px",
+                            background: isActive
+                              ? "rgba(16,185,129,0.10)"
+                              : "transparent",
+                            border: "none",
+                            borderLeft: isActive
+                              ? `2px solid ${ACCENT}`
+                              : "2px solid transparent",
+                            cursor: "pointer",
+                            textAlign: "left",
+                            gap: 2,
+                            transition: "background 100ms",
                           }}
                         >
-                          {sp.name}
-                        </span>
-                        <span
-                          style={{
-                            fontSize: 10,
-                            color: "var(--text-tertiary)",
-                          }}
-                        >
-                          {new Date(sp.updated_at).toLocaleDateString("pt-BR")}
-                        </span>
-                      </button>
+                          <span
+                            style={{
+                              fontSize: 13,
+                              color: isActive
+                                ? "var(--text-primary)"
+                                : "var(--text-secondary)",
+                              fontWeight: isActive ? 600 : 400,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              maxWidth: "100%",
+                            }}
+                          >
+                            {sp.name}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: 10,
+                              color: "var(--text-tertiary)",
+                            }}
+                          >
+                            {new Date(sp.updated_at).toLocaleDateString(
+                              "pt-BR",
+                            )}
+                          </span>
+                        </button>
+                        {(isHovered || isActive) && (
+                          <button
+                            type="button"
+                            aria-label={`Excluir ${sp.name}`}
+                            title="Excluir planilha"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteCandidate(sp);
+                            }}
+                            style={{
+                              position: "absolute",
+                              right: 8,
+                              top: "50%",
+                              transform: "translateY(-50%)",
+                              width: 22,
+                              height: 22,
+                              borderRadius: 4,
+                              background: "transparent",
+                              border: "none",
+                              color: "rgba(239,68,68,0.6)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: "pointer",
+                              transition: "color 120ms",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color = "#ef4444";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color =
+                                "rgba(239,68,68,0.6)";
+                            }}
+                          >
+                            <Trash2 size={11} />
+                          </button>
+                        )}
+                      </div>
                     );
                   })
                 )}

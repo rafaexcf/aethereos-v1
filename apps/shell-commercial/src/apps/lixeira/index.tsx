@@ -13,6 +13,8 @@ import {
   Calendar,
   Filter,
   Image as ImageIcon,
+  LayoutGrid,
+  Columns3,
 } from "lucide-react";
 import { useDrivers } from "../../lib/drivers-context";
 import { useSessionStore } from "../../stores/session";
@@ -184,6 +186,10 @@ function getAppIcon(
       return BarChart2;
     case "kanban":
       return Kanban;
+    case "kanban-board":
+      return LayoutGrid;
+    case "kanban-column":
+      return Columns3;
     case "camera":
       return ImageIcon;
     default:
@@ -204,7 +210,11 @@ function getAppLabel(appId: string): string {
     case "enquetes":
       return "Enquete";
     case "kanban":
+      return "Cartão Kanban";
+    case "kanban-board":
       return "Quadro Kanban";
+    case "kanban-column":
+      return "Coluna Kanban";
     case "camera":
       return "Foto";
     default:
@@ -271,6 +281,10 @@ function getCategoryLabel(appId: string): string {
       return "Enquetes";
     case "kanban":
       return "Kanban";
+    case "kanban-board":
+      return "Quadros Kanban";
+    case "kanban-column":
+      return "Colunas Kanban";
     case "camera":
       return "Fotos";
     default:
@@ -340,7 +354,9 @@ export function LixeiraApp() {
       camera: 0,
     };
     for (const e of allEntries) {
-      if (e.appId in counts) {
+      if (e.appId === "kanban-board" || e.appId === "kanban-column") {
+        counts.kanban += 1;
+      } else if (e.appId in counts) {
         counts[e.appId as TypeFilter] += 1;
       }
     }
@@ -350,7 +366,16 @@ export function LixeiraApp() {
   const filteredEntries = useMemo<TrashEntry[]>(() => {
     let base = allEntries;
     if (typeFilter !== "all") {
-      base = base.filter((e) => e.appId === typeFilter);
+      base = base.filter((e) => {
+        if (typeFilter === "kanban") {
+          return (
+            e.appId === "kanban" ||
+            e.appId === "kanban-board" ||
+            e.appId === "kanban-column"
+          );
+        }
+        return e.appId === typeFilter;
+      });
     }
     if (dateFilter !== "all") {
       const limit = dateFilter === "today" ? 1 : dateFilter === "7d" ? 7 : 30;
@@ -414,6 +439,14 @@ export function LixeiraApp() {
         .update({ trashed: false, trashed_at: null })
         .eq("id", entry.id);
       setTrashedNotes((prev) => prev.filter((n) => n.id !== entry.id));
+    } else if (entry.appId === "kanban-board") {
+      await restoreKanbanBoardCascade(entry.data);
+      await drivers.data.from("trash_items").delete().eq("id", entry.id);
+      setTrashItems((prev) => prev.filter((i) => i.id !== entry.id));
+    } else if (entry.appId === "kanban-column") {
+      await restoreKanbanColumnCascade(entry.data);
+      await drivers.data.from("trash_items").delete().eq("id", entry.id);
+      setTrashItems((prev) => prev.filter((i) => i.id !== entry.id));
     } else {
       const tableName = restoreTableFor(entry.appId);
       if (tableName !== null) {
@@ -425,6 +458,87 @@ export function LixeiraApp() {
     }
     setSelectedKey(null);
     setBusy(false);
+  }
+
+  async function restoreKanbanBoardCascade(
+    data: Record<string, unknown>,
+  ): Promise<void> {
+    if (drivers === null) return;
+    const board = data["board"] as Record<string, unknown> | undefined;
+    const columns =
+      (data["columns"] as Record<string, unknown>[] | undefined) ?? [];
+    const cards =
+      (data["cards"] as Record<string, unknown>[] | undefined) ?? [];
+    const labels =
+      (data["labels"] as Record<string, unknown>[] | undefined) ?? [];
+    const cardLabels =
+      (data["card_labels"] as Record<string, unknown>[] | undefined) ?? [];
+    const checklistItems =
+      (data["checklist_items"] as Record<string, unknown>[] | undefined) ?? [];
+    const comments =
+      (data["comments"] as Record<string, unknown>[] | undefined) ?? [];
+    const activity =
+      (data["activity"] as Record<string, unknown>[] | undefined) ?? [];
+
+    if (board === undefined) return;
+
+    const boardRes = await drivers.data.from("kanban_boards").insert(board);
+    if (boardRes.error) return;
+
+    if (columns.length > 0) {
+      await drivers.data.from("kanban_columns").insert(columns);
+    }
+    if (labels.length > 0) {
+      await drivers.data.from("kanban_labels").insert(labels);
+    }
+    if (cards.length > 0) {
+      await drivers.data.from("kanban_cards").insert(cards);
+    }
+    if (cardLabels.length > 0) {
+      await drivers.data.from("kanban_card_labels").insert(cardLabels);
+    }
+    if (checklistItems.length > 0) {
+      await drivers.data.from("kanban_checklist_items").insert(checklistItems);
+    }
+    if (comments.length > 0) {
+      await drivers.data.from("kanban_comments").insert(comments);
+    }
+    if (activity.length > 0) {
+      await drivers.data.from("kanban_activity").insert(activity);
+    }
+  }
+
+  async function restoreKanbanColumnCascade(
+    data: Record<string, unknown>,
+  ): Promise<void> {
+    if (drivers === null) return;
+    const column = data["column"] as Record<string, unknown> | undefined;
+    const cards =
+      (data["cards"] as Record<string, unknown>[] | undefined) ?? [];
+    const cardLabels =
+      (data["card_labels"] as Record<string, unknown>[] | undefined) ?? [];
+    const checklistItems =
+      (data["checklist_items"] as Record<string, unknown>[] | undefined) ?? [];
+    const comments =
+      (data["comments"] as Record<string, unknown>[] | undefined) ?? [];
+
+    if (column === undefined) return;
+
+    const colRes = await drivers.data.from("kanban_columns").insert(column);
+    if (colRes.error) return;
+
+    if (cards.length > 0) {
+      await drivers.data.from("kanban_cards").insert(cards);
+    }
+    if (cardLabels.length > 0) {
+      await drivers.data.from("kanban_card_labels").insert(cardLabels);
+    }
+    if (checklistItems.length > 0) {
+      await drivers.data.from("kanban_checklist_items").insert(checklistItems);
+    }
+    if (comments.length > 0) {
+      await drivers.data.from("kanban_comments").insert(comments);
+    }
   }
 
   async function deleteEntry(entry: TrashEntry): Promise<void> {
