@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { AppShell } from "@aethereos/ui-shell";
 import { useEmployees, useDepartments } from "./hooks/useEmployees";
 import { useEmployeeMutations } from "./hooks/useEmployeeMutations";
@@ -7,6 +7,8 @@ import { EmployeeForm } from "./components/EmployeeForm";
 import { EmployeeDetailDrawer } from "./components/EmployeeDetailDrawer";
 import type { Employee } from "./types";
 import { rowToEmployee } from "./types";
+import { useRhStore } from "../../stores/rhStore";
+import { useDrivers } from "../../lib/drivers-context";
 
 type View = "list" | "form" | "new";
 
@@ -18,6 +20,25 @@ export function RHApp() {
     null,
   );
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+  const { pendingUserId, clearPendingUserId } = useRhStore();
+  const drivers = useDrivers();
+
+  useEffect(() => {
+    if (pendingUserId === null || drivers === null) return;
+    clearPendingUserId();
+    void drivers.data
+      .from("employees")
+      .select("*")
+      .eq("user_id", pendingUserId)
+      .is("deleted_at", null)
+      .maybeSingle()
+      .then(({ data }: { data: Record<string, unknown> | null }) => {
+        if (data !== null) {
+          setSelectedEmployee(rowToEmployee(data));
+          setView("list");
+        }
+      });
+  }, [pendingUserId, drivers, clearPendingUserId]);
 
   const { employees, total, page, setPage, loading, refresh, pageSize } =
     useEmployees({

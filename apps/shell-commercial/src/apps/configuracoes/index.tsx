@@ -29,13 +29,8 @@ import {
   Building2,
   ImagePlus,
   Trash2,
-  GripVertical,
   Plus,
   RotateCcw,
-  CreditCard,
-  Cpu,
-  HardDrive,
-  Network,
   Users,
   AlertTriangle,
   Sun,
@@ -43,13 +38,19 @@ import {
   ChevronDown,
   Lock,
   Minus,
-  Github,
   HelpCircle,
   BookOpen,
   Lightbulb,
   MessageSquare,
   Rocket,
   ExternalLink,
+  Phone,
+  X,
+  Clock,
+  StickyNote,
+  CloudSun,
+  ListTodo,
+  Store,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import type { LucideProps } from "lucide-react";
@@ -68,8 +69,12 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useDockStore } from "../../stores/dockStore";
+import { useOSStore } from "../../stores/osStore";
+import { useUserPreference } from "../../hooks/useUserPreference";
+import { useTheme } from "../../lib/theme/theme-provider";
+import { useGestorStore } from "../../stores/gestorStore";
+import { useRhStore } from "../../stores/rhStore";
 import { APP_REGISTRY } from "../registry";
-import { GlareHover } from "../../components/ui/glare-hover";
 import { useSessionStore } from "../../stores/session";
 import { useDrivers } from "../../lib/drivers-context";
 import { AnimatedThemeToggler } from "../../components/ui/animated-theme-toggler";
@@ -79,8 +84,11 @@ import {
   WALLPAPER_NAMES,
   getWallpaperStyle,
   CUSTOM_WALLPAPER_ID,
+  DEFAULT_LAYOUT,
 } from "../../stores/mesaStore";
+import type { MesaItem } from "../../types/os";
 import { DDI_OPTIONS } from "../../data/ddi-options";
+import { useModalA11y } from "../../components/shared/useModalA11y";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -93,8 +101,6 @@ type TabId =
   | "dock"
   | "mesa"
   | "aparencia"
-  | "integracoes"
-  | "planos"
   | "sobre";
 
 interface NavItem {
@@ -130,11 +136,7 @@ const NAV_SECTIONS: NavSection[] = [
   },
   {
     label: "Avançado",
-    items: [
-      { id: "integracoes", label: "Integrações", icon: Link2 },
-      { id: "planos", label: "Planos", icon: CreditCard },
-      { id: "sobre", label: "Sistema", icon: Info },
-    ],
+    items: [{ id: "sobre", label: "Sistema", icon: Info }],
   },
 ];
 
@@ -147,8 +149,6 @@ const TAB_LABELS: Record<TabId, string> = {
   dock: "Dock",
   mesa: "Mesa",
   aparencia: "Aparência",
-  integracoes: "Integrações",
-  planos: "Planos",
   sobre: "Sistema",
 };
 
@@ -171,7 +171,7 @@ function ContentHeader({
   /** Quando true com iconUrl, exibe a imagem diretamente sem container/borda */
   noContainer?: boolean;
   title: string;
-  subtitle: string;
+  subtitle: React.ReactNode;
   right?: React.ReactNode;
 }) {
   return (
@@ -191,8 +191,8 @@ function ContentHeader({
           src={iconUrl}
           alt=""
           style={{
-            width: 112,
-            height: 112,
+            height: 56,
+            width: "auto",
             objectFit: "contain",
             flexShrink: 0,
           }}
@@ -271,7 +271,13 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function SettingGroup({ children }: { children: React.ReactNode }) {
+function SettingGroup({
+  children,
+  style,
+}: {
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+}) {
   return (
     <div
       style={{
@@ -279,6 +285,7 @@ function SettingGroup({ children }: { children: React.ReactNode }) {
         background: "rgba(255,255,255,0.04)",
         border: "1px solid rgba(255,255,255,0.07)",
         overflow: "hidden",
+        ...style,
       }}
     >
       {children}
@@ -292,6 +299,7 @@ function SettingRow({
   last,
   danger,
   icon,
+  labelBadge,
   children,
 }: {
   label: string;
@@ -299,6 +307,7 @@ function SettingRow({
   last?: boolean;
   danger?: boolean;
   icon?: React.ReactNode;
+  labelBadge?: React.ReactNode;
   children?: React.ReactNode;
 }) {
   return (
@@ -331,6 +340,7 @@ function SettingRow({
           >
             {label}
           </span>
+          {labelBadge !== undefined && labelBadge}
         </div>
         {sublabel !== undefined && (
           <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
@@ -895,63 +905,6 @@ function SaveLabel({
   return <>{label}</>;
 }
 
-function MonoCode({ children }: { children: React.ReactNode }) {
-  return (
-    <code
-      style={{
-        display: "block",
-        background: "rgba(255,255,255,0.03)",
-        border: "1px solid rgba(255,255,255,0.05)",
-        borderRadius: 8,
-        padding: "7px 11px",
-        fontSize: 11,
-        fontFamily: "var(--font-mono)",
-        color: "var(--text-secondary)",
-        maxWidth: 280,
-        overflow: "hidden",
-        textOverflow: "ellipsis",
-        whiteSpace: "nowrap",
-      }}
-    >
-      {children}
-    </code>
-  );
-}
-
-function ComingSoonBanner({ message }: { message?: string }) {
-  return (
-    <div
-      style={{
-        borderRadius: 12,
-        background: "rgba(99,102,241,0.07)",
-        border: "1px solid rgba(99,102,241,0.18)",
-        padding: "20px 24px",
-        display: "flex",
-        alignItems: "center",
-        gap: 14,
-      }}
-    >
-      <span style={{ fontSize: 20 }}>🚧</span>
-      <div>
-        <p
-          style={{
-            fontSize: 13,
-            fontWeight: 500,
-            color: "var(--text-primary)",
-          }}
-        >
-          Em desenvolvimento
-        </p>
-        <p
-          style={{ fontSize: 12, color: "var(--text-tertiary)", marginTop: 3 }}
-        >
-          {message ?? "Esta seção estará disponível em breve."}
-        </p>
-      </div>
-    </div>
-  );
-}
-
 // ─── Image upload card (avatar / logo) ───────────────────────────────────────
 
 /**
@@ -1006,6 +959,8 @@ function ImageUploadCard({
   error: string | null;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState(false);
+  const [imgHovered, setImgHovered] = useState(false);
   const radius = shape === "circle" ? "50%" : 12;
 
   function pickFile() {
@@ -1045,7 +1000,16 @@ function ImageUploadCard({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          cursor: url !== null ? "zoom-in" : "default",
         }}
+        onClick={() => {
+          if (url !== null && !uploading) setPreview(true);
+        }}
+        onMouseEnter={() => {
+          if (url !== null && !uploading) setImgHovered(true);
+        }}
+        onMouseLeave={() => setImgHovered(false)}
+        title={url !== null ? `Ver ${title}` : undefined}
       >
         {url !== null ? (
           <img
@@ -1055,6 +1019,25 @@ function ImageUploadCard({
           />
         ) : (
           fallback
+        )}
+        {/* Hover overlay */}
+        {url !== null && !uploading && imgHovered && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "rgba(0,0,0,0.38)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Eye
+              size={18}
+              strokeWidth={1.8}
+              style={{ color: "rgba(255,255,255,0.9)" }}
+            />
+          </div>
         )}
         {uploading && (
           <div
@@ -1176,6 +1159,91 @@ function ImageUploadCard({
         onChange={handleChange}
         style={{ display: "none" }}
       />
+
+      {/* Preview modal */}
+      {preview &&
+        url !== null &&
+        createPortal(
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 2000,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(0,0,0,0.72)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+            }}
+            onClick={() => setPreview(false)}
+          >
+            {/* Close button */}
+            <button
+              type="button"
+              onClick={() => setPreview(false)}
+              style={{
+                position: "absolute",
+                top: 20,
+                right: 20,
+                width: 36,
+                height: 36,
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(255,255,255,0.10)",
+                border: "1px solid rgba(255,255,255,0.15)",
+                cursor: "pointer",
+                color: "rgba(255,255,255,0.85)",
+                zIndex: 1,
+                transition: "background 120ms ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.18)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255,255,255,0.10)";
+              }}
+            >
+              <X size={16} strokeWidth={2} />
+            </button>
+
+            {/* Image */}
+            <img
+              src={url}
+              alt={title}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                maxWidth: "80vmin",
+                maxHeight: "80vmin",
+                width: "auto",
+                height: "auto",
+                borderRadius: shape === "circle" ? "50%" : 20,
+                boxShadow: "0 32px 80px rgba(0,0,0,0.7)",
+                border: "2px solid rgba(255,255,255,0.12)",
+                display: "block",
+              }}
+            />
+
+            {/* Label */}
+            <p
+              style={{
+                position: "absolute",
+                bottom: 24,
+                left: 0,
+                right: 0,
+                textAlign: "center",
+                fontSize: 13,
+                color: "rgba(255,255,255,0.5)",
+                pointerEvents: "none",
+              }}
+            >
+              {title}
+            </p>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
@@ -1218,6 +1286,8 @@ function TabMinhaEmpresa({
 }) {
   const drivers = useDrivers();
   const { activeCompanyId } = useSessionStore();
+  const openApp = useOSStore((s) => s.openApp);
+  const setPendingTab = useGestorStore((s) => s.setPendingTab);
 
   const [cnpjDisplay, setCnpjDisplay] = useState("");
   const [cnpjPreview, setCnpjPreview] = useState<CnpjPreview | null>(null);
@@ -1360,9 +1430,43 @@ function TabMinhaEmpresa({
         icon={Building2}
         iconBg="rgba(6,182,212,0.22)"
         iconColor="#22d3ee"
-        iconUrl={logoUrl}
         title="Minha Empresa"
         subtitle="Dados cadastrais da pessoa jurídica"
+        right={
+          <button
+            type="button"
+            onClick={() => {
+              setPendingTab("cadastros");
+              openApp("gestor", "Gestor");
+            }}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+              padding: "7px 12px",
+              borderRadius: 8,
+              background: "rgba(34,211,238,0.08)",
+              border: "1px solid rgba(34,211,238,0.18)",
+              color: "#22d3ee",
+              fontSize: 12,
+              fontWeight: 500,
+              cursor: "pointer",
+              transition: "background 150ms ease, border-color 150ms ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(34,211,238,0.14)";
+              e.currentTarget.style.borderColor = "rgba(34,211,238,0.30)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(34,211,238,0.08)";
+              e.currentTarget.style.borderColor = "rgba(34,211,238,0.18)";
+            }}
+          >
+            <FileText size={12} strokeWidth={1.8} />
+            Cadastro Completo
+            <ArrowRight size={12} strokeWidth={1.8} />
+          </button>
+        }
       />
 
       {/* Cadastro Empresarial */}
@@ -1490,49 +1594,6 @@ function TabMinhaEmpresa({
               >
                 {cnpjPreview.municipio} – {cnpjPreview.uf}
               </p>
-
-              {/* Ver cadastro completo */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  marginTop: 12,
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    // TODO: navegar para o cadastro completo quando a rota existir
-                  }}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 5,
-                    padding: "5px 10px",
-                    borderRadius: 6,
-                    background: "rgba(34,211,238,0.08)",
-                    border: "1px solid rgba(34,211,238,0.18)",
-                    color: "#22d3ee",
-                    fontSize: 12,
-                    fontWeight: 500,
-                    cursor: "pointer",
-                    transition:
-                      "background 150ms ease, border-color 150ms ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "rgba(34,211,238,0.14)";
-                    e.currentTarget.style.borderColor = "rgba(34,211,238,0.30)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "rgba(34,211,238,0.08)";
-                    e.currentTarget.style.borderColor = "rgba(34,211,238,0.18)";
-                  }}
-                >
-                  <FileText size={11} strokeWidth={1.8} />
-                  Ver cadastro completo
-                  <ArrowRight size={11} strokeWidth={1.8} />
-                </button>
-              </div>
             </div>
 
             {/* Footer strip */}
@@ -1865,14 +1926,6 @@ function ChangePasswordDialog({
   );
 }
 
-function detectBrowser(): string {
-  const ua = navigator.userAgent;
-  if (ua.includes("Chrome")) return "Chrome";
-  if (ua.includes("Firefox")) return "Firefox";
-  if (ua.includes("Safari")) return "Safari";
-  return "Navegador desconhecido";
-}
-
 function PasswordBadge({ ok, label }: { ok: boolean; label: string }) {
   return (
     <span
@@ -1971,6 +2024,8 @@ function TabPerfil({
 }) {
   const { email, userId } = useSessionStore();
   const drivers = useDrivers();
+  const openApp = useOSStore((s) => s.openApp);
+  const setPendingUserId = useRhStore((s) => s.setPendingUserId);
 
   // Profile data
   const [name, setName] = useState("");
@@ -2189,9 +2244,43 @@ function TabPerfil({
         icon={User}
         iconBg="rgba(99,102,241,0.22)"
         iconColor="#818cf8"
-        iconUrl={avatarUrl}
         title="Meu Perfil"
         subtitle="Informações pessoais, senha e proteções da conta"
+        right={
+          <button
+            type="button"
+            onClick={() => {
+              if (userId !== null) setPendingUserId(userId);
+              openApp("rh", "RH");
+            }}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
+              padding: "7px 12px",
+              borderRadius: 8,
+              background: "rgba(139,92,246,0.10)",
+              border: "1px solid rgba(139,92,246,0.25)",
+              color: "#a78bfa",
+              fontSize: 12,
+              fontWeight: 500,
+              cursor: "pointer",
+              transition: "background 150ms ease, border-color 150ms ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(139,92,246,0.18)";
+              e.currentTarget.style.borderColor = "rgba(139,92,246,0.40)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(139,92,246,0.10)";
+              e.currentTarget.style.borderColor = "rgba(139,92,246,0.25)";
+            }}
+          >
+            <Users size={12} strokeWidth={1.8} />
+            Perfil Completo
+            <ArrowRight size={12} strokeWidth={1.8} />
+          </button>
+        }
       />
 
       {/* Informações pessoais */}
@@ -2404,50 +2493,19 @@ function TabPerfil({
         </SettingGroup>
       </div>
 
-      {/* Alterar senha */}
+      {/* Assinatura digital */}
       <div>
-        <SectionLabel>Alterar senha</SectionLabel>
+        <SectionLabel>Mais recursos</SectionLabel>
         <SettingGroup>
           <SettingRow
-            label="Senha"
-            sublabel="Defina uma nova senha para sua conta"
+            label="Assinatura digital"
+            sublabel="Assine documentos com validade jurídica diretamente do OS"
             last
           >
-            <button
-              type="button"
-              onClick={() => setShowPwdDialog(true)}
-              style={{
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.10)",
-                borderRadius: 8,
-                padding: "7px 16px",
-                fontSize: 13,
-                color: "var(--text-primary)",
-                cursor: "pointer",
-                transition: "background 120ms ease, border-color 120ms ease",
-                whiteSpace: "nowrap",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(255,255,255,0.10)";
-                e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "rgba(255,255,255,0.06)";
-                e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)";
-              }}
-            >
-              Alterar senha
-            </button>
+            <Badge variant="neutral">Em breve</Badge>
           </SettingRow>
         </SettingGroup>
       </div>
-
-      <ChangePasswordDialog
-        open={showPwdDialog}
-        onClose={() => setShowPwdDialog(false)}
-        drivers={drivers}
-        userId={userId}
-      />
 
       {/* Proteção adicional */}
       <div>
@@ -2469,19 +2527,56 @@ function TabPerfil({
         </SettingGroup>
       </div>
 
-      {/* Mais recursos */}
+      {/* Alterar senha */}
       <div>
-        <SectionLabel>Mais recursos</SectionLabel>
-        <SettingGroup>
+        <SectionLabel>Alterar senha</SectionLabel>
+        <SettingGroup
+          style={{
+            border: "1px solid rgba(234,179,8,0.35)",
+            background: "rgba(234,179,8,0.04)",
+          }}
+        >
           <SettingRow
-            label="Assinatura digital"
-            sublabel="Assine documentos com validade jurídica diretamente do OS"
+            label="Senha"
+            sublabel="Defina uma nova senha para sua conta"
             last
           >
-            <Badge variant="neutral">Em breve</Badge>
+            <button
+              type="button"
+              onClick={() => setShowPwdDialog(true)}
+              style={{
+                background: "rgba(234,179,8,0.10)",
+                border: "1px solid rgba(234,179,8,0.30)",
+                borderRadius: 8,
+                padding: "7px 16px",
+                fontSize: 13,
+                color: "#fbbf24",
+                cursor: "pointer",
+                transition: "background 120ms ease, border-color 120ms ease",
+                whiteSpace: "nowrap",
+                fontWeight: 500,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(234,179,8,0.18)";
+                e.currentTarget.style.borderColor = "rgba(234,179,8,0.50)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(234,179,8,0.10)";
+                e.currentTarget.style.borderColor = "rgba(234,179,8,0.30)";
+              }}
+            >
+              Alterar senha
+            </button>
           </SettingRow>
         </SettingGroup>
       </div>
+
+      <ChangePasswordDialog
+        open={showPwdDialog}
+        onClose={() => setShowPwdDialog(false)}
+        drivers={drivers}
+        userId={userId}
+      />
 
       {/* Salvar — fim da tela */}
       <SaveRow>
@@ -2514,33 +2609,26 @@ const NOTIF_DEFAULTS = {
 };
 
 type NotifPrefs = typeof NOTIF_DEFAULTS;
-const NOTIF_STORAGE_KEY = "ae-notif-prefs";
-
-function loadNotifPrefs(): NotifPrefs {
-  try {
-    const raw = localStorage.getItem(NOTIF_STORAGE_KEY);
-    if (raw !== null)
-      return { ...NOTIF_DEFAULTS, ...(JSON.parse(raw) as Partial<NotifPrefs>) };
-  } catch {
-    /* ignore */
-  }
-  return { ...NOTIF_DEFAULTS };
-}
 
 function TabNotificacoes() {
-  const [prefs, setPrefs] = useState<NotifPrefs>(loadNotifPrefs);
+  const remote = useUserPreference<NotifPrefs>(
+    "notification_prefs",
+    NOTIF_DEFAULTS,
+  );
+  const prefs: NotifPrefs = { ...NOTIF_DEFAULTS, ...remote.value };
   const [saved, setSaved] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function flashSaved() {
+    setSaved(true);
+    if (savedTimerRef.current !== null) clearTimeout(savedTimerRef.current);
+    savedTimerRef.current = setTimeout(() => setSaved(false), 2000);
+  }
 
   function update(key: keyof NotifPrefs, value: boolean) {
     const next = { ...prefs, [key]: value };
-    setPrefs(next);
-    if (debounceRef.current !== null) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(next));
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    }, 400);
+    remote.set(next);
+    flashSaved();
   }
 
   const allOn = Object.values(prefs).every(Boolean);
@@ -2549,10 +2637,8 @@ function TabNotificacoes() {
     const next = Object.fromEntries(
       Object.keys(prefs).map((k) => [k, !allOn]),
     ) as NotifPrefs;
-    setPrefs(next);
-    localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(next));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    remote.set(next);
+    flashSaved();
   }
 
   return (
@@ -2607,6 +2693,13 @@ function TabNotificacoes() {
           <SettingRow
             label="Notificações no App"
             sublabel="Alertas dentro da plataforma Aethereos"
+            icon={
+              <Bell
+                size={14}
+                strokeWidth={1.8}
+                style={{ color: "var(--text-tertiary)", flexShrink: 0 }}
+              />
+            }
           >
             <Toggle
               on={prefs.app_notifications}
@@ -2618,6 +2711,13 @@ function TabNotificacoes() {
           <SettingRow
             label="Notificações por e-mail"
             sublabel="Receba alertas no seu endereço de e-mail"
+            icon={
+              <Mail
+                size={14}
+                strokeWidth={1.8}
+                style={{ color: "var(--text-tertiary)", flexShrink: 0 }}
+              />
+            }
           >
             <Toggle
               on={prefs.email_notifications}
@@ -2629,6 +2729,13 @@ function TabNotificacoes() {
           <SettingRow
             label="Notificações push"
             sublabel="Alertas em tempo real no navegador"
+            icon={
+              <Monitor
+                size={14}
+                strokeWidth={1.8}
+                style={{ color: "var(--text-tertiary)", flexShrink: 0 }}
+              />
+            }
           >
             <Toggle
               on={prefs.push_notifications}
@@ -2640,6 +2747,26 @@ function TabNotificacoes() {
           <SettingRow
             label="Notificações no WhatsApp"
             sublabel="Receba mensagens no WhatsApp vinculado à conta"
+            icon={
+              <div
+                style={{
+                  width: 16,
+                  height: 16,
+                  borderRadius: 4,
+                  background: "#25D366",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <img
+                  src="/integrations/whatsapp.svg"
+                  alt="WhatsApp"
+                  style={{ width: 9, height: 9, objectFit: "contain" }}
+                />
+              </div>
+            }
           >
             <Toggle
               on={prefs.whatsapp_notifications}
@@ -2651,6 +2778,30 @@ function TabNotificacoes() {
           <SettingRow
             label="Notificações no Telegram"
             sublabel="Receba mensagens via bot do Telegram"
+            icon={
+              <div
+                style={{
+                  width: 16,
+                  height: 16,
+                  borderRadius: 4,
+                  background: "#229ED9",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                }}
+              >
+                <svg
+                  width="9"
+                  height="9"
+                  viewBox="0 0 24 24"
+                  fill="white"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path d="M9.417 15.181l-.397 5.584c.568 0 .814-.244 1.109-.537l2.663-2.545 5.518 4.041c1.012.564 1.725.267 1.998-.931L23.93 3.821c.33-1.536-.561-2.132-1.554-1.754L1.122 9.332C-.271 9.869-.254 10.648.76 10.966l5.318 1.647 12.37-7.757c.582-.387 1.114-.172.676.215L9.417 15.181z" />
+                </svg>
+              </div>
+            }
           >
             <Toggle
               on={prefs.telegram_notifications}
@@ -2662,6 +2813,13 @@ function TabNotificacoes() {
           <SettingRow
             label="Notificações SMS"
             sublabel="Receba alertas por SMS no celular cadastrado"
+            icon={
+              <Phone
+                size={14}
+                strokeWidth={1.8}
+                style={{ color: "var(--text-tertiary)", flexShrink: 0 }}
+              />
+            }
             last
           >
             <Toggle
@@ -2679,15 +2837,6 @@ function TabNotificacoes() {
 
 // ─── Tab: Privacidade ─────────────────────────────────────────────────
 
-const STORED_DATA_ITEMS = [
-  "Perfil pessoal",
-  "Dados da empresa",
-  "Ficha de colaborador",
-  "Atividades e histórico",
-  "Preferências e configurações",
-  "Arquivos e documentos",
-];
-
 function DeleteAccountDialog({
   open,
   onClose,
@@ -2696,6 +2845,7 @@ function DeleteAccountDialog({
   onClose: () => void;
 }) {
   const [requested, setRequested] = useState(false);
+  const modalRef = useModalA11y<HTMLDivElement>({ open, onClose });
 
   function handleConfirm() {
     setRequested(true);
@@ -2725,6 +2875,10 @@ function DeleteAccountDialog({
       }}
     >
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Excluir conta"
         style={{
           width: "100%",
           maxWidth: 440,
@@ -2939,11 +3093,253 @@ function DeleteAccountDialog({
   );
 }
 
+function TermosModal({
+  open,
+  onClose,
+  variant,
+}: {
+  open: boolean;
+  onClose: () => void;
+  variant: "termos" | "dados";
+}) {
+  const modalRef = useModalA11y<HTMLDivElement>({ open, onClose });
+  if (!open) return null;
+
+  const isTermos = variant === "termos";
+
+  const content = isTermos ? (
+    <>
+      <Section title="1. Aceitação dos termos">
+        Ao acessar ou usar a plataforma Aethereos, você concorda com estes
+        Termos de Uso e com nossa Política de Privacidade. Se você não concordar
+        com qualquer parte destes termos, não use a plataforma.
+      </Section>
+      <Section title="2. Uso da plataforma">
+        Você concorda em usar o Aethereos exclusivamente para fins lícitos e de
+        acordo com estes termos. É proibido usar a plataforma para atividades
+        ilegais, fraudulentas ou que violem direitos de terceiros.
+      </Section>
+      <Section title="3. Propriedade intelectual">
+        Todo o conteúdo, interfaces, código-fonte e materiais da plataforma são
+        de propriedade da Aethereos ou de seus licenciantes. É vedada a
+        reprodução, distribuição ou modificação sem autorização expressa.
+      </Section>
+      <Section title="4. Conta e segurança">
+        Você é responsável por manter a confidencialidade das suas credenciais
+        de acesso. Notifique-nos imediatamente em caso de acesso não autorizado
+        à sua conta.
+      </Section>
+      <Section title="5. Limitação de responsabilidade">
+        A Aethereos não será responsável por danos indiretos, incidentais ou
+        consequentes decorrentes do uso ou impossibilidade de uso da plataforma,
+        salvo nas hipóteses previstas em lei.
+      </Section>
+      <Section title="6. Alterações nos termos">
+        Reservamo-nos o direito de modificar estes termos a qualquer momento.
+        Alterações significativas serão comunicadas com antecedência mínima de
+        30 dias via e-mail ou notificação na plataforma.
+      </Section>
+      <Section title="7. Lei aplicável" last>
+        Estes termos são regidos pelas leis da República Federativa do Brasil.
+        Fica eleito o foro da comarca de São Paulo/SP para resolução de
+        disputas.
+      </Section>
+    </>
+  ) : (
+    <>
+      <Section title="Dados que coletamos">
+        Coletamos dados fornecidos por você (perfil, empresa, documentos) e
+        dados gerados pelo uso da plataforma (logs de atividade, preferências,
+        metadados de operação).
+      </Section>
+      <Section title="Finalidade do tratamento">
+        Os dados são utilizados exclusivamente para: prestação dos serviços
+        contratados, cumprimento de obrigações legais, melhoria da plataforma e
+        comunicações operacionais.
+      </Section>
+      <Section title="Seus direitos — LGPD (Lei 13.709/2018)">
+        Como titular dos dados você tem direito a: acesso · confirmação de
+        tratamento · correção · portabilidade · anonimização ou eliminação ·
+        revogação do consentimento · oposição ao tratamento. Para exercer estes
+        direitos, entre em contato com nosso DPO.
+      </Section>
+      <Section title="Armazenamento e segurança">
+        Todos os dados são armazenados em servidores localizados no Brasil
+        (região sa-east-1), protegidos por criptografia em trânsito (TLS 1.3) e
+        em repouso (AES-256). Backups diários com retenção de 30 dias.
+      </Section>
+      <Section title="Compartilhamento">
+        Não compartilhamos seus dados com terceiros, exceto: subprocessadores
+        necessários à operação do serviço (listados em nossa política completa)
+        e quando exigido por lei ou ordem judicial.
+      </Section>
+      <Section title="Contato — DPO" last>
+        Encarregado de Proteção de Dados: dpo@aethereos.io · Resposta em até 15
+        dias úteis conforme exigido pela LGPD.
+      </Section>
+    </>
+  );
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(0,0,0,0.55)",
+        backdropFilter: "blur(6px)",
+        WebkitBackdropFilter: "blur(6px)",
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={isTermos ? "Termos de uso" : "Política de privacidade"}
+        style={{
+          width: "100%",
+          maxWidth: 560,
+          maxHeight: "80vh",
+          margin: "0 16px",
+          background: "var(--bg-elevated)",
+          border: "1px solid rgba(255,255,255,0.09)",
+          borderRadius: 16,
+          boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "20px 24px",
+            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            flexShrink: 0,
+          }}
+        >
+          <div>
+            <p
+              style={{
+                fontSize: 15,
+                fontWeight: 600,
+                color: "var(--text-primary)",
+                fontFamily: "var(--font-display)",
+              }}
+            >
+              {isTermos ? "Termos de uso" : "Dados e informações"}
+            </p>
+            <p
+              style={{
+                fontSize: 12,
+                color: "var(--text-tertiary)",
+                marginTop: 2,
+              }}
+            >
+              {isTermos
+                ? "Última atualização: 1º de janeiro de 2025"
+                : "Conforme LGPD — Lei 13.709/2018"}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 8,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "transparent",
+              border: "1px solid transparent",
+              cursor: "pointer",
+              color: "var(--text-tertiary)",
+              transition: "background 120ms ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(255,255,255,0.07)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+            }}
+          >
+            <X size={15} strokeWidth={2} />
+          </button>
+        </div>
+
+        {/* Body — scrollable */}
+        <div
+          style={{
+            overflowY: "auto",
+            padding: "20px 24px 24px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 16,
+            scrollbarWidth: "none",
+          }}
+        >
+          {content}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Section({
+  title,
+  children,
+  last,
+}: {
+  title: string;
+  children: React.ReactNode;
+  last?: boolean;
+}) {
+  return (
+    <div
+      style={{
+        paddingBottom: last ? 0 : 16,
+        borderBottom: last ? "none" : "1px solid rgba(255,255,255,0.05)",
+      }}
+    >
+      <p
+        style={{
+          fontSize: 12,
+          fontWeight: 600,
+          color: "var(--text-primary)",
+          marginBottom: 6,
+        }}
+      >
+        {title}
+      </p>
+      <p
+        style={{
+          fontSize: 13,
+          color: "var(--text-secondary)",
+          lineHeight: 1.65,
+        }}
+      >
+        {children}
+      </p>
+    </div>
+  );
+}
+
 function TabDadosPrivacidade() {
   const { email, userId, activeCompanyId } = useSessionStore();
   const drivers = useDrivers();
   const [exported, setExported] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [infoModal, setInfoModal] = useState<"termos" | "dados" | null>(null);
 
   async function handleExport() {
     const payload: Record<string, unknown> = {
@@ -2989,25 +3385,35 @@ function TabDadosPrivacidade() {
         <SectionLabel>LGPD &amp; Compliance</SectionLabel>
         <SettingGroup>
           <SettingRow
-            label="Status de conformidade"
+            label="Dados e informações"
             sublabel="LGPD · SOC 2 em preparação · dados residentes no Brasil"
+            icon={
+              <Shield
+                size={15}
+                style={{ color: "var(--text-tertiary)", flexShrink: 0 }}
+              />
+            }
+            labelBadge={<Badge variant="success">Em conformidade</Badge>}
+          >
+            <InlineButton onClick={() => setInfoModal("dados")}>
+              Ver mais
+            </InlineButton>
+          </SettingRow>
+          <SettingRow
+            label="Termos de uso"
+            sublabel="Última atualização: 1º de janeiro de 2025"
+            icon={
+              <FileText
+                size={15}
+                style={{ color: "var(--text-tertiary)", flexShrink: 0 }}
+              />
+            }
             last
           >
-            <Badge variant="success">Em conformidade</Badge>
+            <InlineButton onClick={() => setInfoModal("termos")}>
+              Ver mais
+            </InlineButton>
           </SettingRow>
-        </SettingGroup>
-      </div>
-
-      <div>
-        <SectionLabel>Seus dados armazenados</SectionLabel>
-        <SettingGroup>
-          {STORED_DATA_ITEMS.map((item, i) => (
-            <SettingRow
-              key={item}
-              label={item}
-              last={i === STORED_DATA_ITEMS.length - 1}
-            />
-          ))}
         </SettingGroup>
       </div>
 
@@ -3017,6 +3423,12 @@ function TabDadosPrivacidade() {
           <SettingRow
             label="Exportar meus dados"
             sublabel="Baixe uma cópia completa dos seus dados em formato JSON"
+            icon={
+              <Download
+                size={15}
+                style={{ color: "var(--text-tertiary)", flexShrink: 0 }}
+              />
+            }
             last
           >
             <InlineButton onClick={() => void handleExport()}>
@@ -3035,6 +3447,12 @@ function TabDadosPrivacidade() {
           <SettingRow
             label="Solicitar exclusão de conta"
             sublabel="Um administrador será notificado para processar a solicitação"
+            icon={
+              <Trash2
+                size={15}
+                style={{ color: "var(--status-error)", flexShrink: 0 }}
+              />
+            }
             danger
             last
           >
@@ -3048,6 +3466,11 @@ function TabDadosPrivacidade() {
       <DeleteAccountDialog
         open={showDeleteDialog}
         onClose={() => setShowDeleteDialog(false)}
+      />
+      <TermosModal
+        open={infoModal !== null}
+        onClose={() => setInfoModal(null)}
+        variant={infoModal ?? "termos"}
       />
     </div>
   );
@@ -3402,7 +3825,69 @@ function TabDock() {
 
 // ─── Tab: Mesa ────────────────────────────────────────────────────────────────
 
+const MESA_WIDGET_CATALOG: {
+  id: string;
+  label: string;
+  icon: typeof LayoutGrid;
+  description: string;
+}[] = [
+  {
+    id: "clock",
+    label: "Relógio",
+    icon: Clock,
+    description: "Relógio digital com data e fuso horário configurável",
+  },
+  {
+    id: "notes",
+    label: "Notas Rápidas",
+    icon: StickyNote,
+    description: "Bloco de anotações flutuante na área de trabalho",
+  },
+  {
+    id: "weather",
+    label: "Clima",
+    icon: CloudSun,
+    description: "Condições climáticas em tempo real da sua localidade",
+  },
+  {
+    id: "tasks",
+    label: "Tarefas",
+    icon: ListTodo,
+    description: "Lista de tarefas e checklist diário",
+  },
+];
+
 function TabMesa() {
+  const layout = useMesaStore((s) => s.layout);
+  const updateLayout = useMesaStore((s) => s.updateLayout);
+  const openApp = useOSStore((s) => s.openApp);
+
+  const mesaIcons = layout.filter((item) => item.type === "icon");
+  const mesaAppIds = new Set(mesaIcons.map((item) => item.appId));
+
+  const available = APP_REGISTRY.filter(
+    (a) => a.id !== "mesa" && a.requiresAdmin !== true && !mesaAppIds.has(a.id),
+  );
+
+  function addToMesa(appId: string, appName: string) {
+    const col = mesaIcons.length % 6;
+    const row = Math.floor(mesaIcons.length / 6);
+    const newItem: MesaItem = {
+      id: `icon-${appId}-${Date.now()}`,
+      type: "icon",
+      appId,
+      position: { x: 20 + col * 100, y: 20 + row * 100 },
+      size: { w: 80, h: 80 },
+      config: { name: appName },
+      zIndex: 0,
+    };
+    updateLayout([...layout, newItem]);
+  }
+
+  function removeFromMesa(itemId: string) {
+    updateLayout(layout.filter((item) => item.id !== itemId));
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <ContentHeader
@@ -3410,9 +3895,304 @@ function TabMesa() {
         iconBg="rgba(100,116,139,0.22)"
         iconColor="#94a3b8"
         title="Mesa"
-        subtitle="Gerencie widgets e atalhos de apps fixados na sua área de trabalho"
+        subtitle="Gerencie ícones de apps e widgets da sua área de trabalho"
+        right={
+          <button
+            type="button"
+            onClick={() => openApp("magic-store", "Magic Store")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              background: "rgba(99,102,241,0.14)",
+              border: "1px solid rgba(99,102,241,0.28)",
+              borderRadius: 8,
+              padding: "8px 14px",
+              fontSize: 12,
+              fontWeight: 500,
+              color: "#a5b4fc",
+              cursor: "pointer",
+              transition: "background 140ms ease, border-color 140ms ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(99,102,241,0.26)";
+              e.currentTarget.style.borderColor = "rgba(99,102,241,0.45)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(99,102,241,0.14)";
+              e.currentTarget.style.borderColor = "rgba(99,102,241,0.28)";
+            }}
+          >
+            <Store size={13} strokeWidth={1.8} />
+            Baixar na Magic Store
+          </button>
+        }
       />
-      <ComingSoonBanner message="Adicione widgets, remova atalhos e configure o layout da sua Mesa de trabalho." />
+
+      {/* ── Ícones na Mesa ── */}
+      <div>
+        <SectionLabel>Ícones na Mesa ({mesaIcons.length})</SectionLabel>
+        <SettingGroup>
+          {mesaIcons.length === 0 ? (
+            <div
+              style={{
+                padding: "20px 16px",
+                fontSize: 12,
+                color: "var(--text-tertiary)",
+                textAlign: "center",
+              }}
+            >
+              Nenhum ícone fixado na Mesa. Adicione apps abaixo.
+            </div>
+          ) : (
+            <div
+              style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: 12 }}
+            >
+              {mesaIcons.map((item) => {
+                const app = APP_REGISTRY.find((a) => a.id === item.appId);
+                if (app === undefined) return null;
+                return (
+                  <div
+                    key={item.id}
+                    style={{
+                      position: "relative",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "10px 6px 8px",
+                      width: 72,
+                      borderRadius: 12,
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.09)",
+                    }}
+                  >
+                    <DockAppIcon
+                      iconName={app.icon}
+                      color={app.color}
+                      size={44}
+                    />
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 500,
+                        color: "var(--text-secondary)",
+                        textAlign: "center",
+                        maxWidth: 60,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {app.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeFromMesa(item.id)}
+                      aria-label={`Remover ${app.name} da mesa`}
+                      style={{
+                        position: "absolute",
+                        top: 4,
+                        right: 4,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: 18,
+                        height: 18,
+                        borderRadius: 5,
+                        background: "rgba(255,255,255,0.08)",
+                        border: "1px solid rgba(255,255,255,0.10)",
+                        cursor: "pointer",
+                        color: "var(--text-tertiary)",
+                        padding: 0,
+                        transition:
+                          "background 120ms ease, border-color 120ms ease, color 120ms ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background =
+                          "rgba(239,68,68,0.18)";
+                        e.currentTarget.style.borderColor =
+                          "rgba(239,68,68,0.30)";
+                        e.currentTarget.style.color = "#f87171";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background =
+                          "rgba(255,255,255,0.08)";
+                        e.currentTarget.style.borderColor =
+                          "rgba(255,255,255,0.10)";
+                        e.currentTarget.style.color = "var(--text-tertiary)";
+                      }}
+                    >
+                      <X size={9} strokeWidth={2.5} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </SettingGroup>
+      </div>
+
+      {/* ── Apps disponíveis para adicionar ── */}
+      {available.length > 0 && (
+        <div>
+          <SectionLabel>Apps para adicionar ({available.length})</SectionLabel>
+          <SettingGroup>
+            <div
+              style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: 12 }}
+            >
+              {available.map((app) => (
+                <div
+                  key={app.id}
+                  style={{
+                    position: "relative",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "10px 6px 8px",
+                    width: 72,
+                    borderRadius: 12,
+                    background: "rgba(255,255,255,0.02)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                    opacity: 0.75,
+                  }}
+                >
+                  <DockAppIcon
+                    iconName={app.icon}
+                    color={app.color}
+                    size={44}
+                  />
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 500,
+                      color: "var(--text-tertiary)",
+                      textAlign: "center",
+                      maxWidth: 60,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {app.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => addToMesa(app.id, app.name)}
+                    aria-label={`Adicionar ${app.name} à mesa`}
+                    style={{
+                      position: "absolute",
+                      top: 4,
+                      right: 4,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 18,
+                      height: 18,
+                      borderRadius: 5,
+                      background: "rgba(255,255,255,0.08)",
+                      border: "1px solid rgba(255,255,255,0.10)",
+                      cursor: "pointer",
+                      color: "var(--text-tertiary)",
+                      padding: 0,
+                      transition:
+                        "background 120ms ease, border-color 120ms ease, color 120ms ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background =
+                        "rgba(99,102,241,0.20)";
+                      e.currentTarget.style.borderColor =
+                        "rgba(99,102,241,0.35)";
+                      e.currentTarget.style.color = "#a5b4fc";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background =
+                        "rgba(255,255,255,0.08)";
+                      e.currentTarget.style.borderColor =
+                        "rgba(255,255,255,0.10)";
+                      e.currentTarget.style.color = "var(--text-tertiary)";
+                    }}
+                  >
+                    <Plus size={9} strokeWidth={2.5} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </SettingGroup>
+        </div>
+      )}
+
+      {/* ── Widgets ── */}
+      <div>
+        <SectionLabel>Widgets</SectionLabel>
+        <SettingGroup>
+          {MESA_WIDGET_CATALOG.map((w, i) => {
+            const Icon = w.icon;
+            return (
+              <SettingRow
+                key={w.id}
+                label={w.label}
+                sublabel={w.description}
+                last={i === MESA_WIDGET_CATALOG.length - 1}
+                icon={
+                  <div
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 7,
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.09)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Icon
+                      size={14}
+                      strokeWidth={1.7}
+                      style={{ color: "var(--text-secondary)" }}
+                    />
+                  </div>
+                }
+                labelBadge={<Badge variant="neutral">Em breve</Badge>}
+              />
+            );
+          })}
+        </SettingGroup>
+      </div>
+
+      {/* ── Restaurar padrão ── */}
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <button
+          type="button"
+          onClick={() => updateLayout(DEFAULT_LAYOUT)}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.10)",
+            borderRadius: 8,
+            padding: "7px 14px",
+            fontSize: 12,
+            fontWeight: 500,
+            color: "var(--text-secondary)",
+            cursor: "pointer",
+            transition: "background 120ms ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.11)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+          }}
+        >
+          <RotateCcw size={12} strokeWidth={2} />
+          Restaurar padrão
+        </button>
+      </div>
     </div>
   );
 }
@@ -3420,28 +4200,15 @@ function TabMesa() {
 // ─── Theme mode selector (pill toggle: Sol / Lua) ────────────────────────────
 
 function ThemeModeSelector() {
-  const [isDark, setIsDark] = useState(() =>
-    document.documentElement.classList.contains("dark"),
-  );
+  const { theme, setTheme } = useTheme();
+  const isDark = theme === "dark";
   const toggleRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    const update = () =>
-      setIsDark(document.documentElement.classList.contains("dark"));
-    const observer = new MutationObserver(update);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-    return () => observer.disconnect();
-  }, []);
 
   function toggle() {
     const toDark = !isDark;
 
     const applyTheme = () => {
-      document.documentElement.classList.toggle("dark", toDark);
-      localStorage.setItem("theme", toDark ? "dark" : "light");
+      setTheme(toDark ? "dark" : "light");
     };
 
     if (typeof document.startViewTransition !== "function") {
@@ -3890,843 +4657,6 @@ function TabAparencia() {
   );
 }
 
-// ─── Tab: Integrações ─────────────────────────────────────────────────────────
-
-const INTEGRATIONS = [
-  // Financeiro
-  {
-    id: "stripe",
-    name: "Stripe",
-    description: "Gateway de pagamentos",
-    logo: "/integrations/stripe.svg",
-    logoBg: "#635BFF",
-    group: "Financeiro",
-    comingSoon: false,
-    defaultEnabled: true,
-  },
-  {
-    id: "hubspot",
-    name: "HubSpot",
-    description: "CRM e automação de marketing",
-    logo: "/integrations/hubspot.svg",
-    logoBg: "#FF7A59",
-    group: "Financeiro",
-    comingSoon: false,
-    defaultEnabled: false,
-  },
-  {
-    id: "shopify",
-    name: "Shopify",
-    description: "E-commerce e vendas online",
-    logo: "/integrations/shopify.svg",
-    logoBg: "#96BF48",
-    group: "Financeiro",
-    comingSoon: true,
-    defaultEnabled: false,
-  },
-  // Comunicação
-  {
-    id: "slack",
-    name: "Slack",
-    description: "Notificações em canais",
-    logo: "/integrations/slack.svg",
-    logoBg: "#4A154B",
-    group: "Comunicação",
-    comingSoon: false,
-    defaultEnabled: false,
-  },
-  {
-    id: "whatsapp",
-    name: "WhatsApp",
-    description: "Atendimento via WhatsApp",
-    logo: "/integrations/whatsapp.svg",
-    logoBg: "#25D366",
-    group: "Comunicação",
-    comingSoon: false,
-    defaultEnabled: false,
-  },
-  {
-    id: "mailchimp",
-    name: "Mailchimp",
-    description: "Email marketing e automações",
-    logo: "/integrations/mailchimp.svg",
-    logoBg: "#241c15",
-    group: "Comunicação",
-    comingSoon: false,
-    defaultEnabled: false,
-  },
-  {
-    id: "discord",
-    name: "Discord",
-    description: "Comunidade e suporte",
-    logo: "/integrations/discord.svg",
-    logoBg: "#5865F2",
-    group: "Comunicação",
-    comingSoon: true,
-    defaultEnabled: false,
-  },
-  // Automação
-  {
-    id: "zapier",
-    name: "Zapier",
-    description: "Automação entre apps",
-    logo: "/integrations/zapier.svg",
-    logoBg: "#FF4A00",
-    group: "Automação",
-    comingSoon: false,
-    defaultEnabled: false,
-  },
-  {
-    id: "notion",
-    name: "Notion",
-    description: "Wikis e bases de conhecimento",
-    logo: "/integrations/notion.svg",
-    logoBg: "#191919",
-    group: "Automação",
-    comingSoon: false,
-    defaultEnabled: false,
-  },
-  {
-    id: "github",
-    name: "GitHub",
-    description: "Repositórios e pull requests",
-    logo: "/integrations/github.svg",
-    logoBg: "#181717",
-    group: "Automação",
-    comingSoon: false,
-    defaultEnabled: false,
-  },
-  {
-    id: "linear",
-    name: "Linear",
-    description: "Gestão de issues e sprints",
-    logo: "/integrations/linear.svg",
-    logoBg: "#5E6AD2",
-    group: "Automação",
-    comingSoon: true,
-    defaultEnabled: false,
-  },
-  {
-    id: "clickup",
-    name: "ClickUp",
-    description: "Projetos e tarefas",
-    logo: "/integrations/clickup.svg",
-    logoBg: "#7B68EE",
-    group: "Automação",
-    comingSoon: true,
-    defaultEnabled: false,
-  },
-  // Produtividade
-  {
-    id: "google-workspace",
-    name: "Google",
-    description: "Drive, Gmail e Calendar",
-    logo: "/integrations/google-workspace.svg",
-    logoBg: "#202124",
-    group: "Produtividade",
-    comingSoon: true,
-    defaultEnabled: false,
-  },
-  {
-    id: "figma",
-    name: "Figma",
-    description: "Design colaborativo",
-    logo: "/integrations/figma.svg",
-    logoBg: "#F24E1E",
-    group: "Produtividade",
-    comingSoon: true,
-    defaultEnabled: false,
-  },
-  {
-    id: "zoom",
-    name: "Zoom",
-    description: "Videoconferências e reuniões",
-    logo: "/integrations/zoom.svg",
-    logoBg: "#2D8CFF",
-    group: "Produtividade",
-    comingSoon: true,
-    defaultEnabled: false,
-  },
-  {
-    id: "asana",
-    name: "Asana",
-    description: "Gestão de tarefas e equipes",
-    logo: "/integrations/asana.svg",
-    logoBg: "#F06A6A",
-    group: "Produtividade",
-    comingSoon: true,
-    defaultEnabled: false,
-  },
-  {
-    id: "trello",
-    name: "Trello",
-    description: "Quadros Kanban e fluxos",
-    logo: "/integrations/trello.svg",
-    logoBg: "#0079BF",
-    group: "Produtividade",
-    comingSoon: true,
-    defaultEnabled: false,
-  },
-  {
-    id: "jira",
-    name: "Jira",
-    description: "Rastreamento de issues ágeis",
-    logo: "/integrations/jira.svg",
-    logoBg: "#0052CC",
-    group: "Produtividade",
-    comingSoon: true,
-    defaultEnabled: false,
-  },
-  {
-    id: "totvs",
-    name: "TOTVS",
-    description: "Sincronização com ERP",
-    logo: "/integrations/totvs.svg",
-    logoBg: "#E30613",
-    group: "Produtividade",
-    comingSoon: true,
-    defaultEnabled: false,
-  },
-] as const;
-
-function TabIntegracoes() {
-  const [enabled, setEnabled] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(INTEGRATIONS.map((i) => [i.id, i.defaultEnabled])),
-  );
-
-  const groups = Array.from(new Set(INTEGRATIONS.map((i) => i.group)));
-
-  function toggle(id: string) {
-    setEnabled((prev) => ({ ...prev, [id]: !prev[id] }));
-  }
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <ContentHeader
-        icon={Link2}
-        iconBg="rgba(245,158,11,0.22)"
-        iconColor="#fbbf24"
-        title="Integrações"
-        subtitle="Conecte o Aethereos a serviços externos e ferramentas da sua stack"
-      />
-
-      {groups.map((group) => {
-        const items = INTEGRATIONS.filter((i) => i.group === group);
-        return (
-          <div key={group}>
-            <SectionLabel>{group}</SectionLabel>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))",
-                gap: 8,
-              }}
-            >
-              {items.map((intg) => {
-                const isOn = enabled[intg.id] ?? false;
-                const soon = intg.comingSoon;
-                return (
-                  <div
-                    key={intg.id}
-                    style={{
-                      position: "relative",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "14px 10px 12px",
-                      borderRadius: 12,
-                      aspectRatio: "1",
-                      background: isOn
-                        ? "rgba(255,255,255,0.06)"
-                        : "rgba(255,255,255,0.03)",
-                      border: isOn
-                        ? "1px solid rgba(255,255,255,0.12)"
-                        : "1px solid rgba(255,255,255,0.07)",
-                      opacity: soon ? 0.55 : 1,
-                      gap: 6,
-                      transition:
-                        "background 150ms ease, border-color 150ms ease",
-                    }}
-                  >
-                    {/* Em breve badge */}
-                    {soon && (
-                      <div
-                        style={{
-                          position: "absolute",
-                          top: 5,
-                          right: 5,
-                          padding: "1px 4px",
-                          borderRadius: 4,
-                          background: "rgba(255,255,255,0.10)",
-                          fontSize: 7,
-                          fontWeight: 600,
-                          color: "var(--text-tertiary)",
-                          letterSpacing: "0.04em",
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        Em breve
-                      </div>
-                    )}
-
-                    {/* Logo container */}
-                    <div
-                      style={{
-                        width: 46,
-                        height: 46,
-                        borderRadius: 11,
-                        background: intg.logoBg,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        overflow: "hidden",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <img
-                        src={intg.logo}
-                        alt={intg.name}
-                        style={{
-                          width: 28,
-                          height: 28,
-                          objectFit: "contain",
-                        }}
-                      />
-                    </div>
-
-                    {/* Name */}
-                    <p
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: "var(--text-primary)",
-                        textAlign: "center",
-                        lineHeight: 1.2,
-                        margin: 0,
-                      }}
-                    >
-                      {intg.name}
-                    </p>
-
-                    {/* Toggle */}
-                    <Toggle
-                      on={isOn}
-                      onToggle={() => {
-                        if (!soon) toggle(intg.id);
-                      }}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ─── Tab: Planos ──────────────────────────────────────────────────────────────
-
-function UsageBar({ used, limit }: { used: number; limit: number }) {
-  const pct = limit > 0 ? Math.min((used / limit) * 100, 100) : 0;
-  const color = pct > 80 ? "#ef4444" : pct > 50 ? "#f59e0b" : "#6366f1";
-  return (
-    <div
-      style={{
-        width: 140,
-        height: 5,
-        borderRadius: 999,
-        background: "rgba(255,255,255,0.08)",
-        overflow: "hidden",
-        flexShrink: 0,
-      }}
-    >
-      <div
-        style={{
-          width: `${pct}%`,
-          height: "100%",
-          background: color,
-          borderRadius: 999,
-          transition: "width 400ms ease",
-        }}
-      />
-    </div>
-  );
-}
-
-function UsageRow({
-  icon: Icon,
-  iconColor,
-  label,
-  used,
-  limit,
-  unit,
-  last,
-}: {
-  icon: typeof CreditCard;
-  iconColor: string;
-  label: string;
-  used: number;
-  limit: number;
-  unit: string;
-  last?: boolean;
-}) {
-  const fmt = (n: number) =>
-    n >= 1_000_000
-      ? `${(n / 1_000_000).toFixed(1)}M`
-      : n >= 1_000
-        ? `${(n / 1_000).toFixed(1)}K`
-        : n.toLocaleString("pt-BR");
-
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        minHeight: 56,
-        padding: "12px 16px",
-        borderBottom: last ? "none" : "1px solid rgba(255,255,255,0.05)",
-      }}
-    >
-      <div
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: 8,
-          background: `${iconColor}20`,
-          border: `1px solid ${iconColor}30`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}
-      >
-        <Icon size={15} style={{ color: iconColor }} strokeWidth={1.7} />
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <span style={{ fontSize: 13, color: "var(--text-primary)" }}>
-          {label}
-        </span>
-      </div>
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "flex-end",
-          gap: 4,
-          flexShrink: 0,
-        }}
-      >
-        <UsageBar used={used} limit={limit} />
-        <span
-          style={{
-            fontSize: 10,
-            color: "var(--text-tertiary)",
-            fontFamily: "var(--font-mono)",
-          }}
-        >
-          {fmt(used)} / {fmt(limit)} {unit}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-const PLANS = [
-  {
-    id: "gratuito",
-    name: "Gratuito",
-    price: "R$ 0",
-    period: "/mês",
-    color: "#64748b",
-    accentBg: "rgba(100,116,139,0.12)",
-    accentBorder: "rgba(100,116,139,0.28)",
-    features: [
-      "1 usuário",
-      "1 GB armazenamento",
-      "10 mil chamadas API/mês",
-      "Apps básicos",
-    ],
-  },
-  {
-    id: "starter",
-    name: "Starter",
-    price: "R$ 49",
-    period: "/mês",
-    color: "#0ea5e9",
-    accentBg: "rgba(14,165,233,0.10)",
-    accentBorder: "rgba(14,165,233,0.25)",
-    features: [
-      "5 usuários",
-      "10 GB armazenamento",
-      "100 mil chamadas API/mês",
-      "Apps essenciais",
-    ],
-  },
-  {
-    id: "pro",
-    name: "Pro",
-    price: "R$ 149",
-    period: "/mês",
-    color: "#6366f1",
-    accentBg: "rgba(99,102,241,0.12)",
-    accentBorder: "rgba(99,102,241,0.40)",
-    features: [
-      "15 usuários",
-      "25 GB armazenamento",
-      "500 mil chamadas API/mês",
-      "AI Copilot incluso",
-    ],
-    trial: true,
-    trialDays: 30,
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    price: "Custom",
-    period: "",
-    color: "#10b981",
-    accentBg: "rgba(16,185,129,0.10)",
-    accentBorder: "rgba(16,185,129,0.25)",
-    features: [
-      "Usuários ilimitados",
-      "Storage ilimitado",
-      "API ilimitada",
-      "SLA dedicado",
-    ],
-  },
-] as const;
-
-const CURRENT_PLAN_ID = "pro";
-
-function TabPlanos() {
-  const [autoRenew, setAutoRenew] = useState(true);
-  // Mock data — TODO: ligar a billing/metrics real (Lago + métricas LiteLLM)
-  const usage = {
-    apiCalls: { used: 24_350, limit: 100_000, unit: "chamadas" },
-    llmTokens: { used: 1_240_000, limit: 5_000_000, unit: "tokens" },
-    storage: { used: 4.2, limit: 25, unit: "GB" },
-    bandwidth: { used: 18.6, limit: 100, unit: "GB" },
-    users: { used: 3, limit: 10, unit: "usuários" },
-  };
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <ContentHeader
-        icon={CreditCard}
-        iconBg="rgba(16,185,129,0.22)"
-        iconColor="#34d399"
-        title="Planos"
-        subtitle="Plano contratado, consumo do ciclo atual e limites"
-        right={<Badge variant="success">Ativo</Badge>}
-      />
-
-      {/* Cards de plano — linha única com 4 colunas */}
-      <div>
-        <SectionLabel>Escolha seu plano</SectionLabel>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
-            gap: 8,
-          }}
-        >
-          {PLANS.map((plan) => {
-            const isCurrent = plan.id === CURRENT_PLAN_ID;
-            return (
-              <GlareHover
-                key={plan.id}
-                background={
-                  isCurrent ? plan.accentBg : "rgba(255,255,255,0.03)"
-                }
-                color={plan.color as `#${string}`}
-                opacity={isCurrent ? 0.25 : 0.15}
-                duration={500}
-                playOnce
-                style={{
-                  borderRadius: 10,
-                  padding: "12px 10px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 10,
-                  width: "100%",
-                  border: isCurrent
-                    ? `1px solid ${plan.accentBorder}`
-                    : "1px solid rgba(255,255,255,0.07)",
-                  boxShadow: isCurrent
-                    ? `0 0 0 1px ${plan.accentBorder}, 0 4px 16px rgba(0,0,0,0.25)`
-                    : "none",
-                  position: "relative",
-                }}
-              >
-                {/* Badge plano atual */}
-                {isCurrent && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: 8,
-                      right: 8,
-                      padding: "1px 6px",
-                      borderRadius: 999,
-                      background: plan.color,
-                      fontSize: 9,
-                      fontWeight: 700,
-                      color: "#fff",
-                      letterSpacing: "0.05em",
-                      zIndex: 20,
-                    }}
-                  >
-                    {(plan as { trial?: boolean }).trial === true
-                      ? "TRIAL"
-                      : "ATUAL"}
-                  </div>
-                )}
-
-                {/* Nome + preço */}
-                <div>
-                  <p
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 700,
-                      color: isCurrent ? plan.color : "var(--text-secondary)",
-                      letterSpacing: "0.06em",
-                      textTransform: "uppercase",
-                      marginBottom: 4,
-                    }}
-                  >
-                    {plan.name}
-                  </p>
-                  <div
-                    style={{ display: "flex", alignItems: "baseline", gap: 2 }}
-                  >
-                    <span
-                      style={{
-                        fontSize: plan.price === "Custom" ? 23 : 29,
-                        fontWeight: 700,
-                        color: "var(--text-primary)",
-                        fontFamily: "var(--font-display)",
-                        letterSpacing: "-0.02em",
-                      }}
-                    >
-                      {plan.price}
-                    </span>
-                    {plan.period !== "" && (
-                      <span
-                        style={{ fontSize: 14, color: "var(--text-tertiary)" }}
-                      >
-                        {plan.period}
-                      </span>
-                    )}
-                  </div>
-                  {(plan as { trialDays?: number }).trialDays !== undefined && (
-                    <p
-                      style={{
-                        fontSize: 13,
-                        color: "var(--text-tertiary)",
-                        marginTop: 2,
-                      }}
-                    >
-                      Expira em {(plan as { trialDays?: number }).trialDays}{" "}
-                      dias
-                    </p>
-                  )}
-                </div>
-
-                {/* Features */}
-                <ul
-                  style={{
-                    listStyle: "none",
-                    padding: 0,
-                    margin: 0,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 5,
-                    flex: 1,
-                  }}
-                >
-                  {plan.features.map((f) => (
-                    <li
-                      key={f}
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        gap: 5,
-                        fontSize: 14,
-                        color: "var(--text-secondary)",
-                        lineHeight: 1.4,
-                      }}
-                    >
-                      <Check
-                        size={13}
-                        strokeWidth={2.5}
-                        style={{
-                          color: isCurrent
-                            ? plan.color
-                            : "var(--text-tertiary)",
-                          flexShrink: 0,
-                          marginTop: 2,
-                        }}
-                      />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-
-                {/* CTA */}
-                {isCurrent ? (
-                  <div
-                    style={{
-                      fontSize: 14,
-                      color: plan.color,
-                      fontWeight: 600,
-                      textAlign: "center",
-                      padding: "6px 0",
-                      borderRadius: 6,
-                      border: `1px solid ${plan.accentBorder}`,
-                      background: "transparent",
-                    }}
-                  >
-                    Plano ativo
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {}}
-                    style={{
-                      padding: "6px 0",
-                      borderRadius: 6,
-                      fontSize: 14,
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      background: "rgba(255,255,255,0.06)",
-                      border: "1px solid rgba(255,255,255,0.10)",
-                      color: "var(--text-secondary)",
-                      transition:
-                        "background 140ms ease, border-color 140ms ease, color 140ms ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = plan.accentBg;
-                      e.currentTarget.style.borderColor = plan.accentBorder;
-                      e.currentTarget.style.color = plan.color;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background =
-                        "rgba(255,255,255,0.06)";
-                      e.currentTarget.style.borderColor =
-                        "rgba(255,255,255,0.10)";
-                      e.currentTarget.style.color = "var(--text-secondary)";
-                    }}
-                  >
-                    {plan.id === "enterprise" ? "Falar c/ vendas" : "Upgrade"}
-                  </button>
-                )}
-              </GlareHover>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Consumo */}
-      <div>
-        <SectionLabel>Consumo este mês</SectionLabel>
-        <SettingGroup>
-          <UsageRow
-            icon={Network}
-            iconColor="#22d3ee"
-            label="Chamadas de API"
-            used={usage.apiCalls.used}
-            limit={usage.apiCalls.limit}
-            unit={usage.apiCalls.unit}
-          />
-          <UsageRow
-            icon={Cpu}
-            iconColor="#a78bfa"
-            label="Tokens LLM"
-            used={usage.llmTokens.used}
-            limit={usage.llmTokens.limit}
-            unit={usage.llmTokens.unit}
-          />
-          <UsageRow
-            icon={HardDrive}
-            iconColor="#fb923c"
-            label="Armazenamento"
-            used={usage.storage.used}
-            limit={usage.storage.limit}
-            unit={usage.storage.unit}
-          />
-          <UsageRow
-            icon={Network}
-            iconColor="#fbbf24"
-            label="Bandwidth"
-            used={usage.bandwidth.used}
-            limit={usage.bandwidth.limit}
-            unit={usage.bandwidth.unit}
-          />
-          <UsageRow
-            icon={Users}
-            iconColor="#818cf8"
-            label="Usuários ativos"
-            used={usage.users.used}
-            limit={usage.users.limit}
-            unit={usage.users.unit}
-            last
-          />
-        </SettingGroup>
-        <p
-          style={{
-            fontSize: 11,
-            color: "var(--text-tertiary)",
-            marginTop: 8,
-            paddingLeft: 2,
-          }}
-        >
-          Ciclo reinicia no dia 1º de cada mês. Limites podem ser alterados ao
-          mudar de plano.
-        </p>
-      </div>
-
-      {/* Histórico */}
-      <div>
-        <SectionLabel>Faturamento</SectionLabel>
-        <SettingGroup>
-          <SettingRow
-            label="Histórico de faturas"
-            sublabel="Veja todas as cobranças e baixe NFs"
-          >
-            <InlineButton onClick={() => {}}>Ver histórico</InlineButton>
-          </SettingRow>
-          <SettingRow
-            label="Forma de pagamento"
-            sublabel="Cartão, boleto ou Pix"
-          >
-            <Badge variant="neutral">Não configurado</Badge>
-          </SettingRow>
-          <SettingRow
-            label="Endereço de cobrança"
-            sublabel="Usado nas notas fiscais"
-          >
-            <InlineButton onClick={() => {}}>Configurar</InlineButton>
-          </SettingRow>
-          <SettingRow
-            label="Recorrência automática"
-            sublabel={
-              autoRenew
-                ? "Renovação automática de pagamento está ativada"
-                : "Renovação automática de pagamento está desativada"
-            }
-            last
-          >
-            <Toggle on={autoRenew} onToggle={() => setAutoRenew((v) => !v)} />
-          </SettingRow>
-        </SettingGroup>
-      </div>
-    </div>
-  );
-}
-
 // ─── VersionCard (shared — usado em TabSobre e no tile Home) ─────────────────
 
 interface VersionCardData {
@@ -4911,10 +4841,32 @@ function TabSobre() {
         icon={Info}
         iconBg="rgba(100,116,139,0.22)"
         iconColor="#94a3b8"
-        iconUrl="/aethereos-logo.png"
+        iconUrl="/sistema-logo.png"
         noContainer
         title="Sistema ÆTHEREOS"
-        subtitle="Enterprise OS 1.0.0-beta · Armstrong"
+        subtitle={
+          <>
+            Enterprise OS 1.0.0-beta{" "}
+            <span
+              style={{
+                display: "inline-block",
+                padding: "1px 8px",
+                borderRadius: 999,
+                background: "#6366f122",
+                border: "1px solid #6366f144",
+                fontSize: 10,
+                fontWeight: 700,
+                color: "#6366f1",
+                letterSpacing: "0.07em",
+                textTransform: "uppercase",
+                verticalAlign: "middle",
+                marginLeft: 4,
+              }}
+            >
+              Armstrong
+            </span>
+          </>
+        }
       />
 
       {/* Versões — primeiro */}
@@ -4931,7 +4883,7 @@ function TabSobre() {
             accent="#6366f1"
           />
           <VersionCard
-            name="SCP"
+            name="Software Context Protocol (SCP)"
             codename="Protocolo"
             version="v1.0"
             env="Online · sa-east-1"
@@ -4952,6 +4904,13 @@ function TabSobre() {
                 : langSaveState === "saved"
                   ? "Salvo!"
                   : "Aplicado em todo o OS"
+            }
+            icon={
+              <Globe
+                size={14}
+                strokeWidth={1.8}
+                style={{ color: "var(--text-tertiary)", flexShrink: 0 }}
+              />
             }
             last
           >
@@ -5020,18 +4979,39 @@ function TabSobre() {
           <SettingRow
             label="FAQ"
             sublabel="Perguntas frequentes sobre o Aethereos"
+            icon={
+              <HelpCircle
+                size={14}
+                strokeWidth={1.8}
+                style={{ color: "var(--text-tertiary)", flexShrink: 0 }}
+              />
+            }
           >
             <InlineButton onClick={() => {}}>Ver</InlineButton>
           </SettingRow>
           <SettingRow
             label="Tutoriais"
             sublabel="Guias passo a passo para cada módulo"
+            icon={
+              <BookOpen
+                size={14}
+                strokeWidth={1.8}
+                style={{ color: "var(--text-tertiary)", flexShrink: 0 }}
+              />
+            }
           >
             <InlineButton onClick={() => {}}>Ver</InlineButton>
           </SettingRow>
           <SettingRow
             label="Dicas"
             sublabel="Atalhos, recursos ocultos e boas práticas"
+            icon={
+              <Lightbulb
+                size={14}
+                strokeWidth={1.8}
+                style={{ color: "var(--text-tertiary)", flexShrink: 0 }}
+              />
+            }
             last
           >
             <InlineButton onClick={() => {}}>Ver</InlineButton>
@@ -5046,6 +5026,13 @@ function TabSobre() {
           <SettingRow
             label="Fale conosco"
             sublabel="Envie uma mensagem direto ao time de desenvolvedores"
+            icon={
+              <MessageSquare
+                size={14}
+                strokeWidth={1.8}
+                style={{ color: "var(--text-tertiary)", flexShrink: 0 }}
+              />
+            }
           >
             <InlineButton onClick={() => {}}>Enviar</InlineButton>
           </SettingRow>
@@ -5055,6 +5042,13 @@ function TabSobre() {
               betaEnrolled
                 ? "Inscrito — você recebe atualizações antecipadas"
                 : "Acesse funcionalidades antes do lançamento oficial"
+            }
+            icon={
+              <Rocket
+                size={14}
+                strokeWidth={1.8}
+                style={{ color: "var(--text-tertiary)", flexShrink: 0 }}
+              />
             }
             last
           >
@@ -5078,15 +5072,12 @@ const ASIDE_STYLE = {
   display: "flex",
   flexDirection: "column" as const,
   overflowY: "auto" as const,
+  boxShadow: "inset -1px 0 0 rgba(255,255,255,0.08)",
 };
 
 function NavItemIcon({
-  itemId,
   Icon,
   size,
-  imgSize,
-  avatarUrl,
-  logoUrl,
 }: {
   itemId: TabId;
   Icon: typeof User;
@@ -5095,32 +5086,6 @@ function NavItemIcon({
   avatarUrl: string | null;
   logoUrl: string | null;
 }) {
-  let imgUrl: string | null = null;
-  let imgRadius = 0;
-  if (itemId === "perfil" && avatarUrl !== null) {
-    imgUrl = avatarUrl;
-    imgRadius = 999;
-  } else if (itemId === "minha-empresa" && logoUrl !== null) {
-    imgUrl = logoUrl;
-    imgRadius = 5;
-  }
-
-  if (imgUrl !== null) {
-    return (
-      <img
-        src={imgUrl}
-        alt=""
-        style={{
-          width: imgSize,
-          height: imgSize,
-          borderRadius: imgRadius,
-          objectFit: "cover",
-          flexShrink: 0,
-        }}
-      />
-    );
-  }
-
   return (
     <Icon
       size={size}
@@ -5239,13 +5204,9 @@ function Sidebar({
           alignItems: "center",
           gap: 10,
           padding: "16px 14px 12px",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
           background:
             active === "home" ? "rgba(255,255,255,0.04)" : "transparent",
           border: "none",
-          borderBottomWidth: 1,
-          borderBottomStyle: "solid",
-          borderBottomColor: "rgba(255,255,255,0.06)",
           cursor: "pointer",
           textAlign: "left",
           width: "100%",
@@ -5365,7 +5326,7 @@ function Sidebar({
                     cursor: "pointer",
                     textAlign: "left",
                     transition:
-                      "background 120ms ease, color 120ms ease, border-color 120ms ease",
+                      "background 120ms ease, color 120ms ease, border-color 120ms ease, margin 120ms ease",
                     marginBottom: 2,
                     ...(isSelected
                       ? {
@@ -5373,7 +5334,7 @@ function Sidebar({
                           borderTop: "1px solid rgba(255,255,255,0.08)",
                           borderLeft: "1px solid rgba(255,255,255,0.08)",
                           borderBottom: "1px solid rgba(255,255,255,0.08)",
-                          borderRight: "none",
+                          borderRight: "1px solid transparent",
                           background: "var(--bg-elevated)",
                           color: "var(--text-primary)",
                           fontWeight: 500,
@@ -5609,15 +5570,19 @@ function ToggleStackTile({
 
 function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
   const { email, avatarUrl } = useSessionStore();
+  const openApp = useOSStore((s) => s.openApp);
+  const setPendingTab = useGestorStore((s) => s.setPendingTab);
   const initials = email !== null ? email.slice(0, 2).toUpperCase() : "??";
   const displayName = email !== null ? email.split("@")[0] : "Usuário";
 
-  // Persisted notification prefs
-  const [notif, setNotif] = useState<NotifPrefs>(loadNotifPrefs);
+  const notifRemote = useUserPreference<NotifPrefs>(
+    "notification_prefs",
+    NOTIF_DEFAULTS,
+  );
+  const notif: NotifPrefs = { ...NOTIF_DEFAULTS, ...notifRemote.value };
   function toggleNotif(key: keyof NotifPrefs) {
     const next = { ...notif, [key]: !notif[key] };
-    setNotif(next);
-    localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(next));
+    notifRemote.set(next);
   }
 
   // Local-only state (visual)
@@ -6220,7 +6185,10 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
         {/* ── Integrações (1×1) ── */}
         <button
           type="button"
-          onClick={() => onSelect("integracoes")}
+          onClick={() => {
+            setPendingTab("integracoes");
+            openApp("gestor", "Gestor");
+          }}
           style={{
             ...TILE_BASE,
             gridColumn: "3 / span 1",
@@ -6331,10 +6299,6 @@ function TabContent({
       return <TabMesa />;
     case "aparencia":
       return <TabAparencia />;
-    case "integracoes":
-      return <TabIntegracoes />;
-    case "planos":
-      return <TabPlanos />;
     case "sobre":
       return <TabSobre />;
   }

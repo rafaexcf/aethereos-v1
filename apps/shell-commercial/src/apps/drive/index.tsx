@@ -207,6 +207,7 @@ function FileGrid({ entries, onOpenFolder, onDelete }: FileGridProps) {
             type="button"
             onClick={() => onDelete(entry.id)}
             title="Excluir"
+            aria-label={`Excluir ${entry.name}`}
             className="shrink-0 rounded p-1 text-xs opacity-0 transition-opacity group-hover:opacity-100"
             style={{ color: "var(--text-tertiary)" }}
             onMouseEnter={(e) => {
@@ -482,6 +483,7 @@ export function DriveApp() {
               <button
                 type="button"
                 onClick={() => setShowNewFolder(false)}
+                aria-label="Cancelar nova pasta"
                 className="text-xs"
                 style={{ color: "var(--text-secondary)" }}
                 onMouseEnter={(e) =>
