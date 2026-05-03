@@ -47,3 +47,28 @@ export async function loginAsOnboardingUser(page: Page): Promise<void> {
   }
   await loginWith(page, email, password);
 }
+
+/**
+ * Espera o desktop estar 100% pronto para interacao:
+ * - os-desktop renderizado (root container)
+ * - dock visivel com pelo menos 1 app interativo (dock-app-* button)
+ *
+ * NAO depende de mesa icons (Mesa pode estar vazia conforme mesa_layouts
+ * do usuario). Para testes que precisam de mesa especifica, fazer assert
+ * extra de [data-testid="mesa-app"] e seus filhos.
+ *
+ * Resolve flakiness de testes que dependiam de mesa icons (KL-4 Sprint 13).
+ * Falha hard se desktop+dock nao aparecem em 15s — sem skip silencioso.
+ */
+export async function waitForDesktopReady(page: Page): Promise<void> {
+  await expect(page.locator('[data-testid="os-desktop"]')).toBeVisible({
+    timeout: 15_000,
+  });
+  await expect(page.locator('[data-testid="dock"]')).toBeVisible({
+    timeout: 8_000,
+  });
+  // Pelo menos um app no dock (registry sempre tem mesa+drive+pessoas+etc fixos)
+  await expect(page.locator('[data-testid^="dock-app-"]').first()).toBeVisible({
+    timeout: 8_000,
+  });
+}

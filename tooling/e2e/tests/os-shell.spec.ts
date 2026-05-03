@@ -4,7 +4,7 @@
  * Validates the visual OS paradigm: TopBar, Mesa (pinned tab), Dock, TabBar.
  */
 import { test, expect } from "@playwright/test";
-import { loginToDesktop } from "./helpers";
+import { loginToDesktop, waitForDesktopReady } from "./helpers";
 
 const EMAIL = process.env["E2E_USER_EMAIL"] ?? "";
 const PASSWORD = process.env["E2E_USER_PASSWORD"] ?? "";
@@ -65,14 +65,14 @@ test.describe("os-shell paradigma OS", () => {
 
   test("closing all non-pinned tabs hides TabBar", async ({ page }) => {
     await loginToDesktop(page);
+    await waitForDesktopReady(page);
 
-    const firstIcon = page.locator('[data-testid="mesa-app"] button').first();
-    if (!(await firstIcon.isVisible({ timeout: 5_000 }).catch(() => false))) {
-      test.skip();
-      return;
-    }
+    // Abre um app via Dock (mais robusto que Mesa icons — Mesa pode ter 0 icones
+    // dependendo do mesa_layouts do usuario; Dock sempre tem apps fixos).
+    const driveDockBtn = page.locator('[data-testid="dock-app-drive"]');
+    await expect(driveDockBtn).toBeVisible({ timeout: 8_000 });
+    await driveDockBtn.click();
 
-    await firstIcon.click();
     await expect(page.locator('[data-testid="tabbar"]')).toBeVisible({
       timeout: 8_000,
     });
