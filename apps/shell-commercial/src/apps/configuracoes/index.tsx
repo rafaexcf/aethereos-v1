@@ -3334,12 +3334,31 @@ function Section({
   );
 }
 
+const LOCK_TIMEOUT_OPTIONS: SmartSelectOption[] = [
+  { value: "5", label: "5 minutos" },
+  { value: "10", label: "10 minutos" },
+  { value: "15", label: "15 minutos" },
+  { value: "30", label: "30 minutos" },
+  { value: "60", label: "1 hora" },
+  { value: "0", label: "Nunca" },
+];
+
+const DEFAULT_LOCK_TIMEOUT_MINUTES = 15;
+
 function TabDadosPrivacidade() {
   const { email, userId, activeCompanyId } = useSessionStore();
   const drivers = useDrivers();
   const [exported, setExported] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [infoModal, setInfoModal] = useState<"termos" | "dados" | null>(null);
+  const lockTimeoutPref = useUserPreference<number>(
+    "lock_timeout_minutes",
+    DEFAULT_LOCK_TIMEOUT_MINUTES,
+  );
+  const lockTimeoutValue =
+    typeof lockTimeoutPref.value === "number"
+      ? lockTimeoutPref.value
+      : DEFAULT_LOCK_TIMEOUT_MINUTES;
 
   async function handleExport() {
     const payload: Record<string, unknown> = {
@@ -3380,6 +3399,38 @@ function TabDadosPrivacidade() {
         title="Privacidade"
         subtitle="Controle seus dados pessoais conforme a LGPD (Lei 13.709/2018)"
       />
+
+      <div>
+        <SectionLabel>Segurança da sessão</SectionLabel>
+        <SettingGroup>
+          <SettingRow
+            label="Bloquear automaticamente após…"
+            sublabel="Tempo de inatividade até a tela de bloqueio aparecer"
+            icon={
+              <Lock
+                size={15}
+                style={{ color: "var(--text-tertiary)", flexShrink: 0 }}
+              />
+            }
+            last
+          >
+            <SmartSelect
+              value={String(lockTimeoutValue)}
+              onChange={(v) => {
+                const parsed = Number.parseInt(v, 10);
+                lockTimeoutPref.set(
+                  Number.isFinite(parsed)
+                    ? parsed
+                    : DEFAULT_LOCK_TIMEOUT_MINUTES,
+                );
+              }}
+              options={LOCK_TIMEOUT_OPTIONS}
+              width={180}
+              searchable={false}
+            />
+          </SettingRow>
+        </SettingGroup>
+      </div>
 
       <div>
         <SectionLabel>LGPD &amp; Compliance</SectionLabel>

@@ -19,8 +19,9 @@ export function useIdleLock(timeoutMinutes: number): void {
     if (typeof window === "undefined") return;
     if (userId === null) return;
     if (isLocked) return;
+    if (timeoutMinutes <= 0) return;
 
-    const timeoutMs = Math.max(1, timeoutMinutes) * 60 * 1000;
+    const timeoutMs = timeoutMinutes * 60 * 1000;
 
     function clearTimer(): void {
       if (timerRef.current !== null) {

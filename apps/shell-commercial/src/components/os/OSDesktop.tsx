@@ -22,8 +22,9 @@ import { useIdleLock } from "../../hooks/useIdleLock";
 import { useAutomationEngine } from "../../apps/automacoes/useAutomationEngine";
 import { useWorkspacePersistence } from "../../hooks/useWorkspacePersistence";
 import { useUserPreferencesLifecycle } from "../../hooks/useUserPreferencesLifecycle";
+import { useUserPreference } from "../../hooks/useUserPreference";
 
-const IDLE_LOCK_MINUTES = 15;
+const DEFAULT_IDLE_LOCK_MINUTES = 15;
 
 // ─── Desktop context menu ─────────────────────────────────────────────────────
 
@@ -257,7 +258,16 @@ export function OSDesktop() {
   useAutomationEngine();
   useWorkspacePersistence();
   useUserPreferencesLifecycle();
-  useIdleLock(IDLE_LOCK_MINUTES);
+  const lockTimeoutPref = useUserPreference<number>(
+    "lock_timeout_minutes",
+    DEFAULT_IDLE_LOCK_MINUTES,
+  );
+  const lockTimeoutMinutes = lockTimeoutPref.isLoading
+    ? DEFAULT_IDLE_LOCK_MINUTES
+    : typeof lockTimeoutPref.value === "number"
+      ? lockTimeoutPref.value
+      : DEFAULT_IDLE_LOCK_MINUTES;
+  useIdleLock(lockTimeoutMinutes);
 
   const isLocked = useSessionStore((s) => s.isLocked);
 

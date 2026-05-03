@@ -1,7 +1,7 @@
 CREATE TABLE kernel.user_preferences (
   id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id     UUID         NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  key         TEXT         NOT NULL CHECK (key IN ('dock_order','theme','notification_prefs','dock_hidden')),
+  key         TEXT         NOT NULL CHECK (key IN ('dock_order','theme','notification_prefs','dock_hidden','lock_timeout_minutes')),
   value       JSONB        NOT NULL,
   updated_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
   UNIQUE (user_id, key)

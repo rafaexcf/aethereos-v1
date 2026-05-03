@@ -31,6 +31,7 @@ import {
   MoreVertical,
   ArrowLeft,
   ImagePlus,
+  AlertTriangle,
 } from "lucide-react";
 import { useDrivers } from "../../lib/drivers-context";
 import { useSessionStore } from "../../stores/session";
@@ -1260,6 +1261,18 @@ export function CameraApp() {
   }, [stopStream]);
 
   useEffect(() => {
+    if (pending.length === 0) return;
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault();
+      e.returnValue = "Você tem capturas não salvas. Sair agora vai perdê-las.";
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [pending.length]);
+
+  useEffect(() => {
     if (view !== "capture") {
       stopStream();
       return;
@@ -1705,6 +1718,57 @@ export function CameraApp() {
       >
         {view === "gallery" && (
           <>
+            {pending.length > 0 && (
+              <div
+                role="alert"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "10px 20px",
+                  background: "rgba(232,120,40,0.12)",
+                  borderBottom: "1px solid rgba(232,120,40,0.35)",
+                  flexShrink: 0,
+                }}
+              >
+                <AlertTriangle
+                  size={14}
+                  style={{ color: "#f59e0b", flexShrink: 0 }}
+                />
+                <span
+                  style={{
+                    flex: 1,
+                    fontSize: 12,
+                    color: "rgba(255,255,255,0.85)",
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {pending.length}{" "}
+                  {pending.length === 1
+                    ? "captura não salva"
+                    : "capturas não salvas"}{" "}
+                  — fechar agora vai perdê-las
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void saveAllPending();
+                  }}
+                  style={{
+                    ...BTN,
+                    padding: "5px 10px",
+                    borderRadius: 7,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    background: "rgba(34,197,94,0.15)",
+                    color: "#86efac",
+                    border: "1px solid rgba(34,197,94,0.25)",
+                  }}
+                >
+                  <Check size={11} /> Salvar todas
+                </button>
+              </div>
+            )}
             <div
               style={{
                 display: "flex",

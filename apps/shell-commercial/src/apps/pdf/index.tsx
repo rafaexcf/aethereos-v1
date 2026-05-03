@@ -316,6 +316,9 @@ export function PdfApp() {
 
   const [currentNote, setCurrentNote] = useState<PdfNote | null>(null);
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [signedUrlIssuedAt, setSignedUrlIssuedAt] = useState<number | null>(
+    null,
+  );
   const [recents, setRecents] = useState<PdfNote[]>([]);
   const [notes, setNotes] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -367,6 +370,7 @@ export function PdfApp() {
       setMessages([]);
       setInput("");
       setSignedUrl(null);
+      setSignedUrlIssuedAt(null);
       try {
         const client = drivers.data.getClient();
         const { data } = await client.storage
@@ -374,6 +378,7 @@ export function PdfApp() {
           .createSignedUrl(note.storage_path, SIGNED_URL_TTL_SECONDS);
         if (data?.signedUrl !== undefined) {
           setSignedUrl(data.signedUrl);
+          setSignedUrlIssuedAt(Date.now());
         }
       } finally {
         setLoadingDoc(false);
@@ -381,6 +386,31 @@ export function PdfApp() {
     },
     [drivers],
   );
+
+  useEffect(() => {
+    if (drivers === null) return;
+    if (currentNote === null) return;
+    const path = currentNote.storage_path;
+    if (path === null) return;
+    const intervalId = window.setInterval(() => {
+      const issuedAt = signedUrlIssuedAt;
+      if (issuedAt === null) return;
+      if (Date.now() - issuedAt <= 50 * 60_000) return;
+      void (async () => {
+        const client = drivers.data.getClient();
+        const { data } = await client.storage
+          .from(STORAGE_BUCKET)
+          .createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
+        if (data?.signedUrl !== undefined) {
+          setSignedUrl(data.signedUrl);
+          setSignedUrlIssuedAt(Date.now());
+        }
+      })();
+    }, 5 * 60_000);
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [drivers, currentNote, signedUrlIssuedAt]);
 
   // ── Pick a new file: upload + insert row + open ───────────────────────────
 
@@ -490,6 +520,7 @@ export function PdfApp() {
   function handleClose() {
     setCurrentNote(null);
     setSignedUrl(null);
+    setSignedUrlIssuedAt(null);
     setNotes("");
     setMessages([]);
     setInput("");
@@ -515,6 +546,7 @@ export function PdfApp() {
       if (currentNote !== null && currentNote.id === note.id) {
         setCurrentNote(null);
         setSignedUrl(null);
+        setSignedUrlIssuedAt(null);
         setNotes("");
         setMessages([]);
       }

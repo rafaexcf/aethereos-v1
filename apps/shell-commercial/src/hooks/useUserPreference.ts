@@ -7,7 +7,8 @@ export type UserPreferenceKey =
   | "dock_order"
   | "theme"
   | "notification_prefs"
-  | "dock_hidden";
+  | "dock_hidden"
+  | "lock_timeout_minutes";
 
 interface UserPreferenceRow {
   value: unknown;
