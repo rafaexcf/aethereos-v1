@@ -209,6 +209,7 @@ export function OnboardingWizard({
           {[0, 1, 2].map((i) => (
             <div
               key={i}
+              data-testid={`step-indicator-${i}`}
               style={{
                 flex: 1,
                 height: 3,

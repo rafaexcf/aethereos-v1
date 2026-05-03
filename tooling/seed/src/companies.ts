@@ -8,6 +8,7 @@ export interface SeedCompany {
   cnpj: string;
   trade_name: string;
   primary_color: string;
+  onboarding_completed?: boolean;
 }
 
 // CNPJs fictícios estruturalmente válidos para seed (não são CNPJs reais ativos)
@@ -38,6 +39,16 @@ export const COMPANIES: SeedCompany[] = [
     cnpj: "34567890000145",
     trade_name: "Solaris Engenharia",
     primary_color: "#f59e0b",
+  },
+  {
+    id: "10000000-0000-0000-0000-000000000099",
+    name: "Onboarding Test Co LTDA",
+    slug: "onbtest",
+    plan: "starter",
+    cnpj: "99999999000199",
+    trade_name: "Onboarding Test",
+    primary_color: "#a855f7",
+    onboarding_completed: false,
   },
 ];
 
@@ -72,7 +83,7 @@ export async function seedCompanies(): Promise<void> {
         cnpj: company.cnpj,
         trade_name: company.trade_name,
         cnpj_data: FAKE_CNPJ_DATA(company),
-        onboarding_completed: true,
+        onboarding_completed: company.onboarding_completed ?? true,
         metadata: { primary_color: company.primary_color, seeded: true },
       },
       { onConflict: "id", ignoreDuplicates: false },

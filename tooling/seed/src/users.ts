@@ -89,6 +89,17 @@ const USER_DEFS = [
     position: "Engenheira",
     department: "Engenharia",
   },
+  // Onboarding Test Co — usuario dedicado para testes E2E de onboarding wizard.
+  // Pertence a UMA UNICA company com onboarding_completed=false → login dispara
+  // wizard automaticamente em /desktop. Nao mexer.
+  {
+    email: "onboarding.user@onbtest.test",
+    displayName: "Onboarding Test User",
+    companySlug: "onbtest",
+    role: "owner" as const,
+    position: "Founder",
+    department: "Diretoria",
+  },
 ];
 
 const SEED_PASSWORD = "Aethereos@2026!";
