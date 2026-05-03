@@ -99,6 +99,15 @@
     @apply border-black/[0.05] dark:border-white/[0.05];
   }
 
+  /* Skeleton pulse */
+  @keyframes skeleton-pulse {
+    0%, 100% { opacity: 0.35; }
+    50%       { opacity: 0.65; }
+  }
+  .skeleton-pulse {
+    animation: skeleton-pulse 1.6s ease-in-out infinite;
+  }
+
   /* Scrollbar */
   * {
     scrollbar-width: thin;
