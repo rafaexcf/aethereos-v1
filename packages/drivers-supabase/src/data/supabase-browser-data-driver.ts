@@ -83,7 +83,7 @@ export class SupabaseBrowserDataDriver {
     ) => void;
     onError?: (error: Error) => void;
   }): RealtimeSubscription {
-    const channelName = `kernel:${params.table}:${params.filter ?? "all"}:${Date.now()}`;
+    const channelName = `kernel:${params.table}:${params.filter ?? "all"}:${crypto.randomUUID()}`;
     const channel: RealtimeChannel = this.#client
       .channel(channelName)
       .on(
