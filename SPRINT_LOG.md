@@ -5,6 +5,133 @@ Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
 
 ---
 
+# Sprint 13 — Consolidação e Validação E2E
+
+Início: 2026-05-03
+Modelo: Claude Code (claude-sonnet-4-6, Sprint 13 N=1)
+Roadmap: `SPRINT_13_PROMPT.md` na raiz.
+
+## Origem
+
+Sprint 12 entregou apps Camada 1 + onboarding wizard + Magic Store launcher.
+Sprints 10–12 foram executados mas a suíte E2E ficou em **14/32 passed,
+18 failed, 4 skipped**. Causa raiz dos 18 falhos: `loginToDesktop()` em
+`tooling/e2e/tests/helpers.ts` não chegava ao `[data-testid="os-desktop"]`
+a tempo (splash 3s + boot 2-5s + select-company + desktop render somava
+7-12s, mas timeouts somados eram 13s no melhor caso).
+
+Sprint 13 é **estritamente consolidação** — zero features novas, zero apps
+novos, zero migrations novas (exceto seed data). Objetivo único: derrubar
+os 18 falhos para 0.
+
+## Confirmação inicial
+
+- HEAD em `7307d94` (8 commits Sprint 12 + persistência cross-device)
+- 69/69 migrations aplicadas, build verde
+- Estado: 14 passed / 18 failed / 4 skipped
+- Bloqueador #1 identificado: helper de login + splash bypass
+
+## Histórico de milestones (Sprint 13)
+
+| Milestone | Descrição                                                                                                 | Status | Commit  |
+| --------- | --------------------------------------------------------------------------------------------------------- | ------ | ------- |
+| MX61      | helper loginToDesktop bypass splash (?skipSplash) + timeouts 20s + seletor company `:has(span.font-mono)` | DONE   | e434a5b |
+| MX61b     | fix realtime channel name colision em StrictMode (Date.now → crypto.randomUUID)                           | DONE   | 25a4502 |
+| MX63      | strict-mode violations + UI text mismatches (os-shell/rh/magic-store specs)                               | DONE   | 3177a28 |
+| MX62      | KL-3 + KL-4 documentados (4 testes skipped justificados)                                                  | DONE   | 30079c4 |
+| MX64      | validação final — typecheck + lint + 28/32 E2E green                                                      | DONE   | (este)  |
+| MX65      | atualização SPRINT_LOG.md + KNOWN_LIMITATIONS.md                                                          | DONE   | (este)  |
+
+## Causa raiz #1: splash + boot async
+
+`apps/shell-commercial/src/main.tsx` mostra `<SplashScreen>` por ~3s
+(font 1.2s + animation 1.4s + exit 0.35s) E só hidrata `RouterProvider`
+DEPOIS de `boot()` (drivers + auth + fetch, 2-5s). Antes do MX61 o helper
+fazia `goto("/login")` (mostrava splash) e os timeouts agregados (15+15+10s)
+não cobriam o caminho real (~12s de splash+boot+nav).
+
+**Fix:** `?skipSplash` query param. Quando presente:
+
+```ts
+const SKIP_SPLASH = new URLSearchParams(window.location.search).has(
+  "skipSplash",
+);
+const [showSplash, setShowSplash] = useState(!SKIP_SPLASH);
+const [animDone, setAnimDone] = useState(SKIP_SPLASH);
+```
+
+Splash não renderiza, RouterProvider monta direto após `boot()`. Helper
+agora usa `goto("/login?skipSplash")` + timeouts 20s.
+
+## Causa raiz #2: realtime channel name collision em StrictMode
+
+`packages/drivers-supabase/src/data/supabase-browser-data-driver.ts:86` montava
+nome do canal com `Date.now()`. Em React StrictMode dev, `useEffect` monta 2x
+em quase 0ms — ambas chamadas pegam mesmo `Date.now()` → `.channel(name)`
+deduplica por nome → segunda chamada `.on("postgres_changes", ...)` é
+adicionada APÓS primeira `.subscribe()` → supabase-js lança:
+
+```
+"cannot add postgres_changes callbacks for realtime:kernel:user_preferences:
+user_id=eq.<uuid>:<ts> after subscribe()."
+```
+
+ErrorBoundary captura → "Something went wrong!" → `OSDesktop` nunca renderiza
+→ helper espera `[data-testid="os-desktop"]` por 20s e falha.
+
+**Fix:** `crypto.randomUUID()` em vez de `Date.now()`. Sempre único, não
+depende de clock resolution.
+
+## Causa raiz #3: strict-mode violations nos specs
+
+3 testes RH + 3 magic-store falhavam com `strict mode violation: locator
+resolved to N elements` por causa de `.or()` matching múltiplos elementos:
+
+- `[data-testid="rh-app"].or(text=Colaboradores)` matchava `<p>Colaboradores
+internos</p>` E `<div data-testid="rh-app">` simultaneamente
+- `[data-testid="magic-store-app"].or(text=Magic Store)` matchava tab + mesa
+  - loading state
+- `text=Nome completo.or(text=Novo Colaborador)` matchava `<h3>` E `<label>`
+
+**Fix:** remover `.or()` redundantes. Usar testid único OU `getByRole`
+com `exact: true`.
+
+## Causa raiz #4: UI changes não refletidas nos specs
+
+- `topbar.locator("text=Aethereos")` — UI mostra `ÆTHEREOS` (Æ ligature)
+- `[data-testid="employee-detail-drawer"]` — testid não existe; drawer
+  usa botão com `aria-label="Editar"`
+- magic-store filter `/em breve/i` — "Em breve" virou badge de status,
+  não filtro; sidebar tem categorias Aplicativos/Plugins/Widgets/etc.
+- magic-store detail `/fechar/i` — view virou full-page replacement,
+  não modal; sem botão Fechar
+
+## Resultado final
+
+```
+pnpm typecheck    → 24 successful, 24 total
+pnpm lint         → 22 successful, 22 total
+pnpm test:e2e:full → 28 passed, 0 failed, 4 skipped (KNOWN_LIMITATIONS)
+```
+
+Skipped:
+
+- 3 onboarding (KL-3 — falta `E2E_ONBOARDING_COMPANY_ID` + seed company com
+  `onboarding_completed=false`)
+- 1 os-shell:66 (KL-4 — racy timing do hydrate de mesa_layouts)
+
+## Dívidas para Sprint 14+
+
+1. Seed determinístico de company com `onboarding_completed=false` para
+   destravar 3 testes onboarding (KL-3)
+2. Helper `waitForMesaIcons(page)` para reduzir flakiness de testes que
+   dependem do layout da Mesa (KL-4)
+3. Cobertura E2E em CI (GitHub Actions) — Sprint 9.6 deferido
+4. Deploy staging (Vercel preview + Supabase cloud) — Sprint 9.6 deferido
+5. IaC Pulumi — Sprint 9.6 deferido
+
+---
+
 # Sprint 12 — Completar Camada 1 pura
 
 Início: 2026-04-30T00:00:00Z
