@@ -169,3 +169,75 @@ jobs:
           key: ${{ runner.os }}-turbo-${{ github.sha }}
           restore-keys: ${{ runner.os }}-turbo-
       - run: pnpm build
+
+  # ─── E2E (Playwright + Supabase local) ────────────────────────────────────
+  # MX69 Sprint 14: roda suite Playwright contra Supabase local (supabase CLI
+  # sobe Postgres/Auth/Storage/Edge Functions via Docker). anon_key e
+  # service_key abaixo sao as keys publicas/deterministicas do supabase local
+  # (NAO sao secrets — documentadas em https://supabase.com/docs/guides/cli/local-development).
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    needs: [typecheck, lint]
+    timeout-minutes: 20
+    env:
+      E2E_BASE_URL: http://127.0.0.1:5174
+      E2E_SUPABASE_URL: http://127.0.0.1:54321
+      E2E_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+      E2E_SUPABASE_SERVICE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+      E2E_USER_EMAIL: ana.lima@meridian.test
+      E2E_USER_PASSWORD: "Aethereos@2026!"
+      E2E_USER_B_EMAIL: patricia.rodrigues@solaris.test
+      E2E_USER_B_PASSWORD: "Aethereos@2026!"
+      E2E_ONBOARDING_COMPANY_ID: 10000000-0000-0000-0000-000000000099
+      E2E_ONBOARDING_EMAIL: onboarding.user@onbtest.test
+      E2E_ONBOARDING_PASSWORD: "Aethereos@2026!"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase local stack
+        run: supabase start
+
+      - name: Run seed
+        working-directory: tooling/seed
+        run: pnpm start
+
+      - name: Install Playwright browsers (chromium only)
+        working-directory: tooling/e2e
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run E2E suite
+        working-directory: tooling/e2e
+        run: pnpm exec playwright test
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: tooling/e2e/playwright-report/
+          retention-days: 14
+
+      - name: Upload test-results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: tooling/e2e/test-results/
+          retention-days: 14
+
+      - name: Stop Supabase
+        if: always()
+        run: supabase stop --no-backup
