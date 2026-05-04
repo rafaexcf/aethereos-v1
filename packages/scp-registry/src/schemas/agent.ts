@@ -103,6 +103,22 @@ export type AgentCopilotActionRejectedPayload = z.infer<
   typeof AgentCopilotActionRejectedPayloadSchema
 >;
 
+// Sprint 17 MX84: emitido apos a acao proposta ser executada com sucesso
+// (INSERT/UPDATE/UPSERT na tabela alvo do intent). Distingue-se de
+// action_approved porque o approve apenas autoriza; o executed confirma
+// que a mutacao real ocorreu. Falha de execucao nao emite este evento.
+export const AgentCopilotActionExecutedPayloadSchema = z.object({
+  proposal_id: z.string().uuid(),
+  company_id: z.string().uuid(),
+  executed_by: z.string().uuid(),
+  intent_type: z.string().min(1).max(50),
+  resource_id: z.string().optional(),
+  correlation_id: z.string().uuid().optional(),
+});
+export type AgentCopilotActionExecutedPayload = z.infer<
+  typeof AgentCopilotActionExecutedPayloadSchema
+>;
+
 // ---------------------------------------------------------------------------
 // Intent Payload Schemas — typed payloads for Copilot Action Intents (MX5)
 // Each intent type has its own Zod schema; the union is the canonical type.
@@ -176,4 +192,5 @@ export const AGENT_EVENT_SCHEMAS = {
   "agent.copilot.action_proposed": AgentCopilotActionProposedPayloadSchema,
   "agent.copilot.action_approved": AgentCopilotActionApprovedPayloadSchema,
   "agent.copilot.action_rejected": AgentCopilotActionRejectedPayloadSchema,
+  "agent.copilot.action_executed": AgentCopilotActionExecutedPayloadSchema,
 } as const satisfies Record<string, z.ZodSchema>;

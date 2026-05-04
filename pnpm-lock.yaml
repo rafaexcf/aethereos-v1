@@ -305,6 +305,9 @@ importers:
       vite-plugin-pwa:
         specifier: ^0.21.0
         version: 0.21.2(vite@6.4.2(@types/node@22.19.17)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.8.3))(workbox-build@7.4.0(@types/babel__core@7.20.5))(workbox-window@7.4.0)
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.17)(happy-dom@18.0.1)(lightningcss@1.32.0)(terser@5.46.2)
 
   packages/config-eslint:
     dependencies:
