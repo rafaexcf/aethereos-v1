@@ -8,7 +8,8 @@ export type UserPreferenceKey =
   | "theme"
   | "notification_prefs"
   | "dock_hidden"
-  | "lock_timeout_minutes";
+  | "lock_timeout_minutes"
+  | "llm_config";
 
 interface UserPreferenceRow {
   value: unknown;

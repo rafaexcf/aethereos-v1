@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@aethereos/drivers": "workspace:*",
+    "@aethereos/drivers-byok": "workspace:*",
     "@aethereos/drivers-litellm": "workspace:*",
     "@aethereos/drivers-supabase": "workspace:*",
     "@aethereos/kernel": "workspace:*",
