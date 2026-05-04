@@ -1,5 +1,9 @@
-import { useState, type ReactElement } from "react";
+import { useEffect, useRef, useState, type ReactElement } from "react";
 import { ExternalLink, Loader2, AlertTriangle } from "lucide-react";
+import { useDrivers } from "../../lib/drivers-context";
+import { useSessionStore } from "../../stores/session";
+import { useTheme } from "../../lib/theme/theme-provider";
+import { AppBridgeHandler } from "../../lib/app-bridge-handler";
 
 /**
  * Sprint 21 MX113: renderiza um app cujo entry_mode='iframe' como <iframe>
@@ -21,6 +25,51 @@ export function IframeAppFrame({
 }): ReactElement {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const handlerRef = useRef<AppBridgeHandler | null>(null);
+
+  const drivers = useDrivers();
+  const userId = useSessionStore((s) => s.userId);
+  const activeCompanyId = useSessionStore((s) => s.activeCompanyId);
+  const { theme } = useTheme();
+
+  // Sprint 22 MX120: instancia AppBridgeHandler quando iframe carrega.
+  // Cleanup em unmount ou troca de URL para evitar listeners orfaos.
+  useEffect(() => {
+    if (
+      drivers === null ||
+      userId === null ||
+      activeCompanyId === null ||
+      iframeRef.current === null
+    ) {
+      return;
+    }
+    const iframeWindow = iframeRef.current.contentWindow;
+    if (iframeWindow === null) return;
+
+    const themeRef = { current: theme };
+    const handler = new AppBridgeHandler(
+      drivers,
+      {
+        appId,
+        userId,
+        companyId: activeCompanyId,
+        getTheme: () => themeRef.current,
+      },
+      iframeWindow,
+    );
+    handler.start();
+    handlerRef.current = handler;
+    return () => {
+      handler.stop();
+      handlerRef.current = null;
+    };
+  }, [drivers, userId, activeCompanyId, appId, url]);
+
+  // Push theme.changed para o iframe quando tema muda no shell.
+  useEffect(() => {
+    handlerRef.current?.pushEvent("theme.changed", { theme });
+  }, [theme]);
 
   return (
     <div
@@ -108,6 +157,7 @@ export function IframeAppFrame({
       ) : (
         <iframe
           key={appId}
+          ref={iframeRef}
           src={url}
           title={appName}
           onLoad={() => setLoading(false)}
