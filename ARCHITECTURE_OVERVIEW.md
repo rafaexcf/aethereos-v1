@@ -118,6 +118,10 @@ Placeholders para F2 (aethereos-org, aethereos-io, b2baios-com-br).
 - **scp-registry/** — schemas Zod de todos os event types (platform.\*, agent.\*, context.\*, integration.\*, financial.\*, fiscal.\*). 9 smoke tests (Sprint 20 MX109).
 - **observability/** — wrapper OTel + structured logger.
 
+### SDK third-party (Sprint 22)
+
+- **client/** — `@aethereos/client`: SDK tipado para apps iframe + nativos. 10 módulos (auth/drive/people/chat/notifications/scp/ai/settings/windows/theme). Dois transports: `BridgeTransport` (postMessage, modo padrão) e `DirectTransport` (router injetado pelo shell). 12 unit tests (factory + bridge protocol + handshake + timeout + subscribe).
+
 ### UI
 
 - **ui-shell/** — AppShell, layouts, componentes shared (Loading, EmptyState, etc.).

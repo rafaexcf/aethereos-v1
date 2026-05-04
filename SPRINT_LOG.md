@@ -5,6 +5,156 @@ Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
 
 ---
 
+# Sprint 22 — Client SDK + App Bridge: @aethereos/client
+
+Início: 2026-05-04
+Modelo: Claude Code (claude-opus-4-7, Sprint 22 N=1)
+Roadmap: `SPRINT_22_PROMPT.md` na raiz.
+
+## Origem
+
+Sprint 21 separou metadata de apps em `kernel.app_registry` + COMPONENT_MAP. Sprint 22 adiciona a primeira capacidade real para apps third-party: SDK tipado (`@aethereos/client`) + protocolo postMessage (App Bridge) entre iframe e shell. Apps externos passam a poder ler dados reais do tenant respeitando RLS.
+
+## Histórico de milestones (Sprint 22)
+
+| Milestone | Descrição                                                      | Status | Commit  |
+| --------- | -------------------------------------------------------------- | ------ | ------- |
+| MX117     | @aethereos/client package (10 modulos + Transport + factory)   | DONE   | cbafae5 |
+| MX118     | BridgeTransport + 7 unit tests (handshake/request/timeout/sub) | DONE   | e8c6324 |
+| MX119     | AppBridgeHandler host-side (6 module handlers via drivers)     | DONE   | 98cd15d |
+| MX120     | IframeAppFrame instancia handler + push theme.changed          | DONE   | b042003 |
+| MX121     | Demo iframe app + seed em app_registry (auto-install 4 cias)   | DONE   | 24a01a0 |
+| MX122     | 9 unit tests AppBridgeHandler + README + Sprint 22 docs        | DONE   | (este)  |
+
+## Arquitetura — 2 modos
+
+```
+                    MODO BRIDGE (apps iframe)
+
+[iframe app] ── postMessage ──► [shell host window]
+   │                                 │
+   │ AETHEREOS_SDK_HANDSHAKE         │
+   │   ────────────────────────────► │ AppBridgeHandler.start
+   │ ◄──── HANDSHAKE_ACK ────────────│ (filtra por iframe.contentWindow)
+   │       (appId, userId, theme)    │
+   │                                 │
+   │ AETHEREOS_SDK_REQUEST           │
+   │   ────────────────────────────► │ executeMethod(method, params)
+   │     (requestId, method, params) │   ↓
+   │                                 │ drivers.data.from(...).select/insert
+   │ ◄──── SDK_RESPONSE ─────────────│   ↓
+   │       (success, data | error)   │ result OR error
+   │                                 │
+   │ ◄──── SDK_EVENT (push) ─────────│ pushEvent('theme.changed', ...)
+
+                    MODO DIRECT (apps nativos)
+
+[app component] ── createAethereosClient({ direct: { router } })
+                                 │
+                          aeth.drive.list()
+                                 │ → DirectTransport.request('drive.list', {})
+                                 │ → router('drive.list', {})  ← shell injeta
+                                 │ → drivers.data.from('files')...
+```
+
+## @aethereos/client (MX117)
+
+Package novo no monorepo. 14 → 15 packages.
+
+Estrutura:
+
+- `src/types.ts`: SessionInfo, FileEntry, Person, Channel, ChatMessage, NotificationItem, ScpEmitResult, AiChatMessage/Result, Theme, SdkError, BridgeContext
+- `src/transport.ts`: interface Transport (request<T> + subscribe)
+- `src/transports/direct.ts`: DirectTransport para apps in-process
+- `src/transports/bridge.ts`: BridgeTransport postMessage
+- `src/client.ts`: createAethereosClient() factory com auto-detect ou override
+- `src/modules/`: 10 classes (auth/drive/people/chat/notifications/scp/ai/settings/windows/theme)
+
+API: `aeth.drive.list(path?)`, `aeth.notifications.send(title, body, opts?)`, `aeth.scp.emit(event, payload)`, `aeth.theme.onThemeChange(handler)`, etc. Convenção `module.action` para method strings.
+
+Sem deps runtime — package puro.
+
+## BridgeTransport (MX118)
+
+Implementa o protocolo postMessage cliente-side. 7 unit tests:
+
+- handshake: posta HANDSHAKE com versao + resolve com ACK
+- handshake idempotente
+- request: REQUEST com requestId UUID, RESPONSE matching, ignora ids diferentes
+- error tipado em RESPONSE success=false
+- timeout (vi.useFakeTimers): rejeita com BRIDGE_TIMEOUT
+- subscribe + unsubscribe filtra por event name
+
+Test strategy: fake windows com \_\_dispatch helper sem dependência de jsdom.
+
+## AppBridgeHandler (MX119)
+
+`apps/shell-commercial/src/lib/app-bridge-handler.ts`. Host-side router.
+
+- `start/stop`: registra/remove listener postMessage filtrado por `event.source === iframeWindow` (evita cross-talk)
+- `pushEvent(event, data)`: envia AETHEREOS_SDK_EVENT
+- `handshake`: responde com HANDSHAKE_ACK (appId, companyId, userId, theme)
+- 6 module handlers:
+  - `auth.getSession` / `auth.getUser` via `drivers.auth.getSession`
+  - `drive.list` query `kernel.files` filtrado por `company_id`
+  - `people.list` query `kernel.people` + filtro local por `query`
+  - `notifications.send` INSERT em `kernel.notifications` com `source_app=appId`
+  - `notifications.list` SELECT últimas 50 do user+company
+  - `settings.get/set` via `kernel.user_preferences` (key, value)
+  - `theme.getTheme` retorna `ctx.getTheme()`
+- Erros: code + message no RESPONSE → caller recebe SdkError tipado
+
+R10: handlers usam credenciais do USUARIO (RLS aplica via Postgres).
+R11: sem permissões granulares (Sprint 23).
+R12: postMessage target='\*' (origin validation no Sprint 23).
+
+## IframeAppFrame integra bridge (MX120)
+
+useEffect cria handler quando drivers + userId + activeCompanyId + iframe contentWindow disponíveis. ref no `<iframe>` para acesso ao contentWindow. push automático de `theme.changed` quando tema muda no shell.
+
+## Demo iframe app (MX121)
+
+`apps/shell-commercial/public/demo-iframe-app/index.html`: HTML standalone com module script inline (versão compacta do BridgeTransport — sem bundling). 9 botões que chamam métodos reais do SDK.
+
+Migration `20260504000007`: registra `demo-iframe` em `app_registry` (entry_mode=iframe, entry_url=`/demo-iframe-app/index.html`) e auto-instala em 4 companies de teste.
+
+## Testes (MX122)
+
+9 unit tests novos no shell-commercial cobrindo AppBridgeHandler:
+
+- HANDSHAKE → HANDSHAKE_ACK
+- auth.getSession routing + payload format
+- drive.list chama from('files') filtering company_id
+- notifications.send insert com source_app=appId
+- theme.getTheme via ctx callback
+- método desconhecido → EXECUTION_ERROR tipado
+- filtra eventos de outros iframes (event.source guard)
+- pushEvent posta SDK_EVENT
+- stop() para de responder
+
+Total shell-commercial: **26 unit tests** (era 17). Total monorepo: **20 turbo test tasks**, ~210 tests.
+
+## Gate final Sprint 22
+
+```
+pnpm typecheck       → 26/26 ✓
+pnpm lint            → 24/24 ✓
+pnpm test            → 20/20 (~210 unit tests) ✓
+pnpm test:e2e:full   → 33 passed, 1 skipped ✓
+```
+
+1 falha intermitente em `drive.spec.ts:48` reapareceu em 1 de 2 runs — flaky pré-existente desde Sprint 14 (tab-close UI). Recupera em re-run.
+
+## Limitações conhecidas Sprint 22
+
+- **Sem permissões granulares** — todo método é permitido se o iframe carregou. Sprint 23.
+- **postMessage target='\*'** — sem origin validation. Sprint 23.
+- **drive.read não implementado** — Storage requer refactor; em F1 retorna erro.
+- **chat / ai handlers não implementados** no host (apenas API tipada no SDK).
+- **Demo app é HTML estático com SDK inline** — em produção, third-party apps consumirão `@aethereos/client` via `pnpm add` (modo ESM).
+
+---
+
 # Sprint 21 — App Registry no Banco
 
 Início: 2026-05-04
