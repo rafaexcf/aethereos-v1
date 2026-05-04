@@ -95,9 +95,27 @@ export async function seedCompanies(): Promise<void> {
     }
   }
 
-  // Ativar módulos padrão para cada empresa
+  // Sprint 16 MX81: modulos kernel padrao instalados em toda nova company.
+  // Apps utilitarios basicos que TODA empresa usa, independente de vertical.
+  // Verticais (comercio_digital, logitix, erp) NAO sao auto-seedados —
+  // o usuario instala explicitamente via Magic Store quando precisar.
+  // Idempotente: ignoreDuplicates evita conflito em re-runs e preserva
+  // modulos extras que companies existentes ja tenham instalado.
+  const KERNEL_DEFAULT_MODULES = [
+    "drive",
+    "pessoas",
+    "chat",
+    "settings",
+    "rh",
+    "calendar",
+    "tarefas",
+    "bloco-de-notas",
+    "calculadora",
+    "relogio",
+  ];
+
   for (const company of COMPANIES) {
-    for (const module of ["comercio_digital", "logitix", "erp"]) {
+    for (const module of KERNEL_DEFAULT_MODULES) {
       const { error } = await supabase
         .from("company_modules")
         .upsert(
