@@ -4,6 +4,7 @@ import { jlog, type InlineConsumer } from "./consumer.js";
 import { AuditConsumer } from "./consumers/audit-consumer.js";
 import { NotificationConsumer } from "./consumers/notification-consumer.js";
 import { EmbeddingConsumer } from "./consumers/embedding-consumer.js";
+import { EnrichmentConsumer } from "./consumers/enrichment-consumer.js";
 
 const POLL_INTERVAL_MS = Number(process.env["SCP_POLL_INTERVAL_MS"] ?? "2000");
 const BATCH_SIZE = Number(process.env["SCP_BATCH_SIZE"] ?? "50");
@@ -34,6 +35,7 @@ async function main(): Promise<void> {
   const consumers: InlineConsumer[] = [
     new AuditConsumer(),
     new NotificationConsumer(),
+    new EnrichmentConsumer(),
     new EmbeddingConsumer({ supabaseUrl, supabaseAnonKey }),
   ];
 
