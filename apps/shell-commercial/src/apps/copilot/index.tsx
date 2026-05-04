@@ -23,6 +23,7 @@ import type { LLMDriver, ObservabilityDriver } from "@aethereos/drivers";
 import { SupabaseBrowserVectorDriver } from "@aethereos/drivers-supabase/browser";
 import type { SupabaseBrowserDataDriver } from "@aethereos/drivers-supabase/browser";
 import type { ScpPublisherBrowser } from "../../lib/scp-publisher-browser";
+import { executeProposal } from "../../lib/proposal-executor";
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -45,7 +46,12 @@ type IntentType =
   | "update_settings"
   | "create_channel";
 
-type ProposalStatus = "pending" | "approved" | "rejected" | "executed";
+type ProposalStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "executed"
+  | "expired";
 
 interface ActionProposal {
   id: string;
@@ -54,6 +60,7 @@ interface ActionProposal {
   status: ProposalStatus;
   conversationId: string;
   createdAt: Date;
+  executionError?: string;
 }
 
 interface CopilotDrawerProps {
@@ -275,27 +282,33 @@ interface ActionApprovalPanelProps {
   proposal: ActionProposal;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
+  onRetry?: (id: string) => void;
 }
 
 function ActionApprovalPanel({
   proposal,
   onApprove,
   onReject,
+  onRetry,
 }: ActionApprovalPanelProps) {
-  const statusColors: Record<ProposalStatus, string> = {
-    pending: "border-violet-700/50 bg-violet-950/30",
-    approved: "border-green-700/50 bg-green-950/20",
-    rejected: "border-zinc-700/50 bg-zinc-900/50",
-    executed: "border-green-600/50 bg-green-950/30",
-  };
+  const hasError =
+    proposal.status === "approved" && proposal.executionError !== undefined;
+
+  // Sprint 17 MX85: status visual estendido
+  const statusBorder = hasError
+    ? "border-amber-700/50 bg-amber-950/20"
+    : (
+        {
+          pending: "border-violet-700/50 bg-violet-950/30",
+          approved: "border-green-700/50 bg-green-950/20",
+          rejected: "border-zinc-700/50 bg-zinc-900/50",
+          executed: "border-green-600/50 bg-green-950/30",
+          expired: "border-zinc-700/50 bg-zinc-900/30",
+        } as const
+      )[proposal.status];
 
   return (
-    <div
-      className={[
-        "rounded-lg border p-3 text-xs",
-        statusColors[proposal.status],
-      ].join(" ")}
-    >
+    <div className={["rounded-lg border p-3 text-xs", statusBorder].join(" ")}>
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <span>{INTENT_ICONS[proposal.intentType]}</span>
@@ -309,14 +322,20 @@ function ActionApprovalPanel({
         {proposal.status === "pending" && (
           <span className="text-zinc-500">aguarda aprovação</span>
         )}
-        {proposal.status === "approved" && (
-          <span className="text-green-400">✓ aprovado</span>
+        {proposal.status === "approved" && !hasError && (
+          <span className="text-green-400">✓ aprovado · executando…</span>
+        )}
+        {proposal.status === "approved" && hasError && (
+          <span className="text-amber-400">⚠ falha na execução</span>
         )}
         {proposal.status === "executed" && (
           <span className="text-green-400">✓ executado</span>
         )}
         {proposal.status === "rejected" && (
           <span className="text-zinc-500">✗ rejeitado</span>
+        )}
+        {proposal.status === "expired" && (
+          <span className="text-zinc-500">⌛ expirada</span>
         )}
       </div>
 
@@ -351,10 +370,25 @@ function ActionApprovalPanel({
         </div>
       )}
 
+      {hasError && (
+        <div className="space-y-2">
+          <p className="text-amber-300">
+            {proposal.executionError ?? "Erro desconhecido"}
+          </p>
+          {onRetry !== undefined && (
+            <button
+              type="button"
+              onClick={() => onRetry(proposal.id)}
+              className="rounded-md border border-amber-700/50 bg-amber-900/30 px-3 py-1 text-xs text-amber-200 hover:bg-amber-900/50"
+            >
+              Tentar novamente
+            </button>
+          )}
+        </div>
+      )}
+
       {proposal.status === "executed" && (
-        <p className="text-green-500">
-          Ação executada com sucesso (stub — driver não conectado).
-        </p>
+        <p className="text-green-500">Ação executada no banco com sucesso.</p>
       )}
     </div>
   );
@@ -552,11 +586,93 @@ export function CopilotDrawer({
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, proposals]);
 
+  // Sprint 17 MX85: helper interno — tenta executar uma proposal aprovada,
+  // atualiza status para executed se ok ou registra executionError no UI.
+  const tryExecute = useCallback(
+    async (proposalId: string) => {
+      const target = proposals.find((p) => p.id === proposalId);
+      if (target === undefined) return;
+      if (target.status === "expired") return; // R13: nunca executar expirada
+
+      // R13 defensiva: re-checa expires_at no banco antes de executar
+      const result = await executeProposal(
+        { data, scp },
+        {
+          id: target.id,
+          intentType: target.intentType,
+          payload: target.payload as unknown as Record<string, unknown>,
+        },
+        userId,
+        companyId,
+      );
+
+      if (result.ok) {
+        setProposals((prev) =>
+          prev.map((p) =>
+            p.id === proposalId
+              ? {
+                  id: p.id,
+                  intentType: p.intentType,
+                  payload: p.payload,
+                  conversationId: p.conversationId,
+                  createdAt: p.createdAt,
+                  status: "executed" as const,
+                }
+              : p,
+          ),
+        );
+        void data
+          .from("agent_proposals")
+          .update({
+            status: "executed",
+            reviewed_at: new Date().toISOString(),
+          })
+          .eq("id", proposalId);
+        void scp.publishEvent(
+          "agent.copilot.action_executed",
+          {
+            proposal_id: proposalId,
+            company_id: companyId,
+            executed_by: userId,
+            intent_type: target.intentType,
+            ...(result.resourceId !== undefined
+              ? { resource_id: result.resourceId }
+              : {}),
+          },
+          { actor: { type: "human", user_id: userId } },
+        );
+      } else {
+        setProposals((prev) =>
+          prev.map((p) =>
+            p.id === proposalId
+              ? {
+                  ...p,
+                  status: "approved" as const,
+                  executionError: result.error ?? "Falha desconhecida",
+                }
+              : p,
+          ),
+        );
+      }
+    },
+    [data, scp, userId, companyId, proposals],
+  );
+
   const handleApprove = useCallback(
-    (proposalId: string) => {
+    async (proposalId: string) => {
+      // 1. Marca approved localmente + UPDATE no banco + SCP approved
       setProposals((prev) =>
         prev.map((p) =>
-          p.id === proposalId ? { ...p, status: "approved" as const } : p,
+          p.id === proposalId
+            ? {
+                id: p.id,
+                intentType: p.intentType,
+                payload: p.payload,
+                conversationId: p.conversationId,
+                createdAt: p.createdAt,
+                status: "approved" as const,
+              }
+            : p,
         ),
       );
       void data
@@ -583,8 +699,33 @@ export function CopilotDrawer({
           },
         },
       );
+
+      // 2. Sprint 17 MX85: dispara execucao real
+      await tryExecute(proposalId);
     },
-    [data, scp, userId, companyId],
+    [data, scp, userId, companyId, tryExecute],
+  );
+
+  // Botao Tentar novamente quando approved + executionError
+  const handleRetryExecute = useCallback(
+    async (proposalId: string) => {
+      setProposals((prev) =>
+        prev.map((p) =>
+          p.id === proposalId
+            ? {
+                id: p.id,
+                intentType: p.intentType,
+                payload: p.payload,
+                conversationId: p.conversationId,
+                createdAt: p.createdAt,
+                status: p.status,
+              }
+            : p,
+        ),
+      );
+      await tryExecute(proposalId);
+    },
+    [tryExecute],
   );
 
   const handleReject = useCallback(
@@ -1154,6 +1295,7 @@ export function CopilotDrawer({
                           proposal={relatedProposal}
                           onApprove={handleApprove}
                           onReject={handleReject}
+                          onRetry={handleRetryExecute}
                         />
                       </div>
                     )}
