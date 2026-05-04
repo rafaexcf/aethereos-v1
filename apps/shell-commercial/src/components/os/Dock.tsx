@@ -28,6 +28,7 @@ import {
 } from "../../apps/calendario/calendarUtils";
 import { useOSStore } from "../../stores/osStore";
 import { useDockStore } from "../../stores/dockStore";
+import { useInstalledModulesStore } from "../../stores/installedModulesStore";
 import { getApp, prefetchApp } from "../../apps/registry";
 import type { OSApp } from "../../types/os";
 
@@ -1215,9 +1216,11 @@ export function Dock() {
   const dockHidden = useOSStore((s) => s.dockHidden);
   const toggleDockHidden = useOSStore((s) => s.toggleDockHidden);
   const order = useDockStore((s) => s.order);
+  const installed = useInstalledModulesStore((s) => s.installed);
   const dockApps = order
     .map((id) => getApp(id))
-    .filter((a): a is OSApp => a !== undefined);
+    .filter((a): a is OSApp => a !== undefined)
+    .filter((a) => a.alwaysEnabled === true || installed.has(a.id));
   const mouseX = useMotionValue(Infinity);
 
   const openAppIds = new Set(tabs.map((t) => t.appId));

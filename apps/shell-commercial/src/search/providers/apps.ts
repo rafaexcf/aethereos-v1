@@ -1,4 +1,5 @@
 import { APP_REGISTRY } from "../../apps/registry";
+import { useInstalledModulesStore } from "../../stores/installedModulesStore";
 import type { SearchProvider, SearchResult } from "../types";
 
 export const appsProvider: SearchProvider = {
@@ -11,7 +12,13 @@ export const appsProvider: SearchProvider = {
     const q = query.toLowerCase().trim();
     if (!q) return [];
 
-    return APP_REGISTRY.filter((app) => app.name.toLowerCase().includes(q))
+    // Sprint 16 MX79: respeita visibilidade (alwaysEnabled OR installed)
+    const installed = useInstalledModulesStore.getState().installed;
+    return APP_REGISTRY.filter(
+      (app) =>
+        app.name.toLowerCase().includes(q) &&
+        (app.alwaysEnabled === true || installed.has(app.id)),
+    )
       .slice(0, 8)
       .map<SearchResult>((app) => ({
         id: `app-${app.id}`,

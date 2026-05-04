@@ -4,6 +4,7 @@ import type { LucideProps } from "lucide-react";
 import type { ComponentType } from "react";
 import { useMesaStore, getWallpaperStyle } from "../../stores/mesaStore";
 import { useOSStore } from "../../stores/osStore";
+import { useInstalledModulesStore } from "../../stores/installedModulesStore";
 import { getApp } from "../registry";
 import type { MesaItem } from "../../types/os";
 
@@ -122,7 +123,14 @@ export function MesaApp() {
   }, [contextMenu.visible]);
 
   const wallpaperStyle = getWallpaperStyle(wallpaper, wallpaperUrl);
-  const icons = layout.filter((item) => item.type === "icon");
+  const installed = useInstalledModulesStore((s) => s.installed);
+  // Sprint 16 MX79: filtra icones de apps nao instalados (alwaysEnabled passa)
+  const icons = layout.filter((item) => {
+    if (item.type !== "icon") return false;
+    const app = getApp(item.appId);
+    if (app === undefined) return false;
+    return app.alwaysEnabled === true || installed.has(app.id);
+  });
 
   return (
     <div

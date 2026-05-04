@@ -6,6 +6,7 @@ import type { LucideProps } from "lucide-react";
 import type { ComponentType } from "react";
 import { X, Search } from "lucide-react";
 import { APP_REGISTRY } from "../apps/registry";
+import { useInstalledModulesStore } from "../stores/installedModulesStore";
 
 interface AppsLauncherProps {
   open: boolean;
@@ -15,14 +16,19 @@ interface AppsLauncherProps {
 
 export function AppsLauncher({ open, onClose, onOpenApp }: AppsLauncherProps) {
   const [search, setSearch] = useState("");
+  const installed = useInstalledModulesStore((s) => s.installed);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    // Exclude "mesa" (home tab, not a launchable app)
-    const all = APP_REGISTRY.filter((a) => a.id !== "mesa");
+    // Sprint 16 MX79: filtra por visibilidade (alwaysEnabled OU installed)
+    // alem de excluir "mesa" (home tab, nao launchable)
+    const all = APP_REGISTRY.filter(
+      (a) =>
+        a.id !== "mesa" && (a.alwaysEnabled === true || installed.has(a.id)),
+    );
     if (!q) return all;
     return all.filter((a) => a.name.toLowerCase().includes(q));
-  }, [search]);
+  }, [search, installed]);
 
   return createPortal(
     <AnimatePresence>
