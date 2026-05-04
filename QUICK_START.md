@@ -154,7 +154,42 @@ psql "$DATABASE_URL" -c "SELECT action, actor_type, created_at FROM kernel.audit
 
 Sem o worker rodando, eventos ficam `status='pending'` indefinidamente — nao bloqueia o shell, mas audit_log/embeddings nao avancam.
 
-## 8. Rodar gates de CI
+## 8. Testar Context Engine (Sprint 19)
+
+Sprint 19 ligou 3 camadas SCP: eventos brutos → context_records derivados → embeddings indexados → RAG no Copilot.
+
+Passos para validar end-to-end:
+
+1. Subir o pipeline (4 terminais da seção 7) + `pnpm dev:scp-worker`
+2. No shell, abrir Drive → upload de um `.txt` ou `.md` qualquer
+3. Aguardar ~2-4s (uma rodada do poller). No banco:
+
+```bash
+psql "$DATABASE_URL" -c "SELECT entity_type, record_type, version, data->>'name' AS preview FROM kernel.context_records ORDER BY updated_at DESC LIMIT 5;"
+psql "$DATABASE_URL" -c "SELECT source_type, source_id, chunk_index, length(chunk_text) FROM kernel.embeddings ORDER BY created_at DESC LIMIT 5;"
+```
+
+Esperado:
+
+- `context_records`: linha `file/summary` + `company/company_stats_files`
+- `embeddings`: chunks do arquivo (1+ rows com source_type='file')
+
+Se `embeddings` vazio: LLM indisponível. Configure `LITELLM_URL` + `LITELLM_MASTER_KEY` no `.env.local` ou rode `pnpm dev:llm` para subir o gateway local.
+
+Para testar **RAG no Copilot**:
+
+1. Abrir Configurações > Inteligência Artificial → configurar BYOK (qualquer provedor OpenAI-compatible)
+2. Abrir Aether AI Copilot
+3. Perguntar algo sobre o conteúdo do arquivo (ex: "qual o conteúdo do arquivo X?")
+4. A resposta vem com badge sutil **◆ N contextos da empresa** quando o RAG encontrou chunks similares
+
+Para inspecionar via UI:
+
+- Abrir app **Governança** → aba **◆ Context Engine**
+- Ver cards de resumo + tabela dos últimos 20 records
+- Click em "Snapshot" em qualquer linha → drawer mostra records + related_events + embedding_count
+
+## 9. Rodar gates de CI
 
 ```bash
 pnpm typecheck
@@ -168,7 +203,7 @@ set -a; source tooling/e2e/.env.local; set +a
 pnpm test:e2e:full        # ~22s, 32/32 esperado
 ```
 
-## 9. Stop / cleanup
+## 10. Stop / cleanup
 
 ```bash
 supabase stop --no-backup

@@ -5,6 +5,148 @@ Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
 
 ---
 
+# Sprint 19 — Context Engine: Enrichment, Derived Records, Snapshots + RAG
+
+Início: 2026-05-04
+Modelo: Claude Code (claude-opus-4-7, Sprint 19 N=1)
+Roadmap: `SPRINT_19_PROMPT.md` na raiz.
+
+## Origem
+
+Sprint 18 entregou o consumer pipeline em modo inline (audit + notif +
+embedding). Mas embeddings nunca chegaram a ser populados por falta de
+LLM, e a Camada 2 SCP (derived context records) só existia como conceito
+na Fundamentação 8.10. Sprint 19 fecha as 3 camadas:
+
+1. Camada 1 — eventos brutos no scp_outbox (Sprint 9)
+2. Camada 2 — derived context records em kernel.context_records (NOVO)
+3. Camada 3 — actionable insights via embeddings + RAG do Copilot (FUNCIONAL)
+
+## Histórico de milestones (Sprint 19)
+
+| Milestone | Descrição                                                       | Status | Commit  |
+| --------- | --------------------------------------------------------------- | ------ | ------- |
+| MX97      | Migration kernel.context_records (RLS + indices + UPSERT key)   | DONE   | 57d501b |
+| MX98      | EnrichmentConsumer — derived records de 4 event types           | DONE   | f75c31c |
+| MX99      | EmbeddingConsumer funcional (LiteLLM + Edge Fn fallback chain)  | DONE   | f8d220a |
+| MX100     | context-snapshot Edge Function (records + audit + embeddings)   | DONE   | 2901883 |
+| MX101     | Copilot RAG real com pgvector + indicador visual                | DONE   | 111ae76 |
+| MX102     | Context Engine UI no app Governanca (lista + drawer + snapshot) | DONE   | d50ffba |
+| MX103     | 8 unit tests EnrichmentConsumer + Sprint 19 docs                | DONE   | (este)  |
+
+## Arquitetura (3 camadas SCP funcionais)
+
+```
+                     CAMADA 1                CAMADA 2              CAMADA 3
+                  Eventos brutos          Derived Records       Actionable Insight
+                                                                      (RAG)
+
+[shell] ─► [Edge Fn scp-publish] ─► [scp_outbox]
+                                          │
+                            poll          ▼
+                                   [scp-worker poller]
+                                          │
+            ┌────────────┬────────────────┼────────────────────┐
+            ▼            ▼                ▼                    ▼
+        Audit      Notification     Enrichment            Embedding
+                                          │                    │
+                                          ▼                    ▼
+                                [context_records]      [embeddings]──┐
+                                                                      │ similarity
+[Copilot] ─► embed pergunta ─► search_embeddings RPC ─────────────────┘
+                                          │
+                                          ▼
+                              inject chunks no system prompt
+```
+
+## 4 consumers no scp-worker (ordem de dispatch)
+
+```
+new AuditConsumer()         // wildcard — registra tudo
+new NotificationConsumer()  // 4 events — notif idempotente
+new EnrichmentConsumer()    // NOVO Sprint 19 — gera context_records
+new EmbeddingConsumer()     // refactor Sprint 19 — embeda file + context_record
+```
+
+A ordem importa: Enrichment roda ANTES de Embedding, então quando o
+EmbeddingConsumer busca o context_record summary, ele já existe.
+
+## kernel.context_records (MX97)
+
+Nova tabela com UPSERT key `(company_id, entity_type, entity_id, record_type)` + version++ no conflict. RLS company-scoped + trigger updated_at + 2 indices (lookup principal + listagem cronológica).
+
+## EnrichmentConsumer (MX98) — 4 mappings
+
+| Event                         | record_type                 | data                                     |
+| ----------------------------- | --------------------------- | ---------------------------------------- |
+| platform.person.created       | person/summary              | full_name, email, created_by             |
+|                               | company/company_stats       | total_people (SELECT COUNT)              |
+| platform.file.uploaded        | file/summary                | name, mime_type, size_bytes, uploaded_by |
+|                               | company/company_stats_files | total_files                              |
+| platform.chat.channel_created | channel/summary             | name, kind, created_by                   |
+| agent.copilot.action_executed | agent/activity_count        | total*actions++ (incremental), last*\*   |
+
+R12: erros logados via jlog, nunca bloqueiam pipeline.
+
+## EmbeddingConsumer (MX99) — provider chain
+
+1. LiteLLM direto se LITELLM_URL env set (mais rápido)
+2. Edge Function /functions/v1/embed-text (fallback)
+3. Sem provedor: skip silencioso (R11 — nunca polui embeddings com zeros)
+
+Listen:
+
+- `platform.file.uploaded` (text/plain, text/markdown, application/pdf) → chunk(800/100) + embed via Storage REST + UPSERT em embeddings com source_type='file'
+- `platform.person.created`, `chat.channel_created`, `agent.copilot.action_executed` → busca o context_record summary criado pelo EnrichmentConsumer (rodou antes), serializa data como texto natural ("Pessoa: João — email: ..."), embed, UPSERT com source_type='context_record'
+
+Migration extra (20260504000004): amplia CHECK constraint para incluir `'context_record'` em `embeddings.source_type`.
+
+KL-8 (PDF binário sem extrator): preservada.
+
+## Edge Function context-snapshot (MX100)
+
+POST `/functions/v1/context-snapshot` `{ entity_type, entity_id }` retorna `records` + `related_events` (últimos 10 do audit_log) + `embedding_count`. Best-effort: emite SCP `context.snapshot.ready` no outbox (já em KNOWN_EVENT_TYPES de scp-publish desde Sprint 9).
+
+## Copilot RAG (MX101)
+
+Pipeline RAG já existia desde MX16 (cego). Sprint 19 torna **visível**:
+
+- `CopilotMessage.ragChunkCount?: number` armazena quantos chunks foram usados
+- Render mostra badge sutil "◆ N contextos da empresa" com tooltip
+- Fallback inalterado: sem embed, sem chunks, sem badge — só prompt nu
+
+Stack RAG: `fetchQueryEmbedding` → `/functions/v1/embed-text` → `SupabaseBrowserVectorDriver.search` → RPC `kernel.search_embeddings` (cosine: `1 - (embedding <=> query)`) → top-5 injetado.
+
+## UI Context Engine (MX102) no app Governanca
+
+Nova aba `◆ Context Engine`:
+
+- Cards de resumo: count total de embeddings + count por entity_type
+- Tabela últimos 20 context_records (entity, record_type, version, updated_at)
+- Click em row → drawer com data JSON pretty-print
+- Botão "Snapshot" inline → POST /functions/v1/context-snapshot → mostra records, related_events (top 5), embedding_count
+
+## Testes (MX103)
+
+32 unit tests no scp-worker (8 por consumer):
+
+- `audit-consumer.test.ts` (8): wildcard matcher, mapping de actor, extractResource, R12 swallow
+- `notification-consumer.test.ts` (8): 4 event types, idempotência, payload incompleto, fallback tenant_id
+- `enrichment-consumer.test.ts` (8 NOVO): matches, person+stats, file+stats, channel, agent action increment+cold start, payload incompleto, R12
+- `embedding-consumer.test.ts` (8): matches expandido para enrichment events, skip por env/mime/service_role/payload, happy path com chunking + UPSERT, P14 503, Storage 404
+
+`pnpm test` (turbo): 18/18 tasks success.
+`pnpm test:e2e:full`: 33 passed, 1 skipped (governanca pre-existente).
+
+## Limitações conhecidas Sprint 19
+
+- **EmbeddingConsumer single-tenant LiteLLM**: usa LITELLM_URL global do worker, não BYOK por-empresa. F2+ pode adicionar lookup do user_preferences.llm_config do owner antes do fallback Edge Function.
+- **Copilot RAG não filtra por relevance score**: top-5 cosine sempre, mesmo se score < 0.5. Para perguntas off-topic isso introduz ruído no prompt.
+- **context-snapshot não cacheia**: cada chamada recompõe os 3 queries do banco.
+- **KL-8 (PDF binário)** segue não resolvida — texto cru e markdown só.
+
+---
+
 # Sprint 18 — SCP Consumer Pipeline (Outbox Poller + Inline Consumers)
 
 Início: 2026-05-03
