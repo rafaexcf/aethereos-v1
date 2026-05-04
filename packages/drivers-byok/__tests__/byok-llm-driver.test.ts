@@ -45,7 +45,7 @@ describe("BYOKLLMDriver — format: openai", () => {
     const res = await driver.complete([{ role: "user", content: "hello" }]);
 
     expect(res.ok).toBe(true);
-    const call = fetchMock.mock.calls[0]!;
+    const call = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(call[0]).toBe("https://api.example.com/v1/chat/completions");
     const init = call[1] as RequestInit;
     expect(init.method).toBe("POST");
@@ -98,7 +98,7 @@ describe("BYOKLLMDriver — format: openai", () => {
     );
     const res = await driver.embed("hello");
     expect(res.ok).toBe(true);
-    const init = fetchMock.mock.calls[0]![1] as RequestInit;
+    const init = (fetchMock.mock.calls[0] as [string, RequestInit])[1];
     const body = JSON.parse(init.body as string);
     expect(body.input).toBe("hello");
     if (res.ok) {
@@ -125,7 +125,7 @@ describe("BYOKLLMDriver — format: openai", () => {
     const driver = new BYOKLLMDriver(mkConfig());
     const res = await driver.ping();
     expect(res.ok).toBe(true);
-    expect(fetchMock.mock.calls[0]![0]).toBe(
+    expect((fetchMock.mock.calls[0] as [string])[0]).toBe(
       "https://api.example.com/v1/models",
     );
   });
@@ -160,7 +160,7 @@ describe("BYOKLLMDriver — format: anthropic", () => {
       { role: "user", content: "oi" },
     ]);
     expect(res.ok).toBe(true);
-    const call = fetchMock.mock.calls[0]!;
+    const call = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(call[0]).toBe("https://api.anthropic.com/v1/messages");
     const init = call[1] as RequestInit;
     const headers = init.headers as Record<string, string>;
@@ -216,7 +216,7 @@ describe("BYOKLLMDriver — format: google", () => {
       { role: "user", content: "again" },
     ]);
     expect(res.ok).toBe(true);
-    const call = fetchMock.mock.calls[0]!;
+    const call = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(call[0]).toContain(
       "/models/gemini-2.0-flash:generateContent?key=AIza-test",
     );
