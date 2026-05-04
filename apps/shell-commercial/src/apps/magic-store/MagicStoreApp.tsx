@@ -693,18 +693,46 @@ function InstalledBadge() {
 }
 
 function InstallButton({
+  appId,
   installed,
   pending,
   onInstall,
   onUninstall,
   size = "md",
 }: {
+  appId?: string;
   installed: boolean;
   pending: boolean;
   onInstall: () => void;
   onUninstall: () => void;
   size?: "md" | "lg";
 }) {
+  // Sprint 16 MX82: apps protegidos (alwaysEnabled OR PROTECTED_MODULES)
+  // mostram badge "Incluído no OS" em vez de botao desinstalar.
+  // Detecta protecao automaticamente via appId (se fornecido).
+  const protectedApp =
+    appId !== undefined && installed && isProtectedModule(appId);
+  if (protectedApp) {
+    return (
+      <span
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          background: "rgba(34,197,94,0.10)",
+          border: "1px solid rgba(34,197,94,0.22)",
+          borderRadius: 8,
+          padding: size === "lg" ? "8px 14px" : "6px 12px",
+          fontSize: size === "lg" ? 12 : 11,
+          fontWeight: 500,
+          color: "rgb(134, 239, 172)",
+          cursor: "default",
+        }}
+      >
+        Incluído no OS
+      </span>
+    );
+  }
   if (pending) {
     return (
       <button
@@ -1156,6 +1184,9 @@ function HeroBanner({
             ) : null}
             {app.installable && app.status !== "coming_soon" ? (
               <InstallButton
+                appId={
+                  app.source.type === "internal" ? app.source.target : app.id
+                }
                 installed={installed}
                 pending={pending}
                 onInstall={onInstall}
@@ -2504,6 +2535,9 @@ function AppDetailView({
               )}
               {app.installable && app.status !== "coming_soon" ? (
                 <InstallButton
+                  appId={
+                    app.source.type === "internal" ? app.source.target : app.id
+                  }
                   installed={installed}
                   pending={pending}
                   onInstall={onInstall}
