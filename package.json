@@ -79,6 +79,15 @@
         "react": "19",
         "react-dom": "19"
       }
+    },
+    "overrides": {
+      "happy-dom": ">=20.8.9",
+      "serialize-javascript": ">=7.0.5",
+      "drizzle-orm": ">=0.45.2",
+      "vite@<6.4.2": ">=6.4.2",
+      "uuid@<14.0.0": ">=14.0.0",
+      "postcss@<8.5.10": ">=8.5.10",
+      "esbuild@<=0.24.2": ">=0.25.0"
     }
   }
 }
