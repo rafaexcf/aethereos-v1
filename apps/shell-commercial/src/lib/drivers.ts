@@ -10,35 +10,46 @@ import {
   DegradedObservabilityDriver,
 } from "@aethereos/kernel";
 import { ScpPublisherBrowser } from "./scp-publisher-browser";
+import { LLMDriverSwap } from "./llm-driver-swap";
 
 export interface CloudDrivers {
   auth: SupabaseBrowserAuthDriver;
   data: SupabaseBrowserDataDriver;
-  llm: LLMDriver;
+  llm: LLMDriverSwap;
   obs: ObservabilityDriver;
   scp: ScpPublisherBrowser;
 }
 
-export function buildDrivers(): CloudDrivers {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+/**
+ * Cria a LiteLLM-backed wrappada com withDegradedLLM. Default fallback
+ * quando usuario nao configurou BYOK.
+ */
+export function buildLiteLLMFallback(): LLMDriver {
   const litellmUrl =
     import.meta.env["VITE_LITELLM_URL"] ?? "http://localhost:4000";
   const litellmKey = import.meta.env["VITE_LITELLM_KEY"] ?? "sk-dev";
-
-  const primaryLLM = new LiteLLMDriver({
+  const litellm = new LiteLLMDriver({
     baseUrl: litellmUrl,
     masterKey: litellmKey,
     defaultModel: "claude-3-5-sonnet",
     timeoutMs: 30_000,
   });
+  return withDegradedLLM(litellm);
+}
+
+export function buildDrivers(): CloudDrivers {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   const auth = new SupabaseBrowserAuthDriver({ supabaseUrl, supabaseAnonKey });
 
   return {
     auth,
     data: new SupabaseBrowserDataDriver({ supabaseUrl, supabaseAnonKey }),
-    llm: withDegradedLLM(primaryLLM),
+    // llm e LLMDriverSwap — backing pode mudar em runtime via
+    // useLLMConfigLifecycle quando user altera config nas Configuracoes.
+    // Default: LiteLLM (gateway plataforma) wrappado com degraded fallback.
+    llm: new LLMDriverSwap(buildLiteLLMFallback()),
     obs: withDegradedObservability(new DegradedObservabilityDriver()),
     scp: new ScpPublisherBrowser(supabaseUrl, auth),
   };

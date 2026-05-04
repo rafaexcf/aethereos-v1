@@ -22,6 +22,7 @@ import { useIdleLock } from "../../hooks/useIdleLock";
 import { useAutomationEngine } from "../../apps/automacoes/useAutomationEngine";
 import { useWorkspacePersistence } from "../../hooks/useWorkspacePersistence";
 import { useUserPreferencesLifecycle } from "../../hooks/useUserPreferencesLifecycle";
+import { useLLMConfigLifecycle } from "../../hooks/useLLMConfigLifecycle";
 import { useUserPreference } from "../../hooks/useUserPreference";
 
 const DEFAULT_IDLE_LOCK_MINUTES = 15;
@@ -258,6 +259,7 @@ export function OSDesktop() {
   useAutomationEngine();
   useWorkspacePersistence();
   useUserPreferencesLifecycle();
+  useLLMConfigLifecycle();
   const lockTimeoutPref = useUserPreference<number>(
     "lock_timeout_minutes",
     DEFAULT_IDLE_LOCK_MINUTES,
