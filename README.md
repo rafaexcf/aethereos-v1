@@ -14,39 +14,37 @@ pnpm dev
 
 Comece pela ordem:
 
-1. **[CLAUDE.md](./CLAUDE.md)** — âncora operacional. Lido por humanos e agentes.
-2. **[docs/AETHEREOS_FUNDAMENTACAO_v4_3.md](./docs/AETHEREOS_FUNDAMENTACAO_v4_3.md)** — constituição.
-3. **[docs/ECOSYSTEM_README.md](./docs/ECOSYSTEM_README.md)** — mapa do corpus documental.
-4. **[docs/adr/](./docs/adr/)** — registros de decisão arquitetural.
+1. **[QUICK_START.md](./QUICK_START.md)** — setup local em 10 passos
+2. **[ARCHITECTURE_OVERVIEW.md](./ARCHITECTURE_OVERVIEW.md)** — mapa de packages, apps, pipeline SCP, driver model, RLS
+3. **[CLAUDE.md](./CLAUDE.md)** — âncora operacional para humanos e agentes
+4. **[docs/AETHEREOS_FUNDAMENTACAO_v4_3.md](./docs/AETHEREOS_FUNDAMENTACAO_v4_3.md)** — constituição
+5. **[docs/ECOSYSTEM_README.md](./docs/ECOSYSTEM_README.md)** — mapa do corpus documental
+6. **[docs/adr/](./docs/adr/)** — registros de decisão arquitetural
+
+Auditorias pré-staging (Sprint 20):
+
+- **[SECURITY_AUDIT.md](./SECURITY_AUDIT.md)** — RLS 68/68, buckets, edge functions
+- **[CODE_QUALITY_AUDIT.md](./CODE_QUALITY_AUDIT.md)** — TS strict, deps, drivers, testes
+- **[KNOWN_LIMITATIONS.md](./KNOWN_LIMITATIONS.md)** — 7 KLs com status taxonomia
 
 ## Estrutura
 
 ```
 aethereos/
-├── apps/                          # aplicações executáveis
+├── apps/                          # 5 aplicações executáveis
 │   ├── shell-base/                # Camada 0: shell open source local-first (Vite + React)
 │   ├── shell-commercial/          # Camada 1: shell proprietário multi-tenant (Vite + React)
-│   ├── comercio-digital/          # SaaS standalone (Next.js 15)
-│   ├── logitix/                   # SaaS standalone (Next.js 15)
-│   ├── kwix/                      # SaaS standalone (Next.js 15)
-│   ├── autergon/                  # SaaS standalone (Next.js 15)
-│   └── sites/                     # sites institucionais (Astro)
-│       ├── aethereos-org/
-│       ├── aethereos-io/
-│       └── b2baios-com-br/
-├── packages/                      # pacotes compartilhados
-│   ├── kernel/                    # núcleo: SCP, VFS, RLS helpers, permission engine
-│   ├── drivers/                   # interfaces de Driver + implementações Cloud/Local
-│   ├── ui-shell/                  # componentes do shell (dock, janelas, abas, mesa)
-│   ├── scp-registry/              # schemas Zod de eventos
-│   ├── ai/                        # cliente LiteLLM, RAG, instrumentação Langfuse
-│   ├── config-ts/                 # tsconfig.json compartilhados
-│   ├── config-eslint/             # configurações ESLint compartilhadas
-│   └── design-system/             # primitives visuais
-├── tooling/                       # codemods, scripts, ADR helpers
-├── docs/                          # corpus documental (Fundamentação, ADRs, runbooks)
-└── infra/                         # Pulumi TypeScript (IaC)
+│   ├── comercio-digital/          # Camada 2: SaaS standalone (Next.js 15) — primeira vertical
+│   ├── scp-worker/                # Server worker — outbox poller + 4 consumers inline
+│   └── sites/                     # sites institucionais (Astro, placeholder F2)
+├── packages/                      # 14 pacotes compartilhados (drivers, kernel, scp-registry, ui-shell, configs)
+├── tooling/                       # 3 tooling: e2e (Playwright), seed, smoke
+├── supabase/                      # 73 migrations + 11 Edge Functions
+├── infra/local/                   # docker-compose.dev.yml (NATS, LiteLLM, OTel...)
+└── docs/                          # ADRs, runbooks, Fundamentação
 ```
+
+Mapa detalhado em [`ARCHITECTURE_OVERVIEW.md`](./ARCHITECTURE_OVERVIEW.md).
 
 ## Comandos
 
@@ -79,4 +77,4 @@ Veja:
 
 ## Status
 
-Em bootstrap ativo. Sprint 2 (Camada 0) concluído. Ver `SPRINT_LOG.md` e `docs/adr/` para histórico de decisões.
+Em bootstrap ativo, **20 sprints** concluídos. F1 pronto para staging (Sprint 21). Ver `SPRINT_LOG.md` e `docs/adr/` para histórico de decisões.
