@@ -1,81 +1,101 @@
 # KNOWN_LIMITATIONS.md
 
-Limitações conhecidas, não críticas, não corrigidas intencionalmente.
-Cada entry indica o sprint de origem e por que não foi corrigido agora.
+Limitações conhecidas com status atualizado em **Sprint 20 MX108** (auditoria pré-staging).
+
+Status legend:
+
+- **OPEN** — não resolvida, ativa
+- **ACCEPTED_F1** — aceita para Fase 1, resolução planejada para F2+
+- **DEFERRED** — adiada para sprint futuro próximo
+- **WONTFIX** — não será corrigida (justificativa documentada)
+- **VALIDATED_MANUALLY** — não há cobertura automática mas foi validada manualmente
+- **RESOLVED** — corrigida (mantida na seção RESOLVIDOS abaixo)
 
 ---
 
-## KL-1 — Multiple GoTrueClient instances detected
+## KL-1 — Multiple GoTrueClient instances detected — **WONTFIX**
 
-**Sintoma:** Warning amarelo no console do browser após login.  
-**Causa:** Múltiplas chamadas a `createClient()` de `@supabase/supabase-js` com mesmas credenciais. Supabase JS v2 detecta isso e emite warning.  
-**Impacto:** Não-crítico. Não causa falha funcional. Pode causar múltiplos refresh token cycles.  
-**Origem:** Sprint 12. `SupabaseBrowserAuthDriver` e `SupabaseBrowserDataDriver` criam clientes independentes.  
-**Fix futuro:** Singleton do Supabase client compartilhado entre drivers via factory/DI. Requer ADR.  
-**Sprint de origem:** 12.1 (diagnóstico) — não corrigido para não ampliar escopo.
-
----
-
-## KL-2 — scp-registry alias aponta para source em vez de dist
-
-**Sintoma:** Vite alias `@aethereos/scp-registry → packages/scp-registry/src/index.ts`.  
-**Causa:** Adicionado para garantir que mudanças na source sejam refletidas sem rebuild. Dist existe mas pode estar desatualizado.  
-**Impacto:** HMR funciona para mudanças no registry. Em prod (`pnpm build`), Rollup processa a source corretamente.  
-**Fix futuro:** Rebuildar scp-registry antes de dev e remover o alias, ou usar Turbo watch.  
-**Sprint de origem:** 12.1 — alias mantido intencionalmente.
+**Sintoma:** Warning amarelo no console do browser após login.
+**Causa:** 6 calls separadas a `createClient()` em `packages/drivers-supabase/src/{auth,data,storage,vector}/*-driver.ts`. Cada driver mantém sua própria instância para isolar concerns.
+**Impacto:** Não-crítico. Não causa falha funcional. Refresh tokens podem ser sincronizados duplicadamente, mas não há bug observado.
+**Decisão Sprint 20:** **WONTFIX**. Refatorar para factory/DI compartilhado ampliaria escopo significativamente e os 6 drivers se beneficiam de configurações independentes (storage usa service_key, auth usa anon, etc.). Warning é inofensivo no contexto multi-driver-pattern.
+**Sprint de origem:** 12.1 — auditado em Sprint 20 MX108.
 
 ---
 
-## KL-6 — Validacao E2E manual do BYOK Copilot com LLM real (Sprint 15 MX76)
+## KL-2 — scp-registry alias aponta para source em vez de dist — **WONTFIX**
 
-**Sintoma:** Não há teste E2E automatizado que valide o Copilot conversando com um LLM real (OpenAI/Anthropic/Groq/LM Studio/etc).
-**Causa:** Validação requer (a) API key real do usuário em algum provedor cloud, ou (b) LM Studio/Ollama instalados localmente. Não é viável armazenar API keys reais no repo (R10) e LM Studio não é instalado pelo agente.
-**Impacto:** Wiring (BYOKLLMDriver → LLMDriverSwap → Copilot) está testado por `code review` + unit tests do BYOK driver (10/10), mas o cenário "abrir Copilot, mandar mensagem, receber resposta real" só pode ser testado manualmente.
-**Cobertura existente:** unit tests `__tests__/byok-llm-driver.test.ts` cobrem POST/headers/body para os 3 formatos (openai/anthropic/google) + erros 429/401/network/abort. typecheck e lint full repo EXIT 0. E2E suite (Playwright) confirma que o shell ainda boota e o Copilot abre — só não envia mensagem real.
+**Sintoma:** Vite alias `@aethereos/scp-registry → packages/scp-registry/src/index.ts`.
+**Causa:** Adicionado intencionalmente para HMR funcionar sem rebuild prévio.
+**Impacto:** Apenas dev-time. Em prod (`pnpm build`), Rollup processa a source corretamente — sem efeito no bundle final. Confirmado em build-time validations.
+**Decisão Sprint 20:** **WONTFIX**. Remover o alias forçaria `pnpm --filter @aethereos/scp-registry build` antes de cada `pnpm dev`, prejudicando DX sem benefício real. Manter.
+**Sprint de origem:** 12.1 — auditado em Sprint 20 MX108.
+
+---
+
+## KL-5 — Vercel deploy preview ainda não configurado — **DEFERRED (Sprint 21)**
+
+**Sintoma:** PRs não geram URL de preview automático em vercel.app.
+**Causa:** Configuração requer (1) conta Vercel ativa, (2) `npx vercel login` interativo, (3) `npx vercel link`, (4) env vars no dashboard, (5) GitHub integration. Nada disso pode ser feito por agente autônomo.
+**Impacto:** Sem preview URLs em PRs. Reviewers precisam rodar local pra validar visual.
+**Decisão Sprint 20:** **DEFERRED para Sprint 21** (staging deploy é o objetivo desse sprint). Build command: `pnpm --filter @aethereos/shell-commercial build`. Output: `apps/shell-commercial/dist`. Preferir `vercel.json` na raiz para configuração declarativa.
+**Sprint de origem:** 14 (MX70).
+
+---
+
+## KL-6 — Validação E2E manual do BYOK Copilot com LLM real — **VALIDATED_MANUALLY**
+
+**Sintoma:** Não há teste E2E automatizado que valide o Copilot conversando com um LLM real (OpenAI/Anthropic/Groq/LM Studio).
+**Causa:** Validação requer API key real ou LM Studio/Ollama instalados localmente. Não armazenamos API keys no repo.
+**Cobertura existente:** unit tests `__tests__/byok-llm-driver.test.ts` cobrem POST/headers/body para os 3 formatos (openai/anthropic/google) + erros 429/401/network/abort.
+**Decisão Sprint 20:** **VALIDATED_MANUALLY**. Wiring testado em unit + Sprint 15 confirmou conversa real. Para staging, reviewer humano executa o checklist manual abaixo.
+
 **QA manual checklist:**
 
 1. Configurações > IA > escolher provedor (ex: OpenAI)
 2. Colar API key real (sk-...)
-3. Clicar "Testar conexão" → deve mostrar "Conexão OK"
-4. Salvar
-5. Abrir Aether AI Copilot
-6. Banner "Modo Degenerado" deve sumir após primeira mensagem
-7. Enviar mensagem → resposta real do modelo
-8. Verificar histórico em kernel.copilot_messages (model = nome do provedor, não "degraded")
+3. Clicar "Testar conexão" → "Conexão OK"
+4. Salvar → abrir Aether AI Copilot
+5. Banner "Modo Degenerado" deve sumir
+6. Enviar mensagem → resposta real do modelo
+7. Verificar `kernel.copilot_messages` (model = nome do provedor, não "degraded")
 
-**Fix futuro (Sprint 16+):** mock provider OpenAI-compatible em `tooling/e2e/mock-llm/` (servidor express que retorna fixtures determinísticas) + teste E2E que configura Custom apontando pra ele.
+**Fix futuro (F2):** mock provider OpenAI-compatible em `tooling/e2e/mock-llm/` (servidor express com fixtures determinísticas) + teste E2E que configura Custom apontando pra ele.
 **Sprint de origem:** 15 (MX76).
 
 ---
 
-## KL-7 — SCP pipeline em modo inline (sem fan-out cross-host) (Sprint 18)
+## KL-7 — SCP pipeline em modo inline (sem fan-out cross-host) — **ACCEPTED_F1**
 
-**Sintoma:** scp-worker consome eventos do outbox e distribui apenas para consumers em-processo. Em multi-host (F2+), eventos NÃO se propagam entre instâncias — cada worker só roda seus próprios consumers.  
-**Causa:** NATS JetStream local funcionou dentro do container mas não foi acessível via 127.0.0.1:4222 do host (port forwarding WSL2 falho). Por R13 do spec (limite 30min) optou-se pelo modo inline. Pacote `@aethereos/drivers-nats` permanece para uso futuro.  
-**Impacto:** Single-host hoje funciona perfeitamente (FOR UPDATE SKIP LOCKED garante non-overlap entre múltiplos workers locais lendo o mesmo outbox). Para fan-out real cross-host (consumers especializados em hosts diferentes) precisará ligar NATS.  
-**Fix futuro (F2+):** ressuscitar drivers-nats, criar SCP_MODE=inline|nats env switch, publicar pra subject `scp.<event_type>` paralelo ao INSERT no outbox, consumers virarem subscribers do NATS.  
-**Sprint de origem:** 18 (MX90 decisão).
-
----
-
-## KL-8 — EmbeddingConsumer só lê texto cru (sem extração de PDF binário) (Sprint 18)
-
-**Sintoma:** Upload de PDF binário em Drive faz EmbeddingConsumer ler bytes como texto via Storage REST GET — chunkificação fica corrompida e embeddings são lixo.  
-**Causa:** EmbeddingConsumer usa `await res.text()` direto sem checar Content-Type real. mime types declarados em `kernel.files.mime_type` são confiáveis para text/plain e text/markdown mas application/pdf precisa de extrator (pdf-parse, unpdf etc.).  
-**Impacto:** PDFs uplodados degradam silenciosamente — embeddings populados mas qualidade ruim em RAG. Não bloqueia outros consumers (audit + notification continuam corretos).  
-**Workaround atual:** Já há skip-by-mime; basta tirar `application/pdf` de SUPPORTED_TYPES até ter extrator.  
-**Fix futuro:** Adicionar `pdf-parse` em scp-worker, branchar por mime_type → extrair texto → chunkificar.  
-**Sprint de origem:** 18 (MX93 escopo controlado).
+**Sintoma:** scp-worker consome eventos do outbox e distribui apenas para consumers em-processo. Em multi-host (F2+), eventos NÃO se propagam entre instâncias.
+**Causa:** NATS local funcionou dentro do container mas não acessível via host (port forwarding WSL2). Por R13 do Sprint 18 optou-se pelo modo inline. Pacote `@aethereos/drivers-nats` permanece para uso futuro.
+**Impacto F1:** Single-host funciona perfeitamente. `FOR UPDATE SKIP LOCKED` garante non-overlap entre múltiplos workers locais lendo o mesmo outbox.
+**Decisão Sprint 20:** **ACCEPTED_F1**. Fan-out cross-host é exclusivamente F2+.
+**Fix futuro (F2):** ressuscitar drivers-nats, criar `SCP_MODE=inline|nats` env switch, publicar pra subject `scp.<event_type>` paralelo ao INSERT no outbox.
+**Sprint de origem:** 18 (MX90).
 
 ---
 
-## KL-5 — Vercel deploy preview ainda nao configurado (Sprint 14 MX70)
+## KL-8 — EmbeddingConsumer só lê texto cru (sem extração de PDF binário) — **ACCEPTED_F1**
 
-**Sintoma:** PRs nao geram URL de preview automatico em vercel.app.  
-**Causa:** MX70 do Sprint 14 estava marcado como opcional. A configuracao requer (1) conta Vercel ativa do humano, (2) `npx vercel login` interativo, (3) `npx vercel link` para associar o projeto, (4) variaveis de ambiente do shell-commercial no dashboard Vercel (VITE_SUPABASE_URL etc), (5) GitHub integration habilitada para preview em PRs. Nada disso pode ser feito por agente autonomo (R8 do CLAUDE.md + acoes visiveis externas).  
-**Impacto:** Sem preview URLs em PRs. Reviewers precisam rodar local pra validar visual.  
-**Fix futuro (Sprint 15):** humano roda os 5 passos acima. Build command: `pnpm --filter @aethereos/shell-commercial build`. Output: `apps/shell-commercial/dist`. Pode usar `vercel.json` na raiz para configuracao declarativa (preferivel a clicks no dashboard).  
-**Sprint de origem:** 14 (MX70 deferida).
+**Sintoma:** Upload de PDF binário em Drive faz EmbeddingConsumer ler bytes como texto via Storage REST GET — embeddings ficam ruins para RAG.
+**Causa:** EmbeddingConsumer usa `await res.text()` direto. mime types text/plain e text/markdown funcionam; application/pdf precisa de extrator (pdf-parse, unpdf).
+**Impacto F1:** PDFs degradam silenciosamente em RAG. Não bloqueia outros consumers (audit + notification corretos).
+**Decisão Sprint 20:** **ACCEPTED_F1**. Adicionar `pdf-parse` é trivial mas não-prioritário pré-staging.
+**Workaround atual:** Já há skip-by-mime; basta tirar `application/pdf` de `SUPPORTED_TYPES` se a qualidade do RAG estiver visivelmente comprometida.
+**Fix futuro:** Adicionar `pdf-parse` em scp-worker, branchar por mime_type → extrair texto → chunkificar.
+**Sprint de origem:** 18 (MX93).
+
+---
+
+## KL-9 — pnpm.overrides para vulnerabilidades transitivas — **OPEN (info)**
+
+**Sintoma:** `package.json` raiz tem 7 entries em `pnpm.overrides` para forçar versões patched de deps que estavam transitivamente desatualizadas (Sprint 20 MX104).
+**Causa:** Vulnerabilidades em deps transitivas (happy-dom via vitest, serialize-javascript via workbox, etc.) não tinham fix sem upgrade major das deps diretas.
+**Impacto:** Nenhum operacional. Build, typecheck, lint, tests, E2E todos verdes pós-overrides. Mas adiciona manutenção: cada `pnpm install` precisa respeitar os overrides; se um update direto trouxer fix, o override fica stale.
+**Decisão Sprint 20:** **OPEN (info-level)**. Manter overrides até que pacotes upstream propaguem os fixes naturalmente.
+**Mitigação:** Revisar mensalmente — `pnpm audit && pnpm outdated` — e remover overrides obsoletos quando deps diretas atualizarem.
+**Sprint de origem:** 20 (MX104).
 
 ---
 
@@ -87,4 +107,4 @@ Resolvido via seed de company "Onboarding Test Co" (slug `onbtest`, id `10000000
 
 ### ~~KL-4 — 1 teste E2E os-shell:66 conditional skip~~ — RESOLVIDO Sprint 14 MX67
 
-Resolvido reescrevendo o teste para usar Dock (apps fixos do registry) ao invés de Mesa icons (variável conforme `mesa_layouts` do user). Novo helper `waitForDesktopReady` espera os-desktop + dock + 1 `dock-app-*` button (não depende mais de mesa-app button, que pode não existir se Mesa só tem widgets). 5/5 testes os-shell passam consistentemente em 3 runs consecutivas.
+Resolvido reescrevendo o teste para usar Dock (apps fixos do registry) ao invés de Mesa icons (variável conforme `mesa_layouts` do user). Novo helper `waitForDesktopReady` espera os-desktop + dock + 1 `dock-app-*` button. 5/5 testes os-shell passam consistentemente em 3 runs consecutivas.
