@@ -44,7 +44,11 @@ import {
 } from "../../data/magic-store-catalog";
 import { useDrivers } from "../../lib/drivers-context";
 import { useSessionStore } from "../../stores/session";
-import { useWindowsStore } from "../../stores/windows";
+import { useOSStore } from "../../stores/osStore";
+import {
+  useInstalledModulesStore,
+  isProtectedModule,
+} from "../../stores/installedModulesStore";
 import { getApp } from "../registry";
 
 /* ─── Types & Constants ───────────────────────────────────────────────────── */
@@ -441,154 +445,6 @@ const DISTROS_TEASER: TeaserItem[] = [
     category: "b2b",
   },
 ];
-
-/* ─── Installed modules persistence (kernel.company_modules) ──────────────── */
-
-interface CompanyModuleRow {
-  id: string;
-  module: string;
-}
-
-interface InstalledModulesState {
-  ready: boolean;
-  installed: ReadonlySet<string>;
-  pending: ReadonlySet<string>;
-  install: (moduleId: string) => Promise<void>;
-  uninstall: (moduleId: string) => Promise<void>;
-  error: string | null;
-}
-
-function useInstalledModules(): InstalledModulesState {
-  const drivers = useDrivers();
-  const userId = useSessionStore((s) => s.userId);
-  const activeCompanyId = useSessionStore((s) => s.activeCompanyId);
-  const [installed, setInstalled] = useState<ReadonlySet<string>>(
-    () => new Set<string>(),
-  );
-  const [pending, setPending] = useState<ReadonlySet<string>>(
-    () => new Set<string>(),
-  );
-  const [ready, setReady] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (drivers === null || userId === null || activeCompanyId === null) {
-      setReady(false);
-      return;
-    }
-    let cancelled = false;
-    const cid = activeCompanyId;
-    const load = async () => {
-      try {
-        const res = (await drivers.data
-          .from("company_modules")
-          .select("id,module")
-          .eq("company_id", cid)) as unknown as {
-          data: CompanyModuleRow[] | null;
-          error: { message: string } | null;
-        };
-        if (cancelled) return;
-        if (res.error !== null) {
-          setError(res.error.message);
-          setReady(true);
-          return;
-        }
-        const ids = new Set<string>((res.data ?? []).map((r) => r.module));
-        setInstalled(ids);
-        setError(null);
-        setReady(true);
-      } catch (e) {
-        if (cancelled) return;
-        setError(e instanceof Error ? e.message : "Erro ao carregar módulos");
-        setReady(true);
-      }
-    };
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [drivers, userId, activeCompanyId]);
-
-  const install = useCallback(
-    async (moduleId: string) => {
-      if (drivers === null || activeCompanyId === null) return;
-      if (installed.has(moduleId)) return;
-      setPending((p) => {
-        const next = new Set(p);
-        next.add(moduleId);
-        return next;
-      });
-      try {
-        const res = (await drivers.data.from("company_modules").insert({
-          company_id: activeCompanyId,
-          module: moduleId,
-          status: "active",
-        })) as unknown as { error: { message: string } | null };
-        if (res.error !== null) {
-          setError(res.error.message);
-          return;
-        }
-        setInstalled((prev) => {
-          const next = new Set(prev);
-          next.add(moduleId);
-          return next;
-        });
-        setError(null);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Erro ao instalar");
-      } finally {
-        setPending((p) => {
-          const next = new Set(p);
-          next.delete(moduleId);
-          return next;
-        });
-      }
-    },
-    [drivers, activeCompanyId, installed],
-  );
-
-  const uninstall = useCallback(
-    async (moduleId: string) => {
-      if (drivers === null || activeCompanyId === null) return;
-      if (!installed.has(moduleId)) return;
-      setPending((p) => {
-        const next = new Set(p);
-        next.add(moduleId);
-        return next;
-      });
-      try {
-        const res = (await drivers.data
-          .from("company_modules")
-          .delete()
-          .eq("company_id", activeCompanyId)
-          .eq("module", moduleId)) as unknown as {
-          error: { message: string } | null;
-        };
-        if (res.error !== null) {
-          setError(res.error.message);
-          return;
-        }
-        setInstalled((prev) => {
-          const next = new Set(prev);
-          next.delete(moduleId);
-          return next;
-        });
-        setError(null);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Erro ao desinstalar");
-      } finally {
-        setPending((p) => {
-          const next = new Set(p);
-          next.delete(moduleId);
-          return next;
-        });
-      }
-    },
-    [drivers, activeCompanyId, installed],
-  );
-
-  return { ready, installed, pending, install, uninstall, error };
-}
 
 /* ─── Sparkles Text ───────────────────────────────────────────────────────── */
 
@@ -2848,14 +2704,67 @@ export function MagicStoreApp() {
   const [sidebarFilter, setSidebarFilter] = useState("all");
   const [selectedApp, setSelectedApp] = useState<CatalogApp | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const {
-    installed,
-    pending,
-    install,
-    uninstall,
-    error: installError,
-  } = useInstalledModules();
-  const openWindow = useWindowsStore((s) => s.openApp);
+
+  // Sprint 16 MX80: store global em vez de hook local — install/uninstall
+  // refletem em tempo real no Dock/Mesa/Launcher.
+  const drivers = useDrivers();
+  const userId = useSessionStore((s) => s.userId);
+  const activeCompanyId = useSessionStore((s) => s.activeCompanyId);
+  const installed = useInstalledModulesStore((s) => s.installed);
+  const pending = useInstalledModulesStore((s) => s.pending);
+  const installError = useInstalledModulesStore((s) => s.error);
+  const installModule = useInstalledModulesStore((s) => s.installModule);
+  const uninstallModule = useInstalledModulesStore((s) => s.uninstallModule);
+
+  const install = useCallback(
+    async (moduleId: string) => {
+      if (drivers === null || activeCompanyId === null || userId === null)
+        return;
+      await installModule(drivers, activeCompanyId, moduleId);
+      // Sprint 16: emite SCP event apos install bem-sucedido
+      const nowInstalled = useInstalledModulesStore
+        .getState()
+        .installed.has(moduleId);
+      if (nowInstalled) {
+        void drivers.scp.publishEvent(
+          "platform.module.installed",
+          {
+            company_id: activeCompanyId,
+            module: moduleId,
+            installed_by: userId,
+          },
+          { actor: { type: "human", user_id: userId } },
+        );
+      }
+    },
+    [drivers, activeCompanyId, userId, installModule],
+  );
+
+  const uninstall = useCallback(
+    async (moduleId: string) => {
+      if (drivers === null || activeCompanyId === null || userId === null)
+        return;
+      if (isProtectedModule(moduleId)) return;
+      await uninstallModule(drivers, activeCompanyId, moduleId);
+      const stillInstalled = useInstalledModulesStore
+        .getState()
+        .installed.has(moduleId);
+      if (!stillInstalled) {
+        void drivers.scp.publishEvent(
+          "platform.module.uninstalled",
+          {
+            company_id: activeCompanyId,
+            module: moduleId,
+            uninstalled_by: userId,
+          },
+          { actor: { type: "human", user_id: userId } },
+        );
+      }
+    },
+    [drivers, activeCompanyId, userId, uninstallModule],
+  );
+
+  const openApp = useOSStore((s) => s.openApp);
 
   const related = useMemo(() => {
     if (selectedApp === null) return [];
@@ -2872,7 +2781,8 @@ export function MagicStoreApp() {
     if (src.type === "internal") {
       const registered = getApp(src.target);
       if (registered !== undefined) {
-        openWindow(registered.id, registered.name);
+        // Sprint 16 MX80: abre como tab (osStore.openApp), nao como window
+        openApp(registered.id, registered.name);
       }
       return;
     }

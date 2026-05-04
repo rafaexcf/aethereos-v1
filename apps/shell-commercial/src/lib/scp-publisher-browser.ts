@@ -8,11 +8,16 @@ export interface PublishEventOptions {
   correlation_id?: string;
   causation_id?: string;
   idempotency_key?: string;
-  actor?: {
-    type: "agent";
-    agent_id: string;
-    supervising_user_id: string;
-  };
+  actor?:
+    | {
+        type: "agent";
+        agent_id: string;
+        supervising_user_id: string;
+      }
+    | {
+        type: "human";
+        user_id: string;
+      };
 }
 
 export interface PublishEventResult {

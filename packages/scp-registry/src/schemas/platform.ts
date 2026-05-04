@@ -193,6 +193,28 @@ export type PlatformStaffAccessPayload = z.infer<
   typeof PlatformStaffAccessPayloadSchema
 >;
 
+// ---------------------------------------------------------------------------
+// Eventos de modulos (Magic Store — Sprint 16 MX80)
+// ---------------------------------------------------------------------------
+
+export const PlatformModuleInstalledPayloadSchema = z.object({
+  company_id: z.string().uuid(),
+  module: z.string().min(1).max(100),
+  installed_by: z.string().uuid(),
+});
+export type PlatformModuleInstalledPayload = z.infer<
+  typeof PlatformModuleInstalledPayloadSchema
+>;
+
+export const PlatformModuleUninstalledPayloadSchema = z.object({
+  company_id: z.string().uuid(),
+  module: z.string().min(1).max(100),
+  uninstalled_by: z.string().uuid(),
+});
+export type PlatformModuleUninstalledPayload = z.infer<
+  typeof PlatformModuleUninstalledPayloadSchema
+>;
+
 /** Mapa de tipo de evento → schema de payload para eventos platform.* */
 export const PLATFORM_EVENT_SCHEMAS = {
   "platform.tenant.created": PlatformTenantCreatedPayloadSchema,
@@ -211,4 +233,6 @@ export const PLATFORM_EVENT_SCHEMAS = {
   "platform.chat.channel_created": PlatformChatChannelCreatedPayloadSchema,
   "platform.settings.updated": PlatformSettingsUpdatedPayloadSchema,
   "platform.staff.access": PlatformStaffAccessPayloadSchema,
+  "platform.module.installed": PlatformModuleInstalledPayloadSchema,
+  "platform.module.uninstalled": PlatformModuleUninstalledPayloadSchema,
 } as const satisfies Record<string, z.ZodSchema>;
