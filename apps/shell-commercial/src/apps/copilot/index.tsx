@@ -438,6 +438,7 @@ export function CopilotDrawer({
         payload: CopilotIntentPayload;
         status: string;
         created_at: string;
+        expires_at: string | null;
       };
 
       // 1. Find or create copilot agent for this company
@@ -535,27 +536,43 @@ export function CopilotDrawer({
         );
       }
 
-      // 4. Load pending proposals
+      // 4. Load proposals (Sprint 17 MX86: inclui expires_at + marca expired)
       const propsRes = await (data
         .from("agent_proposals")
-        .select("id, intent_type, payload, status, created_at")
+        .select("id, intent_type, payload, status, created_at, expires_at")
         .eq("conversation_id", convId)
         .in("status", [
           "pending",
           "approved",
           "rejected",
+          "executed",
+          "expired",
         ]) as unknown as Promise<{ data: PropRow[] | null; error: unknown }>);
       if (propsRes.data !== null && propsRes.data.length > 0) {
-        setProposals(
-          propsRes.data.map((p) => ({
+        const nowMs = Date.now();
+        const staleIds: string[] = [];
+        const hydrated = propsRes.data.map((p) => {
+          const expiresMs =
+            p.expires_at !== null ? new Date(p.expires_at).getTime() : Infinity;
+          const isStale = p.status === "pending" && expiresMs < nowMs;
+          if (isStale) staleIds.push(p.id);
+          return {
             id: p.id,
             intentType: p.intent_type as IntentType,
             payload: p.payload,
-            status: p.status as ProposalStatus,
+            status: (isStale ? "expired" : p.status) as ProposalStatus,
             conversationId: convId,
             createdAt: new Date(p.created_at),
-          })),
-        );
+          };
+        });
+        // UPDATE banco em background — sem await pra nao bloquear hydratacao
+        if (staleIds.length > 0) {
+          void data
+            .from("agent_proposals")
+            .update({ status: "expired" })
+            .in("id", staleIds);
+        }
+        setProposals(hydrated as ActionProposal[]);
       }
     } catch {
       conversationId.current = crypto.randomUUID();
