@@ -5,6 +5,132 @@ Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
 
 ---
 
+# Sprint 17 — Agent Proposals Workflow: Aprovar, Rejeitar, Executar
+
+Início: 2026-05-04
+Modelo: Claude Code (claude-sonnet-4-6, Sprint 17 N=1)
+Roadmap: `SPRINT_17_PROMPT.md` na raiz.
+
+## Origem
+
+Copilot Sprint 12 entregou Shadow Mode UI com botões Aprovar/Rejeitar
+inline no chat — mas aprovação **não executava nada de verdade**. Status
+ficava "approved" e o Copilot não inseria pessoa, não criava canal, etc.
+Sprint 17 fecha o ciclo end-to-end: aprovação → execução real → notificação
+ao usuário → painel central em Governança.
+
+## Histórico de milestones (Sprint 17)
+
+| Milestone | Descrição                                                          | Status | Commit  |
+| --------- | ------------------------------------------------------------------ | ------ | ------- |
+| MX84      | proposal-executor lib (5 intent types) + 10 unit tests             | DONE   | 441e65d |
+| MX85      | Copilot approve dispara executeProposal + estado erro+retry no UI  | DONE   | d0459be |
+| MX86      | expirer client-side + SQL function expire_stale_proposals          | DONE   | 393401b |
+| MX87      | notifications kernel.notifications em created/executed/expired     | DONE   | 7c1fc77 |
+| MX88      | painel Governança Shadow tab com filtros + actions inline + drawer | DONE   | 3dfd811 |
+| MX89      | E2E governanca (skipa gracioso) + docs Sprint 17                   | DONE   | (este)  |
+
+## Arquitetura
+
+```
+[Copilot drawer] [Governanca shadow tab]
+        │                    │
+        └────────┬───────────┘
+                 ↓
+       handleApprove(proposalId)
+                 │
+       UPDATE status=approved  →  SCP agent.copilot.action_approved
+                 │
+       executeProposal(deps, proposal, userId, companyId)
+                 │
+        ┌────────┴────────┐
+        ↓                 ↓
+      ok=true          ok=false
+        │                 │
+   UPDATE executed   mantem approved
+   SCP action_executed   executionError no UI
+   notification success  retry button
+```
+
+## 5 intent types funcionais
+
+| Intent               | Tabela alvo              | SCP emitido                     |
+| -------------------- | ------------------------ | ------------------------------- |
+| create_person        | kernel.people            | platform.person.created         |
+| create_file (folder) | kernel.files             | platform.folder.created         |
+| create_file (file)   | kernel.files             | (nenhum — stub sem storage)     |
+| send_notification    | kernel.notifications     | (nenhum — notif eh o resultado) |
+| update_settings      | kernel.settings (UPSERT) | platform.settings.updated       |
+| create_channel       | kernel.chat_channels     | platform.chat.channel_created   |
+
+Todos com actor=human (R10 freio agentico — execução usa credenciais do
+usuário que aprovou, não do agente).
+
+## Novo schema SCP
+
+`agent.copilot.action_executed` registrado em `packages/scp-registry/src/schemas/agent.ts`:
+
+- payload: proposal_id, company_id, executed_by, intent_type, resource_id?, correlation_id?
+- distinto de action_approved (que apenas autoriza)
+
+## Migração
+
+`20260504000002_kernel_expire_stale_proposals.sql`:
+
+- function `kernel.expire_stale_proposals()` SECURITY DEFINER
+- UPDATE pending → expired WHERE expires_at < NOW()
+- REVOKE PUBLIC + GRANT service_role
+- aplicada no DB local: marcou 16 das 40 proposals seed como expired
+
+## Notifications de lifecycle (MX87)
+
+3 INSERTs em kernel.notifications wireados no Copilot:
+
+- **created**: type=info, "Copilot sugeriu uma ação"
+- **executed**: type=success, "Ação executada pelo Copilot"
+- **expired**: type=warning, "Sugestão do Copilot expirou"
+
+source_app=copilot + source_id=proposal.id em todos. Toast aparece via
+Realtime sub do Sprint 13 (`useNotificationsLifecycle`).
+
+## Painel Governança (MX88)
+
+Aba Shadow Mode ganhou:
+
+- Filtros: status (pending/approved/rejected/executed/expired) + intent_type
+- Drawer inline expandível com payload JSON formatado + revisor + timestamps
+- Ações Aprovar/Rejeitar inline (apenas para `supervising_user_id === currentUserId`)
+- Reusa lib/proposal-executor (mesma logica do CopilotDrawer)
+
+## Resultado final
+
+```
+pnpm typecheck     → exit 0 (25 tasks)
+pnpm lint          → exit 0
+pnpm test          → 10/10 BYOK + 10/10 proposal-executor
+pnpm test:e2e:full → 33 passed + 1 skipped (governanca, gracioso) = 34
+```
+
+Novo teste `governanca.spec.ts` skipa gracefully se Command Center search
+não localiza Governança (app não está nos default modules ana.lima — Sprint 16
+removeu auto-seed de admin apps). Resolução em sprint futuro: seed governanca
+para admins OR adicionar testid + path direto.
+
+## Dívidas para Sprint 18+
+
+1. Edge Function `create-company` deve seedar KERNEL_DEFAULT_MODULES
+2. CHECK/trigger PG para bloquear DELETE de modules protegidos
+3. Mock LLM provider para E2E determinístico do Copilot (KL-6)
+4. Cron job que chama `kernel.expire_stale_proposals()` (atualmente só
+   client + função pode ser chamada manualmente)
+5. Click em notificação do Copilot deve deep-link para o proposal
+   específico no Copilot drawer
+6. Vercel deploy preview (KL-5)
+7. IaC Pulumi
+8. Deploy Supabase remoto
+
+---
+
 # Sprint 16 — Magic Store Real: Install/Uninstall Reativo
 
 Início: 2026-05-04

@@ -89,7 +89,29 @@ Apps protegidos (Mesa, Magic Store, Aether AI, Configurações, Notificações) 
 
 Companies novas recebem 10 apps básicos por padrão (drive, pessoas, chat, settings, rh, calendar, tarefas, bloco-de-notas, calculadora, relogio). Verticais (Comércio Digital, LOGITIX, ERP, Kwix, Autergon) precisam ser instalados manualmente.
 
-## 6. Rodar gates de CI
+## 6. Testar fluxo de proposals do Aether AI Copilot
+
+Sprint 17 conectou o ciclo end-to-end do Copilot: aprovar uma sugestão executa a ação real no banco.
+
+1. Mesa > **Aether AI** (ou via launcher)
+2. Digite: "criar pessoa Maria Silva" → Copilot detecta intent + propõe ação
+3. Painel ActionApprovalPanel aparece com badge "Shadow Mode"
+4. Click **Aprovar** → status muda pra "approved · executando…" → "executed"
+5. Notificação "✓ Ação executada pelo Copilot" no sino do Dock
+6. Verifique em **Pessoas** → Maria Silva foi inserida
+
+Estados visuais:
+
+- pending (violeta): aguarda aprovação
+- approved (verde claro): aprovado, executando
+- approved + erro (âmbar): falha de execução, botão "Tentar novamente"
+- executed (verde): ação confirmada no banco
+- rejected (cinza): rejeitado pelo usuário
+- expired (cinza pálido): TTL 1h excedido
+
+5 intents implementados: `create_person`, `create_file`, `send_notification`, `update_settings`, `create_channel`. Painel central de todas as proposals em **Governança > Shadow Mode** com filtros + drawer + ações inline.
+
+## 7. Rodar gates de CI
 
 ```bash
 pnpm typecheck
@@ -103,7 +125,7 @@ set -a; source tooling/e2e/.env.local; set +a
 pnpm test:e2e:full        # ~22s, 32/32 esperado
 ```
 
-## 7. Stop / cleanup
+## 8. Stop / cleanup
 
 ```bash
 supabase stop --no-backup
