@@ -384,24 +384,26 @@ function StaffPage() {
                     </div>
                   )}
 
+                  {/* Suspender/Reativar company: requer agent.action.requested
+                      com aprovacao humana porque platform.tenant.suspended esta
+                      em AGENT_BLOCKED_EVENT_TYPES (Fundamentacao 12.4 [INV]).
+                      Wiring deferido para sprint pos-staging. */}
                   <div className="flex gap-2 border-t border-zinc-800 pt-4 mt-4">
                     {detail.company.status === "active" ? (
                       <button
                         type="button"
-                        className="rounded-md border border-red-700/50 px-3 py-1.5 text-xs text-red-400 hover:border-red-600 hover:text-red-300"
-                        onClick={() => {
-                          /* TODO: platform.tenant.suspended via scp-publish */
-                        }}
+                        disabled
+                        className="rounded-md border border-red-700/50 px-3 py-1.5 text-xs text-red-400 opacity-40 cursor-not-allowed"
+                        title="Em desenvolvimento: requer fluxo agent.action.requested + aprovacao manual"
                       >
                         Suspender company
                       </button>
                     ) : (
                       <button
                         type="button"
-                        className="rounded-md border border-green-700/50 px-3 py-1.5 text-xs text-green-400 hover:border-green-600"
-                        onClick={() => {
-                          /* TODO: platform.tenant.reactivated */
-                        }}
+                        disabled
+                        className="rounded-md border border-green-700/50 px-3 py-1.5 text-xs text-green-400 opacity-40 cursor-not-allowed"
+                        title="Em desenvolvimento: requer fluxo agent.action.requested + aprovacao manual"
                       >
                         Reativar company
                       </button>
