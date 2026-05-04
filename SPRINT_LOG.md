@@ -5,6 +5,96 @@ Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
 
 ---
 
+# Sprint 15 — BYOK LLM + Copilot Real
+
+Início: 2026-05-04
+Modelo: Claude Code (claude-sonnet-4-6, Sprint 15 N=1)
+Roadmap: `SPRINT_15_PROMPT.md` na raiz.
+
+## Origem
+
+Copilot tinha UI completa (Shadow Mode + RAG cego + proposals) mas sem
+LLM real — só LiteLLMDriver apontando para gateway local + DegradedLLMDriver
+fallback. Sprint 15 entrega Bring Your Own Key: usuário configura próprio
+provedor (OpenAI/Anthropic/Google/Groq/Mistral/OpenRouter/Together/LM Studio/
+Ollama/Custom) nas Configurações e o Copilot passa a usar BYOKLLMDriver
+fazendo chamadas diretas do browser.
+
+## Histórico de milestones (Sprint 15)
+
+| Milestone | Descrição                                                                             | Status | Commit  |
+| --------- | ------------------------------------------------------------------------------------- | ------ | ------- |
+| MX72      | BYOKLLMDriver — 3 formatos (openai/anthropic/google) + 9 unit tests                   | DONE   | 62fb75a |
+| MX73      | provider presets (10 entries) + validateConfig + fetchAvailableModels + friendlyError | DONE   | eac5fd1 |
+| MX74      | TabIA em Configurações + migration estende CHECK pra llm_config                       | DONE   | 86a1dfb |
+| MX75      | LLMDriverSwap + useLLMConfigLifecycle (BYOK > LiteLLM > Degraded)                     | DONE   | 6a75e0d |
+| MX76      | Copilot wired com BYOK; validação manual deferida (KL-6)                              | DONE   | b26fc9f |
+| MX77      | docs Sprint 15 + QUICK_START.md + KNOWN_LIMITATIONS                                   | DONE   | (este)  |
+
+## Arquitetura BYOK
+
+```
+[Configurações > IA]
+  ↓ user salva config
+kernel.user_preferences.value (jsonb, RLS user_id only)
+  ↓ Realtime sub
+useUserPreference("llm_config")
+  ↓ change detected
+useLLMConfigLifecycle (mounted em OSDesktop)
+  ↓ build BYOKLLMDriver(config) + withDegradedLLM
+drivers.llm.setBacking(byok)  ← LLMDriverSwap (instância estável)
+  ↓ delegate
+Copilot.instrumentedChat(drivers.llm, ...) → POST direto pro provider
+```
+
+Prioridade: **BYOK > LiteLLM > Degraded** (withDegradedLLM wrapper protege
+qualquer backing).
+
+## 3 formatos suportados em BYOKLLMDriver
+
+- **openai**: POST `{baseUrl}/chat/completions` (OpenAI standard) — cobre
+  Groq, Mistral, OpenRouter, Together, LM Studio, Ollama, Custom
+- **anthropic**: POST `{baseUrl}/v1/messages` (Messages API nativa) — separa
+  system messages, header `x-api-key` + `anthropic-version` +
+  `anthropic-dangerous-direct-browser-access`
+- **google**: POST `{baseUrl}/models/{model}:generateContent` — apiKey via
+  query param, role rename (assistant → model), systemInstruction separado
+
+## Segurança (R10/R11 do spec)
+
+- API key armazenada em `kernel.user_preferences.value` (jsonb) protegida
+  por RLS (`user_id = auth.uid()` apenas)
+- API key NUNCA logada no console nem emitida em SCP events
+- Fetch direto do browser pro provider — sem proxy Edge Function (proxy
+  para esconder key do network tab fica como melhoria futura — Sprint 16+)
+
+## Resultado final
+
+```
+pnpm typecheck     → exit 0 (25 tasks)
+pnpm lint          → exit 0
+pnpm test          → BYOK driver 10/10 passed
+pnpm test:e2e:full → 31 passed + 1 skipped (rh:75 flaky, não relacionado a BYOK)
+```
+
+## KL aberta nesta sprint
+
+- **KL-6** (MX76): validação E2E do Copilot com LLM real é manual — requer
+  API key real OR LM Studio instalado localmente. Wiring + unit tests
+  cobertos. Plano para Sprint 16+: mock provider OpenAI-compatible em
+  `tooling/e2e/mock-llm/` para teste E2E determinístico.
+
+## Dívidas para Sprint 16+
+
+1. Mock LLM server para E2E determinístico do Copilot (KL-6)
+2. Edge Function proxy `/llm-byok` para esconder API key do network tab
+3. SCP consumer / Policy Engine / Client SDK — pendentes
+4. Vercel deploy preview (KL-5)
+5. IaC Pulumi — desde Sprint 9.6
+6. Deploy Supabase remoto — desde Sprint 9.6
+
+---
+
 # Sprint 14 — CI E2E + Resolve Skipped Tests
 
 Início: 2026-05-03

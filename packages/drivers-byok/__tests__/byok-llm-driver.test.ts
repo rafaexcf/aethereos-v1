@@ -106,6 +106,19 @@ describe("BYOKLLMDriver — format: openai", () => {
     }
   });
 
+  it("complete: erro de rede (fetch throws) retorna NetworkError", async () => {
+    globalThis.fetch = vi
+      .fn()
+      .mockRejectedValue(new Error("ENOTFOUND api.example.com"));
+    const driver = new BYOKLLMDriver(mkConfig());
+    const res = await driver.complete([{ role: "user", content: "hi" }]);
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.error.constructor.name).toBe("NetworkError");
+      expect(res.error.message).toContain("ENOTFOUND");
+    }
+  });
+
   it("ping: GET /models", async () => {
     const fetchMock = mockFetchOk({ data: [] });
     globalThis.fetch = fetchMock;

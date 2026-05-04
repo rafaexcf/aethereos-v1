@@ -26,6 +26,28 @@ Cada entry indica o sprint de origem e por que não foi corrigido agora.
 
 ---
 
+## KL-6 — Validacao E2E manual do BYOK Copilot com LLM real (Sprint 15 MX76)
+
+**Sintoma:** Não há teste E2E automatizado que valide o Copilot conversando com um LLM real (OpenAI/Anthropic/Groq/LM Studio/etc).
+**Causa:** Validação requer (a) API key real do usuário em algum provedor cloud, ou (b) LM Studio/Ollama instalados localmente. Não é viável armazenar API keys reais no repo (R10) e LM Studio não é instalado pelo agente.
+**Impacto:** Wiring (BYOKLLMDriver → LLMDriverSwap → Copilot) está testado por `code review` + unit tests do BYOK driver (10/10), mas o cenário "abrir Copilot, mandar mensagem, receber resposta real" só pode ser testado manualmente.
+**Cobertura existente:** unit tests `__tests__/byok-llm-driver.test.ts` cobrem POST/headers/body para os 3 formatos (openai/anthropic/google) + erros 429/401/network/abort. typecheck e lint full repo EXIT 0. E2E suite (Playwright) confirma que o shell ainda boota e o Copilot abre — só não envia mensagem real.
+**QA manual checklist:**
+
+1. Configurações > IA > escolher provedor (ex: OpenAI)
+2. Colar API key real (sk-...)
+3. Clicar "Testar conexão" → deve mostrar "Conexão OK"
+4. Salvar
+5. Abrir Aether AI Copilot
+6. Banner "Modo Degenerado" deve sumir após primeira mensagem
+7. Enviar mensagem → resposta real do modelo
+8. Verificar histórico em kernel.copilot_messages (model = nome do provedor, não "degraded")
+
+**Fix futuro (Sprint 16+):** mock provider OpenAI-compatible em `tooling/e2e/mock-llm/` (servidor express que retorna fixtures determinísticas) + teste E2E que configura Custom apontando pra ele.
+**Sprint de origem:** 15 (MX76).
+
+---
+
 ## KL-5 — Vercel deploy preview ainda nao configurado (Sprint 14 MX70)
 
 **Sintoma:** PRs nao geram URL de preview automatico em vercel.app.  
