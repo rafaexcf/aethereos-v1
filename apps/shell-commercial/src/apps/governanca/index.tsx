@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppShell } from "@aethereos/ui-shell";
 import { KERNEL_CAPABILITIES } from "@aethereos/kernel";
 import { INVARIANT_OPERATIONS } from "@aethereos/kernel";
 import { EmptyState } from "../../components/shared/EmptyState";
 import { useDrivers } from "../../lib/drivers-context";
 import { useSessionStore } from "../../stores/session";
+import { executeProposal } from "../../lib/proposal-executor";
 
 type Tab = "agentes" | "capabilities" | "invariantes" | "shadow";
 
@@ -46,6 +47,7 @@ interface ProposalRow {
   rejection_reason: string | null;
   created_at: string;
   expires_at: string;
+  payload?: Record<string, unknown> | null;
 }
 
 function formatDateTime(iso: string): string {
@@ -757,12 +759,33 @@ function TabShadow({
   agents,
   users,
   loading,
+  currentUserId,
+  onApprove,
+  onReject,
 }: {
   proposals: ProposalRow[];
   agents: AgentRow[];
   users: Map<string, UserRow>;
   loading: boolean;
+  currentUserId: string | null;
+  onApprove: (id: string) => Promise<void>;
+  onReject: (id: string) => Promise<void>;
 }) {
+  // Sprint 17 MX88: filtros + drawer inline
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [intentFilter, setIntentFilter] = useState<string>("all");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [actingId, setActingId] = useState<string | null>(null);
+
+  const allIntentTypes = Array.from(
+    new Set(proposals.map((p) => p.intent_type)),
+  ).sort();
+
+  const filteredProposals = proposals.filter(
+    (p) =>
+      (statusFilter === "all" || p.status === statusFilter) &&
+      (intentFilter === "all" || p.intent_type === intentFilter),
+  );
   const statusColor: Record<string, { bg: string; fg: string }> = {
     pending: { bg: "rgba(234,179,8,0.15)", fg: "#fde047" },
     approved: { bg: "rgba(34,197,94,0.15)", fg: "#86efac" },
@@ -815,16 +838,46 @@ function TabShadow({
         </p>
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
-          Histórico recente de propostas
-        </span>
+      {/* Sprint 17 MX88: filtros */}
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          style={{
+            padding: "4px 8px",
+            fontSize: 11,
+            borderRadius: 6,
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.10)",
+            color: "var(--text-primary)",
+          }}
+        >
+          <option value="all">Todos status</option>
+          <option value="pending">Aguardando</option>
+          <option value="approved">Aprovado</option>
+          <option value="rejected">Rejeitado</option>
+          <option value="executed">Executado</option>
+          <option value="expired">Expirado</option>
+        </select>
+        <select
+          value={intentFilter}
+          onChange={(e) => setIntentFilter(e.target.value)}
+          style={{
+            padding: "4px 8px",
+            fontSize: 11,
+            borderRadius: 6,
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.10)",
+            color: "var(--text-primary)",
+          }}
+        >
+          <option value="all">Todas intents</option>
+          {allIntentTypes.map((it) => (
+            <option key={it} value={it}>
+              {it}
+            </option>
+          ))}
+        </select>
         <span
           style={{
             fontSize: 10,
@@ -832,9 +885,11 @@ function TabShadow({
             background: "rgba(255,255,255,0.06)",
             padding: "2px 8px",
             borderRadius: 999,
+            alignSelf: "center",
+            marginLeft: "auto",
           }}
         >
-          {proposals.length} propostas
+          {filteredProposals.length} de {proposals.length} propostas
         </span>
       </div>
 
@@ -842,69 +897,175 @@ function TabShadow({
         <div style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
           Carregando propostas…
         </div>
-      ) : proposals.length === 0 ? (
+      ) : filteredProposals.length === 0 ? (
         <EmptyState
           icon="UserCheck"
-          title="Sem propostas registradas"
-          description="O Copilot ainda não submeteu nenhuma proposta de ação para revisão humana."
+          title="Sem propostas correspondentes"
+          description={
+            proposals.length === 0
+              ? "O Copilot ainda não submeteu nenhuma proposta para revisão."
+              : "Nenhuma proposta corresponde aos filtros."
+          }
         />
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          {proposals.map((p) => {
+          {filteredProposals.map((p) => {
             const sup = users.get(p.supervising_user_id);
             const color = statusColor[p.status] ?? {
               bg: "rgba(255,255,255,0.06)",
               fg: "var(--text-tertiary)",
             };
+            const expanded = expandedId === p.id;
+            const canAct =
+              p.status === "pending" &&
+              currentUserId !== null &&
+              p.supervising_user_id === currentUserId;
             return (
               <div
                 key={p.id}
                 style={{
                   display: "flex",
-                  alignItems: "center",
-                  gap: 12,
+                  flexDirection: "column",
                   background: "rgba(255,255,255,0.03)",
                   border: "1px solid rgba(255,255,255,0.08)",
                   borderRadius: 10,
-                  padding: "10px 14px",
                 }}
               >
-                <div
+                <button
+                  type="button"
+                  onClick={() => setExpandedId(expanded ? null : p.id)}
                   style={{
-                    flex: 1,
                     display: "flex",
-                    flexDirection: "column",
-                    gap: 2,
+                    alignItems: "center",
+                    gap: 12,
+                    padding: "10px 14px",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    color: "inherit",
                   }}
                 >
-                  <span
+                  <div
                     style={{
-                      fontSize: 13,
-                      color: "var(--text-secondary)",
+                      flex: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 2,
                     }}
                   >
-                    {p.intent_type}
+                    <span
+                      style={{ fontSize: 13, color: "var(--text-secondary)" }}
+                    >
+                      {p.intent_type}
+                    </span>
+                    <span
+                      style={{ fontSize: 11, color: "var(--text-tertiary)" }}
+                    >
+                      {agentName(p.agent_id)} ·{" "}
+                      {sup?.display_name ??
+                        sup?.email ??
+                        p.supervising_user_id.slice(0, 8)}
+                      {" · "}
+                      {formatDateTime(p.created_at)}
+                    </span>
+                  </div>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      background: color.bg,
+                      color: color.fg,
+                    }}
+                  >
+                    {statusLabel[p.status] ?? p.status}
                   </span>
-                  <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
-                    {agentName(p.agent_id)} ·{" "}
-                    {sup?.display_name ??
-                      sup?.email ??
-                      p.supervising_user_id.slice(0, 8)}
-                    {" · "}
-                    {formatDateTime(p.created_at)}
-                  </span>
-                </div>
-                <span
-                  style={{
-                    fontSize: 10,
-                    padding: "2px 8px",
-                    borderRadius: 999,
-                    background: color.bg,
-                    color: color.fg,
-                  }}
-                >
-                  {statusLabel[p.status] ?? p.status}
-                </span>
+                </button>
+
+                {expanded && (
+                  <div
+                    style={{
+                      borderTop: "1px solid rgba(255,255,255,0.06)",
+                      padding: "10px 14px",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                    }}
+                  >
+                    <pre
+                      style={{
+                        margin: 0,
+                        fontSize: 10,
+                        fontFamily: "var(--font-mono, monospace)",
+                        color: "var(--text-tertiary)",
+                        background: "rgba(0,0,0,0.25)",
+                        padding: 8,
+                        borderRadius: 6,
+                        overflow: "auto",
+                        maxHeight: 200,
+                      }}
+                    >
+                      {JSON.stringify(p.payload ?? {}, null, 2)}
+                    </pre>
+                    {p.reviewed_at !== null && (
+                      <span
+                        style={{ fontSize: 10, color: "var(--text-tertiary)" }}
+                      >
+                        Revisado em {formatDateTime(p.reviewed_at)}
+                        {p.reviewed_by !== null
+                          ? ` por ${users.get(p.reviewed_by)?.display_name ?? p.reviewed_by.slice(0, 8)}`
+                          : ""}
+                      </span>
+                    )}
+                    {canAct && (
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button
+                          type="button"
+                          disabled={actingId === p.id}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            setActingId(p.id);
+                            await onApprove(p.id);
+                            setActingId(null);
+                          }}
+                          style={{
+                            padding: "5px 12px",
+                            fontSize: 11,
+                            borderRadius: 6,
+                            background: "rgba(34,197,94,0.18)",
+                            border: "1px solid rgba(34,197,94,0.32)",
+                            color: "#86efac",
+                            cursor: actingId === p.id ? "wait" : "pointer",
+                          }}
+                        >
+                          Aprovar
+                        </button>
+                        <button
+                          type="button"
+                          disabled={actingId === p.id}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            setActingId(p.id);
+                            await onReject(p.id);
+                            setActingId(null);
+                          }}
+                          style={{
+                            padding: "5px 12px",
+                            fontSize: 11,
+                            borderRadius: 6,
+                            background: "rgba(239,68,68,0.12)",
+                            border: "1px solid rgba(239,68,68,0.28)",
+                            color: "#fca5a5",
+                            cursor: actingId === p.id ? "wait" : "pointer",
+                          }}
+                        >
+                          Rejeitar
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -956,7 +1117,7 @@ export function GovernancaApp() {
         d.data
           .from("agent_proposals")
           .select(
-            "id,agent_id,intent_type,status,supervising_user_id,reviewed_by,reviewed_at,rejection_reason,created_at,expires_at",
+            "id,agent_id,intent_type,status,supervising_user_id,reviewed_by,reviewed_at,rejection_reason,created_at,expires_at,payload",
           )
           .order("created_at", { ascending: false })
           .limit(50),
@@ -979,6 +1140,130 @@ export function GovernancaApp() {
     };
   }, [drivers, userId, activeCompanyId]);
 
+  // Sprint 17 MX88: handlers de approve/reject de proposals.
+  // Approve tambem dispara executeProposal (mesma logica do CopilotDrawer).
+  const handleApproveProposal = useCallback(
+    async (proposalId: string) => {
+      if (drivers === null || userId === null || activeCompanyId === null)
+        return;
+      const target = proposals.find((p) => p.id === proposalId);
+      if (target === undefined || target.status !== "pending") return;
+
+      // 1. UPDATE status="approved"
+      await drivers.data
+        .from("agent_proposals")
+        .update({
+          status: "approved",
+          reviewed_by: userId,
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq("id", proposalId);
+      void drivers.scp.publishEvent(
+        "agent.copilot.action_approved",
+        {
+          proposal_id: proposalId,
+          company_id: activeCompanyId,
+          approved_by: userId,
+          approved_at: new Date().toISOString(),
+        },
+        {
+          actor: {
+            type: "agent",
+            agent_id: target.agent_id,
+            supervising_user_id: userId,
+          },
+        },
+      );
+
+      // 2. Executa
+      const exec = await executeProposal(
+        { data: drivers.data, scp: drivers.scp },
+        {
+          id: target.id,
+          intentType: target.intent_type,
+          payload: (target.payload ?? {}) as Record<string, unknown>,
+        },
+        userId,
+        activeCompanyId,
+      );
+
+      if (exec.ok) {
+        await drivers.data
+          .from("agent_proposals")
+          .update({
+            status: "executed",
+            reviewed_at: new Date().toISOString(),
+          })
+          .eq("id", proposalId);
+        void drivers.scp.publishEvent(
+          "agent.copilot.action_executed",
+          {
+            proposal_id: proposalId,
+            company_id: activeCompanyId,
+            executed_by: userId,
+            intent_type: target.intent_type,
+            ...(exec.resourceId !== undefined
+              ? { resource_id: exec.resourceId }
+              : {}),
+          },
+          { actor: { type: "human", user_id: userId } },
+        );
+        // Refresh local state
+        setProposals((prev) =>
+          prev.map((p) =>
+            p.id === proposalId ? { ...p, status: "executed" as const } : p,
+          ),
+        );
+      } else {
+        setProposals((prev) =>
+          prev.map((p) =>
+            p.id === proposalId ? { ...p, status: "approved" as const } : p,
+          ),
+        );
+      }
+    },
+    [drivers, userId, activeCompanyId, proposals],
+  );
+
+  const handleRejectProposal = useCallback(
+    async (proposalId: string) => {
+      if (drivers === null || userId === null || activeCompanyId === null)
+        return;
+      const target = proposals.find((p) => p.id === proposalId);
+      if (target === undefined || target.status !== "pending") return;
+
+      await drivers.data
+        .from("agent_proposals")
+        .update({
+          status: "rejected",
+          reviewed_by: userId,
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq("id", proposalId);
+      void drivers.scp.publishEvent(
+        "agent.copilot.action_rejected",
+        {
+          proposal_id: proposalId,
+          company_id: activeCompanyId,
+          rejected_by: userId,
+        },
+        {
+          actor: {
+            type: "agent",
+            agent_id: target.agent_id,
+            supervising_user_id: userId,
+          },
+        },
+      );
+      setProposals((prev) =>
+        prev.map((p) =>
+          p.id === proposalId ? { ...p, status: "rejected" as const } : p,
+        ),
+      );
+    },
+    [drivers, userId, activeCompanyId, proposals],
+  );
+
   const tabContent = useMemo<Record<Tab, React.ReactNode>>(
     () => ({
       agentes: (
@@ -998,10 +1283,22 @@ export function GovernancaApp() {
           agents={agents}
           users={users}
           loading={loading}
+          currentUserId={userId}
+          onApprove={handleApproveProposal}
+          onReject={handleRejectProposal}
         />
       ),
     }),
-    [agents, users, proposals, loading, selectedAgentId],
+    [
+      agents,
+      users,
+      proposals,
+      loading,
+      selectedAgentId,
+      userId,
+      handleApproveProposal,
+      handleRejectProposal,
+    ],
   );
 
   return (
