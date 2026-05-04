@@ -27,6 +27,8 @@
     "ci:audit": "pnpm audit --audit-level=high",
     "ci:full": "pnpm typecheck && pnpm lint && pnpm deps:check && pnpm test && pnpm test:isolation && pnpm build",
     "dev:infra": "docker compose -f infra/local/docker-compose.dev.yml up -d nats litellm",
+    "dev:scp-worker": "pnpm --filter @aethereos/scp-worker dev",
+    "build:scp-worker": "pnpm --filter @aethereos/scp-worker build",
     "dev:infra:down": "docker compose -f infra/local/docker-compose.dev.yml down",
     "dev:llm": "docker compose -f infra/local/docker-compose.dev.yml up -d nats litellm",
     "dev:observability": "docker compose -f infra/local/docker-compose.dev.yml up -d langfuse-postgres langfuse",

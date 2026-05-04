@@ -111,7 +111,50 @@ Estados visuais:
 
 5 intents implementados: `create_person`, `create_file`, `send_notification`, `update_settings`, `create_channel`. Painel central de todas as proposals em **Governança > Shadow Mode** com filtros + drawer + ações inline.
 
-## 7. Rodar gates de CI
+## 7. Rodar pipeline SCP (eventos -> consumers)
+
+Sprint 18 entregou o consumer pipeline em modo inline (poller direto no Postgres, sem NATS). Eventos publicados pela Edge Function `scp-publish` aterrissam em `kernel.scp_outbox` e sao consumidos pelo `scp-worker`:
+
+- **AuditConsumer** — captura tudo em `kernel.audit_log`
+- **NotificationConsumer** — emite `kernel.notifications` para `person.created`, `file.uploaded`, `folder.created`, `chat.channel_created` (idempotente vs. notif inline)
+- **EmbeddingConsumer** — chunkifica + embeda arquivos `text/*` ou `application/pdf` em `kernel.embeddings` (degraded skip se falta `SUPABASE_SERVICE_ROLE_KEY`)
+
+Para subir o pipeline completo, abra 4 terminais:
+
+```bash
+# Terminal 1 — Supabase (Postgres + Auth + Storage + Edge Functions)
+pnpm db:start
+
+# Terminal 2 — infra opcional (LiteLLM se for testar embeddings; outros sao no-op)
+pnpm dev:infra
+
+# Terminal 3 — shell-commercial
+pnpm dev
+
+# Terminal 4 — worker SCP (polla scp_outbox a cada 2s, processa em batches de 50)
+pnpm dev:scp-worker
+```
+
+Env vars (`.env.local`):
+
+```bash
+DATABASE_URL=postgres://postgres:postgres@127.0.0.1:54322/postgres
+SCP_POLL_INTERVAL_MS=2000           # opcional, default 2000
+SCP_BATCH_SIZE=50                   # opcional, default 50
+SCP_MAX_ATTEMPTS=3                  # opcional, default 3 (apos isso => status='failed')
+SUPABASE_SERVICE_ROLE_KEY=...       # obrigatoria so se quiser EmbeddingConsumer ativo
+```
+
+Para validar: faca uma acao no shell (criar pessoa, upload arquivo) e cheque:
+
+```bash
+psql "$DATABASE_URL" -c "SELECT event_type, status, attempts FROM kernel.scp_outbox ORDER BY created_at DESC LIMIT 5;"
+psql "$DATABASE_URL" -c "SELECT action, actor_type, created_at FROM kernel.audit_log ORDER BY created_at DESC LIMIT 5;"
+```
+
+Sem o worker rodando, eventos ficam `status='pending'` indefinidamente — nao bloqueia o shell, mas audit_log/embeddings nao avancam.
+
+## 8. Rodar gates de CI
 
 ```bash
 pnpm typecheck
@@ -125,7 +168,7 @@ set -a; source tooling/e2e/.env.local; set +a
 pnpm test:e2e:full        # ~22s, 32/32 esperado
 ```
 
-## 8. Stop / cleanup
+## 9. Stop / cleanup
 
 ```bash
 supabase stop --no-backup
