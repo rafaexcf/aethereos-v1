@@ -24,6 +24,7 @@ import { useWorkspacePersistence } from "../../hooks/useWorkspacePersistence";
 import { useUserPreferencesLifecycle } from "../../hooks/useUserPreferencesLifecycle";
 import { useLLMConfigLifecycle } from "../../hooks/useLLMConfigLifecycle";
 import { useInstalledModulesLifecycle } from "../../hooks/useInstalledModulesLifecycle";
+import { useAppRegistryLifecycle } from "../../hooks/useAppRegistryLifecycle";
 import { useUserPreference } from "../../hooks/useUserPreference";
 
 const DEFAULT_IDLE_LOCK_MINUTES = 15;
@@ -262,6 +263,7 @@ export function OSDesktop() {
   useUserPreferencesLifecycle();
   useLLMConfigLifecycle();
   useInstalledModulesLifecycle();
+  useAppRegistryLifecycle();
   const lockTimeoutPref = useUserPreference<number>(
     "lock_timeout_minutes",
     DEFAULT_IDLE_LOCK_MINUTES,

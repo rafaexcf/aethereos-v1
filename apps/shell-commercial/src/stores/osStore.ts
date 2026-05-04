@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import type { OSTab } from "../types/os";
+import { useAppRegistryStore } from "./appRegistryStore";
+import { openWebLink } from "../components/os/WebLinkOpener";
 
 interface OSState {
   tabs: OSTab[];
@@ -63,6 +65,18 @@ export const useOSStore = create<OSState & OSActions>((set, get) => ({
   closeSupport: () => set({ supportOpen: false }),
 
   openApp: (appId, title) => {
+    // Sprint 21 MX114: dispatch por entry_mode.
+    // weblink: nao cria aba, abre nova janela. iframe/internal: comportamento
+    // tradicional (cria aba; AppFrame decide renderizar component ou iframe).
+    const entry = useAppRegistryStore.getState().apps.get(appId);
+    if (entry?.entry_mode === "weblink") {
+      const url = entry.entry_url ?? entry.external_url;
+      if (url !== null && url !== undefined && url !== "") {
+        openWebLink(url);
+      }
+      return;
+    }
+
     const { tabs, activeTabId } = get();
     const existing = tabs.find((t) => t.appId === appId);
 

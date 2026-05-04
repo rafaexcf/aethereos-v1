@@ -9,8 +9,10 @@ import {
 import { X } from "lucide-react";
 import { useOSStore } from "../../stores/osStore";
 import { getApp } from "../../apps/registry";
+import { useAppRegistryStore } from "../../stores/appRegistryStore";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { AppLoader } from "./AppLoader";
+import { IframeAppFrame } from "./IframeAppFrame";
 import type { OSTab } from "../../types/os";
 
 const DIVIDER_BG = "rgba(255,255,255,0.08)";
@@ -18,6 +20,17 @@ const DIVIDER_BG_ACTIVE = "rgba(255,255,255,0.18)";
 const PANE_BG = "#191d21";
 
 function PaneBody({ appId }: { appId: string }) {
+  const registryEntry = useAppRegistryStore((s) => s.apps.get(appId));
+
+  // Sprint 21 MX114: iframe apps renderizam IframeAppFrame em vez de componente.
+  if (registryEntry?.entry_mode === "iframe") {
+    const url = registryEntry.entry_url ?? registryEntry.external_url ?? "";
+    if (url === "") return null;
+    return (
+      <IframeAppFrame url={url} appId={appId} appName={registryEntry.name} />
+    );
+  }
+
   const app = getApp(appId);
   const AppComponent = app?.component;
   if (!AppComponent) return null;
@@ -200,13 +213,16 @@ const TabPane = memo(function TabPane({
 }) {
   const closeTab = useOSStore((s) => s.closeTab);
   const app = getApp(tab.appId);
+  const registryEntry = useAppRegistryStore((s) => s.apps.get(tab.appId));
   const AppComponent = app?.component;
+  const isIframeMode = registryEntry?.entry_mode === "iframe";
 
   const handleReset = useCallback(() => {
     closeTab(tab.id);
   }, [closeTab, tab.id]);
 
-  if (!AppComponent) return null;
+  // Sprint 21 MX114: pode renderizar iframe sem componente nativo.
+  if (!isIframeMode && !AppComponent) return null;
 
   return (
     <div
@@ -221,9 +237,13 @@ const TabPane = memo(function TabPane({
         <SplitPane tab={tab} />
       ) : (
         <ErrorBoundary onReset={handleReset}>
-          <Suspense fallback={<AppLoader appId={tab.appId} />}>
-            <AppComponent />
-          </Suspense>
+          {isIframeMode ? (
+            <PaneBody appId={tab.appId} />
+          ) : (
+            <Suspense fallback={<AppLoader appId={tab.appId} />}>
+              {AppComponent !== undefined ? <AppComponent /> : null}
+            </Suspense>
+          )}
         </ErrorBoundary>
       )}
     </div>
