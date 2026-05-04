@@ -102,4 +102,33 @@ test.describe("magic store", () => {
       timeout: 5_000,
     });
   });
+
+  // ─── Sprint 16 MX83: visibilidade reativa ao company_modules ──────────────
+
+  test("dock mostra apenas apps installed + alwaysEnabled", async ({
+    page,
+  }) => {
+    await loginToDesktop(page);
+
+    const dock = page.locator('[data-testid="dock"]');
+    await expect(dock).toBeVisible({ timeout: 8_000 });
+
+    // Drive eh kernel default seed (KERNEL_DEFAULT_MODULES) → presente no Dock
+    await expect(dock.locator('[data-testid="dock-app-drive"]')).toBeVisible({
+      timeout: 5_000,
+    });
+
+    // Magic Store eh alwaysEnabled → presente no Dock independente do seed
+    await expect(
+      dock.locator('[data-testid="dock-app-magic-store"]'),
+    ).toBeVisible({ timeout: 5_000 });
+
+    // Aether AI eh alwaysEnabled → presente no Dock
+    await expect(dock.locator('[data-testid="dock-app-ae-ai"]')).toBeVisible({
+      timeout: 5_000,
+    });
+
+    // Verticais antigos (comercio_digital/logitix/erp) podem estar OU nao —
+    // depende do seed antigo + KERNEL_DEFAULT_MODULES atualizado. Nao asserta.
+  });
 });

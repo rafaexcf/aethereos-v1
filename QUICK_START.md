@@ -76,7 +76,20 @@ Configurações > IA > Ollama (Local) > Detectar modelos > Salvar.
 4. Digite o nome do modelo
 5. Testar > Salvar
 
-## 5. Rodar gates de CI
+## 5. Instalar/desinstalar apps via Magic Store
+
+Sprint 16 tornou o registry de apps dinâmico. Ao instalar/desinstalar um app na Magic Store, o Dock/Mesa/Apps Launcher reagem em tempo real.
+
+1. Mesa > **Æ Magic Store** (ou via launcher)
+2. Navegue por categorias: Aplicativos / Plugins / Widgets / Integrações / Distros
+3. Click em um card → **Instalar** → app aparece no Dock (se `showInDock: true`)
+4. **Desinstalar** → desaparece do Dock e Apps Launcher
+
+Apps protegidos (Mesa, Magic Store, Aether AI, Configurações, Notificações) mostram badge "Incluído no OS" — não podem ser desinstalados.
+
+Companies novas recebem 10 apps básicos por padrão (drive, pessoas, chat, settings, rh, calendar, tarefas, bloco-de-notas, calculadora, relogio). Verticais (Comércio Digital, LOGITIX, ERP, Kwix, Autergon) precisam ser instalados manualmente.
+
+## 6. Rodar gates de CI
 
 ```bash
 pnpm typecheck
@@ -90,7 +103,7 @@ set -a; source tooling/e2e/.env.local; set +a
 pnpm test:e2e:full        # ~22s, 32/32 esperado
 ```
 
-## 6. Stop / cleanup
+## 7. Stop / cleanup
 
 ```bash
 supabase stop --no-backup

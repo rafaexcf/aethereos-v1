@@ -5,6 +5,105 @@ Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
 
 ---
 
+# Sprint 16 — Magic Store Real: Install/Uninstall Reativo
+
+Início: 2026-05-04
+Modelo: Claude Code (claude-sonnet-4-6, Sprint 16 N=1)
+Roadmap: `SPRINT_16_PROMPT.md` na raiz.
+
+## Origem
+
+Sprint 12 entregou Magic Store com UI completa + persistência em
+`kernel.company_modules`, MAS o registry de apps era hardcoded e Dock/Mesa/
+Apps Launcher mostravam todos os 33 apps independente do estado de
+instalação. Sprint 16 torna esse registry **dinâmico**: instalar/desinstalar
+na Magic Store afeta o que aparece no Dock/Mesa/Launcher em tempo real.
+
+## Histórico de milestones (Sprint 16)
+
+| Milestone | Descrição                                                                  | Status | Commit  |
+| --------- | -------------------------------------------------------------------------- | ------ | ------- |
+| MX78      | installedModulesStore (Zustand) + lifecycle hook                           | DONE   | 9d1612a |
+| MX79      | Dock + AppsLauncher + Mesa + search providers filtram por visibilidade     | DONE   | 3a985b0 |
+| MX80      | MagicStoreApp usa store global + emite SCP events platform.module.\*       | DONE   | 17cd30c |
+| MX81      | Seed default kernel modules (10 basicos) substitui verticais auto-seedados | DONE   | e2cb94d |
+| MX82      | InstallButton mostra badge "Incluído no OS" para apps protegidos           | DONE   | 73b05f5 |
+| MX83      | E2E test "dock mostra apenas apps installed + alwaysEnabled" + docs        | DONE   | (este)  |
+
+## Arquitetura
+
+```
+[Magic Store > Install]
+  ↓ store.installModule()
+kernel.company_modules INSERT (RLS company_id)
+  ↓ Realtime sub
+useInstalledModulesStore.installed (ReadonlySet<string>)
+  ↓ Zustand subscription
+useIsAppVisible(appId) hook
+  ↓ consulta direta
+Dock + AppsLauncher + Mesa + search providers
+  ↓ render condicional
+Apps aparecem/desaparecem
+```
+
+## Regra de visibilidade
+
+Para todo app no `APP_REGISTRY`:
+
+- **Visível** se: `app.alwaysEnabled === true` OU `installed.has(app.id)`
+- **Oculto** caso contrário
+
+Apps protegidos (sempre visíveis, imunes a uninstall):
+
+- `mesa`, `magic-store`, `ae-ai`, `settings`, `notifications` (PROTECTED_MODULES)
+- Qualquer app com `alwaysEnabled: true` no registry
+
+## Default kernel modules (MX81)
+
+Toda nova company recebe 10 apps básicos seedados:
+
+- drive, pessoas, chat, settings, rh, calendar, tarefas, bloco-de-notas, calculadora, relogio
+
+Verticais (comercio_digital, logitix, erp) NÃO são mais auto-seedados — usuário instala via Magic Store.
+
+## SCP events emitidos
+
+- `platform.module.installed` — payload: `company_id, module, installed_by`
+- `platform.module.uninstalled` — payload: `company_id, module, uninstalled_by`
+
+Schemas registrados em `packages/scp-registry/src/schemas/platform.ts`. Actor `human` (usuário logado).
+
+## Defesa em profundidade contra uninstall de apps críticos
+
+1. **UI** (`InstallButton`): badge verde "Incluído no OS" em vez de botão
+2. **Store** (`uninstallModule`): rejeita silenciosamente se `isProtectedModule(id)`
+3. **Banco**: TODO sprint futuro — CHECK constraint ou trigger PG
+
+## Resultado final
+
+```
+pnpm typecheck     → exit 0 (25 tasks)
+pnpm lint          → exit 0
+pnpm test:e2e:full → 33 passed, 0 failed, 0 skipped (32 + 1 novo)
+```
+
+Novo teste E2E `magic-store.spec.ts:108` valida que Dock mostra Drive
+(kernel default), Magic Store (alwaysEnabled), Aether AI (alwaysEnabled).
+
+## Dívidas para Sprint 17+
+
+1. Edge function `create-company` deveria também inserir KERNEL_DEFAULT_MODULES
+   ao criar nova company via UI (atualmente só seed faz isso)
+2. CHECK constraint ou trigger PG para bloquear DELETE de modules protegidos
+   no banco (defesa em profundidade)
+3. Mock LLM provider para E2E determinístico do Copilot (KL-6)
+4. SCP consumer / Policy Engine / Client SDK
+5. Vercel deploy preview (KL-5)
+6. IaC Pulumi
+7. Deploy Supabase remoto
+
+---
+
 # Sprint 15 — BYOK LLM + Copilot Real
 
 Início: 2026-05-04
