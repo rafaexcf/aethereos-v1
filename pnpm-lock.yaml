@@ -318,6 +318,21 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.19.17)(happy-dom@20.9.0)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.8.3)
 
+  packages/client:
+    devDependencies:
+      "@aethereos/config-eslint":
+        specifier: workspace:*
+        version: link:../config-eslint
+      "@aethereos/config-ts":
+        specifier: workspace:*
+        version: link:../config-ts
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.19.17)(happy-dom@20.9.0)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.2)(tsx@4.21.0)(yaml@2.8.3)
+
   packages/config-eslint:
     dependencies:
       "@eslint/js":
