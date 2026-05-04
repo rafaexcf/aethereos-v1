@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Demo SDK — @aethereos/client</title>
+    <style>
+      :root {
+        font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        background: #0f1216;
+        color: rgba(255, 255, 255, 0.88);
+        min-height: 100vh;
+        padding: 24px 28px;
+      }
+      h1 {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0 0 4px;
+      }
+      .sub {
+        color: rgba(255, 255, 255, 0.55);
+        font-size: 12px;
+        margin-bottom: 18px;
+      }
+      .ctx {
+        font-family: ui-monospace, SFMono-Regular, monospace;
+        font-size: 11px;
+        color: rgba(168, 85, 247, 0.85);
+        margin-bottom: 18px;
+        padding: 8px 10px;
+        background: rgba(255, 255, 255, 0.04);
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: 18px;
+      }
+      .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      button {
+        background: rgba(139, 92, 246, 0.15);
+        border: 1px solid rgba(139, 92, 246, 0.4);
+        color: #d8b4fe;
+        font-size: 12px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        text-align: left;
+      }
+      button:hover {
+        background: rgba(139, 92, 246, 0.25);
+      }
+      pre {
+        margin: 0;
+        padding: 14px;
+        background: rgba(0, 0, 0, 0.4);
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        font-size: 11px;
+        line-height: 1.5;
+        max-height: 70vh;
+        overflow: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .err {
+        color: #fca5a5;
+      }
+      .ok {
+        color: #86efac;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Demo SDK — @aethereos/client</h1>
+    <div class="sub">
+      App de demonstração do SDK + App Bridge (Sprint 22). Roda em iframe e
+      consome dados reais do shell via postMessage.
+    </div>
+    <div id="ctx" class="ctx">Aguardando handshake…</div>
+
+    <div class="grid">
+      <div class="actions">
+        <button data-action="getSession">aeth.auth.getSession()</button>
+        <button data-action="getUser">aeth.auth.getUser()</button>
+        <button data-action="listDrive">aeth.drive.list()</button>
+        <button data-action="listPeople">aeth.people.list()</button>
+        <button data-action="listNotifications">aeth.notifications.list()</button>
+        <button data-action="sendNotification">
+          aeth.notifications.send()
+        </button>
+        <button data-action="getTheme">aeth.theme.getTheme()</button>
+        <button data-action="settingsGet">aeth.settings.get('theme')</button>
+        <button data-action="bogus">aeth.bogus.method()</button>
+      </div>
+      <pre id="out">Selecione uma ação à esquerda.</pre>
+    </div>
+
+    <script type="module">
+      // Sprint 22 MX121 — protocolo bridge inline. Versao standalone do
+      // @aethereos/client para evitar bundling: este arquivo eh servido por
+      // Vite como /demo-iframe-app/index.html; nao passa por TS compile.
+
+      const PROTOCOL = {
+        TYPE_HANDSHAKE: "AETHEREOS_SDK_HANDSHAKE",
+        TYPE_HANDSHAKE_ACK: "AETHEREOS_SDK_HANDSHAKE_ACK",
+        TYPE_REQUEST: "AETHEREOS_SDK_REQUEST",
+        TYPE_RESPONSE: "AETHEREOS_SDK_RESPONSE",
+        TYPE_EVENT: "AETHEREOS_SDK_EVENT",
+        SDK_VERSION: "1.0.0",
+      };
+
+      let context = null;
+
+      function handshake() {
+        return new Promise((resolve, reject) => {
+          const timeout = setTimeout(
+            () => reject(new Error("handshake timeout")),
+            5000,
+          );
+          const onMsg = (e) => {
+            if (e.data?.type !== PROTOCOL.TYPE_HANDSHAKE_ACK) return;
+            clearTimeout(timeout);
+            window.removeEventListener("message", onMsg);
+            context = {
+              appId: e.data.appId,
+              companyId: e.data.companyId,
+              userId: e.data.userId,
+              theme: e.data.theme,
+            };
+            resolve(context);
+          };
+          window.addEventListener("message", onMsg);
+          window.parent.postMessage(
+            { type: PROTOCOL.TYPE_HANDSHAKE, version: PROTOCOL.SDK_VERSION },
+            "*",
+          );
+        });
+      }
+
+      function request(method, params = {}) {
+        return new Promise((resolve, reject) => {
+          const requestId = crypto.randomUUID();
+          const timeout = setTimeout(() => {
+            window.removeEventListener("message", onMsg);
+            reject(new Error("bridge timeout: " + method));
+          }, 10000);
+          const onMsg = (e) => {
+            if (e.data?.type !== PROTOCOL.TYPE_RESPONSE) return;
+            if (e.data.requestId !== requestId) return;
+            clearTimeout(timeout);
+            window.removeEventListener("message", onMsg);
+            if (e.data.success) resolve(e.data.data);
+            else
+              reject(
+                Object.assign(new Error(e.data.error?.message ?? "error"), {
+                  code: e.data.error?.code,
+                }),
+              );
+          };
+          window.addEventListener("message", onMsg);
+          window.parent.postMessage(
+            {
+              type: PROTOCOL.TYPE_REQUEST,
+              requestId,
+              method,
+              params,
+            },
+            "*",
+          );
+        });
+      }
+
+      // Subscribe a eventos push (theme.changed)
+      window.addEventListener("message", (e) => {
+        if (e.data?.type !== PROTOCOL.TYPE_EVENT) return;
+        if (e.data.event === "theme.changed") {
+          context && (context.theme = e.data.data?.theme ?? "dark");
+          renderContext();
+        }
+      });
+
+      const out = document.getElementById("out");
+      const ctxEl = document.getElementById("ctx");
+
+      function renderContext() {
+        if (!context) return;
+        ctxEl.textContent =
+          "ctx: app=" +
+          context.appId +
+          " | user=" +
+          context.userId.slice(0, 8) +
+          "… | tema=" +
+          context.theme;
+      }
+
+      function showOk(label, data) {
+        out.innerHTML =
+          "<span class='ok'>✓ " +
+          label +
+          "</span>\n\n" +
+          escapeJson(data);
+      }
+      function showErr(label, err) {
+        out.innerHTML =
+          "<span class='err'>✗ " +
+          label +
+          "</span>\n\n" +
+          (err?.code ? "[" + err.code + "] " : "") +
+          (err?.message ?? String(err));
+      }
+      function escapeJson(d) {
+        const s = JSON.stringify(d, null, 2);
+        return s
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      const ACTIONS = {
+        getSession: () => request("auth.getSession"),
+        getUser: () => request("auth.getUser"),
+        listDrive: () => request("drive.list"),
+        listPeople: () => request("people.list"),
+        listNotifications: () => request("notifications.list"),
+        sendNotification: () =>
+          request("notifications.send", {
+            title: "Olá do Demo SDK",
+            body: "Esta notificação veio de um app iframe via bridge.",
+            type: "info",
+          }),
+        getTheme: () => request("theme.getTheme"),
+        settingsGet: () => request("settings.get", { key: "theme" }),
+        bogus: () => request("bogus.method", {}),
+      };
+
+      document.querySelectorAll("button[data-action]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const action = btn.getAttribute("data-action");
+          const fn = ACTIONS[action];
+          if (!fn) return;
+          out.textContent = "...";
+          try {
+            const data = await fn();
+            showOk(action, data ?? "(no data)");
+          } catch (err) {
+            showErr(action, err);
+          }
+        });
+      });
+
+      handshake()
+        .then(() => renderContext())
+        .catch((err) => {
+          ctxEl.textContent = "Handshake falhou: " + err.message;
+        });
+    </script>
+  </body>
+</html>
