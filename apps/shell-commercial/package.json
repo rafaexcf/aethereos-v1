@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@aethereos/client": "workspace:*",
     "@aethereos/drivers": "workspace:*",
     "@aethereos/drivers-byok": "workspace:*",
     "@aethereos/drivers-litellm": "workspace:*",
