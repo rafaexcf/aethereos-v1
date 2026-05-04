@@ -1,4 +1,4 @@
-import React from "react";
+import React, { type ComponentType, type LazyExoticComponent } from "react";
 import type { OSApp } from "../types/os";
 
 // ADR-0024: Camada 1 é OS B2B genérico. Apps verticais (Comércio, LOGITIX, ERP)
@@ -14,6 +14,136 @@ function makePlaceholder(appName: string, sprintTarget?: string) {
         }),
     })),
   );
+}
+
+// ─── Sprint 21 MX113: COMPONENT_MAP ──────────────────────────────────────────
+//
+// Mapeamento leve appId -> componente React.lazy. Substitui (em conjunto com
+// kernel.app_registry no banco e appRegistryStore) o array APP_REGISTRY como
+// source-of-truth de metadata.
+//
+// Apenas apps NATIVOS aparecem aqui — apps iframe/weblink usam IframeAppFrame
+// ou WebLinkOpener e nao precisam de entrada nesta tabela (R11 do Sprint 21).
+//
+// APP_REGISTRY abaixo permanece como compat layer durante a transicao
+// (consumido por Dock/Mesa/TabBar/AppFrame ate MX114).
+
+export const COMPONENT_MAP: Record<
+  string,
+  LazyExoticComponent<ComponentType>
+> = {
+  mesa: React.lazy(() =>
+    import("./mesa/MesaApp").then((m) => ({ default: m.MesaApp })),
+  ),
+  drive: React.lazy(() =>
+    import("./drive/index").then((m) => ({ default: m.DriveApp })),
+  ),
+  pessoas: React.lazy(() =>
+    import("./pessoas/index").then((m) => ({ default: m.PessoasApp })),
+  ),
+  chat: React.lazy(() =>
+    import("./chat/index").then((m) => ({ default: m.ChatApp })),
+  ),
+  rh: React.lazy(() =>
+    import("./rh/index").then((m) => ({ default: m.RHApp })),
+  ),
+  "magic-store": React.lazy(() =>
+    import("./magic-store/index").then((m) => ({ default: m.MagicStoreApp })),
+  ),
+  weather: React.lazy(() =>
+    import("./weather/index").then((m) => ({ default: m.WeatherApp })),
+  ),
+  settings: React.lazy(() =>
+    import("./configuracoes/index").then((m) => ({
+      default: m.ConfiguracoesApp,
+    })),
+  ),
+  notifications: React.lazy(() =>
+    import("./notifications/NotificationsApp").then((m) => ({
+      default: m.NotificationsApp,
+    })),
+  ),
+  gestor: React.lazy(() =>
+    import("./gestor/index").then((m) => ({ default: m.GestorApp })),
+  ),
+  "ae-ai": makePlaceholder("Aether AI"),
+  calendar: React.lazy(() =>
+    import("./calendario/CalendarApp").then((m) => ({
+      default: m.CalendarApp,
+    })),
+  ),
+  governanca: React.lazy(() =>
+    import("./governanca/index").then((m) => ({ default: m.GovernancaApp })),
+  ),
+  auditoria: React.lazy(() =>
+    import("./auditoria/index").then((m) => ({ default: m.AuditoriaApp })),
+  ),
+  "bloco-de-notas": React.lazy(() =>
+    import("./bloco-de-notas/index").then((m) => ({
+      default: m.BlocoDeNotasApp,
+    })),
+  ),
+  tarefas: React.lazy(() =>
+    import("./tarefas/index").then((m) => ({ default: m.TarefasApp })),
+  ),
+  "agenda-telefonica": React.lazy(() =>
+    import("./agenda-telefonica/index").then((m) => ({
+      default: m.AgendaTelefonicaApp,
+    })),
+  ),
+  calculadora: React.lazy(() =>
+    import("./calculadora/index").then((m) => ({ default: m.CalculadoraApp })),
+  ),
+  relogio: React.lazy(() =>
+    import("./relogio/index").then((m) => ({ default: m.RelogioApp })),
+  ),
+  camera: React.lazy(() =>
+    import("./camera/index").then((m) => ({ default: m.CameraApp })),
+  ),
+  "gravador-de-voz": React.lazy(() =>
+    import("./gravador-de-voz/index").then((m) => ({
+      default: m.GravadorDeVozApp,
+    })),
+  ),
+  enquetes: React.lazy(() =>
+    import("./enquetes/index").then((m) => ({ default: m.EnquetesApp })),
+  ),
+  navegador: React.lazy(() =>
+    import("./navegador/index").then((m) => ({ default: m.NavegadorApp })),
+  ),
+  kanban: React.lazy(() =>
+    import("./kanban/index").then((m) => ({ default: m.KanbanApp })),
+  ),
+  lixeira: React.lazy(() =>
+    import("./lixeira/index").then((m) => ({ default: m.LixeiraApp })),
+  ),
+  planilhas: React.lazy(() =>
+    import("./planilhas/index").then((m) => ({ default: m.PlanilhasApp })),
+  ),
+  documentos: React.lazy(() =>
+    import("./documentos/index").then((m) => ({ default: m.DocumentosApp })),
+  ),
+  apresentacoes: React.lazy(() =>
+    import("./apresentacoes/index").then((m) => ({
+      default: m.ApresentacoesApp,
+    })),
+  ),
+  pdf: React.lazy(() =>
+    import("./pdf/index").then((m) => ({ default: m.PdfApp })),
+  ),
+  automacoes: React.lazy(() =>
+    import("./automacoes/index").then((m) => ({ default: m.AutomacoesApp })),
+  ),
+  reuniao: React.lazy(() =>
+    import("./reuniao/index").then((m) => ({ default: m.ReuniaoApp })),
+  ),
+};
+
+/** Resolve componente React.lazy de um app nativo. null para iframe/weblink. */
+export function getComponent(
+  appId: string,
+): LazyExoticComponent<ComponentType> | null {
+  return COMPONENT_MAP[appId] ?? null;
 }
 
 export const APP_REGISTRY: OSApp[] = [
