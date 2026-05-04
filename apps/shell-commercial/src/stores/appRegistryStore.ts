@@ -100,7 +100,7 @@ export const useAppRegistryStore = create<
       const res = (await drivers.data
         .from("app_registry")
         .select("*")
-        .eq("status", "published")
+        .in("status", ["published", "draft"])
         .order("sort_order", { ascending: true })) as unknown as {
         data: AppRegistryRow[] | null;
         error: { message: string } | null;

@@ -38,10 +38,8 @@ import {
   Trash2,
   Download,
 } from "lucide-react";
-import {
-  MAGIC_STORE_CATALOG,
-  type MagicStoreApp as CatalogApp,
-} from "../../data/magic-store-catalog";
+import { type MagicStoreApp as CatalogApp } from "../../data/magic-store-catalog";
+import { useMagicStoreCatalog } from "./catalog-adapter";
 import { useDrivers } from "../../lib/drivers-context";
 import { useSessionStore } from "../../stores/session";
 import { useOSStore } from "../../stores/osStore";
@@ -2739,6 +2737,9 @@ export function MagicStoreApp() {
   const [selectedApp, setSelectedApp] = useState<CatalogApp | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  // Sprint 21 MX115: catalogo agora vem do banco via appRegistryStore.
+  const catalog = useMagicStoreCatalog();
+
   // Sprint 16 MX80: store global em vez de hook local — install/uninstall
   // refletem em tempo real no Dock/Mesa/Launcher.
   const drivers = useDrivers();
@@ -2802,13 +2803,15 @@ export function MagicStoreApp() {
 
   const related = useMemo(() => {
     if (selectedApp === null) return [];
-    return MAGIC_STORE_CATALOG.filter(
-      (a) =>
-        a.id !== selectedApp.id &&
-        (a.category === selectedApp.category ||
-          a.tags.some((t) => selectedApp.tags.includes(t))),
-    ).slice(0, 6);
-  }, [selectedApp]);
+    return catalog
+      .filter(
+        (a) =>
+          a.id !== selectedApp.id &&
+          (a.category === selectedApp.category ||
+            a.tags.some((t) => selectedApp.tags.includes(t))),
+      )
+      .slice(0, 6);
+  }, [selectedApp, catalog]);
 
   function handleOpen(app: CatalogApp) {
     const src = app.source;
@@ -2862,7 +2865,7 @@ export function MagicStoreApp() {
     if (activePage === "apps") {
       return (
         <AppsTabPage
-          catalog={MAGIC_STORE_CATALOG}
+          catalog={catalog}
           sidebarFilter={sidebarFilter}
           onFilter={handleFilter}
           onSelect={setSelectedApp}
@@ -2996,7 +2999,7 @@ export function MagicStoreApp() {
               </>
             ) : (
               <StoreFrontPage
-                catalog={MAGIC_STORE_CATALOG}
+                catalog={catalog}
                 onSelect={setSelectedApp}
                 onOpen={handleOpen}
                 onNavigate={handleNavigate}
