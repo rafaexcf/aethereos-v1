@@ -7,13 +7,14 @@ import { useDrivers } from "../../lib/drivers-context";
 import { useSessionStore } from "../../stores/session";
 import { executeProposal } from "../../lib/proposal-executor";
 
-type Tab = "agentes" | "capabilities" | "invariantes" | "shadow";
+type Tab = "agentes" | "capabilities" | "invariantes" | "shadow" | "context";
 
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "agentes", label: "Agentes", icon: "🤖" },
   { id: "capabilities", label: "Capabilities", icon: "🔑" },
   { id: "invariantes", label: "Invariantes", icon: "🔒" },
   { id: "shadow", label: "Shadow Mode", icon: "👤" },
+  { id: "context", label: "Context Engine", icon: "◆" },
 ];
 
 interface AgentRow {
@@ -56,6 +57,430 @@ function formatDateTime(iso: string): string {
     timeStyle: "short",
   });
 }
+
+// ─── Sprint 19 MX102: Context Engine ────────────────────────────────────────
+
+interface ContextRecordRow {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  record_type: string;
+  version: number;
+  data: Record<string, unknown>;
+  source_event_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface ContextSnapshot {
+  entity_type: string;
+  entity_id: string;
+  records: Array<{
+    record_type: string;
+    version: number;
+    data: Record<string, unknown>;
+    updated_at: string;
+  }>;
+  related_events: Array<{
+    event_type: string;
+    created_at: string;
+    payload_preview: Record<string, unknown>;
+  }>;
+  embedding_count: number;
+}
+
+function TabContext({
+  records,
+  embeddingsCount,
+  loading,
+  onRequestSnapshot,
+}: {
+  records: ContextRecordRow[];
+  embeddingsCount: number;
+  loading: boolean;
+  onRequestSnapshot: (
+    entityType: string,
+    entityId: string,
+  ) => Promise<ContextSnapshot | null>;
+}) {
+  const [selected, setSelected] = useState<ContextRecordRow | null>(null);
+  const [snapshot, setSnapshot] = useState<ContextSnapshot | null>(null);
+  const [snapshotLoading, setSnapshotLoading] = useState(false);
+
+  const summary = useMemo(() => {
+    const byType = new Map<string, number>();
+    for (const r of records) {
+      byType.set(r.entity_type, (byType.get(r.entity_type) ?? 0) + 1);
+    }
+    return [...byType.entries()].sort((a, b) => b[1] - a[1]);
+  }, [records]);
+
+  if (loading) {
+    return (
+      <div style={{ padding: 24, fontSize: 13, color: "var(--text-tertiary)" }}>
+        Carregando context records…
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{ display: "flex", height: "100%", overflow: "hidden", gap: 0 }}
+    >
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: "16px 24px 32px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 16,
+        }}
+      >
+        <header>
+          <h2
+            style={{
+              fontSize: 16,
+              fontWeight: 600,
+              color: "var(--text-primary)",
+              margin: 0,
+            }}
+          >
+            Context Engine
+          </h2>
+          <p
+            style={{
+              fontSize: 12,
+              color: "var(--text-tertiary)",
+              margin: "4px 0 0",
+            }}
+          >
+            Camada 2 SCP — registros derivados pelos enrichment consumers a
+            partir de eventos brutos.
+          </p>
+        </header>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gap: 12,
+          }}
+        >
+          <SummaryCard
+            label="Embeddings"
+            value={embeddingsCount}
+            sub="vetores indexados"
+          />
+          {summary.map(([type, n]) => (
+            <SummaryCard
+              key={type}
+              label={type}
+              value={n}
+              sub="context_records"
+            />
+          ))}
+        </div>
+
+        {records.length === 0 ? (
+          <div style={{ padding: "32px 16px" }}>
+            <EmptyState
+              icon="Database"
+              title="Nenhum context record ainda"
+              description="Quando arquivos forem uploaded, pessoas criadas ou ações do Copilot executadas, o EnrichmentConsumer gera registros aqui."
+            />
+          </div>
+        ) : (
+          <div
+            style={{
+              border: "1px solid rgba(255,255,255,0.07)",
+              borderRadius: 8,
+              overflow: "hidden",
+            }}
+          >
+            <table
+              style={{
+                width: "100%",
+                borderCollapse: "collapse",
+                fontSize: 12,
+              }}
+            >
+              <thead>
+                <tr
+                  style={{
+                    background: "rgba(255,255,255,0.03)",
+                    color: "var(--text-tertiary)",
+                  }}
+                >
+                  <th style={cellHeadStyle}>Entity</th>
+                  <th style={cellHeadStyle}>Record</th>
+                  <th style={cellHeadStyle}>v</th>
+                  <th style={cellHeadStyle}>Updated</th>
+                  <th style={cellHeadStyle}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {records.slice(0, 20).map((r) => (
+                  <tr
+                    key={r.id}
+                    style={{
+                      borderTop: "1px solid rgba(255,255,255,0.05)",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => {
+                      setSelected(r);
+                      setSnapshot(null);
+                    }}
+                  >
+                    <td style={cellStyle}>
+                      <span
+                        style={{
+                          color: "var(--text-secondary)",
+                          fontWeight: 500,
+                        }}
+                      >
+                        {r.entity_type}
+                      </span>
+                      <span
+                        style={{
+                          marginLeft: 6,
+                          color: "var(--text-tertiary)",
+                          fontSize: 10,
+                          fontFamily: "var(--font-mono)",
+                        }}
+                      >
+                        {r.entity_id.slice(0, 8)}…
+                      </span>
+                    </td>
+                    <td style={cellStyle}>{r.record_type}</td>
+                    <td style={cellStyle}>{r.version}</td>
+                    <td style={cellStyle}>{formatDateTime(r.updated_at)}</td>
+                    <td style={cellStyle}>
+                      <button
+                        type="button"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          setSelected(r);
+                          setSnapshot(null);
+                          setSnapshotLoading(true);
+                          const s = await onRequestSnapshot(
+                            r.entity_type,
+                            r.entity_id,
+                          );
+                          setSnapshot(s);
+                          setSnapshotLoading(false);
+                        }}
+                        style={{
+                          fontSize: 10,
+                          color: "rgba(168,85,247,0.85)",
+                          background: "transparent",
+                          border: "1px solid rgba(168,85,247,0.4)",
+                          borderRadius: 4,
+                          padding: "2px 6px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Snapshot
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {selected !== null && (
+        <aside
+          style={{
+            width: 380,
+            borderLeft: "1px solid rgba(255,255,255,0.07)",
+            background: "rgba(0,0,0,0.15)",
+            overflowY: "auto",
+            padding: 16,
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+          }}
+        >
+          <header>
+            <div
+              style={{
+                fontSize: 11,
+                color: "var(--text-tertiary)",
+                textTransform: "uppercase",
+              }}
+            >
+              {selected.entity_type} / {selected.record_type}
+            </div>
+            <div
+              style={{
+                fontSize: 12,
+                fontFamily: "var(--font-mono)",
+                color: "var(--text-secondary)",
+                marginTop: 4,
+              }}
+            >
+              {selected.entity_id}
+            </div>
+          </header>
+          <section>
+            <h4
+              style={{
+                fontSize: 11,
+                color: "var(--text-tertiary)",
+                margin: "0 0 4px",
+                textTransform: "uppercase",
+              }}
+            >
+              data
+            </h4>
+            <pre
+              style={{
+                fontSize: 11,
+                background: "rgba(0,0,0,0.3)",
+                color: "rgba(255,255,255,0.85)",
+                padding: 8,
+                borderRadius: 6,
+                overflow: "auto",
+                margin: 0,
+              }}
+            >
+              {JSON.stringify(selected.data, null, 2)}
+            </pre>
+          </section>
+
+          {snapshotLoading && (
+            <div style={{ fontSize: 12, color: "var(--text-tertiary)" }}>
+              Buscando snapshot…
+            </div>
+          )}
+          {snapshot !== null && (
+            <section>
+              <h4
+                style={{
+                  fontSize: 11,
+                  color: "var(--text-tertiary)",
+                  margin: "0 0 4px",
+                  textTransform: "uppercase",
+                }}
+              >
+                snapshot
+              </h4>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "var(--text-secondary)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 4,
+                }}
+              >
+                <div>
+                  records: <strong>{snapshot.records.length}</strong>
+                </div>
+                <div>
+                  related events:{" "}
+                  <strong>{snapshot.related_events.length}</strong>
+                </div>
+                <div>
+                  embeddings: <strong>{snapshot.embedding_count}</strong>
+                </div>
+              </div>
+              {snapshot.related_events.length > 0 && (
+                <div
+                  style={{
+                    marginTop: 8,
+                    fontSize: 11,
+                    color: "var(--text-tertiary)",
+                  }}
+                >
+                  últimos eventos:
+                  <ul
+                    style={{
+                      paddingLeft: 14,
+                      margin: "4px 0 0",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    {snapshot.related_events.slice(0, 5).map((e, i) => (
+                      <li key={i}>
+                        {e.event_type}{" "}
+                        <span style={{ color: "var(--text-tertiary)" }}>
+                          {formatDateTime(e.created_at)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </section>
+          )}
+        </aside>
+      )}
+    </div>
+  );
+}
+
+function SummaryCard({
+  label,
+  value,
+  sub,
+}: {
+  label: string;
+  value: number;
+  sub: string;
+}) {
+  return (
+    <div
+      style={{
+        background: "rgba(255,255,255,0.04)",
+        border: "1px solid rgba(255,255,255,0.06)",
+        borderRadius: 8,
+        padding: 12,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 10,
+          color: "var(--text-tertiary)",
+          textTransform: "uppercase",
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          fontSize: 22,
+          fontWeight: 600,
+          color: "var(--text-primary)",
+          marginTop: 4,
+        }}
+      >
+        {value}
+      </div>
+      <div
+        style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 2 }}
+      >
+        {sub}
+      </div>
+    </div>
+  );
+}
+
+const cellHeadStyle: React.CSSProperties = {
+  textAlign: "left",
+  padding: "8px 10px",
+  fontSize: 10,
+  fontWeight: 500,
+  textTransform: "uppercase",
+};
+
+const cellStyle: React.CSSProperties = {
+  padding: "8px 10px",
+  color: "var(--text-secondary)",
+};
 
 function TabAgentes({
   agents,
@@ -1095,6 +1520,9 @@ export function GovernancaApp() {
   const [proposals, setProposals] = useState<ProposalRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  // Sprint 19 MX102: Context Engine
+  const [contextRecords, setContextRecords] = useState<ContextRecordRow[]>([]);
+  const [embeddingsCount, setEmbeddingsCount] = useState(0);
 
   const drivers = useDrivers();
   const { userId, activeCompanyId } = useSessionStore();
@@ -1106,31 +1534,47 @@ export function GovernancaApp() {
     let cancelled = false;
     async function load(): Promise<void> {
       setLoading(true);
-      const [agentsRes, usersRes, proposalsRes] = await Promise.all([
-        d.data
-          .from("agents")
-          .select(
-            "id,company_id,supervising_user_id,name,description,capabilities,status,kind,autonomy_level,created_at,updated_at",
-          )
-          .order("created_at", { ascending: false }),
-        d.data.from("users").select("id,email,display_name"),
-        d.data
-          .from("agent_proposals")
-          .select(
-            "id,agent_id,intent_type,status,supervising_user_id,reviewed_by,reviewed_at,rejection_reason,created_at,expires_at,payload",
-          )
-          .order("created_at", { ascending: false })
-          .limit(50),
-      ]);
+      const [agentsRes, usersRes, proposalsRes, recordsRes, embedCountRes] =
+        await Promise.all([
+          d.data
+            .from("agents")
+            .select(
+              "id,company_id,supervising_user_id,name,description,capabilities,status,kind,autonomy_level,created_at,updated_at",
+            )
+            .order("created_at", { ascending: false }),
+          d.data.from("users").select("id,email,display_name"),
+          d.data
+            .from("agent_proposals")
+            .select(
+              "id,agent_id,intent_type,status,supervising_user_id,reviewed_by,reviewed_at,rejection_reason,created_at,expires_at,payload",
+            )
+            .order("created_at", { ascending: false })
+            .limit(50),
+          d.data
+            .from("context_records")
+            .select(
+              "id,entity_type,entity_id,record_type,version,data,source_event_id,created_at,updated_at",
+            )
+            .order("updated_at", { ascending: false })
+            .limit(20),
+          d.data
+            .from("embeddings")
+            .select("id", { count: "exact", head: true }),
+        ]);
       if (cancelled) return;
 
       const agentRows = (agentsRes.data ?? []) as AgentRow[];
       const userRows = (usersRes.data ?? []) as UserRow[];
       const proposalRows = (proposalsRes.data ?? []) as ProposalRow[];
+      const recordRows = (recordsRes.data ?? []) as ContextRecordRow[];
 
       setAgents(agentRows);
       setUsers(new Map(userRows.map((u) => [u.id, u])));
       setProposals(proposalRows);
+      setContextRecords(recordRows);
+      setEmbeddingsCount(
+        (embedCountRes as { count: number | null }).count ?? 0,
+      );
       setLoading(false);
     }
 
@@ -1139,6 +1583,44 @@ export function GovernancaApp() {
       cancelled = true;
     };
   }, [drivers, userId, activeCompanyId]);
+
+  const handleRequestSnapshot = useCallback(
+    async (
+      entityType: string,
+      entityId: string,
+    ): Promise<ContextSnapshot | null> => {
+      const supabaseUrl = import.meta.env["VITE_SUPABASE_URL"] ?? "";
+      const anonKey = import.meta.env["VITE_SUPABASE_ANON_KEY"] ?? "";
+      if (!supabaseUrl || !anonKey || drivers === null) return null;
+      try {
+        const sessionResult = await drivers.auth.getSession();
+        const jwt =
+          sessionResult.ok && sessionResult.value !== null
+            ? sessionResult.value.access_token
+            : anonKey;
+        const res = await fetch(
+          `${supabaseUrl}/functions/v1/context-snapshot`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${jwt}`,
+            },
+            body: JSON.stringify({
+              entity_type: entityType,
+              entity_id: entityId,
+            }),
+            signal: AbortSignal.timeout(15_000),
+          },
+        );
+        if (!res.ok) return null;
+        return (await res.json()) as ContextSnapshot;
+      } catch {
+        return null;
+      }
+    },
+    [drivers],
+  );
 
   // Sprint 17 MX88: handlers de approve/reject de proposals.
   // Approve tambem dispara executeProposal (mesma logica do CopilotDrawer).
@@ -1288,6 +1770,14 @@ export function GovernancaApp() {
           onReject={handleRejectProposal}
         />
       ),
+      context: (
+        <TabContext
+          records={contextRecords}
+          embeddingsCount={embeddingsCount}
+          loading={loading}
+          onRequestSnapshot={handleRequestSnapshot}
+        />
+      ),
     }),
     [
       agents,
@@ -1298,6 +1788,9 @@ export function GovernancaApp() {
       userId,
       handleApproveProposal,
       handleRejectProposal,
+      contextRecords,
+      embeddingsCount,
+      handleRequestSnapshot,
     ],
   );
 
