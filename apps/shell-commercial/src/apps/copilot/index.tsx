@@ -571,6 +571,17 @@ export function CopilotDrawer({
             .from("agent_proposals")
             .update({ status: "expired" })
             .in("id", staleIds);
+          // Sprint 17 MX87: notifica usuario que sugestao expirou (1 row por proposal)
+          const expiredNotifs = staleIds.map((sid) => ({
+            user_id: userId,
+            company_id: companyId,
+            type: "warning" as const,
+            title: "Sugestão do Copilot expirou",
+            body: "Uma proposta nao revisada em 1h foi descartada.",
+            source_app: "copilot" as const,
+            source_id: sid,
+          }));
+          void data.from("notifications").insert(expiredNotifs);
         }
         setProposals(hydrated as ActionProposal[]);
       }
@@ -658,6 +669,16 @@ export function CopilotDrawer({
           },
           { actor: { type: "human", user_id: userId } },
         );
+        // Sprint 17 MX87: notifica execucao bem-sucedida
+        void data.from("notifications").insert({
+          user_id: userId,
+          company_id: companyId,
+          type: "success",
+          title: "Ação executada pelo Copilot",
+          body: INTENT_LABELS[target.intentType],
+          source_app: "copilot",
+          source_id: proposalId,
+        });
       } else {
         setProposals((prev) =>
           prev.map((p) =>
@@ -953,6 +974,16 @@ export function CopilotDrawer({
             },
           },
         );
+        // Sprint 17 MX87: notifica usuario sobre nova sugestao do Copilot
+        void data.from("notifications").insert({
+          user_id: userId,
+          company_id: companyId,
+          type: "info",
+          title: "Copilot sugeriu uma ação",
+          body: INTENT_LABELS[proposal.intentType],
+          source_app: "copilot",
+          source_id: proposal.id,
+        });
       }
 
       const assistantMsg: CopilotMessage = {
