@@ -48,6 +48,27 @@ Cada entry indica o sprint de origem e por que não foi corrigido agora.
 
 ---
 
+## KL-7 — SCP pipeline em modo inline (sem fan-out cross-host) (Sprint 18)
+
+**Sintoma:** scp-worker consome eventos do outbox e distribui apenas para consumers em-processo. Em multi-host (F2+), eventos NÃO se propagam entre instâncias — cada worker só roda seus próprios consumers.  
+**Causa:** NATS JetStream local funcionou dentro do container mas não foi acessível via 127.0.0.1:4222 do host (port forwarding WSL2 falho). Por R13 do spec (limite 30min) optou-se pelo modo inline. Pacote `@aethereos/drivers-nats` permanece para uso futuro.  
+**Impacto:** Single-host hoje funciona perfeitamente (FOR UPDATE SKIP LOCKED garante non-overlap entre múltiplos workers locais lendo o mesmo outbox). Para fan-out real cross-host (consumers especializados em hosts diferentes) precisará ligar NATS.  
+**Fix futuro (F2+):** ressuscitar drivers-nats, criar SCP_MODE=inline|nats env switch, publicar pra subject `scp.<event_type>` paralelo ao INSERT no outbox, consumers virarem subscribers do NATS.  
+**Sprint de origem:** 18 (MX90 decisão).
+
+---
+
+## KL-8 — EmbeddingConsumer só lê texto cru (sem extração de PDF binário) (Sprint 18)
+
+**Sintoma:** Upload de PDF binário em Drive faz EmbeddingConsumer ler bytes como texto via Storage REST GET — chunkificação fica corrompida e embeddings são lixo.  
+**Causa:** EmbeddingConsumer usa `await res.text()` direto sem checar Content-Type real. mime types declarados em `kernel.files.mime_type` são confiáveis para text/plain e text/markdown mas application/pdf precisa de extrator (pdf-parse, unpdf etc.).  
+**Impacto:** PDFs uplodados degradam silenciosamente — embeddings populados mas qualidade ruim em RAG. Não bloqueia outros consumers (audit + notification continuam corretos).  
+**Workaround atual:** Já há skip-by-mime; basta tirar `application/pdf` de SUPPORTED_TYPES até ter extrator.  
+**Fix futuro:** Adicionar `pdf-parse` em scp-worker, branchar por mime_type → extrair texto → chunkificar.  
+**Sprint de origem:** 18 (MX93 escopo controlado).
+
+---
+
 ## KL-5 — Vercel deploy preview ainda nao configurado (Sprint 14 MX70)
 
 **Sintoma:** PRs nao geram URL de preview automatico em vercel.app.  

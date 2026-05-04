@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "start": "node --env-file=../../.env.local --experimental-specifier-resolution=node dist/main.js",
+    "test": "vitest run --config vitest.config.ts",
     "test:isolation": "vitest run --config vitest.isolation.config.ts",
     "clean": "rm -rf dist"
   },

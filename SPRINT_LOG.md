@@ -5,6 +5,153 @@ Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
 
 ---
 
+# Sprint 18 — SCP Consumer Pipeline (Outbox Poller + Inline Consumers)
+
+Início: 2026-05-03
+Modelo: Claude Code (claude-opus-4-7, Sprint 18 N=1)
+Roadmap: `SPRINT_18_PROMPT.md` na raiz.
+
+## Origem
+
+Sprint 9 entregou a Edge Function `scp-publish` que escreve eventos em
+`kernel.scp_outbox`. Sprint 17 começou a empilhar eventos reais (5 intents
+do Copilot) — mas nada lia o outbox. `audit_log` ficou vazio, embeddings
+nunca aconteciam, notificações dependiam de inserção inline pelo browser.
+Sprint 18 fecha o lado consumer: poller dedicado, audit universal,
+notificações idempotentes e embeddings com Modo Degenerado.
+
+## Decisão arquitetural — modo inline (sem NATS)
+
+NATS JetStream local funcionava dentro do container mas não era acessível
+via `127.0.0.1:4222` no host (port forwarding WSL2 falho — `nats client
+connect` retornou CONNECTION_REFUSED, `curl 127.0.0.1:8222/varz` sem
+resposta). Por R13 do spec (limite 30min) optou-se pelo **modo inline**:
+poller lê outbox, distribui para consumers em-processo, sem broker. O
+pacote `@aethereos/drivers-nats` permanece para uso futuro (cluster
+multi-host F2+).
+
+## Histórico de milestones (Sprint 18)
+
+| Milestone | Descrição                                                     | Status | Commit  |
+| --------- | ------------------------------------------------------------- | ------ | ------- |
+| MX90      | Verificar drivers-nats + decidir modo (inline)                | DONE   | b773960 |
+| MX91      | Outbox poller (FOR UPDATE SKIP LOCKED + retry 3x)             | DONE   | eebe71f |
+| MX92      | AuditConsumer (wildcard → kernel.audit_log)                   | DONE   | eb71f04 |
+| MX93      | EmbeddingConsumer (chunk + embed-text + UPSERT pgvector)      | DONE   | eb71f04 |
+| MX94      | NotificationConsumer (idempotente vs. notif inline do shell)  | DONE   | eb71f04 |
+| MX95      | Dev scripts + integration (pnpm dev:scp-worker + QUICK_START) | DONE   | 6b4f031 |
+| MX96      | 24 unit tests (3 consumers) + Sprint 18 docs                  | DONE   | (este)  |
+
+## Arquitetura
+
+```
+[shell] ── action ──► [Edge Function scp-publish] ── INSERT ──► kernel.scp_outbox
+                                                                       │
+                                                          poll a cada SCP_POLL_INTERVAL_MS
+                                                                       ↓
+                                                    [scp-worker main.ts]
+                                                            │
+                                       SELECT ... FOR UPDATE SKIP LOCKED
+                                                            │
+                                          ┌─────────────────┼─────────────────┐
+                                          ↓                 ↓                 ↓
+                                  AuditConsumer   NotificationConsumer  EmbeddingConsumer
+                                  (wildcard)      (4 event types)       (file.uploaded)
+                                          │                 │                 │
+                                  audit_log         notifications       embeddings
+                                                                        + Storage REST
+                                                                        + /functions/v1/embed-text
+```
+
+UPDATE outbox: `status='published'` se todos consumers OK; senão incrementa
+`attempts` e mantém `pending` até `SCP_MAX_ATTEMPTS` (default 3) → `failed`
+permanente com `last_error` populado.
+
+## 3 consumers entregues
+
+**AuditConsumer** (apps/scp-worker/src/consumers/audit-consumer.ts):
+
+- `matches()` é wildcard — captura todos os eventos
+- mapeia envelope → kernel.audit*log: action=event_type, actor*\*=envelope.actor, payload=envelope.payload jsonb
+- extractResource: reconhece `file_id`/`person_id`/`folder_id`/`channel_id`/`proposal_id`/`module`/`company_id`/`user_id`/`notification_id` por convenção
+- R12: erro de INSERT é engolido (audit é secundário, nunca bloqueia pipeline)
+
+**NotificationConsumer** (apps/scp-worker/src/consumers/notification-consumer.ts):
+
+- Subscribe: `platform.person.created`, `platform.file.uploaded`, `platform.folder.created`, `platform.chat.channel_created`
+- **Idempotência crítica**: SELECT-before-INSERT em `(user_id, source_app, source_id)` para coexistir com notif inline do shell (Sprint 17 já notifica direto do browser)
+- Mensagens em PT-BR: "Novo contato", "Arquivo enviado", "Pasta criada", "Canal criado"
+- Skip silencioso se payload incompleto (sem created_by/full_name)
+
+**EmbeddingConsumer** (apps/scp-worker/src/consumers/embedding-consumer.ts):
+
+- Listen: `platform.file.uploaded`
+- mime types suportados: `text/plain`, `text/markdown`, `application/pdf`
+- Chunk: 800 chars, overlap 100
+- Storage REST GET (service_role) → fetch text → POST `/functions/v1/embed-text` por chunk → UPSERT em `kernel.embeddings(company_id, source_id, chunk_index)`
+- **Modo Degenerado P14**: 503 do embed-text → log + skip restante (não marca outbox como failed); service_role ausente → skip silencioso; mime não suportado → skip silencioso
+
+## Worker lifecycle (apps/scp-worker/src/main.ts)
+
+- Loop infinito com `await sleep(SCP_POLL_INTERVAL_MS)` entre batches (default 2000ms)
+- `BATCH_SIZE=50` rows por iteração (configurável)
+- Graceful shutdown: SIGTERM/SIGINT → flag shuttingDown → sql.end({ timeout: 5 }) → process.exit(0)
+- Logs estruturados (jlog) com mascaramento de credenciais em DATABASE_URL
+- Defensivo: `buildFallbackEnvelope` para rows com envelope NULL (dados antigos pre-Sprint 9)
+
+## Smoke test pipeline (validado localmente)
+
+Após inserir evento `platform.person.created` direto no outbox + iniciar worker:
+
+```
+event_id → AuditConsumer + NotificationConsumer
+         → 1 row em kernel.audit_log (action='platform.person.created')
+         → 1 row em kernel.notifications (title='Novo contato')
+         → outbox.status='published' + published_at NOW()
+17 eventos pré-existentes pendentes também processados antes do SIGTERM
+```
+
+## Testes
+
+24 unit tests novos (apps/scp-worker/**tests**/unit/):
+
+- `audit-consumer.test.ts` (8): wildcard matcher, mapping de actor (human/agent/system), extractResource (file/module/fallback prefix), R12 swallow
+- `notification-consumer.test.ts` (8): 4 event types, idempotência (SELECT existing → skip), payload incompleto, fallback de tenant_id
+- `embedding-consumer.test.ts` (8): matches, skip por env/mime/service_role/payload, happy path com chunking + UPSERT, P14 503, Storage 404
+
+Mock minimalista de `sql` tagged template + `sql.unsafe` em `_mock-sql.ts`.
+
+`pnpm test` (turbo, todos os pacotes): 18/18 tasks success, scp-worker 24/24 passed.
+
+## Env vars (apps/scp-worker)
+
+```bash
+DATABASE_URL=postgres://postgres:postgres@127.0.0.1:54322/postgres   # obrigatório
+SCP_POLL_INTERVAL_MS=2000          # opcional, default 2000
+SCP_BATCH_SIZE=50                  # opcional, default 50
+SCP_MAX_ATTEMPTS=3                 # opcional, default 3
+SUPABASE_URL=http://127.0.0.1:54321
+SUPABASE_ANON_KEY=...              # opcional (sem ele EmbeddingConsumer skipa)
+SUPABASE_SERVICE_ROLE_KEY=...      # opcional (sem ele EmbeddingConsumer skipa)
+```
+
+## Scripts adicionados
+
+- `pnpm dev:scp-worker` (root) → `pnpm --filter @aethereos/scp-worker dev`
+- `pnpm build:scp-worker` (root) → `pnpm --filter @aethereos/scp-worker build`
+- `pnpm test` (scp-worker) → vitest unit suite (24 tests)
+
+QUICK_START.md ganhou seção 7 documentando o fluxo de 4 terminais
+(db:start / dev:infra / dev / dev:scp-worker) + queries de validação.
+
+## Limitações conhecidas Sprint 18
+
+- **Modo inline**: 1 worker por host. Multi-instância funciona (FOR UPDATE SKIP LOCKED garante non-overlap), mas eventos só são consumidos pelos consumers do _próprio_ worker. Para fan-out cross-host (F2+) será preciso ligar NATS (drivers-nats já existe).
+- **EmbeddingConsumer só processa text/plain, text/markdown, application/pdf.** PDFs binários hoje são lidos como texto cru — extração real (pdf-parse, etc.) fica para sprint futuro.
+- **Storage REST falha silenciosa**: se service_role estiver expirada ou path errado, log warn + skip. Não há retry — fila Outbox cuida disso ao não marcar como published se INSERT falhou no audit_log primeiro (mas embedding nunca é "falha do pipeline" por design P14).
+
+---
+
 # Sprint 17 — Agent Proposals Workflow: Aprovar, Rejeitar, Executar
 
 Início: 2026-05-04
