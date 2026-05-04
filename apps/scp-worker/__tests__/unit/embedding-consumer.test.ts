@@ -39,7 +39,11 @@ describe("EmbeddingConsumer", () => {
       supabaseAnonKey: ANON,
     });
     expect(c.matches("platform.file.uploaded")).toBe(true);
-    expect(c.matches("platform.person.created")).toBe(false);
+    // Sprint 19 MX99: tambem embeda context_records derivados pelo EnrichmentConsumer
+    expect(c.matches("platform.person.created")).toBe(true);
+    expect(c.matches("platform.chat.channel_created")).toBe(true);
+    expect(c.matches("agent.copilot.action_executed")).toBe(true);
+    expect(c.matches("platform.folder.created")).toBe(false);
   });
 
   it("skip silencioso quando supabaseUrl/anonKey ausentes", async () => {

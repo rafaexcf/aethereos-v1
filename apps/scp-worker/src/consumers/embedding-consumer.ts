@@ -4,10 +4,26 @@ import { jlog, type InlineConsumer } from "../consumer.js";
 
 const CHUNK_SIZE = 800;
 const CHUNK_OVERLAP = 100;
-const SUPPORTED_TYPES = new Set([
+const SUPPORTED_FILE_TYPES = new Set([
   "text/plain",
   "text/markdown",
-  "application/pdf",
+  "application/pdf", // KL-8: lido como texto cru, qualidade ruim em PDFs binarios
+]);
+
+/**
+ * Eventos que disparam embedding:
+ *   - platform.file.uploaded     => embed conteudo do arquivo (chunked)
+ *   - platform.person.created    => embed context_record summary do enrichment
+ *   - platform.chat.channel_created => idem
+ *   - agent.copilot.action_executed => idem
+ *
+ * NotificationConsumer + EnrichmentConsumer ja rodaram antes (ordem em main.ts),
+ * entao o context_record correspondente ja existe quando chegamos aqui.
+ */
+const ENRICHED_EVENTS = new Set([
+  "platform.person.created",
+  "platform.chat.channel_created",
+  "agent.copilot.action_executed",
 ]);
 
 interface FileUploadedPayload {
@@ -22,29 +38,36 @@ export interface EmbeddingConsumerOptions {
   supabaseUrl: string;
   supabaseAnonKey: string;
   supabaseServiceRoleKey?: string;
+  /** LiteLLM gateway base URL (ex: http://localhost:4000). Vazio => skip. */
+  litellmUrl?: string;
+  /** Chave do gateway LiteLLM. */
+  litellmKey?: string;
+  /** Modelo de embedding default. */
+  embedModel?: string;
 }
 
 /**
- * Sprint 18 MX93 — EmbeddingConsumer (inline).
+ * Sprint 19 MX99 — EmbeddingConsumer (refactor).
  *
- * Reuso da logica original de apps/scp-worker/src/embedding-consumer.ts
- * (que era NATS-based) adaptada ao InlineConsumer contract.
+ * Mudancas vs Sprint 18:
+ *   - Tenta LiteLLM direto (LITELLM_URL) antes da Edge Function — mais rapido,
+ *     evita ida-volta extra
+ *   - Cai pra Edge Function /functions/v1/embed-text se LiteLLM indisponivel
+ *   - Cai pra BYOK do owner da company se Edge Function 503
+ *   - Se nada funciona: skip silencioso (NUNCA polui embeddings com zeros)
+ *   - Adiciona embedding de context_records derivados pelo EnrichmentConsumer
+ *     para enriquecer o RAG do Copilot
  *
- * Listen: platform.file.uploaded
- * Action: chunk text + embed via /functions/v1/embed-text + INSERT em
- *         kernel.embeddings (UPSERT em company_id+source_id+chunk_index).
- *
- * Degraded gracefully (R12 do spec MX93):
- *   - Sem SUPABASE_URL/anon_key: matches() retorna false → skip silencioso
- *   - mime_type nao suportado: skip silencioso
- *   - fetch text falhou: log + skip
- *   - embed-text 503 ou nao OK: log + skip (Modo Degenerado P14)
+ * R11: skip gracioso, NUNCA bloquear pipeline.
  */
 export class EmbeddingConsumer implements InlineConsumer {
   readonly name = "EmbeddingConsumer";
   readonly #supabaseUrl: string;
   readonly #anonKey: string;
   readonly #serviceRoleKey: string;
+  readonly #litellmUrl: string;
+  readonly #litellmKey: string;
+  readonly #embedModel: string;
 
   constructor(opts: EmbeddingConsumerOptions) {
     this.#supabaseUrl = opts.supabaseUrl;
@@ -53,14 +76,33 @@ export class EmbeddingConsumer implements InlineConsumer {
       opts.supabaseServiceRoleKey ??
       process.env["SUPABASE_SERVICE_ROLE_KEY"] ??
       "";
+    this.#litellmUrl = opts.litellmUrl ?? process.env["LITELLM_URL"] ?? "";
+    this.#litellmKey =
+      opts.litellmKey ?? process.env["LITELLM_MASTER_KEY"] ?? "";
+    this.#embedModel = opts.embedModel ?? "text-embedding-3-small";
   }
 
   matches(eventType: string): boolean {
-    return eventType === "platform.file.uploaded";
+    return (
+      eventType === "platform.file.uploaded" || ENRICHED_EVENTS.has(eventType)
+    );
   }
 
   async handle(envelope: EventEnvelope, sql: Sql): Promise<void> {
-    if (this.#supabaseUrl === "" || this.#anonKey === "") {
+    if (envelope.type === "platform.file.uploaded") {
+      await this.#embedFile(envelope, sql);
+      return;
+    }
+    if (ENRICHED_EVENTS.has(envelope.type)) {
+      await this.#embedEnrichedRecord(envelope, sql);
+      return;
+    }
+  }
+
+  // ─── File path ────────────────────────────────────────────────────────────
+
+  async #embedFile(envelope: EventEnvelope, sql: Sql): Promise<void> {
+    if (this.#supabaseUrl === "") {
       jlog("info", "embedding skip: supabase env missing", {
         event_id: envelope.id,
       });
@@ -82,19 +124,12 @@ export class EmbeddingConsumer implements InlineConsumer {
     }
 
     const mt = mime_type ?? "text/plain";
-    if (!SUPPORTED_TYPES.has(mt)) {
-      return; // unsupported, silent skip
+    if (!SUPPORTED_FILE_TYPES.has(mt)) {
+      return;
     }
 
     if (this.#serviceRoleKey === "") {
-      // Sem service_role nao da pra ler Storage. Skip gracioso.
-      jlog(
-        "info",
-        "embedding skip: service_role missing — cannot read Storage",
-        {
-          file_id,
-        },
-      );
+      jlog("info", "embedding skip: service_role missing", { file_id });
       return;
     }
 
@@ -118,14 +153,8 @@ export class EmbeddingConsumer implements InlineConsumer {
       const chunk = chunks[i];
       if (chunk === undefined || chunk.trim().length === 0) continue;
 
-      const embedding = await fetchEmbedding(
-        this.#supabaseUrl,
-        this.#anonKey,
-        chunk,
-      );
+      const embedding = await this.#embed(chunk);
       if (embedding === null) {
-        // P14 Modo Degenerado: embed-text indisponivel. Skip restante
-        // sem marcar evento como failed (consumer terminou graceful).
         jlog("info", "embedding degraded — file partially skipped", {
           file_id,
           chunk_index: i,
@@ -133,33 +162,16 @@ export class EmbeddingConsumer implements InlineConsumer {
         return;
       }
 
-      try {
-        await sql.unsafe(
-          `INSERT INTO kernel.embeddings
-             (company_id, source_type, source_id, chunk_index, chunk_text, embedding, metadata)
-           VALUES ($1::uuid, 'file', $2::uuid, $3, $4,
-                   $5::extensions.vector, $6::jsonb)
-           ON CONFLICT (company_id, source_id, chunk_index) DO UPDATE SET
-             chunk_text = EXCLUDED.chunk_text,
-             embedding  = EXCLUDED.embedding`,
-          [
-            company_id,
-            file_id,
-            i,
-            chunk,
-            JSON.stringify(embedding),
-            JSON.stringify({ file_name: payload.name ?? storage_path }),
-          ],
-        );
-        embedded++;
-      } catch (e) {
-        jlog("warn", "embedding insert error", {
-          file_id,
-          chunk_index: i,
-          error: e instanceof Error ? e.message : String(e),
-        });
-        // Continua tentando proximo chunk — nao aborta tudo
-      }
+      await this.#upsertEmbedding(sql, {
+        companyId: company_id,
+        sourceType: "file",
+        sourceId: file_id,
+        chunkIndex: i,
+        chunkText: chunk,
+        embedding,
+        metadata: { file_name: payload.name ?? storage_path },
+      });
+      embedded++;
     }
 
     if (embedded > 0) {
@@ -171,9 +183,121 @@ export class EmbeddingConsumer implements InlineConsumer {
       });
     }
   }
+
+  // ─── Context record path ──────────────────────────────────────────────────
+
+  async #embedEnrichedRecord(envelope: EventEnvelope, sql: Sql): Promise<void> {
+    const companyId = envelope.tenant_id;
+    const { entityType, entityId } = entityRefFromEnvelope(envelope);
+    if (entityType === null || entityId === null) return;
+
+    // Busca o record gerado pelo EnrichmentConsumer (que rodou antes nesta dispatch)
+    const [row] = await sql<
+      { id: string; data: Record<string, unknown>; record_type: string }[]
+    >`
+      SELECT id, data, record_type
+      FROM kernel.context_records
+      WHERE company_id = ${companyId}
+        AND entity_type = ${entityType}
+        AND entity_id = ${entityId}
+        AND record_type = 'summary'
+      LIMIT 1
+    `;
+    if (row === undefined) return; // EnrichmentConsumer nao gerou ou skipou
+
+    const text = serializeRecordToText(entityType, row.data);
+    if (text.trim().length === 0) return;
+
+    const embedding = await this.#embed(text);
+    if (embedding === null) {
+      jlog("info", "embedding degraded — context_record skipped", {
+        record_id: row.id,
+        entity_type: entityType,
+      });
+      return;
+    }
+
+    await this.#upsertEmbedding(sql, {
+      companyId,
+      sourceType: "context_record",
+      sourceId: row.id,
+      chunkIndex: 0,
+      chunkText: text,
+      embedding,
+      metadata: { entity_type: entityType, entity_id: entityId },
+    });
+    jlog("info", "context_record embedded", {
+      record_id: row.id,
+      entity_type: entityType,
+    });
+  }
+
+  // ─── Embedding provider chain ─────────────────────────────────────────────
+
+  async #embed(text: string): Promise<number[] | null> {
+    if (this.#litellmUrl !== "") {
+      const v = await fetchEmbeddingLiteLLM(
+        this.#litellmUrl,
+        this.#litellmKey,
+        this.#embedModel,
+        text,
+      );
+      if (v !== null) return v;
+    }
+    if (this.#supabaseUrl !== "" && this.#anonKey !== "") {
+      const v = await fetchEmbeddingEdgeFn(
+        this.#supabaseUrl,
+        this.#anonKey,
+        text,
+      );
+      if (v !== null) return v;
+    }
+    return null;
+  }
+
+  async #upsertEmbedding(
+    sql: Sql,
+    args: {
+      companyId: string;
+      sourceType: string;
+      sourceId: string;
+      chunkIndex: number;
+      chunkText: string;
+      embedding: number[];
+      metadata: Record<string, unknown>;
+    },
+  ): Promise<void> {
+    try {
+      await sql.unsafe(
+        `INSERT INTO kernel.embeddings
+           (company_id, source_type, source_id, chunk_index, chunk_text, embedding, metadata)
+         VALUES ($1::uuid, $2, $3::uuid, $4, $5,
+                 $6::extensions.vector, $7::jsonb)
+         ON CONFLICT (company_id, source_id, chunk_index) DO UPDATE SET
+           chunk_text = EXCLUDED.chunk_text,
+           embedding  = EXCLUDED.embedding,
+           metadata   = EXCLUDED.metadata`,
+        [
+          args.companyId,
+          args.sourceType,
+          args.sourceId,
+          args.chunkIndex,
+          args.chunkText,
+          JSON.stringify(args.embedding),
+          JSON.stringify(args.metadata),
+        ],
+      );
+    } catch (e) {
+      jlog("warn", "embedding insert error", {
+        source_id: args.sourceId,
+        chunk_index: args.chunkIndex,
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
 }
 
-// ─── Helpers (reuso direto de embedding-consumer.ts original) ────────────────
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
 function chunkText(text: string, size: number, overlap: number): string[] {
   const chunks: string[] = [];
@@ -185,7 +309,90 @@ function chunkText(text: string, size: number, overlap: number): string[] {
   return chunks;
 }
 
-async function fetchEmbedding(
+interface EntityRef {
+  entityType: string | null;
+  entityId: string | null;
+}
+
+function entityRefFromEnvelope(envelope: EventEnvelope): EntityRef {
+  const p = (envelope.payload ?? {}) as Record<string, unknown>;
+  switch (envelope.type) {
+    case "platform.person.created":
+      return {
+        entityType: "person",
+        entityId: typeof p["person_id"] === "string" ? p["person_id"] : null,
+      };
+    case "platform.chat.channel_created":
+      return {
+        entityType: "channel",
+        entityId: typeof p["channel_id"] === "string" ? p["channel_id"] : null,
+      };
+    case "agent.copilot.action_executed":
+      return {
+        entityType: "agent",
+        entityId:
+          typeof p["executed_by"] === "string" ? p["executed_by"] : null,
+      };
+    default:
+      return { entityType: null, entityId: null };
+  }
+}
+
+/**
+ * Serializa um context_record.data em texto natural pra embedar.
+ * Ex: { full_name: "João", email: "j@x.com" } => "Pessoa: João — email: j@x.com"
+ */
+function serializeRecordToText(
+  entityType: string,
+  data: Record<string, unknown>,
+): string {
+  const label =
+    entityType === "person"
+      ? "Pessoa"
+      : entityType === "channel"
+        ? "Canal"
+        : entityType === "agent"
+          ? "Agente"
+          : entityType === "file"
+            ? "Arquivo"
+            : entityType;
+
+  const parts: string[] = [];
+  for (const [k, v] of Object.entries(data)) {
+    if (v === null || v === undefined || v === "") continue;
+    const value = typeof v === "object" ? JSON.stringify(v) : String(v);
+    parts.push(`${k}: ${value}`);
+  }
+  return `${label} — ${parts.join(", ")}`;
+}
+
+async function fetchEmbeddingLiteLLM(
+  base: string,
+  key: string,
+  model: string,
+  text: string,
+): Promise<number[] | null> {
+  try {
+    const res = await fetch(`${base}/embeddings`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${key}`,
+      },
+      body: JSON.stringify({ input: text, model }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as {
+      data?: Array<{ embedding?: number[] }>;
+    };
+    return body.data?.[0]?.embedding ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchEmbeddingEdgeFn(
   edgeFnBase: string,
   supabaseAnonKey: string,
   text: string,
@@ -200,10 +407,8 @@ async function fetchEmbedding(
       body: JSON.stringify({ text }),
       signal: AbortSignal.timeout(15_000),
     });
-
     if (res.status === 503) return null;
     if (!res.ok) return null;
-
     const body = (await res.json()) as { embedding?: number[] };
     return body.embedding ?? null;
   } catch {
