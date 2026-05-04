@@ -5,6 +5,110 @@ Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
 
 ---
 
+# Sprint 21 — App Registry no Banco
+
+Início: 2026-05-04
+Modelo: Claude Code (claude-opus-4-7, Sprint 21 N=1)
+Roadmap: `SPRINT_21_PROMPT.md` na raiz.
+
+## Origem
+
+Sprint 20 fechou auditoria pré-staging. Sprint 21 começa a serie de
+sprints de extensibilidade: apps deixam de ser arrays TypeScript hardcoded
+e passam a viver em `kernel.app_registry`. Magic Store e shell consultam
+o banco; component map (React.lazy) fica em código apenas para apps
+nativos. Apps iframe/weblink não precisam de componente — shell renderiza
+frame genérico.
+
+## Histórico de milestones (Sprint 21)
+
+| Milestone | Descrição                                                        | Status | Commit  |
+| --------- | ---------------------------------------------------------------- | ------ | ------- |
+| MX111     | Migration kernel.app_registry (global, RLS authenticated SELECT) | DONE   | f1a3520 |
+| MX112     | Seed: 31 nativos + 22 externos = 52 apps no banco                | DONE   | bb9ada3 |
+| MX113     | COMPONENT_MAP em registry.ts + IframeAppFrame + WebLinkOpener    | DONE   | b37258d |
+| MX114     | appRegistryStore Zustand + lifecycle hook + dispatch entry_mode  | DONE   | 180db6f |
+| MX115     | Magic Store consume catalog do banco via adapter                 | DONE   | f550753 |
+| MX116     | Cleanup magic-store-catalog.ts + 7 unit tests + Sprint 21 docs   | DONE   | (este)  |
+
+## Arquitetura — 3 camadas
+
+```
+CAMADA A (banco)              CAMADA B (codigo)               CAMADA C (runtime)
+kernel.app_registry           COMPONENT_MAP em registry.ts    appRegistryStore
+                              { id: React.lazy }
++ metadata completa           apenas apps nativos              merge: row + component
++ status, entry_mode          NAO cresce com 3rd party         + filtros + helpers
++ entry_url p/ iframe/weblink                                  + dispatch entry_mode
+```
+
+## kernel.app_registry (MX111)
+
+Tabela GLOBAL (sem company_id) — todos os tenants veem o mesmo catalogo.
+Instalacao por-tenant continua via `kernel.company_modules`.
+
+Campos: `id, slug, name, description, long_description, icon, color, category, app_type, entry_mode, entry_url, version, status, pricing_model, permissions[], tags[], license, developer_name, show_in_dock, closeable, has_internal_nav, always_enabled, opens_as_modal, installable, offline_capable, external_url, install_count, sort_order, created_at, updated_at`.
+
+CHECK constraints em `app_type`, `entry_mode`, `status`, `pricing_model`, `category`. RLS: SELECT para qualquer authenticated; mutacoes via service_role.
+
+## Seed (MX112) — 52 apps
+
+- 31 nativos (entry_mode=internal, app_type=native)
+- 5 verticais weblink (comercio-digital, logitix, erp, kwix, autergon)
+- 5 AI weblinks (claude, chatgpt, gemini, perplexity, huggingchat)
+- 1 Puter
+- 10 jogos open-source weblinks
+
+Idempotencia via `ON CONFLICT (id) DO NOTHING`. Normaliza `comercio_digital` → `comercio-digital` em `company_modules` (UPDATE 4 rows).
+
+## COMPONENT_MAP + IframeAppFrame + WebLinkOpener (MX113)
+
+- `COMPONENT_MAP: Record<string, LazyExoticComponent>` em `registry.ts` — 31 entries.
+- `IframeAppFrame`: `<iframe sandbox="...">` com loading + fallback "Abrir em nova aba".
+- `WebLinkOpener.openWebLink(url)`: `window.open(url, "_blank", "noopener,noreferrer")`.
+- `APP_REGISTRY` array preservado como compat layer (R12).
+
+## appRegistryStore + dispatch (MX114)
+
+- Store Zustand carrega `app_registry WHERE status IN ('published','draft')` no boot do desktop.
+- `AppRegistryEntry` = row do banco + `component` resolvido via COMPONENT_MAP + `hasComponent` flag.
+- Selectors: `getRegistryApp(id)`, `getDockApps()`, `filterVisible(apps, installed)`, `searchApps(query)`.
+- `osStore.openApp` agora dispatcha por `entry_mode`:
+  - `weblink` → `openWebLink(url)`, sem aba.
+  - `iframe` / `internal` → cria aba.
+- `AppFrame.PaneBody` e `TabPane` renderizam `<IframeAppFrame>` quando `entry_mode='iframe'`.
+
+## Magic Store reads from DB (MX115)
+
+`apps/magic-store/catalog-adapter.ts`: hook `useMagicStoreCatalog()` mapeia `AppRegistryEntry` → `MagicStoreApp` (forma esperada pela UI). Filtra apps system (mesa, magic-store, settings, notifications, lixeira, governanca, auditoria).
+
+`MagicStoreApp.tsx`: substitui import de `MAGIC_STORE_CATALOG` por hook reativo. UI sem mudança visual.
+
+## Cleanup + tests (MX116)
+
+- `data/magic-store-catalog.ts` reduzido aos types — 611 linhas → 50 linhas. Array hardcoded e helpers removidos.
+- 7 unit tests novos em `appRegistryStore.test.ts`: loadApps popula Map, hasComponent true/false, getDockApps, filterVisible, searchApps case-insensitive, error handling.
+- Total shell-commercial: 17 tests (era 10).
+
+## Gate final Sprint 21
+
+```
+pnpm typecheck       → 25/25 ✓
+pnpm lint            → 23/23 ✓
+pnpm test            → 19/19 (200+ unit tests, 17 em shell-commercial) ✓
+pnpm test:e2e:full   → 33 passed, 1 skipped ✓
+```
+
+1 falha intermitente em `rh.spec.ts:49` reapareceu em 1 de 4 runs — flaky pre-existente desde Sprint 14. Recupera em re-run.
+
+## Limitações conhecidas Sprint 21
+
+- **APP_REGISTRY array ainda presente** em `registry.ts` como compat layer. 25+ consumers (Dock/Mesa/TabBar/Launcher/dockStore/etc.) ainda usam `getApp()` que lê do array. Em sprint futuro, refatorar para usar `appRegistryStore.getRegistryApp()` direto.
+- **app_registry sem realtime** — catalogo eh global e raramente muda; carrega uma vez por sessao.
+- **status='draft' usado como "coming_soon"** — schema CHECK do banco nao tem 'beta' explicito.
+
+---
+
 # Sprint 20 — Auditoria Geral e Revisão Pré-Deploy
 
 Início: 2026-05-04

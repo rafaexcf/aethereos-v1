@@ -51,11 +51,23 @@ aethereos/
 
 OS web no domínio `aethereos.io`. Multi-tenant, RLS por `company_id`. Stack: Vite 8 + React 19 + TanStack Router + Zustand + Tailwind v4 + framer-motion (exceção ADR-0023).
 
-24 apps internos no registry (`src/apps/registry.ts`):
+App registry em 3 camadas (Sprint 21):
 
-- **Sistema** (alwaysEnabled): mesa, magic-store, ae-ai (Copilot), drive, pessoas, chat, rh, settings
-- **Sob demanda**: bloco-de-notas, tarefas, agenda-telefonica, calculadora, relogio, camera, gravador-de-voz, enquetes, navegador, kanban, weather, notifications, gestor, calendar
+- **Banco** (`kernel.app_registry`): metadata global (sem company_id) de 52 apps — 31 nativos + 5 verticais + 5 AI + 1 Puter + 10 jogos.
+- **Component map** (`apps/registry.ts:COMPONENT_MAP`): 31 React.lazy para apps nativos. Apps iframe/weblink não precisam de entrada.
+- **Runtime** (`stores/appRegistryStore.ts`): Zustand store que carrega o banco no boot e merge com componentes; dispatch por `entry_mode`:
+  - `internal` → tab com componente nativo
+  - `iframe` → tab com `<IframeAppFrame>`
+  - `weblink` → `window.open` (não cria tab)
+
+Apps por categoria:
+
+- **Sistema** (always_enabled): mesa, magic-store, ae-ai (Copilot), settings, notifications, lixeira
+- **Productivity / Utilities / Optional**: drive, pessoas, chat, rh, bloco-de-notas, tarefas, agenda-telefonica, calculadora, relogio, weather, calendar, kanban, planilhas, documentos, apresentacoes, pdf, automacoes, reuniao, navegador, camera, gravador-de-voz, enquetes, gestor
 - **Admin**: governanca, auditoria
+- **Verticais (weblink)**: comercio-digital, logitix, erp, kwix, autergon
+- **AI (weblink)**: claude, chatgpt, gemini, perplexity, huggingchat
+- **Puter / Games (weblink)**: puter-os, 10 jogos open-source
 
 ### apps/shell-base — Camada 0 (open-source)
 
