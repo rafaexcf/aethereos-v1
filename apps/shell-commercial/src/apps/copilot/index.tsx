@@ -36,6 +36,8 @@ interface CopilotMessage {
   model?: string;
   isDegraded: boolean;
   proposalId?: string;
+  /** Sprint 19 MX101: numero de chunks usados como contexto RAG (0 = sem RAG) */
+  ragChunkCount?: number;
   createdAt: Date;
 }
 
@@ -995,6 +997,7 @@ export function CopilotDrawer({
         createdAt: new Date(),
       };
       if (proposalId !== undefined) assistantMsg.proposalId = proposalId;
+      if (ragChunkCount > 0) assistantMsg.ragChunkCount = ragChunkCount;
       setMessages((prev) => [...prev, assistantMsg]);
 
       // Persist assistant message + emit SCP event
@@ -1337,6 +1340,22 @@ export function CopilotDrawer({
                         {msg.model}
                       </span>
                     )}
+                    {msg.ragChunkCount !== undefined &&
+                      msg.ragChunkCount > 0 && (
+                        <span
+                          title={`Resposta baseada em ${msg.ragChunkCount} trecho(s) dos dados da empresa (RAG via pgvector)`}
+                          style={{
+                            fontSize: 10,
+                            color: "rgba(139,92,246,0.85)",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 4,
+                          }}
+                        >
+                          ◆ {msg.ragChunkCount} contexto
+                          {msg.ragChunkCount !== 1 ? "s" : ""} da empresa
+                        </span>
+                      )}
                     {relatedProposal !== undefined && (
                       <div style={{ width: "100%", maxWidth: "88%" }}>
                         <ActionApprovalPanel
