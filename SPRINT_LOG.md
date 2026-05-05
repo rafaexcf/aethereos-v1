@@ -5,6 +5,107 @@ Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
 
 ---
 
+# Sprint 31 — Gates Finais da Fase 1: Compliance + SCP Replay + SLO + CI/CD
+
+Início: 2026-05-09
+Modelo: Claude Code (claude-opus-4-7-1m, Sprint 31 N=1)
+Roadmap: `docs/sprint-prompts/SPRINT_31_PROMPT.md`
+
+## Origem
+
+Último sprint de código da Camada 1. Fecha 4 dos 8 gates da Fase 1
+(1, 2, 3, 7) e instrumenta 5/6 parcialmente (4, 5, 6 — restante depende
+de tempo: dogfood 30 dias + pen test externo). Gate 8 é puramente
+temporal.
+
+## Histórico de milestones
+
+| Milestone | Descrição                                                          | Commit  |
+| --------- | ------------------------------------------------------------------ | ------- |
+| MX169     | Compliance docs (Gate 7) — CONTRIBUTING/SECURITY/COC/BRAND/PRIVACY | 2462a38 |
+| MX170     | SCP Replay (Gate 3) — replayEvent + replayRange + idempotência     | f253e6f |
+| MX171     | Health endpoint + SLO instrumentation + error tracking (Gate 5)    | 85bfd67 |
+| MX172     | Vercel auto-deploy runbook + Supabase migration flow (Gate 5)      | c34e1af |
+| MX173     | Copilot eval dataset seed — 50 queries (Gate 4 parcial)            | 3fbc527 |
+| MX174     | Security checklist + GATES_STATUS + sprint final (Gate 6 parcial)  | (este)  |
+
+## Arquitetura entregue
+
+**Compliance docs (raiz do repo):**
+
+- LICENSE — já existia com BUSL-1.1 (Camada 0) + proprietária (1/2)
+- CONTRIBUTING.md, SECURITY.md, CODE_OF_CONDUCT.md, BRAND_POLICY.md,
+  PRIVACY_POLICY.md — novos
+
+**SCP Replay:**
+
+- Migration `20260509000001_kernel_scp_replay.sql`:
+  - `kernel.scp_outbox` ADD `replay_count` + `last_replayed_at`
+  - `kernel.audit_log` ADD `event_id UUID UNIQUE` (idempotência)
+- `apps/scp-worker/src/replay.ts` — `replayEvent` + `replayRange`
+- `apps/scp-worker/src/replay-cli.ts` — CLI `pnpm replay --event-id ...`
+- AuditConsumer com `ON CONFLICT (event_id) DO NOTHING`
+
+**Health + SLO:**
+
+- Edge Function `supabase/functions/health/index.ts` — pública,
+  `{ status, timestamp, version, db, uptime_seconds }`
+- scp-worker main.ts: `recordLatency()` + `flushMetrics()` (p50/p95/p99
+  a cada 100 eventos)
+- `apps/shell-commercial/src/lib/observability.ts` — `reportError()`
+  com fallback Sentry → console; `installGlobalErrorHandlers()`
+- ErrorBoundary integrado
+
+**CI/CD:**
+
+- `docs/runbooks/auto-deploy.md` — fluxo Vercel + Supabase
+- `.vercel/project.json` confirma Git Integration ativa
+
+**Eval dataset:**
+
+- `docs/copilot-eval-dataset.json` — 50 queries (20 rag + 15 proposal +
+  10 direct + 5 decline)
+
+**Security checklist:**
+
+- `docs/SECURITY_CHECKLIST.md` — 13 vetores MITIGADO + evidência
+- `GATES_STATUS.md` — snapshot final dos 8 gates da Fase 1
+
+## Gates da Fase 1
+
+| #   | Gate                          | Status     |
+| --- | ----------------------------- | ---------- |
+| 1   | Provisionamento               | ✅ PASS    |
+| 2   | Isolamento                    | ✅ PASS    |
+| 3   | SCP end-to-end + replay       | ✅ PASS    |
+| 4   | Copilot básico (eval dataset) | ⚠️ PARCIAL |
+| 5   | SLO (métricas, uptime)        | ⚠️ PARCIAL |
+| 6   | Segurança (pen test)          | ⚠️ PARCIAL |
+| 7   | Compliance docs               | ✅ PASS    |
+| 8   | Dogfood (30 dias)             | ⏳ TEMPO   |
+
+## Validações
+
+- TypeCheck: 26/26 ✓
+- Lint: 24/24 ✓
+- Unit tests: 38/38 ✓ (incluindo 6 novos para replay)
+
+## Pendências fast-follow
+
+- Configurar BetterUptime/UptimeRobot apontando para health endpoint
+- Iniciar dogfood 30 dias com tráfego controlado
+- Habilitar Sentry quando volume justificar (KL-10)
+- Contratar pen test externo (KL-12)
+- Automatizar `supabase db push` no deploy (KL-13)
+
+## Camada 1 — encerramento de código
+
+Camada 1 código-completa. Gates 1, 2, 3, 7 PASS. Gates 4, 5, 6 parciais
+(instrumentação feita, aguarda 30 dias + pen test). Gate 8 requer tempo.
+Próximo: dogfood + comercio.digital em paralelo.
+
+---
+
 # Sprint 30 — Segurança Enterprise + LGPD: 2FA, Sessões, Exportação
 
 Início: 2026-05-08

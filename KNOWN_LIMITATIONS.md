@@ -88,6 +88,50 @@ Status legend:
 
 ---
 
+## KL-10 — Sentry sem DSN configurado — **DEFERRED (pós-dogfood)**
+
+**Sintoma:** `lib/observability.ts` (Sprint 31 MX171) reporta erros via console.error caso `window.Sentry` não esteja inicializado. Em produção atualmente não há Sentry rodando.
+**Causa:** R11 do Sprint 31 limita Sentry a 1h de setup. Optamos pela rota lightweight: hook pronto, sem dependência opcional no bundle, ativável depois via VITE_SENTRY_DSN + script CDN ou `@sentry/browser`.
+**Impacto:** Erros em prod ficam apenas em console do browser do usuário e Vercel logs (via `[obs] error` prefix). Sem agregação cross-user, sem alerting automatizado.
+**Mitigação:** Captura via `installGlobalErrorHandlers()` permanece operacional. ErrorBoundary roteia via `reportError()`.
+**Próximo passo:** habilitar Sentry quando dogfood gerar tráfego significativo (>10 erros/dia).
+**Sprint de origem:** 31 (MX171).
+
+---
+
+## KL-11 — Eval dataset Copilot com 50 queries (seed) — **DEFERRED (dogfood 30 dias)**
+
+**Sintoma:** `docs/copilot-eval-dataset.json` tem 50 queries (rag/proposal/direct/decline). Gate 4 da Fase 1 pede 500+ queries.
+**Causa:** Sintetizar 500 queries sem uso real produz dataset enviesado para o que o time imagina, não para o que usuário pergunta. R12 do Sprint 31: dataset é seed.
+**Impacto:** Métrica de eval do Copilot fica em modo manual/qualitativo até dataset crescer.
+**Mitigação:** Logar queries reais (anonimizadas) em produção e revisar semanalmente para enriquecer o dataset.
+**Próximo passo:** sprint pós-dogfood com 30 dias de uso real → expansão automática + sistema de eval rodando contra o Copilot.
+**Sprint de origem:** 31 (MX173).
+
+---
+
+## KL-12 — Pen test externo pendente — **DEFERRED (pós-dogfood)**
+
+**Sintoma:** `docs/SECURITY_CHECKLIST.md` tem 13/13 vetores como MITIGADO mas Gate 6 só fecha 100% após pen test externo.
+**Causa:** Pen test exige (1) ambiente staging com tráfego, (2) contratação de fornecedor especializado, (3) janela de 2-4 semanas para execução e remediação.
+**Impacto:** Gate 6 permanece PARCIAL. Findings de pen test podem revelar vetores não mapeados.
+**Mitigação:** Checklist interno revisado a cada 90 dias. Bug bounty (informal) via SECURITY.md.
+**Próximo passo:** sprint dedicada após 30 dias de dogfood com fornecedor selecionado.
+**Sprint de origem:** 31 (MX174).
+
+---
+
+## KL-13 — Migrations Supabase sem deploy automático — **OPEN (info)**
+
+**Sintoma:** `supabase db push --linked` é passo manual após merge em main, antes do Vercel deploy completar.
+**Causa:** Action que roda push automático precisa de OIDC ou senha do banco no GitHub Secrets — risco operacional não justificado para volume atual.
+**Impacto:** Esquecer o push pode resultar em frontend novo + schema antigo = erros em produção.
+**Mitigação:** Runbook `docs/runbooks/auto-deploy.md` documenta o fluxo seguro. PR template (futuro) com checkbox.
+**Próximo passo:** automatizar via GitHub Action quando volume justificar.
+**Sprint de origem:** 31 (MX172).
+
+---
+
 ## KL-9 — pnpm.overrides para vulnerabilidades transitivas — **OPEN (info)**
 
 **Sintoma:** `package.json` raiz tem 7 entries em `pnpm.overrides` para forçar versões patched de deps que estavam transitivamente desatualizadas (Sprint 20 MX104).

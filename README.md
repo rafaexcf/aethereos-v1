@@ -91,4 +91,11 @@ Veja:
 
 ## Status
 
-Em bootstrap ativo, **20 sprints** concluídos. F1 pronto para staging (Sprint 21). Ver `SPRINT_LOG.md` e `docs/adr/` para histórico de decisões.
+**Sprint 31 (2026-05-09)** — Camada 1 código-completa. 4/8 gates da Fase 1 PASS (1, 2, 3, 7), 3/8 parciais (4, 5, 6 — aguardam dogfood + pen test), 1/8 temporal (8 — 30 dias).
+
+- **[GATES_STATUS.md](./GATES_STATUS.md)** — snapshot detalhado dos 8 gates
+- **[docs/SECURITY_CHECKLIST.md](./docs/SECURITY_CHECKLIST.md)** — 13 vetores de ameaça + status MITIGADO
+- **[SPRINT_LOG.md](./SPRINT_LOG.md)** — histórico completo
+- **[docs/adr/](./docs/adr/)** — decisões arquiteturais
+
+Próximo: dogfood interno de 30 dias + comercio.digital (Camada 2) em paralelo.
