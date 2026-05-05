@@ -2,12 +2,7 @@
 // Lookup público de CNPJ via BrasilAPI com fallback ReceitaWS.
 // NÃO requer autenticação — rate limit por IP é dívida futura.
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-};
+import { corsHeaders, handlePreflight } from "../_shared/cors.ts";
 
 interface CnpjData {
   cnpj: string;
@@ -91,14 +86,15 @@ async function fromReceitaWS(cnpj: string): Promise<CnpjData> {
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const pf = handlePreflight(req);
+  if (pf !== null) return pf;
+
+  const cors = corsHeaders(req.headers.get("origin"));
 
   if (req.method !== "GET") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 
@@ -109,7 +105,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (cnpj.length !== 14) {
     return new Response(JSON.stringify({ error: "CNPJ deve ter 14 dígitos" }), {
       status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 
@@ -124,7 +120,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         JSON.stringify({ error: "CNPJ não encontrado nas fontes disponíveis" }),
         {
           status: 404,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          headers: { ...cors, "Content-Type": "application/json" },
         },
       );
     }
@@ -132,6 +128,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   return new Response(JSON.stringify(data), {
     status: 200,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...cors, "Content-Type": "application/json" },
   });
 });

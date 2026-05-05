@@ -8,23 +8,18 @@
 // Requer: SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY (auto-injetadas).
 
 import { createClient } from "npm:@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import { corsHeaders, handlePreflight } from "../_shared/cors.ts";
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const pf = handlePreflight(req);
+  if (pf !== null) return pf;
+
+  const cors = corsHeaders(req.headers.get("origin"));
 
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 
@@ -39,7 +34,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       JSON.stringify({ error: "Missing or invalid Authorization header" }),
       {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       },
     );
   }
@@ -54,7 +49,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (authError !== null || user === null) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 
@@ -65,7 +60,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   } catch {
     return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
       status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 
@@ -75,7 +70,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (!name) {
     return new Response(JSON.stringify({ error: "name is required" }), {
       status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 
@@ -84,7 +79,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       JSON.stringify({ error: "slug must match [a-z0-9-]{3,63}" }),
       {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       },
     );
   }
@@ -103,12 +98,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
       : error.message;
     return new Response(JSON.stringify({ error: msg }), {
       status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 
   return new Response(JSON.stringify(data), {
     status: 201,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...cors, "Content-Type": "application/json" },
   });
 });

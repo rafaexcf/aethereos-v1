@@ -3,17 +3,19 @@
 // Modo degradado: se LiteLLM offline ou sem chave, retorna 503.
 // Dimensão padrão: 1536 (text-embedding-3-small OpenAI / Anthropic compatible).
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import { corsHeaders, handlePreflight } from "../_shared/cors.ts";
 
-function jsonResponse(body: unknown, status: number): Response {
+function jsonResponse(
+  body: unknown,
+  status: number,
+  origin: string | null,
+): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: {
+      ...corsHeaders(origin),
+      "Content-Type": "application/json",
+    },
   });
 }
 
@@ -29,19 +31,20 @@ interface LiteLLMEmbedResponse {
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const pf = handlePreflight(req);
+  if (pf !== null) return pf;
+
+  const origin = req.headers.get("origin");
 
   if (req.method !== "POST") {
-    return jsonResponse({ error: "method not allowed" }, 405);
+    return jsonResponse({ error: "method not allowed" }, 405, origin);
   }
 
   let body: RequestBody;
   try {
     body = (await req.json()) as RequestBody;
   } catch {
-    return jsonResponse({ error: "invalid json body" }, 400);
+    return jsonResponse({ error: "invalid json body" }, 400, origin);
   }
 
   const { text, model = "text-embedding-3-small" } = body;
@@ -50,6 +53,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return jsonResponse(
       { error: "text é obrigatório e não pode ser vazio" },
       400,
+      origin,
     );
   }
 
@@ -64,6 +68,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         degraded: true,
       },
       503,
+      origin,
     );
   }
 
@@ -91,6 +96,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
           litellm_status: response.status,
         },
         503,
+        origin,
       );
     }
 
@@ -104,6 +110,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
           degraded: true,
         },
         503,
+        origin,
       );
     }
 
@@ -115,6 +122,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         dimensions: embedding.length,
       },
       200,
+      origin,
     );
   } catch (e) {
     const isTimeout = e instanceof DOMException && e.name === "TimeoutError";
@@ -129,6 +137,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         degraded: true,
       },
       503,
+      origin,
     );
   }
 });

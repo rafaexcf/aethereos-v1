@@ -19,11 +19,23 @@ export class ErrorBoundary extends Component<Props, State> {
     return { error };
   }
 
-  override componentDidCatch(_error: Error, _info: ErrorInfo) {
-    // Error displayed in render; structured logging via OTel pending.
+  override componentDidCatch(error: Error, info: ErrorInfo) {
+    // Sprint 27 MX142: logging estruturado pra console (OTel pending).
+    // Permite debug rapido em prod sem derrubar o shell.
+    // eslint-disable-next-line no-console
+    console.error("[AppErrorBoundary]", error.message, {
+      stack: error.stack,
+      componentStack: info.componentStack,
+    });
   }
 
   handleReset = () => {
+    this.setState({ error: null });
+    this.props.onReset?.();
+  };
+
+  handleReload = () => {
+    // Recarrega o app re-mountando — preserva o shell, outros apps continuam.
     this.setState({ error: null });
     this.props.onReset?.();
   };
@@ -66,7 +78,7 @@ export class ErrorBoundary extends Component<Props, State> {
                   letterSpacing: "-0.02em",
                 }}
               >
-                Algo deu errado
+                Algo deu errado neste app
               </p>
               <p
                 className="mt-1.5 font-mono text-center"
@@ -80,28 +92,51 @@ export class ErrorBoundary extends Component<Props, State> {
               </p>
             </div>
 
-            <button
-              onClick={this.handleReset}
-              className="px-5 py-2 transition-all"
-              style={{
-                background: "var(--glass-bg)",
-                border: "1px solid var(--glass-border)",
-                borderRadius: "var(--radius-md)",
-                color: "var(--text-secondary)",
-                fontSize: 13,
-                cursor: "pointer",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "var(--glass-bg-hover)";
-                e.currentTarget.style.color = "var(--text-primary)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "var(--glass-bg)";
-                e.currentTarget.style.color = "var(--text-secondary)";
-              }}
-            >
-              Fechar app
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={this.handleReload}
+                className="px-5 py-2 transition-all"
+                style={{
+                  background: "rgba(99,102,241,0.85)",
+                  border: "1px solid rgba(99,102,241,1)",
+                  borderRadius: "var(--radius-md)",
+                  color: "#fff",
+                  fontSize: 13,
+                  cursor: "pointer",
+                  fontWeight: 500,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#6366f1";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(99,102,241,0.85)";
+                }}
+              >
+                Recarregar
+              </button>
+              <button
+                onClick={this.handleReset}
+                className="px-5 py-2 transition-all"
+                style={{
+                  background: "var(--glass-bg)",
+                  border: "1px solid var(--glass-border)",
+                  borderRadius: "var(--radius-md)",
+                  color: "var(--text-secondary)",
+                  fontSize: 13,
+                  cursor: "pointer",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "var(--glass-bg-hover)";
+                  e.currentTarget.style.color = "var(--text-primary)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "var(--glass-bg)";
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                }}
+              >
+                Fechar
+              </button>
+            </div>
           </div>
         </div>
       );

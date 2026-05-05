@@ -7,13 +7,7 @@
 //      CLAUDE.md seção 5 — KernelPublisher é server-only; browser usa esta função
 
 import { createClient } from "npm:@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import { corsHeaders, handlePreflight } from "../_shared/cors.ts";
 
 // Todos os event types registrados no scp-registry.
 // Mantido em sincronia com packages/scp-registry/src/schemas/*.ts.
@@ -97,20 +91,28 @@ function isUuid(value: unknown): value is string {
   );
 }
 
-function jsonResponse(body: unknown, status: number): Response {
+function jsonResponse(
+  body: unknown,
+  status: number,
+  origin: string | null,
+): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: {
+      ...corsHeaders(origin),
+      "Content-Type": "application/json",
+    },
   });
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const pf = handlePreflight(req);
+  if (pf !== null) return pf;
+
+  const origin = req.headers.get("origin");
 
   if (req.method !== "POST") {
-    return jsonResponse({ error: "method not allowed" }, 405);
+    return jsonResponse({ error: "method not allowed" }, 405, origin);
   }
 
   // --- 1. Verificar JWT ---
@@ -119,6 +121,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return jsonResponse(
       { error: "missing or invalid authorization header" },
       401,
+      origin,
     );
   }
   const jwt = authHeader.slice(7);
@@ -134,7 +137,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   } = await userClient.auth.getUser(jwt);
 
   if (authError !== null || user === null) {
-    return jsonResponse({ error: "unauthorized" }, 401);
+    return jsonResponse({ error: "unauthorized" }, 401, origin);
   }
 
   // --- 2. Extrair company_id do JWT (active_company_id injetado pelo custom_access_token hook) ---
@@ -151,6 +154,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
           "no active_company_id in JWT claims — selecione uma company antes de emitir eventos",
       },
       400,
+      origin,
     );
   }
 
@@ -159,7 +163,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   try {
     body = (await req.json()) as RequestBody;
   } catch {
-    return jsonResponse({ error: "invalid json body" }, 400);
+    return jsonResponse({ error: "invalid json body" }, 400, origin);
   }
 
   const { event_type, payload, correlation_id, causation_id, idempotency_key } =
@@ -172,6 +176,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
           "event_type inválido: deve ter formato domain.entity.action (3-4 níveis, lowercase)",
       },
       400,
+      origin,
     );
   }
 
@@ -181,6 +186,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         error: `event_type '${event_type}' não está registrado no scp-registry`,
       },
       400,
+      origin,
     );
   }
 
@@ -189,13 +195,18 @@ Deno.serve(async (req: Request): Promise<Response> => {
     typeof payload !== "object" ||
     Array.isArray(payload)
   ) {
-    return jsonResponse({ error: "payload deve ser um objeto JSON" }, 400);
+    return jsonResponse(
+      { error: "payload deve ser um objeto JSON" },
+      400,
+      origin,
+    );
   }
 
   if (!isUuid(correlation_id)) {
     return jsonResponse(
       { error: "correlation_id deve ser um UUID válido" },
       400,
+      origin,
     );
   }
 
@@ -203,6 +214,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return jsonResponse(
       { error: "causation_id deve ser um UUID válido quando presente" },
       400,
+      origin,
     );
   }
 
@@ -225,6 +237,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return jsonResponse(
         { error: "actor.agent_id obrigatório para actor.type=agent" },
         400,
+        origin,
       );
     }
     if (!isUuid(rawActor.supervising_user_id ?? "")) {
@@ -234,6 +247,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
             "actor.supervising_user_id obrigatório para actor.type=agent (Interpretação A+ [INV])",
         },
         400,
+        origin,
       );
     }
     // 4a. Bloquear operações invariantes para agentes
@@ -245,6 +259,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
           blocked_reason: "invariant_operation",
         },
         403,
+        origin,
       );
     }
     actor = {
@@ -263,6 +278,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
             "actor.service_name e actor.version obrigatórios para actor.type=system",
         },
         400,
+        origin,
       );
     }
     actor = {
@@ -313,14 +329,22 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (insertError !== null) {
     // Idempotência: conflito em event_id único = evento já registrado (ok)
     if (insertError.code === "23505") {
-      return jsonResponse({ event_id, correlation_id, occurred_at }, 200);
+      return jsonResponse(
+        { event_id, correlation_id, occurred_at },
+        200,
+        origin,
+      );
     }
     console.error("[scp-publish] outbox insert error", {
       correlation_id,
       event_type,
       error: insertError.message,
     });
-    return jsonResponse({ error: "falha ao registrar evento no outbox" }, 500);
+    return jsonResponse(
+      { error: "falha ao registrar evento no outbox" },
+      500,
+      origin,
+    );
   }
 
   console.log("[scp-publish] evento registrado", {
@@ -331,5 +355,5 @@ Deno.serve(async (req: Request): Promise<Response> => {
     actor_type: actor.type,
   });
 
-  return jsonResponse({ event_id, correlation_id, occurred_at }, 201);
+  return jsonResponse({ event_id, correlation_id, occurred_at }, 201, origin);
 });

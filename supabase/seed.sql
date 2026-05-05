@@ -1,13 +1,16 @@
--- Seed para desenvolvimento local
--- Cria empresa de teste + usuário admin para facilitar desenvolvimento.
--- NÃO usar em produção.
+-- Sprint 27 MX142: seed.sql limpo. O seed real do projeto roda via
+-- @aethereos/seed (tooling/seed/) e migrations idempotentes em
+-- supabase/migrations/. Este arquivo era um pg_dump corrompido com IDs
+-- duplicados — substituido por stub vazio idempotente.
+--
+-- Para popular o ambiente local:
+--   supabase db reset           -- aplica todas as migrations + seed.sql
+--   pnpm --filter @aethereos/seed start   -- popula companies/users/etc
+--
+-- Para popular o cloud:
+--   SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
+--     pnpm --filter @aethereos/seed start
+--
+-- Ref: docs/SPRINT_LOG.md (Sprint 24 MX134 — seed cloud)
 
--- Empresa de teste
-insert into kernel.companies (id, slug, name, plan, status)
-values (
-  '00000000-0000-0000-0000-000000000001',
-  'aethereos-dev',
-  'Aethereos Dev',
-  'enterprise',
-  'active'
-) on conflict (id) do nothing;
+-- (intencionalmente vazio)

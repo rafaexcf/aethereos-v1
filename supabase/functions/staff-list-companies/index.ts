@@ -4,18 +4,19 @@
 // Verifica is_staff=true no JWT antes de qualquer query.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { corsHeaders, handlePreflight } from "../_shared/cors.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-};
-
-function jsonResponse(body: unknown, status: number): Response {
+function jsonResponse(
+  body: unknown,
+  status: number,
+  origin: string | null,
+): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: {
+      ...corsHeaders(origin),
+      "Content-Type": "application/json",
+    },
   });
 }
 
@@ -31,17 +32,18 @@ function decodeJwtPayload(jwt: string): Record<string, unknown> {
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const pf = handlePreflight(req);
+  if (pf !== null) return pf;
+
+  const origin = req.headers.get("origin");
 
   if (req.method !== "GET") {
-    return jsonResponse({ error: "method not allowed" }, 405);
+    return jsonResponse({ error: "method not allowed" }, 405, origin);
   }
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
-    return jsonResponse({ error: "missing authorization header" }, 401);
+    return jsonResponse({ error: "missing authorization header" }, 401, origin);
   }
   const jwt = authHeader.slice(7);
 
@@ -57,13 +59,17 @@ Deno.serve(async (req: Request): Promise<Response> => {
   } = await userClient.auth.getUser(jwt);
 
   if (authError !== null || user === null) {
-    return jsonResponse({ error: "unauthorized" }, 401);
+    return jsonResponse({ error: "unauthorized" }, 401, origin);
   }
 
   // Verificar is_staff no JWT — claim injetado pelo custom_access_token_hook
   const payload = decodeJwtPayload(jwt);
   if (payload["is_staff"] !== true) {
-    return jsonResponse({ error: "forbidden: requires staff role" }, 403);
+    return jsonResponse(
+      { error: "forbidden: requires staff role" },
+      403,
+      origin,
+    );
   }
 
   const staffUserId = user.id;
@@ -108,7 +114,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       staff_user_id: staffUserId,
       error: companiesError.message,
     });
-    return jsonResponse({ error: "falha ao buscar companies" }, 500);
+    return jsonResponse({ error: "falha ao buscar companies" }, 500, origin);
   }
 
   // Audit: registra acesso no staff_access_log (company_id=null = acesso global à lista)
@@ -138,5 +144,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
       },
     },
     200,
+    origin,
   );
 });

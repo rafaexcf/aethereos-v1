@@ -7,13 +7,7 @@
 // Auth: Bearer JWT (authenticated) com active_company_id no payload.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import { corsHeaders, handlePreflight } from "../_shared/cors.ts";
 
 const ALLOWED_ENTITY_TYPES = new Set([
   "person",
@@ -49,10 +43,17 @@ interface SnapshotResponse {
   embedding_count: number;
 }
 
-function jsonResponse(body: unknown, status: number): Response {
+function jsonResponse(
+  body: unknown,
+  status: number,
+  origin: string | null,
+): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: {
+      ...corsHeaders(origin),
+      "Content-Type": "application/json",
+    },
   });
 }
 
@@ -77,15 +78,18 @@ function isUuid(value: unknown): value is string {
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS")
-    return new Response("ok", { headers: corsHeaders });
+  const pf = handlePreflight(req);
+  if (pf !== null) return pf;
+
+  const origin = req.headers.get("origin");
+
   if (req.method !== "POST")
-    return jsonResponse({ error: "method not allowed" }, 405);
+    return jsonResponse({ error: "method not allowed" }, 405, origin);
 
   // 1. JWT
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
-    return jsonResponse({ error: "missing authorization header" }, 401);
+    return jsonResponse({ error: "missing authorization header" }, 401, origin);
   }
   const jwt = authHeader.slice(7);
 
@@ -100,7 +104,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   } = await userClient.auth.getUser(jwt);
 
   if (authError !== null || user === null) {
-    return jsonResponse({ error: "unauthorized" }, 401);
+    return jsonResponse({ error: "unauthorized" }, 401, origin);
   }
 
   // 2. company_id do JWT
@@ -111,7 +115,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       : null;
 
   if (companyId === null || !isUuid(companyId)) {
-    return jsonResponse({ error: "no active_company_id in JWT" }, 400);
+    return jsonResponse({ error: "no active_company_id in JWT" }, 400, origin);
   }
 
   // 3. Body
@@ -119,7 +123,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   try {
     body = (await req.json()) as RequestBody;
   } catch {
-    return jsonResponse({ error: "invalid json body" }, 400);
+    return jsonResponse({ error: "invalid json body" }, 400, origin);
   }
 
   const { entity_type, entity_id } = body;
@@ -132,10 +136,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
         error: `entity_type invalido. Permitidos: ${[...ALLOWED_ENTITY_TYPES].join(", ")}`,
       },
       400,
+      origin,
     );
   }
   if (!isUuid(entity_id)) {
-    return jsonResponse({ error: "entity_id deve ser UUID" }, 400);
+    return jsonResponse({ error: "entity_id deve ser UUID" }, 400, origin);
   }
 
   // 4. Queries — service_role para bypass de RLS (controle ja feito pelo company_id no WHERE)
@@ -151,7 +156,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   if (recordsErr !== null) {
     console.error("[context-snapshot] records query error", recordsErr);
-    return jsonResponse({ error: "falha ao buscar context_records" }, 500);
+    return jsonResponse(
+      { error: "falha ao buscar context_records" },
+      500,
+      origin,
+    );
   }
 
   const { data: auditRows, error: auditErr } = await adminClient
@@ -165,7 +174,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   if (auditErr !== null) {
     console.error("[context-snapshot] audit query error", auditErr);
-    return jsonResponse({ error: "falha ao buscar audit_log" }, 500);
+    return jsonResponse({ error: "falha ao buscar audit_log" }, 500, origin);
   }
 
   const { count: embeddingCount, error: embedErr } = await adminClient
@@ -177,7 +186,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   if (embedErr !== null) {
     console.error("[context-snapshot] embeddings count error", embedErr);
-    return jsonResponse({ error: "falha ao contar embeddings" }, 500);
+    return jsonResponse({ error: "falha ao contar embeddings" }, 500, origin);
   }
 
   // 5. Build response
@@ -249,7 +258,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // nao bloqueia a resposta
   }
 
-  return jsonResponse(response, 200);
+  return jsonResponse(response, 200, origin);
 });
 
 function previewPayload(p: Record<string, unknown>): Record<string, unknown> {

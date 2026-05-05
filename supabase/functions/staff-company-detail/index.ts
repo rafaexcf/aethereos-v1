@@ -5,18 +5,19 @@
 // Envia notificação ao owner da company ao acessar (transparência obrigatória).
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { corsHeaders, handlePreflight } from "../_shared/cors.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-};
-
-function jsonResponse(body: unknown, status: number): Response {
+function jsonResponse(
+  body: unknown,
+  status: number,
+  origin: string | null,
+): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: {
+      ...corsHeaders(origin),
+      "Content-Type": "application/json",
+    },
   });
 }
 
@@ -39,17 +40,18 @@ function isUuid(v: unknown): v is string {
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const pf = handlePreflight(req);
+  if (pf !== null) return pf;
+
+  const origin = req.headers.get("origin");
 
   if (req.method !== "GET") {
-    return jsonResponse({ error: "method not allowed" }, 405);
+    return jsonResponse({ error: "method not allowed" }, 405, origin);
   }
 
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
-    return jsonResponse({ error: "missing authorization header" }, 401);
+    return jsonResponse({ error: "missing authorization header" }, 401, origin);
   }
   const jwt = authHeader.slice(7);
 
@@ -64,12 +66,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
   } = await userClient.auth.getUser(jwt);
 
   if (authError !== null || user === null) {
-    return jsonResponse({ error: "unauthorized" }, 401);
+    return jsonResponse({ error: "unauthorized" }, 401, origin);
   }
 
   const payload = decodeJwtPayload(jwt);
   if (payload["is_staff"] !== true) {
-    return jsonResponse({ error: "forbidden: requires staff role" }, 403);
+    return jsonResponse(
+      { error: "forbidden: requires staff role" },
+      403,
+      origin,
+    );
   }
 
   const staffUserId = user.id;
@@ -80,6 +86,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return jsonResponse(
       { error: "company_id obrigatório e deve ser um UUID válido" },
       400,
+      origin,
     );
   }
 
@@ -124,14 +131,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   if (companyResult.error !== null) {
     if (companyResult.error.code === "PGRST116") {
-      return jsonResponse({ error: "company não encontrada" }, 404);
+      return jsonResponse({ error: "company não encontrada" }, 404, origin);
     }
     console.error("[staff-company-detail] company query error", {
       staff_user_id: staffUserId,
       company_id: companyId,
       error: companyResult.error.message,
     });
-    return jsonResponse({ error: "falha ao buscar company" }, 500);
+    return jsonResponse({ error: "falha ao buscar company" }, 500, origin);
   }
 
   // Buscar owner para notificação
@@ -176,5 +183,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
       recent_access_log: recentAccessLog.data ?? [],
     },
     200,
+    origin,
   );
 });

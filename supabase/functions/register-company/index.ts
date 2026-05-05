@@ -6,13 +6,7 @@
 // Requer: auth user PREVIAMENTE criado via supabase.auth.signUp no cliente.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+import { corsHeaders, handlePreflight } from "../_shared/cors.ts";
 
 interface RegisterBody {
   email?: string;
@@ -45,14 +39,15 @@ async function lookupCnpj(
 }
 
 Deno.serve(async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const pf = handlePreflight(req);
+  if (pf !== null) return pf;
+
+  const cors = corsHeaders(req.headers.get("origin"));
 
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 
@@ -67,7 +62,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       JSON.stringify({ error: "Authorization header requerido" }),
       {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       },
     );
   }
@@ -84,7 +79,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       JSON.stringify({ error: "Token inválido ou expirado" }),
       {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       },
     );
   }
@@ -96,7 +91,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   } catch {
     return new Response(JSON.stringify({ error: "JSON inválido" }), {
       status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 
@@ -106,7 +101,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (cnpj.length !== 14) {
     return new Response(JSON.stringify({ error: "CNPJ deve ter 14 dígitos" }), {
       status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 
@@ -116,7 +111,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       JSON.stringify({ error: "Nome completo é obrigatório" }),
       {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       },
     );
   }
@@ -155,12 +150,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 
   return new Response(JSON.stringify(data), {
     status: 201,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...cors, "Content-Type": "application/json" },
   });
 });

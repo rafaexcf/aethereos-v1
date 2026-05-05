@@ -1,4 +1,5 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { corsHeaders, handlePreflight } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -30,15 +31,8 @@ function decodeJwt(token: string): Record<string, unknown> | null {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Authorization, Content-Type, apikey",
-      },
-    });
-  }
+  const pf = handlePreflight(req);
+  if (pf !== null) return pf;
 
   if (req.method !== "POST") {
     return Response.json({ error: "Method not allowed" }, { status: 405 });
@@ -155,6 +149,6 @@ Deno.serve(async (req: Request) => {
 
   return Response.json(
     { ok: true, company_id },
-    { headers: { "Access-Control-Allow-Origin": "*" } },
+    { headers: corsHeaders(req.headers.get("origin")) },
   );
 });
