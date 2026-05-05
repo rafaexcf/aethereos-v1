@@ -5,6 +5,90 @@ Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
 
 ---
 
+# Sprint 24 — Staging Deploy: Vercel + Supabase Cloud
+
+Início: 2026-05-05
+Modelo: Claude Code (claude-opus-4-7, Sprint 24 N=1)
+Roadmap: `SPRINT_24_PROMPT.md` na raiz.
+
+## Origem
+
+23 sprints rodando local (Supabase CLI + Vite dev). Sprint 24 leva Aethereos
+V1 ao primeiro ambiente público: Vercel (frontend) + Supabase Cloud Pro
+(banco + auth + storage + edge functions).
+
+## URLs
+
+| Serviço          | URL                                                         |
+| ---------------- | ----------------------------------------------------------- |
+| Shell            | https://aethereos.vercel.app                                |
+| Supabase         | https://oublhirkojyipwtmkzvw.supabase.co                    |
+| Vercel inspector | https://vercel.com/metaquantics/aethereos                   |
+| Supabase admin   | https://supabase.com/dashboard/project/oublhirkojyipwtmkzvw |
+
+## Histórico de milestones (Sprint 24)
+
+| Milestone | Descrição                                                   | Status | Commit  |
+| --------- | ----------------------------------------------------------- | ------ | ------- |
+| MX130     | 78 migrations aplicadas no cloud (1 fix pgvector schema)    | DONE   | 0fe6319 |
+| MX131     | 11 Edge Functions deployed --no-verify-jwt                  | DONE   | c0011fd |
+| MX132     | VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY no Vercel        | DONE   | bd9e60c |
+| MX133     | Primeiro deploy READY em aethereos.vercel.app               | DONE   | a0095db |
+| MX134     | Seed cloud (4 cias, 10 users, 80 people, 64 files, 84 msgs) | DONE   | 56fd32f |
+| MX135     | STAGING_VALIDATION.md com 12 checks automatizados PASS      | DONE   | (este)  |
+
+## Issues encontradas + fixes (MX130/MX134)
+
+1. **pgvector operator schema** (MX130): função `kernel.search_embeddings` falhava no cloud com `<=>` não-qualificado. Fix: `SET search_path = public, extensions` + `OPERATOR(extensions.<=>)` explícito.
+2. **PostgREST schema exposure** (MX134): cloud expunha apenas `public, graphql_public`. Fix: `supabase config push --yes` sincronizou `schemas = ["public", "graphql_public", "kernel", "comercio"]` do `config.toml` local.
+3. **Seed key precedence** (MX134): `.env.local` SUPABASE_SERVICE_KEY (chave demo local) silenciosamente sobrescrevia `SUPABASE_SERVICE_ROLE_KEY` (cloud). Fix: inverter precedência em `tooling/seed/src/client.ts`.
+4. **Seed local-only guard** (MX134): assertLocalOnly() recusava cloud URLs. Fix: flag opt-in `ALLOW_CLOUD_SEED=true`.
+
+## Validação automatizada (12 checks PASS)
+
+Script de smoke em `STAGING_VALIDATION.md`:
+
+- ✅ Vercel HTML + JS bundle servidos
+- ✅ Auth login retorna JWT com `active_company_id` claim populado
+- ✅ Schema kernel exposto via PostgREST
+- ✅ Multi-tenant isolation: Meridian e Atalaia veem rows diferentes
+- ✅ RLS cross-tenant denial: Meridian probing Atalaia row → `[]`
+- ✅ App registry global retorna 53 apps
+- ✅ Edge functions: scp-publish (auth required), cnpj-lookup (público), context-snapshot (200 com payload válido)
+
+## Validação manual pendente (M1-M14)
+
+Reviewer humano abre `aethereos.vercel.app` em browser:
+splash → login → desktop → Dock → abrir apps → Magic Store → multi-tenant
+→ Copilot. Detalhe completo em `STAGING_VALIDATION.md`.
+
+## Gate final Sprint 24
+
+```
+pnpm typecheck       → 26/26 ✓ (cached)
+pnpm lint            → 24/24 ✓ (cached)
+pnpm test            → 20/20 (~225 unit tests) ✓
+pnpm test:e2e:full   → não rodado (E2E aponta pra localhost; staging
+                       requer reconfigurar E2E_BASE_URL — futuro)
+```
+
+## Limitações conhecidas Sprint 24
+
+- **E2E não testa staging** — `tooling/e2e/playwright.config.ts` ainda
+  usa `localhost:5174`. Adaptar com `E2E_BASE_URL=https://aethereos.vercel.app`
+  - service_role key para seed dinâmico fica para sprint futuro.
+- **Legacy JWT keys ativos** — projeto Cloud usa formato `eyJhbG...` legacy
+  para anon/service*role. Migração para `sb_publishable*_`/`sb*secret*_`
+  (formato novo) é trabalho separado.
+- **Sem domínio customizado** — `app.aethereos.io` apontando pro Vercel é
+  sprint futuro.
+- **Sem CI/CD** — push em main NÃO faz auto-deploy. Reviewer humano roda
+  `npx vercel --prod` manualmente.
+- **Sem monitoramento** — sem Vercel Analytics, Supabase logs aggregados
+  ou Sentry. Adicionar pré-GA.
+
+---
+
 # Sprint 23 — Permissões (Scopes) + Manifesto aethereos.app.json
 
 Início: 2026-05-04
