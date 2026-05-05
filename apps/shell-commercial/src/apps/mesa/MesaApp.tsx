@@ -23,9 +23,15 @@ interface ContextMenuState {
 function DesktopIcon({
   item,
   onContextMenu,
+  onDragStart,
+  isDragging,
+  didDrag,
 }: {
   item: MesaItem;
   onContextMenu: (e: React.MouseEvent, item: MesaItem) => void;
+  onDragStart: (e: React.MouseEvent, item: MesaItem) => void;
+  isDragging: boolean;
+  didDrag: boolean;
 }) {
   const openApp = useOSStore((s) => s.openApp);
   const [selected, setSelected] = useState(false);
@@ -47,14 +53,22 @@ function DesktopIcon({
 
   return (
     <button
-      onClick={() => setSelected((s) => !s)}
+      onMouseDown={(e) => onDragStart(e, item)}
+      onClick={() => {
+        // Sprint 27: ignora click se houve drag.
+        if (didDrag) return;
+        setSelected((s) => !s);
+      }}
       onDoubleClick={handleDoubleClick}
       onContextMenu={(e) => onContextMenu(e, item)}
-      className="absolute flex flex-col items-center gap-1 cursor-pointer select-none"
+      className="absolute flex flex-col items-center gap-1 select-none"
       style={{
         left: item.position.x,
         top: item.position.y,
         width: 56,
+        cursor: isDragging ? "grabbing" : "grab",
+        opacity: isDragging ? 0.85 : 1,
+        zIndex: isDragging ? 100 : (item.zIndex ?? 0),
       }}
     >
       <div
@@ -113,6 +127,7 @@ function DesktopIcon({
 
 export function MesaApp() {
   const { layout, wallpaper, wallpaperUrl, fetchLayout } = useMesaStore();
+  const updateLayout = useMesaStore((s) => s.updateLayout);
   const addWidget = useMesaStore((s) => s.addWidget);
   const removeItem = useMesaStore((s) => s.removeItem);
   const setPendingTab = useSettingsNavStore((s) => s.setPendingTab);
@@ -174,9 +189,63 @@ export function MesaApp() {
     if (app === undefined) return false;
     return app.alwaysEnabled === true || installed.has(app.id);
   });
-  // Sprint 26: widgets vivem ao lado de icones no mesmo layout.
-  const widgets = layout.filter((item) => item.type === "widget");
+  // Sprint 27 hotfix: widgets também filtrados por install status — antes
+  // renderizavam mesmo se app fosse desinstalado/inexistente, o que
+  // quebrava o flow de openApp e podia gerar erro visual.
+  const widgets = layout.filter((item) => {
+    if (item.type !== "widget") return false;
+    const app = getApp(item.appId);
+    if (app === undefined) return false;
+    return app.alwaysEnabled === true || installed.has(app.id);
+  });
   const widgetAppIds = new Set(widgets.map((w) => w.appId));
+
+  // Sprint 27: drag-and-drop free-form pra icons e widgets na mesa.
+  const [dragging, setDragging] = useState<{
+    itemId: string;
+    offsetX: number;
+    offsetY: number;
+    moved: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    if (dragging === null) return;
+    function onMove(e: MouseEvent) {
+      setDragging((d) => (d === null ? null : { ...d, moved: true }));
+      const item = layout.find((it) => it.id === dragging?.itemId);
+      if (item === undefined || dragging === null) return;
+      const next: MesaItem = {
+        ...item,
+        position: {
+          x: Math.max(0, e.clientX - dragging.offsetX),
+          y: Math.max(0, e.clientY - dragging.offsetY),
+        },
+      };
+      updateLayout(layout.map((it) => (it.id === dragging.itemId ? next : it)));
+    }
+    function onUp() {
+      setDragging(null);
+    }
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+    return () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    };
+  }, [dragging, layout, updateLayout]);
+
+  function handleDragStart(e: React.MouseEvent, item: MesaItem) {
+    if (e.button !== 0) return;
+    if (item.locked === true) return;
+    e.preventDefault();
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    setDragging({
+      itemId: item.id,
+      offsetX: e.clientX - rect.left,
+      offsetY: e.clientY - rect.top,
+      moved: false,
+    });
+  }
 
   function handlePickWidget(appId: string) {
     const spec = getWidgetSpec(appId);
@@ -218,16 +287,23 @@ export function MesaApp() {
           key={item.id}
           item={item}
           onContextMenu={handleIconContextMenu}
+          onDragStart={handleDragStart}
+          isDragging={dragging?.itemId === item.id}
+          didDrag={dragging?.itemId === item.id && dragging.moved === true}
         />
       ))}
 
       {widgets.map((item) => {
         const app = getApp(item.appId);
+        const isBeingDragged = dragging?.itemId === item.id;
         return (
           <button
             type="button"
             key={item.id}
+            onMouseDown={(e) => handleDragStart(e, item)}
             onClick={() => {
+              // Sprint 27: só dispara openApp se NÃO houve arraste.
+              if (dragging?.itemId === item.id && dragging.moved) return;
               if (app !== undefined) openApp(app.id, app.name);
             }}
             onContextMenu={(e) => {
@@ -249,7 +325,11 @@ export function MesaApp() {
               border: "none",
               padding: 0,
               background: "transparent",
-              cursor: "pointer",
+              cursor: isBeingDragged ? "grabbing" : "grab",
+              userSelect: "none",
+              opacity: isBeingDragged ? 0.85 : 1,
+              transition: isBeingDragged ? "none" : "opacity 120ms ease",
+              zIndex: isBeingDragged ? 100 : (item.zIndex ?? 0),
             }}
             aria-label={app?.name ?? item.appId}
           >
