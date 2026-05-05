@@ -5,6 +5,149 @@ Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
 
 ---
 
+# Sprint 23 — Permissões (Scopes) + Manifesto aethereos.app.json
+
+Início: 2026-05-04
+Modelo: Claude Code (claude-opus-4-7, Sprint 23 N=1)
+Roadmap: `SPRINT_23_PROMPT.md` na raiz.
+
+## Origem
+
+Sprint 22 entregou `@aethereos/client` + AppBridgeHandler executando _qualquer_ método sem checar permissões. Sprint 23 adiciona o sistema de scopes: apps declaram permissões no manifesto; usuário consente no install (modal); bridge valida cada request contra `kernel.app_permission_grants`.
+
+## Histórico de milestones (Sprint 23)
+
+| Milestone | Descrição                                                       | Status | Commit  |
+| --------- | --------------------------------------------------------------- | ------ | ------- |
+| MX123     | SCOPE_CATALOG (17 scopes) + kernel.app_permission_grants        | DONE   | 4cdd061 |
+| MX124     | UPDATE app_registry.permissions[] + auto-grant non-sensitive    | DONE   | b6685eb |
+| MX125     | PermissionConsentModal no install + grantScopes action          | DONE   | f7b8037 |
+| MX126     | AppBridgeHandler valida + cache grants no handshake             | DONE   | ad16b6f |
+| MX127     | aethereos.app.json spec + Zod AethereosManifestSchema + 9 tests | DONE   | 8c6e14e |
+| MX128     | PermissionsSection no detail view + revokeScope action          | DONE   | 0b4b4b1 |
+| MX129     | scopes.test.ts (8) + Sprint 23 docs                             | DONE   | (este)  |
+
+## SCOPE_CATALOG (MX123)
+
+17 scopes, 5 sensitive:
+
+| Scope                    | Sensitive | Descrição                                      |
+| ------------------------ | --------- | ---------------------------------------------- |
+| auth.read                | —         | Identidade (BASE_SCOPE — auto-grant universal) |
+| drive.read / drive.write | —         | Listar/escrever no Drive                       |
+| **drive.delete**         | ✓         | Deletar arquivos                               |
+| people.read              | —         | Listar contatos                                |
+| **people.write**         | ✓         | Criar/editar contatos                          |
+| chat.read / chat.write   | —         | Ler/enviar mensagens                           |
+| notifications.send       | —         | Enviar notif ao sino                           |
+| **scp.emit**             | ✓         | Emitir SCP em nome do app                      |
+| scp.subscribe            | —         | Escutar SCP                                    |
+| **ai.chat**              | ✓         | Usar Copilot (consome quota)                   |
+| ai.embed                 | —         | Gerar embeddings                               |
+| settings.read            | —         | Ler preferências                               |
+| **settings.write**       | ✓         | Alterar preferências                           |
+| theme.read               | —         | Ler tema atual                                 |
+| windows.manage           | —         | Gerenciar janelas e mensagens inter-app        |
+
+Catálogo + `METHOD_SCOPE_MAP` (23 mappings method → scope) + helpers `isSensitiveScope` / `getScope` exportados de `@aethereos/client`.
+
+## kernel.app_permission_grants
+
+```sql
+CREATE TABLE kernel.app_permission_grants (
+  id, company_id, app_id, scope, granted_by, granted_at,
+  UNIQUE (company_id, app_id, scope)
+);
+```
+
+RLS company-scoped: SELECT membros, INSERT exige `granted_by=auth.uid()`. Index (company_id, app_id) para lookup rápido no bridge.
+
+## Seed (MX124)
+
+UPDATEs em `app_registry.permissions[]` para 25+ apps nativos + demo. Backfill safe para apps já instalados:
+
+1. `auth.read` para todos (R14)
+2. Todos os scopes não-sensíveis declarados auto-granted
+3. Sensíveis NÃO auto-granted — exigem consent
+
+Pós-seed: 139 grants em 4 companies de teste.
+
+## Modal de consentimento (MX125)
+
+`PermissionConsentModal` portal aparece quando install detecta scopes sensíveis declarados. Lista todos os scopes com badges "Sensivel" amarelos, ícones Lucide por scope, descrição. Botões "Cancelar" / "Instalar e permitir". A11y completo via `useModalA11y`.
+
+`installedModulesStore.grantScopes` action faz upsert idempotente em `kernel.app_permission_grants`. `MagicStoreApp.install` orquestra: sem sensíveis → install + auto-grant; com sensíveis → modal → accept dispara installCore com todos os scopes.
+
+## Validação no bridge (MX126)
+
+`AppBridgeHandler`:
+
+- `loadGrants()`: SELECT scope WHERE company_id AND app_id, cached em `#grantedScopes` Set
+- HANDSHAKE pré-carrega grants em background (R13: cache, sem SELECT por request)
+- `auth.read` sempre presente no cache (R14)
+- Antes de `#executeMethod`: `METHOD_SCOPE_MAP[method]` → scope; se ausente em granted → `PERMISSION_DENIED`
+- Apps nativos (entry_mode=internal) NÃO passam pelo bridge (R10)
+
+Fail-closed: erro carregando grants resulta em set vazio (apenas auth.read funciona).
+
+## Manifesto aethereos.app.json (MX127)
+
+Spec declarativa para apps third-party (não consumida em runtime em F1):
+
+- `id` kebab-case, `version` semver, `description` ≤ 280 chars
+- `developer.name` obrigatório, website/email opcionais
+- `type` ∈ {native/open_source/embedded_external/external_shortcut/template_app/ai_app}
+- `category` ∈ {vertical/optional/ai/productivity/games/utilities/puter/system}
+- `entry.mode` ∈ {internal/iframe/weblink} com refine: iframe/weblink exigem url
+- `permissions[]` enum dinâmico de SCOPE_CATALOG
+- `window`, `pricing`, `security{sandbox,allowedOrigins}` opcionais
+
+Validação via `parseManifest(input)` Result-style. Strict mode rejeita campos extras.
+
+`docs/MANIFEST_SPEC.md` documenta cada campo + roadmap (F2 = Developer Console ingere).
+
+## UI de revogação (MX128)
+
+`PermissionsSection` no detail view do Magic Store (visível apenas para apps instalados): lista cada grant com botão "Revogar" individual, exceto `BASE_SCOPE` (Identidade — obrigatório). Badges "Sensivel" em amarelo + "Obrigatorio" para auth.read.
+
+`installedModulesStore.revokeScope` action faz DELETE no banco.
+
+## Testes (MX129)
+
+8 unit tests novos em `packages/client/__tests__/scopes.test.ts`:
+
+- 17 scopes definidos
+- Todos com label/description/icon não-vazios
+- BASE_SCOPE = auth.read e não-sensitive
+- SENSITIVE_SCOPES = exatamente 5
+- METHOD_SCOPE_MAP cobre 22+ métodos
+- METHOD_SCOPE_MAP só usa scopes do CATALOG
+- getScope retorna correto / undefined
+- isSensitiveScope rejeita desconhecido
+
+Acumulado:
+
+- `@aethereos/client`: **29 tests** (era 12 antes do sprint, +17 novos: 9 manifest + 8 scopes)
+- `shell-commercial`: **28 tests** (era 26, +2 novos: PERMISSION_DENIED + handshake cache)
+- Total monorepo: **20/20 turbo test tasks**, ~225 unit tests.
+
+## Gate final Sprint 23
+
+```
+pnpm typecheck       → 26/26 ✓
+pnpm lint            → 24/24 ✓
+pnpm test            → 20/20 (~225 unit tests) ✓
+pnpm test:e2e:full   → 33 passed, 1 skipped ✓
+```
+
+## Limitações conhecidas Sprint 23
+
+- **Cache de grants não invalida automaticamente em revoke** — após revogar via UI, o iframe precisa ser remontado (re-handshake) para o `AppBridgeHandler` recarregar o cache. Em sprint futuro, postar push event `permissions.changed` ao revogar.
+- **`allowedOrigins` no manifesto não é aplicado** — postMessage target ainda é `'*'`. Origin validation entra com Developer Console.
+- **Apps alwaysEnabled (ae-ai, magic-store, mesa)** — entry_mode=internal não usam bridge, não dependem de grants. Apenas declaram permissions[] como documentação.
+
+---
+
 # Sprint 22 — Client SDK + App Bridge: @aethereos/client
 
 Início: 2026-05-04

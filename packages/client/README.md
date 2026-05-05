@@ -228,9 +228,63 @@ try {
 
 ---
 
+## Permissões (Sprint 23)
+
+Apps declaram permissões no manifesto `aethereos.app.json` em `permissions[]`. Ao instalar, usuário consente nos scopes sensíveis. AppBridgeHandler valida cada request — métodos sem grant retornam `PERMISSION_DENIED`.
+
+```ts
+import {
+  SCOPE_CATALOG,
+  isSensitiveScope,
+  METHOD_SCOPE_MAP,
+} from "@aethereos/client";
+
+// Catalogo central de 17 scopes
+const drive = SCOPE_CATALOG["drive.write"];
+console.log(drive.label, drive.description, drive.sensitive);
+
+// Mapeamento method -> scope (usado pelo bridge)
+const required = METHOD_SCOPE_MAP["drive.delete"]; // "drive.delete"
+
+// 5 scopes sensíveis exigem consentimento explícito:
+// drive.delete, people.write, settings.write, scp.emit, ai.chat
+```
+
+`auth.read` (BASE_SCOPE) é sempre concedido implicitamente — todo app instalado pode ler a sessão do usuário.
+
+Tratamento de erro:
+
+```ts
+try {
+  await aeth.drive.delete("file-id");
+} catch (err) {
+  if (err instanceof SdkError && err.code === "PERMISSION_DENIED") {
+    // App não tem grant para drive.delete — pedir ao usuário para reinstalar
+    // ou conceder via Magic Store > app detail > Permissões
+  }
+}
+```
+
+## Manifesto aethereos.app.json (Sprint 23)
+
+Spec declarativa para apps third-party:
+
+```ts
+import { parseManifest, type AethereosManifest } from "@aethereos/client";
+
+const result = parseManifest(JSON.parse(content));
+if (!result.ok) {
+  console.error(result.issues);
+  process.exit(1);
+}
+const m: AethereosManifest = result.value;
+```
+
+Spec completa em [`docs/MANIFEST_SPEC.md`](../../docs/MANIFEST_SPEC.md).
+
 ## Limitações Sprint 22
 
-- Sem permissões granulares — todo método é permitido se o iframe carregou
-- `postMessage` target é `'*'` (origin validation no Sprint 23)
+- `postMessage` target ainda é `'*'` (origin validation entra com Developer Console)
 - `drive.read` não implementado em F1 (Storage requer refactor)
 - `chat`, `ai` ainda sem handlers no host (apenas API tipada)
+- Cache de grants no bridge não invalida ao revogar via UI — iframe precisa ser remontado para refresh
