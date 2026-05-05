@@ -170,6 +170,45 @@ export function TabAutenticacao2FA() {
         </SettingGroup>
       </div>
 
+      <div style={{ marginBottom: 28 }}>
+        <SectionLabel>Política de Senhas</SectionLabel>
+        <SettingGroup>
+          <SettingRow
+            label="Comprimento mínimo"
+            sublabel="Mínimo de caracteres exigido na senha"
+          >
+            <Badge variant="neutral">6 caracteres</Badge>
+          </SettingRow>
+          <SettingRow
+            label="Exigir letra maiúscula"
+            sublabel="Pelo menos uma A-Z"
+          >
+            <Badge variant="neutral">Não</Badge>
+          </SettingRow>
+          <SettingRow label="Exigir número" sublabel="Pelo menos um dígito 0-9">
+            <Badge variant="neutral">Não</Badge>
+          </SettingRow>
+          <SettingRow
+            label="Exigir caractere especial"
+            sublabel="Pelo menos um símbolo"
+            last
+          >
+            <Badge variant="neutral">Não</Badge>
+          </SettingRow>
+        </SettingGroup>
+        <p
+          style={{
+            fontSize: 11,
+            color: "var(--text-tertiary)",
+            marginTop: 10,
+            lineHeight: 1.5,
+          }}
+        >
+          ℹ️ Política gerenciada pelo provedor de autenticação (Supabase Auth).
+          Customização avançada exige plano Enterprise — fast-follow.
+        </p>
+      </div>
+
       <div>
         <SectionLabel>Status por colaborador</SectionLabel>
         <ComingSoonSection

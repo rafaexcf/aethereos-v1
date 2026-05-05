@@ -5,6 +5,82 @@ Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
 
 ---
 
+# Sprint 30 — Segurança Enterprise + LGPD: 2FA, Sessões, Exportação
+
+Início: 2026-05-08
+Modelo: Claude Code (claude-opus-4-7-1m, Sprint 30 N=1, 3 agentes paralelos)
+Roadmap: `docs/sprint-prompts/SPRINT_30_PROMPT.md`
+
+## Origem
+
+Aethereos não tinha 2FA, controle de sessões, alertas de segurança nem
+exportação de dados (LGPD art. 18). Sprint 30 entrega o pacote completo
+de segurança enterprise.
+
+## Histórico de milestones
+
+| Milestone | Descrição                                                       | Commit  |
+| --------- | --------------------------------------------------------------- | ------- |
+| MX163     | TOTP 2FA componente + wired em Configurações                    | 844545c |
+| MX164     | TabAutenticacao2FA persiste policy em company settings          | 363d56a |
+| MX165     | login_history + Edge Function force-logout + TabSessoesAtivas   | (este)  |
+| MX166     | security_alerts realign + helper emitAlert + auto-emit triggers | (este)  |
+| MX167     | Edge Function export-company-data + TabLGPD com DPO + retenção  | (este)  |
+| MX168     | Política de senhas info + SPRINT_LOG + commit final             | (este)  |
+
+## Arquitetura entregue
+
+**Componente reutilizável:**
+
+- `components/shared/TwoFactorAuth.tsx` — phases discriminadas
+  (loading/idle/enrolling/unenrolling/error). API Supabase Auth
+  `mfa.enroll`/`challengeAndVerify`/`unenroll`/`listFactors`.
+
+**Migrations:**
+
+- `kernel.login_history` — sessões ativas com is_active flag
+- `security_alerts` realigned — title/description/metadata/acknowledged
+  - 8 alert_types canônicos
+
+**Edge Functions:**
+
+- `force-logout` — owner/admin marca is_active=false em batch (decisão
+  R12: flag tenant-isolated em vez de auth.admin.signOut)
+- `export-company-data` — owner-only (R11), JSON com 10 entidades sem
+  secrets (R15), 50MB cap, rate-limit 3/h, registra audit_log
+
+**Helpers:**
+
+- `lib/security-alerts.ts` — emitAlert() best-effort
+- Auto-emit triggers em member_removed (Colaboradores) + mfa_disabled
+  (TwoFactorAuth)
+
+**Tabs do Gestor:**
+
+- TabAutenticacao2FA — policy persistida (none/admins/all) + política
+  senhas info
+- TabSessoesAtivas — lista, "Esta sessão" highlight, encerrar uma ou
+  todas
+- TabAlertasRisco — chips de filtro + ack individual/bulk + relativeTime
+- TabLGPD — DPO auto-save + retenção + export download blob
+
+## Validações
+
+- TypeCheck: 26/26 ✓
+- Lint: 24/24 ✓
+
+## Pendências fast-follow
+
+- Enforcement 2FA no boot do shell (interceptor antes do desktop se
+  policy=all e user sem MFA)
+- Hook que consome login_history.is_active=false no shell pra force
+  logout efetivo
+- admin_added auto-emit (precisa fluxo de edit-role ainda não
+  implementado em Colaboradores)
+- Detecção login_new_ip / login_new_device (R13 — começamos com simples)
+
+---
+
 # Sprint 29 — Apps com Persistência Real: Tarefas, Kanban, Notas, Lixeira
 
 Início: 2026-05-07

@@ -3198,6 +3198,22 @@ function TabPerfil({
         </SettingGroup>
       </div>
 
+      {/* Sessões ativas (Sprint 30 MX165) */}
+      <div>
+        <SectionLabel>Sessões ativas</SectionLabel>
+        <SettingGroup>
+          <SettingRow
+            label="Suas sessões"
+            sublabel="Dispositivos onde você está logado"
+            last
+          >
+            <Badge variant="neutral">
+              Gerencie em Gestor &gt; Segurança &gt; Sessões Ativas
+            </Badge>
+          </SettingRow>
+        </SettingGroup>
+      </div>
+
       {/* Alterar senha */}
       <div>
         <SectionLabel>Alterar senha</SectionLabel>

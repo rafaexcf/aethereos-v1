@@ -895,6 +895,9 @@ export const companySettings = kernelSchema.table(
 export type CompanySetting = typeof companySettings.$inferSelect;
 export type NewCompanySetting = typeof companySettings.$inferInsert;
 
+// Sprint 30 MX166: realinhado pra schema canônico (title/description/
+// metadata + acknowledged/acknowledged_by). Migration:
+// 20260508000002_security_alerts_realign.sql
 export const securityAlerts = kernelSchema.table(
   "security_alerts",
   {
@@ -904,20 +907,23 @@ export const securityAlerts = kernelSchema.table(
       .references(() => companies.id, { onDelete: "cascade" }),
     userId: uuid("user_id"),
     alertType: text("alert_type").notNull(),
-    severity: text("severity").notNull(),
-    payload: jsonb("payload").notNull().default({}),
-    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    severity: text("severity").notNull().default("info"),
+    title: text("title").notNull(),
+    description: text("description").notNull(),
+    metadata: jsonb("metadata").notNull().default({}),
+    acknowledged: boolean("acknowledged").notNull().default(false),
+    acknowledgedBy: uuid("acknowledged_by"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
   (t) => [
-    index("kernel_security_alerts_company_idx").on(t.companyId, t.createdAt),
-    index("kernel_security_alerts_severity_idx").on(
+    index("kernel_security_alerts_company_idx").on(
       t.companyId,
-      t.severity,
+      t.acknowledged,
       t.createdAt,
     ),
+    index("kernel_security_alerts_severity_idx").on(t.companyId, t.severity),
     index("kernel_security_alerts_user_idx").on(t.userId, t.createdAt),
   ],
 );
@@ -1064,3 +1070,40 @@ export const notes = kernelSchema.table(
 
 export type Note = typeof notes.$inferSelect;
 export type NewNote = typeof notes.$inferInsert;
+
+// ---------------------------------------------------------------------------
+// Sprint 30 MX165 — Sessões ativas / force-logout
+// ---------------------------------------------------------------------------
+
+export const loginHistory = kernelSchema.table(
+  "login_history",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    deviceType: text("device_type"),
+    loginAt: timestamp("login_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    logoutAt: timestamp("logout_at", { withTimezone: true }),
+    isActive: boolean("is_active").notNull().default(true),
+  },
+  (t) => [
+    index("kernel_login_history_company_active_idx").on(
+      t.companyId,
+      t.isActive,
+      t.lastSeenAt,
+    ),
+    index("kernel_login_history_user_idx").on(t.userId, t.lastSeenAt),
+  ],
+);
+
+export type LoginHistory = typeof loginHistory.$inferSelect;
+export type NewLoginHistory = typeof loginHistory.$inferInsert;

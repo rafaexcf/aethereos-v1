@@ -25,6 +25,7 @@ import {
 } from "./_shared";
 import { useDrivers } from "../../../lib/drivers-context";
 import { useSessionStore } from "../../../stores/session";
+import { emitAlert } from "../../../lib/security-alerts";
 
 type MembershipStatus =
   | "active"
@@ -719,10 +720,29 @@ export function TabColaboradores() {
         pushToast("Não foi possível atualizar status", "error");
         return;
       }
+      const target = members.find((m) => m.user_id === userIdTarget);
       setMembers((prev) =>
         prev.map((m) => (m.user_id === userIdTarget ? { ...m, status } : m)),
       );
       pushToast("Status atualizado", "success");
+      // Sprint 30 MX166: auto-emit security alert quando colaborador é
+      // removido. Best-effort, não bloqueia UI.
+      if (status === "removed" && target !== undefined) {
+        const callerName = userId ?? "outro administrador";
+        void emitAlert(drivers, {
+          company_id: activeCompanyId,
+          user_id: userIdTarget,
+          alert_type: "member_removed",
+          severity: "info",
+          title: `${target.full_name} foi removido`,
+          description: `O colaborador foi marcado como removido por ${callerName}.`,
+          metadata: {
+            removed_user_id: userIdTarget,
+            removed_role: target.role,
+            actor_user_id: userId ?? null,
+          },
+        });
+      }
     } catch {
       pushToast("Erro ao atualizar status", "error");
     }

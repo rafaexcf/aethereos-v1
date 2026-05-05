@@ -7,6 +7,8 @@
 import { useEffect, useState } from "react";
 import { ShieldCheck, ShieldAlert, X, Check, Loader2 } from "lucide-react";
 import { useDrivers } from "../../lib/drivers-context";
+import { useSessionStore } from "../../stores/session";
+import { emitAlert } from "../../lib/security-alerts";
 
 type Phase =
   | { kind: "loading" }
@@ -32,6 +34,9 @@ interface MfaFactor {
 
 export function TwoFactorAuth() {
   const drivers = useDrivers();
+  const userId = useSessionStore((s) => s.userId);
+  const activeCompanyId = useSessionStore((s) => s.activeCompanyId);
+  const userEmail = useSessionStore((s) => s.email);
   const [phase, setPhase] = useState<Phase>({ kind: "loading" });
 
   const reload = async () => {
@@ -163,6 +168,19 @@ export function TwoFactorAuth() {
     if (error !== null) {
       setPhase({ kind: "error", message: error.message });
       return;
+    }
+    // Sprint 30 MX166: 2FA desativado é um evento de segurança relevante.
+    // Best-effort — não bloqueia o fluxo de unenroll.
+    if (activeCompanyId !== null) {
+      void emitAlert(drivers, {
+        company_id: activeCompanyId,
+        user_id: userId,
+        alert_type: "mfa_disabled",
+        severity: "warning",
+        title: "Autenticação em dois fatores desativada",
+        description: `O usuário ${userEmail ?? "(sem email)"} desativou a verificação 2FA da própria conta.`,
+        metadata: { factor_id: phase.factorId },
+      });
     }
     void reload();
   }
