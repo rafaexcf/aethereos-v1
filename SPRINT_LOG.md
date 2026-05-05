@@ -5,6 +5,81 @@ Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
 
 ---
 
+# Sprint 25 — Catálogo Open Source: 130+ apps externos na Magic Store
+
+Início: 2026-05-05
+Modelo: Claude Code (claude-opus-4-7, Sprint 25 N=1)
+Roadmap: `SPRINT_25_PROMPT.md` na raiz.
+
+## Origem
+
+Magic Store possui 53 apps (52 nativos + 1 demo) vindos de
+`20260504000006_seed_app_registry.sql`. Sprint 25 expande catálogo com
+**136 apps externos** (open source + embedded externos populares) para
+saltar de 53 para **189 apps** em `kernel.app_registry`.
+
+## Histórico de milestones (Sprint 25)
+
+| Milestone | Descrição                                                          | Status | Commit  |
+| --------- | ------------------------------------------------------------------ | ------ | ------- |
+| MX136     | Script `tools/validate-iframe.mjs` valida 64 URLs (XFO+CSP)        | DONE   | bb782fd |
+| MX137     | Migration insere 136 apps; total 189 (82 iframe + 76 weblink)      | DONE   | cc8f810 |
+| MX138     | Sidebar + carrosséis ganham Dev Tools, Design, Dados, Jogos        | DONE   | c3141a6 |
+| MX139     | `handleOpen` roteia iframe para tab interna, weblink para nova aba | DONE   | 48ad183 |
+| MX140     | E2E full suite + AETHEREOS_OPEN_SOURCE_APPS_CATALOG.md             | DONE   | (este)  |
+
+## Métricas finais
+
+```
+Total de apps em kernel.app_registry: 189
+  Sprint 25 adicionou: 136
+  Distribuição:
+    productivity 39 | utilities 37 | games 24 | dev-tools 22
+    ai 15 | design 17 | data 17 | system 11 | vertical 5
+  Modos:
+    iframe 82 | weblink 76 | internal 31
+```
+
+## Validação iframe (MX136)
+
+Script `tools/validate-iframe.mjs` faz GET em cada URL e classifica via
+headers `X-Frame-Options` e `Content-Security-Policy: frame-ancestors`.
+Resultado em `tools/validate-iframe-results.json` (64 URLs:
+36 iframe / 28 weblink).
+
+Critério (R8): em caso de dúvida (timeout, header ambíguo, etc) → weblink.
+
+## Mudanças funcionais (MX139)
+
+- **Antes:** `handleOpen` em `MagicStoreApp` chamava `window.open()`
+  para `iframe` E `weblink` — apps iframe nunca abriam dentro do shell.
+- **Agora:** apps `iframe` chamam `osStore.openApp()` e abrem como tab
+  interna; `AppFrame` delega para `IframeAppFrame` quando
+  `entry_mode='iframe'`. Weblink continua em nova aba.
+
+## Gate final Sprint 25
+
+```
+pnpm typecheck       → 26/26 ✓
+pnpm lint            → 24/24 ✓
+pnpm test:e2e:full   → 33 passed, 1 skipped, 0 failed
+```
+
+## Limitações conhecidas Sprint 25
+
+- Headers permissivos podem mascarar **frame-busters JS** (ex: ChatGPT,
+  fast.com). Usuário pode precisar abrir em nova aba mesmo com
+  `entry_mode='iframe'`.
+- **TradingView widgets** registrados com símbolo de exemplo (AAPL).
+  Customização do símbolo via parâmetros de URL é trabalho futuro.
+- Apps com **autenticação proprietária** (Claude.ai, ChatGPT,
+  Gemini) podem falhar em iframe por `SameSite=Strict` cookies.
+- Migration **não substitui** seed.sql modificado pré-Sprint 25 —
+  rodar `git stash` em `supabase/seed.sql` antes de `supabase start`
+  até alguém revisar o pg_dump committed.
+
+---
+
 # Sprint 24 — Staging Deploy: Vercel + Supabase Cloud
 
 Início: 2026-05-05
