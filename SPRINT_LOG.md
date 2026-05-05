@@ -5,6 +5,59 @@ Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
 
 ---
 
+# Sprint 29 — Apps com Persistência Real: Tarefas, Kanban, Notas, Lixeira
+
+Início: 2026-05-07
+Modelo: Claude Code (claude-opus-4-7-1m, Sprint 29 N=1, 4 agentes paralelos)
+Roadmap: `docs/sprint-prompts/SPRINT_29_PROMPT.md`
+
+## Origem
+
+4 apps mais usados no dia-a-dia (Tarefas, Kanban, Bloco de Notas, Lixeira)
+eram UI-only — dados sumiam ao recarregar. Sprint 29 entrega persistência
+real com 5 novas tabelas RLS multi-tenant + 1 ALTER em kernel.files.
+
+## Histórico de milestones (Sprint 29)
+
+| Milestone | Descrição                                                       | Commit  |
+| --------- | --------------------------------------------------------------- | ------- |
+| MX157     | 3 migrations: tasks, kanban (3 tabelas), notes + Drizzle schema | e580fce |
+| MX158     | Tarefas — CRUD com kernel.tasks, filtros, modal único           | (este)  |
+| MX159     | Kanban — drag-and-drop @dnd-kit + batch sort_order              | (este)  |
+| MX160     | Bloco de Notas — auto-save debounce 1s + soft-delete archived   | (este)  |
+| MX161     | Lixeira funcional — 3 tabs files/notes/tasks + confirm dupla    | (este)  |
+| MX162     | SPRINT_LOG + gate final + deploy                                | (este)  |
+
+## Arquitetura entregue
+
+**5 tabelas novas (RLS company-scoped):**
+
+- `kernel.tasks` — title, description, status CHECK (todo/in_progress/done/cancelled), priority CHECK (low/medium/high/urgent), due_date, assigned_to, completed_at, sort_order
+- `kernel.kanban_boards` — name, created_by
+- `kernel.kanban_columns` — board_id FK CASCADE, name, color, sort_order
+- `kernel.kanban_cards` — column_id FK CASCADE, title, description, color, assigned_to, due_date, sort_order
+- `kernel.notes` — title, content, color, pinned, archived (soft-delete)
+
+**Migrations adicionais:**
+
+- ALTER `kernel.files` ADD `deleted_at` (soft-delete consumido pela Lixeira)
+- DROP+CREATE pra `kernel.tasks` (schema antigo `task_lists` user-scoped descontinuado)
+- DROP+CREATE pra kanban (schema antigo diferente, sem cards columns separados)
+
+## Validações
+
+- TypeCheck: 26/26 ✓
+- Lint: 24/24 ✓
+
+## Pendências fast-follow
+
+- Seed dev (5 tarefas + 1 board+3 cols+6 cards + 3 notas + 1 file deleted)
+- E2E tests específicos de persistência (criar → recarregar → verificar)
+- SCP events (R15 — pulado, fast-follow)
+- Purge automático de itens >30d na lixeira
+
+---
+
 # Sprint 28 — Permissões Avançadas: Departamentos, Grupos, Regras de Apps
 
 Início: 2026-05-06

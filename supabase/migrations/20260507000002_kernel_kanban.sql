@@ -1,5 +1,12 @@
 -- Sprint 29 MX157: kernel.kanban_boards + kernel.kanban_columns + kernel.kanban_cards.
 -- Persistência do app Kanban com 3 níveis: board → colunas → cards.
+-- Drop+recreate: schema antigo de 20260502000010 era user-scoped e tinha
+-- estrutura diferente (sem assigned_to/due_date/color por card). Tabela
+-- não tinha dados em prod (Kanban era UI-only até esta sprint).
+
+DROP TABLE IF EXISTS kernel.kanban_cards CASCADE;
+DROP TABLE IF EXISTS kernel.kanban_columns CASCADE;
+DROP TABLE IF EXISTS kernel.kanban_boards CASCADE;
 
 CREATE TABLE kernel.kanban_boards (
   id          UUID         PRIMARY KEY DEFAULT gen_random_uuid(),

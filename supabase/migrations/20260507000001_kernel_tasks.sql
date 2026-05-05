@@ -1,4 +1,9 @@
 -- Sprint 29 MX157: kernel.tasks — persistência real do app Tarefas.
+-- Drop+recreate: schema antigo de 20260502000002 era user-scoped (com task_lists)
+-- e não bate com o uso real planejado pra MX158. Tabela não tinha dados em prod.
+
+DROP TABLE IF EXISTS kernel.tasks CASCADE;
+DROP TABLE IF EXISTS kernel.task_lists CASCADE;
 
 CREATE TABLE kernel.tasks (
   id           UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
