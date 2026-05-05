@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import type { NotificationItem } from "./NotificationBell";
 import { useOSStore } from "../stores/osStore";
+import { useAppRegistryStore } from "../stores/appRegistryStore";
+import { getApp } from "../apps/registry";
 
 interface NotificationToastProps {
   item: NotificationItem | null;
@@ -50,8 +52,25 @@ export function NotificationToast({ item, onDismiss }: NotificationToastProps) {
   const cfg = item !== null ? TYPE_CONFIG[item.type] : null;
 
   function handleNavigate() {
-    if (item === null || item.appId === undefined) return;
-    openApp(item.appId, item.app ?? item.appId);
+    if (item === null) return;
+    // Sprint 26: clique no toast tenta navegar pro app de origem; se o appId
+    // nao existir em nenhum registry (interno ou kernel.app_registry), cai
+    // no painel de Notificacoes pra evitar abrir aba em branco.
+    const targetAppId = item.appId;
+    const internalApp =
+      targetAppId !== undefined ? getApp(targetAppId) : undefined;
+    const registryApp =
+      targetAppId !== undefined
+        ? useAppRegistryStore.getState().apps.get(targetAppId)
+        : undefined;
+    const resolved =
+      targetAppId !== undefined &&
+      (internalApp !== undefined || registryApp !== undefined);
+    if (resolved && targetAppId !== undefined) {
+      openApp(targetAppId, item.app ?? targetAppId);
+    } else {
+      openApp("notifications", "Notificações");
+    }
     onDismiss(item.id);
   }
 
@@ -69,7 +88,7 @@ export function NotificationToast({ item, onDismiss }: NotificationToastProps) {
             bottom: BOTTOM_OFFSET,
             left: "50%",
             width: TOAST_WIDTH,
-            cursor: item.appId !== undefined ? "pointer" : "default",
+            cursor: "pointer",
             zIndex: 400,
             borderRadius: 14,
             background: "rgba(8,10,20,0.96)",
@@ -81,7 +100,7 @@ export function NotificationToast({ item, onDismiss }: NotificationToastProps) {
           }}
         >
           <div
-            onClick={item.appId !== undefined ? handleNavigate : undefined}
+            onClick={handleNavigate}
             style={{
               padding: "13px 14px 14px",
               display: "flex",
@@ -178,19 +197,19 @@ export function NotificationToast({ item, onDismiss }: NotificationToastProps) {
               >
                 {item.body}
               </p>
-              {item.appId !== undefined && (
-                <p
-                  style={{
-                    fontSize: 11,
-                    color: cfg.color,
-                    marginTop: 6,
-                    fontWeight: 500,
-                    opacity: 0.8,
-                  }}
-                >
-                  Abrir {item.app ?? "app"} →
-                </p>
-              )}
+              <p
+                style={{
+                  fontSize: 11,
+                  color: cfg.color,
+                  marginTop: 6,
+                  fontWeight: 500,
+                  opacity: 0.8,
+                }}
+              >
+                {item.appId !== undefined
+                  ? `Abrir ${item.app ?? "app"} →`
+                  : "Ver na central →"}
+              </p>
             </div>
 
             {/* Close */}

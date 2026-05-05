@@ -321,7 +321,7 @@ Adicional ao CLAUDE.md raiz:
 
 Sistema (alwaysEnabled / showInDock):
 
-- `mesa`, `magic-store`, `ae-ai`, `drive`, `pessoas`, `chat`, `rh`, `settings`
+- `mesa`, `magic-store`, `ae-ai`, `drive`, `chat`, `rh`, `settings`
 
 Sob demanda (`showInDock: false`, abertos via launcher/busca):
 

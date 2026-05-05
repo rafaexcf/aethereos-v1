@@ -84,9 +84,9 @@ interface CopilotDrawerProps {
 const DEMO_AGENT_ID = "00000000-0000-0000-0000-000000000001";
 
 const SYSTEM_PROMPT = `Você é o Copilot do Aethereos, um assistente de OS B2B.
-Ajude o usuário com tarefas dentro da plataforma: Drive, Pessoas, Chat, Configurações.
+Ajude o usuário com tarefas dentro da plataforma: Drive, Chat, Configurações.
 Seja conciso e direto. Responda sempre em português.
-Quando o usuário pedir uma ação (criar pessoa, enviar notificação, criar canal, etc.),
+Quando o usuário pedir uma ação (enviar notificação, criar canal, etc.),
 diga o que você faria e que vai propor a ação para aprovação (Shadow Mode).`;
 
 // ---------------------------------------------------------------------------
@@ -1244,14 +1244,13 @@ export function CopilotDrawer({
                         lineHeight: 1.5,
                       }}
                     >
-                      Posso ajudar com Drive, Pessoas, Chat e Configurações.
-                      Ações requerem sua aprovação.
+                      Posso ajudar com Drive, Chat e Configurações. Ações
+                      requerem sua aprovação.
                     </p>
                   </div>
                   <div className="flex flex-wrap justify-center gap-2 pt-1">
                     {[
                       "Criar uma pasta no Drive",
-                      "Adicionar pessoa",
                       "Criar canal de suporte",
                       "Enviar notificação para a equipe",
                     ].map((hint) => (

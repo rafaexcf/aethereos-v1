@@ -5,8 +5,13 @@ import type { ComponentType } from "react";
 import { useMesaStore, getWallpaperStyle } from "../../stores/mesaStore";
 import { useOSStore } from "../../stores/osStore";
 import { useInstalledModulesStore } from "../../stores/installedModulesStore";
+import { useSettingsNavStore } from "../../stores/settingsNavStore";
+import { AppContextMenu } from "../../components/os/AppContextMenu";
 import { getApp } from "../registry";
 import type { MesaItem } from "../../types/os";
+import { WidgetRenderer } from "./widgets/WidgetRenderer";
+import { WidgetGallery } from "./widgets/WidgetGallery";
+import { getWidgetSpec } from "./widgets/specs";
 
 interface ContextMenuState {
   visible: boolean;
@@ -15,7 +20,13 @@ interface ContextMenuState {
   itemId: string;
 }
 
-function DesktopIcon({ item }: { item: MesaItem }) {
+function DesktopIcon({
+  item,
+  onContextMenu,
+}: {
+  item: MesaItem;
+  onContextMenu: (e: React.MouseEvent, item: MesaItem) => void;
+}) {
   const openApp = useOSStore((s) => s.openApp);
   const [selected, setSelected] = useState(false);
   const app = getApp(item.appId);
@@ -38,6 +49,7 @@ function DesktopIcon({ item }: { item: MesaItem }) {
     <button
       onClick={() => setSelected((s) => !s)}
       onDoubleClick={handleDoubleClick}
+      onContextMenu={(e) => onContextMenu(e, item)}
       className="absolute flex flex-col items-center gap-1 cursor-pointer select-none"
       style={{
         left: item.position.x,
@@ -101,12 +113,32 @@ function DesktopIcon({ item }: { item: MesaItem }) {
 
 export function MesaApp() {
   const { layout, wallpaper, wallpaperUrl, fetchLayout } = useMesaStore();
+  const addWidget = useMesaStore((s) => s.addWidget);
+  const removeItem = useMesaStore((s) => s.removeItem);
+  const setPendingTab = useSettingsNavStore((s) => s.setPendingTab);
+  const openApp = useOSStore((s) => s.openApp);
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     visible: false,
     x: 0,
     y: 0,
     itemId: "",
   });
+  // Sprint 26: menu de contexto por icone (Remover da Mesa).
+  const [iconCtx, setIconCtx] = useState<{
+    appId: string;
+    iconId: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  // Sprint 26: galeria de widgets.
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  // Sprint 26: menu de contexto sobre widgets ja na mesa.
+  const [widgetCtx, setWidgetCtx] = useState<{
+    itemId: string;
+    appId: string;
+    x: number;
+    y: number;
+  } | null>(null);
 
   useEffect(() => {
     void fetchLayout();
@@ -122,6 +154,17 @@ export function MesaApp() {
     return () => document.removeEventListener("click", handleClick);
   }, [contextMenu.visible]);
 
+  function handleIconContextMenu(e: React.MouseEvent, item: MesaItem) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIconCtx({
+      appId: item.appId,
+      iconId: item.id,
+      x: e.clientX,
+      y: e.clientY,
+    });
+  }
+
   const wallpaperStyle = getWallpaperStyle(wallpaper, wallpaperUrl);
   const installed = useInstalledModulesStore((s) => s.installed);
   // Sprint 16 MX79: filtra icones de apps nao instalados (alwaysEnabled passa)
@@ -131,6 +174,16 @@ export function MesaApp() {
     if (app === undefined) return false;
     return app.alwaysEnabled === true || installed.has(app.id);
   });
+  // Sprint 26: widgets vivem ao lado de icones no mesmo layout.
+  const widgets = layout.filter((item) => item.type === "widget");
+  const widgetAppIds = new Set(widgets.map((w) => w.appId));
+
+  function handlePickWidget(appId: string) {
+    const spec = getWidgetSpec(appId);
+    if (spec === undefined) return;
+    addWidget(appId, spec.defaultSize);
+    setGalleryOpen(false);
+  }
 
   return (
     <div
@@ -140,6 +193,7 @@ export function MesaApp() {
       onContextMenu={(e) => {
         if ((e.target as HTMLElement).closest("button")) return;
         e.preventDefault();
+        e.stopPropagation();
         setContextMenu({
           visible: true,
           x: e.clientX,
@@ -160,12 +214,121 @@ export function MesaApp() {
       />
 
       {icons.map((item) => (
-        <DesktopIcon key={item.id} item={item} />
+        <DesktopIcon
+          key={item.id}
+          item={item}
+          onContextMenu={handleIconContextMenu}
+        />
       ))}
+
+      {widgets.map((item) => {
+        const app = getApp(item.appId);
+        return (
+          <button
+            type="button"
+            key={item.id}
+            onClick={() => {
+              if (app !== undefined) openApp(app.id, app.name);
+            }}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setWidgetCtx({
+                itemId: item.id,
+                appId: item.appId,
+                x: e.clientX,
+                y: e.clientY,
+              });
+            }}
+            style={{
+              position: "absolute",
+              left: item.position.x,
+              top: item.position.y,
+              width: item.size.w,
+              height: item.size.h,
+              border: "none",
+              padding: 0,
+              background: "transparent",
+              cursor: "pointer",
+            }}
+            aria-label={app?.name ?? item.appId}
+          >
+            <WidgetRenderer appId={item.appId} />
+          </button>
+        );
+      })}
+
+      {iconCtx !== null && (
+        <AppContextMenu
+          surface="mesa"
+          appId={iconCtx.appId}
+          mesaIconId={iconCtx.iconId}
+          pos={{ x: iconCtx.x, y: iconCtx.y }}
+          onClose={() => setIconCtx(null)}
+        />
+      )}
+
+      {widgetCtx !== null && (
+        <div
+          className="fixed z-50 min-w-[180px] rounded-xl overflow-hidden py-1.5"
+          style={{
+            left: widgetCtx.x,
+            top: widgetCtx.y,
+            background: "rgba(8,12,22,0.96)",
+            backdropFilter: "blur(32px)",
+            border: "1px solid rgba(255,255,255,0.10)",
+            boxShadow: "0 16px 48px rgba(0,0,0,0.55)",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs cursor-pointer"
+            style={{ color: "rgba(255,255,255,0.78)" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(255,255,255,0.07)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+            }}
+            onClick={() => {
+              const app = getApp(widgetCtx.appId);
+              if (app !== undefined) openApp(app.id, app.name);
+              setWidgetCtx(null);
+            }}
+          >
+            Abrir app
+          </button>
+          <button
+            type="button"
+            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs cursor-pointer"
+            style={{ color: "rgba(252,165,165,0.92)" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(239,68,68,0.10)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+            }}
+            onClick={() => {
+              removeItem(widgetCtx.itemId);
+              setWidgetCtx(null);
+            }}
+          >
+            Remover widget
+          </button>
+        </div>
+      )}
+
+      <WidgetGallery
+        open={galleryOpen}
+        onClose={() => setGalleryOpen(false)}
+        onPick={handlePickWidget}
+        installedAppIds={widgetAppIds}
+      />
 
       {contextMenu.visible && (
         <div
-          className="fixed z-50 min-w-[160px] rounded-xl overflow-hidden py-1.5"
+          className="fixed z-50 min-w-[180px] rounded-xl overflow-hidden py-1.5"
           style={{
             left: contextMenu.x,
             top: contextMenu.y,
@@ -188,9 +351,30 @@ export function MesaApp() {
               e.currentTarget.style.background = "transparent";
               e.currentTarget.style.color = "rgba(255,255,255,0.75)";
             }}
-            onClick={() =>
-              setContextMenu((prev) => ({ ...prev, visible: false }))
-            }
+            onClick={() => {
+              setContextMenu((prev) => ({ ...prev, visible: false }));
+              setGalleryOpen(true);
+            }}
+          >
+            Adicionar Widget
+          </button>
+          <button
+            type="button"
+            className="w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors cursor-pointer"
+            style={{ color: "rgba(255,255,255,0.75)" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(59, 130, 246, 0.2)";
+              e.currentTarget.style.color = "rgba(255,255,255,0.95)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "rgba(255,255,255,0.75)";
+            }}
+            onClick={() => {
+              setContextMenu((prev) => ({ ...prev, visible: false }));
+              setPendingTab("mesa");
+              openApp("settings", "Configurações");
+            }}
           >
             Personalizar Mesa
           </button>

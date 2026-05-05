@@ -140,7 +140,6 @@ const SIDEBAR_CONFIGS: Record<NavTab, SidebarSection[]> = {
         { id: "data", label: "Dados & BI", icon: BarChart3 },
         { id: "games", label: "Jogos", icon: Gamepad2 },
         { id: "utilities", label: "Utilitários", icon: Workflow },
-        { id: "puter", label: "Puter & OS abertos", icon: Globe },
       ],
     },
     {
@@ -1292,35 +1291,58 @@ function AppCard({
   const descSize = size === "sm" ? 11 : 12;
   const muted = app.status === "coming_soon";
 
+  // Sprint 26: cartoes instalados ganham identidade visual propria —
+  // gradiente tonal usando app.color, borda colorida e faixa lateral
+  // esquerda — pra parecer "ja seu", em contraste com disponivel (neutro).
+  const accent = app.color;
+  const bgIdle = installed
+    ? `linear-gradient(135deg, ${accent}1F 0%, ${accent}0A 45%, rgba(255,255,255,0.03) 100%)`
+    : "rgba(255,255,255,0.035)";
+  const bgHover = installed
+    ? `linear-gradient(135deg, ${accent}33 0%, ${accent}14 45%, rgba(255,255,255,0.05) 100%)`
+    : "rgba(255,255,255,0.07)";
+  const borderIdle = installed ? `${accent}3D` : "rgba(255,255,255,0.06)";
+  const borderHover = installed ? `${accent}66` : "rgba(255,255,255,0.14)";
+
   return (
     <button
       type="button"
       onClick={() => onSelect(app)}
       style={{
+        position: "relative",
         display: "flex",
         flexDirection: "column",
         gap: 14,
         padding: cardPadding,
-        background: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.07)",
+        paddingLeft: installed ? cardPadding + 4 : cardPadding,
+        background: bgIdle,
+        border: `1px solid ${borderIdle}`,
         borderRadius: 16,
         textAlign: "left",
         cursor: "pointer",
         transition:
-          "background 200ms ease, border-color 200ms ease, transform 200ms ease",
+          "background 200ms ease, border-color 200ms ease, transform 200ms ease, box-shadow 200ms ease",
         opacity: muted ? 0.75 : 1,
         height: "100%",
         boxSizing: "border-box",
+        boxShadow: installed ? `inset 3px 0 0 ${accent}` : "none",
+        overflow: "hidden",
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.background = "rgba(255,255,255,0.07)";
-        e.currentTarget.style.borderColor = "rgba(255,255,255,0.14)";
+        e.currentTarget.style.background = bgHover;
+        e.currentTarget.style.borderColor = borderHover;
         e.currentTarget.style.transform = "translateY(-2px)";
+        if (installed) {
+          e.currentTarget.style.boxShadow = `inset 3px 0 0 ${accent}, 0 8px 22px -10px ${accent}66`;
+        }
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-        e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)";
+        e.currentTarget.style.background = bgIdle;
+        e.currentTarget.style.borderColor = borderIdle;
         e.currentTarget.style.transform = "translateY(0)";
+        e.currentTarget.style.boxShadow = installed
+          ? `inset 3px 0 0 ${accent}`
+          : "none";
       }}
     >
       <div
@@ -1370,24 +1392,47 @@ function AppCard({
         </p>
       </div>
       <div
-        style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: "auto" }}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+          marginTop: "auto",
+        }}
       >
-        {app.tags.slice(0, 3).map((tag) => (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+          {app.tags.slice(0, 3).map((tag) => (
+            <span
+              key={tag}
+              style={{
+                fontSize: 10,
+                padding: "2px 7px",
+                background: installed
+                  ? `${accent}1F`
+                  : "rgba(255,255,255,0.05)",
+                border: `1px solid ${installed ? `${accent}33` : "rgba(255,255,255,0.06)"}`,
+                color: "var(--text-tertiary)",
+                borderRadius: 6,
+                letterSpacing: "0.01em",
+              }}
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+        {installed ? (
           <span
-            key={tag}
             style={{
-              fontSize: 10,
-              padding: "2px 7px",
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.06)",
-              color: "var(--text-tertiary)",
-              borderRadius: 6,
+              fontSize: 11,
+              fontWeight: 500,
+              color: accent,
               letterSpacing: "0.01em",
+              whiteSpace: "nowrap",
             }}
           >
-            {tag}
+            Abrir →
           </span>
-        ))}
+        ) : null}
       </div>
     </button>
   );

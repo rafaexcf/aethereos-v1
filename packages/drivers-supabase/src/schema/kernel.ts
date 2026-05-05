@@ -431,8 +431,11 @@ export const profiles = kernelSchema.table("profiles", {
   phone: text("phone"),
   avatarUrl: text("avatar_url"),
   position: text("position"),
+  area: text("area"),
+  areaTrabalho: text("area_trabalho"),
   department: text("department"),
   isPlatformAdmin: boolean("is_platform_admin").notNull().default(false),
+  grantsTenantAdmin: boolean("grants_tenant_admin").notNull().default(false),
   data: jsonb("data").default({}),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

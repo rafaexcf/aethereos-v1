@@ -123,7 +123,7 @@ function DesktopPage() {
       body: "Maria Silva foi adicionada ao workspace com perfil de Colaborador.",
       read_at: null,
       created_at: new Date(Date.now() - 3 * 86400_000),
-      app: "Pessoas",
+      app: "RH",
       context: "sistema",
     },
     {

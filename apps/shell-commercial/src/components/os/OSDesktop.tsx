@@ -12,6 +12,7 @@ import { LockScreen } from "./LockScreen";
 import { useSessionStore } from "../../stores/session";
 import { useOSStore } from "../../stores/osStore";
 import { useMesaStore, getWallpaperStyle } from "../../stores/mesaStore";
+import { useSettingsNavStore } from "../../stores/settingsNavStore";
 import { CopilotDrawer } from "../../apps/copilot/index";
 import { AppsLauncher } from "../AppsLauncher";
 import { SupportModal } from "../SupportModal";
@@ -335,7 +336,7 @@ export function OSDesktop() {
       read_at: null,
       created_at: new Date(),
       app: "Configurações",
-      appId: "configuracoes",
+      appId: "settings",
       context: "sistema",
     };
     const t = setTimeout(() => setToastNotif(notif), 1800);
@@ -398,7 +399,11 @@ export function OSDesktop() {
           onClose={() => setCtxMenu(null)}
           onAddApp={() => openAppsLauncher()}
           onWallpaper={() => {
-            openApp("configuracoes", "Configurações");
+            // Sprint 26: navega direto pra aba Mesa (onde fica o picker
+            // de wallpaper) — antes abria settings em "home" e usuario
+            // achava que "nao acontecia nada".
+            useSettingsNavStore.getState().setPendingTab("mesa");
+            openApp("settings", "Configurações");
             setCtxMenu(null);
           }}
         />

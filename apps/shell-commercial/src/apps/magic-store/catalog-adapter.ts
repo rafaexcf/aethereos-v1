@@ -43,6 +43,9 @@ function entryModeToSourceType(mode: EntryMode): MagicStoreSourceType {
 function entryToMagicStoreApp(entry: AppRegistryEntry): MagicStoreApp | null {
   if (HIDDEN_FROM_STORE.has(entry.id)) return null;
   if (entry.category === "system") return null;
+  // Sprint 25+: categoria 'puter' (OS abertos como puter.com) removida da
+  // Magic Store — usuario decidiu nao expor concorrentes diretos no catalogo.
+  if (entry.category === "puter") return null;
 
   const sourceTarget =
     entry.entry_mode === "internal"

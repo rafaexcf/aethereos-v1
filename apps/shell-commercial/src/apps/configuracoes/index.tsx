@@ -8,7 +8,6 @@ import {
   PanelBottom,
   LayoutGrid,
   Palette,
-  Link2,
   Info,
   ChevronRight,
   Settings,
@@ -51,8 +50,6 @@ import {
   CloudSun,
   ListTodo,
   Store,
-  Bot,
-  Zap,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import type { LucideProps } from "lucide-react";
@@ -73,16 +70,10 @@ import { CSS } from "@dnd-kit/utilities";
 import { useDockStore } from "../../stores/dockStore";
 import { useOSStore } from "../../stores/osStore";
 import { useUserPreference } from "../../hooks/useUserPreference";
-import {
-  PROVIDER_PRESETS,
-  validateConfig,
-  fetchAvailableModels,
-  type ProviderId,
-  type ProviderPreset,
-} from "@aethereos/drivers-byok";
 import { useTheme } from "../../lib/theme/theme-provider";
 import { useGestorStore } from "../../stores/gestorStore";
 import { useRhStore } from "../../stores/rhStore";
+import { useSettingsNavStore } from "../../stores/settingsNavStore";
 import { APP_REGISTRY } from "../registry";
 import { useSessionStore } from "../../stores/session";
 import { useDrivers } from "../../lib/drivers-context";
@@ -107,7 +98,6 @@ type TabId =
   | "perfil"
   | "notificacoes"
   | "dados-privacidade"
-  | "ia"
   | "dock"
   | "mesa"
   | "aparencia"
@@ -134,7 +124,6 @@ const NAV_SECTIONS: NavSection[] = [
       { id: "perfil", label: "Meu Perfil", icon: User },
       { id: "notificacoes", label: "Notificações", icon: Bell },
       { id: "dados-privacidade", label: "Privacidade", icon: FileText },
-      { id: "ia", label: "Inteligência Artificial", icon: Bot },
     ],
   },
   {
@@ -157,7 +146,6 @@ const TAB_LABELS: Record<TabId, string> = {
   perfil: "Meu Perfil",
   notificacoes: "Notificações",
   "dados-privacidade": "Privacidade",
-  ia: "Inteligência Artificial",
   dock: "Dock",
   mesa: "Mesa",
   aparencia: "Aparência",
@@ -2027,6 +2015,628 @@ function PwdInput({
   );
 }
 
+// ─── Cargos / Áreas / Tags — domínio profissional ─────────────────────────
+//
+// Cargos top-exec dispensam Área e Departamento; cargos admin marcam
+// `grants_tenant_admin = true` (intencao apenas — autorizacao real continua via
+// tenant_memberships.role + JWT claims).
+
+const ADMIN_CARGOS = new Set<string>([
+  "conselho_adm",
+  "presidencia",
+  "vice_presidencia",
+]);
+const TOP_EXEC_CARGOS = new Set<string>(["conselho_adm", "presidencia"]);
+
+const CARGO_OPTIONS: { value: string; label: string }[] = [
+  { value: "conselho_adm", label: "Conselho de Administração" },
+  { value: "presidencia", label: "Presidência" },
+  { value: "vice_presidencia", label: "Vice-Presidência" },
+  { value: "diretoria", label: "Diretoria" },
+  { value: "vice_diretoria", label: "Vice-Diretoria" },
+  { value: "gerencia", label: "Gerência" },
+  { value: "coordenacao", label: "Coordenação" },
+  { value: "supervisao", label: "Supervisão" },
+  { value: "encarregado", label: "Encarregado" },
+  { value: "analista", label: "Analista" },
+  { value: "auxiliar", label: "Auxiliar" },
+  { value: "trainee", label: "Trainee" },
+  { value: "estagio", label: "Estágio" },
+  { value: "menor_aprendiz", label: "Menor Aprendiz" },
+  { value: "consultoria_externa", label: "Consultoria Externa" },
+  {
+    value: "representante_terceirizado",
+    label: "Representante Terceirizado",
+  },
+];
+
+interface AreaOption {
+  value: string;
+  label: string;
+}
+interface AreaGroup {
+  label: string;
+  options: AreaOption[];
+}
+
+const AREA_TRABALHO_GROUPS: AreaGroup[] = [
+  {
+    label: "Administrativo",
+    options: [{ value: "administrativo", label: "Administrativo" }],
+  },
+  {
+    label: "Comercial",
+    options: [
+      { value: "comercial_compras", label: "Comercial (Compras)" },
+      { value: "comercial_vendas", label: "Comercial (Vendas)" },
+    ],
+  },
+  {
+    label: "Financeiro e Contábil",
+    options: [
+      { value: "financeiro", label: "Financeiro" },
+      { value: "fiscal", label: "Fiscal" },
+      { value: "contabil", label: "Contábil" },
+    ],
+  },
+  {
+    label: "Tecnologia",
+    options: [
+      {
+        value: "tecnologia_informacao",
+        label: "Tecnologia da Informação",
+      },
+    ],
+  },
+  {
+    label: "Comunicação e Marketing",
+    options: [
+      { value: "comunicacao", label: "Comunicação" },
+      { value: "marketing", label: "Marketing" },
+      { value: "imprensa", label: "Imprensa" },
+    ],
+  },
+  {
+    label: "ESG e Sustentabilidade",
+    options: [{ value: "esg", label: "ESG" }],
+  },
+  {
+    label: "Operações",
+    options: [
+      { value: "operacional", label: "Operacional" },
+      { value: "producao", label: "Produção" },
+      { value: "estoque", label: "Estoque" },
+      { value: "logistica", label: "Logística" },
+    ],
+  },
+  {
+    label: "Pessoas",
+    options: [{ value: "recursos_humanos", label: "Recursos Humanos" }],
+  },
+  {
+    label: "Jurídico e Compliance",
+    options: [{ value: "juridico_compliance", label: "Jurídico e Compliance" }],
+  },
+  {
+    label: "Inovação e Desenvolvimento",
+    options: [
+      { value: "pesquisa_desenvolvimento", label: "P&D" },
+      { value: "qualidade", label: "Qualidade" },
+      { value: "inovacao", label: "Inovação" },
+    ],
+  },
+  {
+    label: "Engenharia e Manutenção",
+    options: [
+      { value: "engenharia", label: "Engenharia" },
+      { value: "manutencao", label: "Manutenção" },
+    ],
+  },
+  {
+    label: "Segurança",
+    options: [{ value: "seguranca", label: "Segurança" }],
+  },
+  {
+    label: "Atendimento",
+    options: [{ value: "atendimento_sac", label: "Atendimento SAC" }],
+  },
+  {
+    label: "Relações",
+    options: [
+      {
+        value: "relacoes_institucionais",
+        label: "Relações Institucionais",
+      },
+      {
+        value: "relacoes_internacionais",
+        label: "Relações Internacionais",
+      },
+    ],
+  },
+  {
+    label: "Outras Áreas Empresariais",
+    options: [
+      { value: "auditoria_interna", label: "Auditoria Interna" },
+      { value: "controladoria", label: "Controladoria" },
+      {
+        value: "planejamento_estrategico",
+        label: "Planejamento Estratégico",
+      },
+      { value: "gestao_projetos", label: "Gestão de Projetos" },
+      { value: "supply_chain", label: "Supply Chain" },
+      { value: "facilities", label: "Facilities" },
+      { value: "procurement", label: "Procurement" },
+      { value: "exportacao", label: "Exportação" },
+      { value: "importacao", label: "Importação" },
+      { value: "trade_marketing", label: "Trade Marketing" },
+      { value: "inteligencia_mercado", label: "Inteligência de Mercado" },
+      { value: "customer_success", label: "Customer Success" },
+      { value: "pos_vendas", label: "Pós-Vendas" },
+      {
+        value: "treinamento_desenvolvimento",
+        label: "Treinamento e Desenvolvimento",
+      },
+    ],
+  },
+];
+
+function getAreaLabel(slug: string): string {
+  for (const group of AREA_TRABALHO_GROUPS) {
+    for (const opt of group.options) {
+      if (opt.value === slug) return opt.label;
+    }
+  }
+  return "";
+}
+
+function GroupedSelect({
+  value,
+  onChange,
+  groups,
+  placeholder = "Selecionar",
+  width = 220,
+  disabled = false,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  groups: AreaGroup[];
+  placeholder?: string;
+  width?: number | string;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [dropStyle, setDropStyle] = useState<React.CSSProperties>({});
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  const selectedLabel = getAreaLabel(value);
+
+  const filteredGroups = (() => {
+    const q = query.trim().toLowerCase();
+    if (q === "") return groups;
+    return groups
+      .map((g) => ({
+        ...g,
+        options: g.options.filter(
+          (o) =>
+            o.label.toLowerCase().includes(q) ||
+            g.label.toLowerCase().includes(q),
+        ),
+      }))
+      .filter((g) => g.options.length > 0);
+  })();
+
+  const close = useCallback(() => {
+    setOpen(false);
+    setQuery("");
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    const onDown = (e: MouseEvent) => {
+      if (
+        triggerRef.current &&
+        !triggerRef.current.contains(e.target as Node) &&
+        !(e.target as HTMLElement).closest("[data-grouped-select-portal]")
+      )
+        close();
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onDown);
+    };
+  }, [open, close]);
+
+  useEffect(() => {
+    if (open) setTimeout(() => searchRef.current?.focus(), 0);
+  }, [open]);
+
+  function handleOpen() {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const dropW = typeof width === "number" ? width : rect.width;
+    const dropH = 320;
+    const spaceBelow = vh - rect.bottom - 8;
+    const spaceAbove = rect.top - 8;
+    const openAbove = spaceBelow < dropH && spaceAbove > spaceBelow;
+    const leftPos = rect.left + dropW > vw ? vw - dropW - 8 : rect.left;
+    setDropStyle({
+      position: "fixed",
+      top: openAbove ? rect.top - dropH - 4 : rect.bottom + 4,
+      left: leftPos,
+      width: dropW,
+      zIndex: 9999,
+    });
+    setOpen(true);
+  }
+
+  return (
+    <>
+      <button
+        ref={triggerRef}
+        type="button"
+        disabled={disabled}
+        onClick={() => (open ? close() : handleOpen())}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 6,
+          width,
+          background: disabled
+            ? "rgba(255,255,255,0.025)"
+            : open
+              ? "rgba(255,255,255,0.08)"
+              : "rgba(255,255,255,0.06)",
+          border: open
+            ? "1px solid rgba(99,102,241,0.65)"
+            : "1px solid rgba(255,255,255,0.10)",
+          borderRadius: 8,
+          padding: "7px 10px 7px 11px",
+          fontSize: 13,
+          color: disabled
+            ? "rgba(255,255,255,0.28)"
+            : selectedLabel !== ""
+              ? "var(--text-primary)"
+              : "var(--text-tertiary)",
+          cursor: disabled ? "not-allowed" : "pointer",
+          opacity: disabled ? 0.6 : 1,
+          outline: "none",
+          transition: "border-color 120ms ease, background 120ms ease",
+          boxShadow: open ? "0 0 0 3px rgba(99,102,241,0.12)" : "none",
+        }}
+      >
+        <span
+          style={{
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {selectedLabel !== "" ? selectedLabel : placeholder}
+        </span>
+        <ChevronDown
+          size={13}
+          strokeWidth={2}
+          style={{
+            flexShrink: 0,
+            color: "var(--text-tertiary)",
+            transform: open ? "rotate(180deg)" : "none",
+            transition: "transform 150ms ease",
+          }}
+        />
+      </button>
+
+      {open &&
+        createPortal(
+          <div
+            data-grouped-select-portal
+            style={{
+              ...dropStyle,
+              background: "var(--bg-elevated)",
+              border: "1px solid rgba(255,255,255,0.10)",
+              borderRadius: 10,
+              boxShadow: "var(--shadow-lg)",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                padding: "8px 8px 4px",
+                borderBottom: "1px solid rgba(255,255,255,0.07)",
+              }}
+            >
+              <div style={{ position: "relative" }}>
+                <Search
+                  size={12}
+                  style={{
+                    position: "absolute",
+                    left: 9,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    color: "var(--text-tertiary)",
+                    pointerEvents: "none",
+                  }}
+                />
+                <input
+                  ref={searchRef}
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Buscar área…"
+                  style={{
+                    width: "100%",
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    borderRadius: 6,
+                    padding: "5px 8px 5px 28px",
+                    fontSize: 12,
+                    color: "var(--text-primary)",
+                    outline: "none",
+                  }}
+                />
+              </div>
+            </div>
+            <div
+              style={{ overflowY: "auto", maxHeight: 280, padding: "4px 0" }}
+            >
+              {filteredGroups.length === 0 ? (
+                <div
+                  style={{
+                    padding: "10px 12px",
+                    fontSize: 12,
+                    color: "var(--text-tertiary)",
+                  }}
+                >
+                  Nenhum resultado
+                </div>
+              ) : (
+                filteredGroups.map((g) => (
+                  <div
+                    key={g.label}
+                    style={{ paddingTop: 4, paddingBottom: 4 }}
+                  >
+                    <div
+                      style={{
+                        padding: "5px 12px 3px",
+                        fontSize: 10,
+                        fontWeight: 600,
+                        color: "var(--text-tertiary)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.06em",
+                      }}
+                    >
+                      {g.label}
+                    </div>
+                    {g.options.map((o) => (
+                      <button
+                        key={o.value}
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
+                          onChange(o.value);
+                          close();
+                        }}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          width: "100%",
+                          padding: "7px 12px 7px 16px",
+                          fontSize: 13,
+                          color:
+                            o.value === value
+                              ? "var(--text-primary)"
+                              : "var(--text-secondary)",
+                          background:
+                            o.value === value
+                              ? "rgba(99,102,241,0.14)"
+                              : "transparent",
+                          border: "none",
+                          cursor: "pointer",
+                          textAlign: "left",
+                          transition: "background 80ms ease",
+                          fontWeight: o.value === value ? 500 : 400,
+                        }}
+                        onMouseEnter={(e) => {
+                          if (o.value !== value)
+                            e.currentTarget.style.background =
+                              "rgba(255,255,255,0.05)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background =
+                            o.value === value
+                              ? "rgba(99,102,241,0.14)"
+                              : "transparent";
+                        }}
+                      >
+                        <span>{o.label}</span>
+                        {o.value === value && (
+                          <Check
+                            size={12}
+                            strokeWidth={2.5}
+                            style={{ color: "#818cf8", flexShrink: 0 }}
+                          />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+}
+
+function TagInput({
+  tags,
+  onChange,
+  placeholder = "Digite e pressione Enter…",
+  disabled = false,
+  width = 280,
+}: {
+  tags: string[];
+  onChange: (next: string[]) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  width?: number | string;
+}) {
+  const [draft, setDraft] = useState("");
+
+  function commit(raw: string) {
+    const value = raw.trim();
+    if (value === "") return;
+    if (tags.some((t) => t.toLowerCase() === value.toLowerCase())) {
+      setDraft("");
+      return;
+    }
+    onChange([...tags, value]);
+    setDraft("");
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (disabled) return;
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      commit(draft);
+      return;
+    }
+    if (e.key === "Backspace" && draft === "" && tags.length > 0) {
+      e.preventDefault();
+      onChange(tags.slice(0, -1));
+    }
+  }
+
+  function removeAt(idx: number) {
+    if (disabled) return;
+    onChange(tags.filter((_, i) => i !== idx));
+  }
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "center",
+        gap: 5,
+        width,
+        minHeight: 34,
+        background: disabled
+          ? "rgba(255,255,255,0.025)"
+          : "rgba(255,255,255,0.06)",
+        border: "1px solid rgba(255,255,255,0.10)",
+        borderRadius: 8,
+        padding: "4px 6px",
+        cursor: disabled ? "not-allowed" : "text",
+        opacity: disabled ? 0.6 : 1,
+      }}
+      onClick={(e) => {
+        if (disabled) return;
+        const input = (e.currentTarget as HTMLDivElement).querySelector(
+          "input",
+        );
+        input?.focus();
+      }}
+    >
+      {tags.map((tag, idx) => (
+        <span
+          key={`${tag}-${idx}`}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 4,
+            padding: "2px 4px 2px 8px",
+            background: "rgba(99,102,241,0.18)",
+            border: "1px solid rgba(99,102,241,0.32)",
+            borderRadius: 6,
+            fontSize: 12,
+            fontWeight: 500,
+            color: "#c7d2fe",
+            maxWidth: 180,
+          }}
+        >
+          <span
+            style={{
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {tag}
+          </span>
+          {!disabled && (
+            <button
+              type="button"
+              aria-label={`Remover ${tag}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                removeAt(idx);
+              }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 16,
+                height: 16,
+                background: "transparent",
+                border: "none",
+                color: "rgba(199,210,254,0.7)",
+                cursor: "pointer",
+                padding: 0,
+                borderRadius: 4,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(99,102,241,0.32)";
+                e.currentTarget.style.color = "#fff";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+                e.currentTarget.style.color = "rgba(199,210,254,0.7)";
+              }}
+            >
+              <X size={10} strokeWidth={2.4} />
+            </button>
+          )}
+        </span>
+      ))}
+      <input
+        type="text"
+        value={draft}
+        disabled={disabled}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onBlur={() => {
+          if (draft.trim() !== "") commit(draft);
+        }}
+        placeholder={tags.length === 0 ? placeholder : ""}
+        style={{
+          flex: 1,
+          minWidth: 90,
+          background: "transparent",
+          border: "none",
+          outline: "none",
+          color: "var(--text-primary)",
+          fontSize: 13,
+          padding: "4px 4px",
+        }}
+      />
+    </div>
+  );
+}
+
 function TabPerfil({
   avatarUrl,
   setAvatarUrl,
@@ -2043,8 +2653,8 @@ function TabPerfil({
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [cargo, setCargo] = useState("");
-  const [area, setArea] = useState("");
-  const [setor, setSetor] = useState("");
+  const [areaTrabalho, setAreaTrabalho] = useState("");
+  const [departmentTags, setDepartmentTags] = useState<string[]>([]);
   const [sexo, setSexo] = useState("");
   const [cpf, setCpf] = useState("");
   const [birthDate, setBirthDate] = useState("");
@@ -2119,8 +2729,8 @@ function TabPerfil({
   const nameRef = useRef(name);
   const phoneRef = useRef(phone);
   const cargoRef = useRef(cargo);
-  const areaRef = useRef(area);
-  const setorRef = useRef(setor);
+  const areaTrabalhoRef = useRef(areaTrabalho);
+  const departmentTagsRef = useRef<string[]>(departmentTags);
   const sexoRef = useRef(sexo);
   const cpfRef = useRef(cpf);
   const birthDateRef = useRef(birthDate);
@@ -2130,8 +2740,8 @@ function TabPerfil({
   nameRef.current = name;
   phoneRef.current = phone;
   cargoRef.current = cargo;
-  areaRef.current = area;
-  setorRef.current = setor;
+  areaTrabalhoRef.current = areaTrabalho;
+  departmentTagsRef.current = departmentTags;
   sexoRef.current = sexo;
   cpfRef.current = cpf;
   birthDateRef.current = birthDate;
@@ -2163,7 +2773,7 @@ function TabPerfil({
 
     void drivers.data
       .from("profiles")
-      .select("phone,full_name,position,area,department,data")
+      .select("phone,full_name,position,area_trabalho,department,data")
       .eq("id", userId)
       .maybeSingle()
       .then(
@@ -2174,7 +2784,7 @@ function TabPerfil({
             phone: string | null;
             full_name: string | null;
             position: string | null;
-            area: string | null;
+            area_trabalho: string | null;
             department: string | null;
             data: Record<string, unknown> | null;
           } | null;
@@ -2182,8 +2792,14 @@ function TabPerfil({
           if (data === null) return;
           if (data.phone !== null) setPhone(data.phone);
           if (data.position !== null) setCargo(data.position);
-          if (data.area !== null) setArea(data.area);
-          if (data.department !== null) setSetor(data.department);
+          if (data.area_trabalho !== null) setAreaTrabalho(data.area_trabalho);
+          if (data.department !== null) {
+            const parsed = data.department
+              .split(",")
+              .map((t) => t.trim())
+              .filter((t) => t !== "");
+            setDepartmentTags(parsed);
+          }
           if (data.full_name !== null) {
             setName((prev) => (prev === "" ? (data.full_name ?? "") : prev));
           }
@@ -2228,13 +2844,27 @@ function TabPerfil({
         if (birthDateRef.current !== "")
           extraData["birth_date"] = birthDateRef.current;
         extraData["ddi"] = ddiRef.current;
+        const cargoSlug = cargoRef.current;
+        const isTopExec = TOP_EXEC_CARGOS.has(cargoSlug);
+        // Top-exec dispensa Area e Departamento — limpa colunas pra evitar
+        // residuo se usuario alternar de cargo nao-exec → exec.
+        const areaToSave =
+          isTopExec || areaTrabalhoRef.current === ""
+            ? null
+            : areaTrabalhoRef.current;
+        const departmentJoined = isTopExec
+          ? null
+          : departmentTagsRef.current.length > 0
+            ? departmentTagsRef.current.join(", ")
+            : null;
         await drivers.data
           .from("profiles")
           .update({
             phone: phoneRef.current !== "" ? phoneRef.current : null,
-            position: cargoRef.current !== "" ? cargoRef.current : null,
-            area: areaRef.current !== "" ? areaRef.current : null,
-            department: setorRef.current !== "" ? setorRef.current : null,
+            position: cargoSlug !== "" ? cargoSlug : null,
+            area_trabalho: areaToSave,
+            department: departmentJoined,
+            grants_tenant_admin: ADMIN_CARGOS.has(cargoSlug),
             data: Object.keys(extraData).length > 0 ? extraData : null,
           })
           .eq("id", userId);
@@ -2467,41 +3097,69 @@ function TabPerfil({
         <SettingGroup>
           <SettingRow
             label="Cargo"
-            sublabel="Seu título ou função dentro da empresa"
+            sublabel="Selecione seu nível hierárquico na empresa"
+            last={TOP_EXEC_CARGOS.has(cargo)}
           >
-            <SettingInput
+            <SmartSelect
               value={cargo}
               onChange={(value) => {
+                // Top-exec novo: limpa Área e Departamento.
+                if (TOP_EXEC_CARGOS.has(value)) {
+                  setAreaTrabalho("");
+                  setDepartmentTags([]);
+                }
                 setCargo(value);
                 triggerAutoSave();
               }}
-              placeholder="Ex: Gerente de Vendas"
+              options={CARGO_OPTIONS}
+              placeholder="Selecionar cargo"
+              width={260}
             />
           </SettingRow>
-          <SettingRow label="Área" sublabel="Departamento ou área de atuação">
-            <SettingInput
-              value={area}
-              onChange={(value) => {
-                setArea(value);
-                triggerAutoSave();
-              }}
-              placeholder="Ex: Comercial"
-            />
-          </SettingRow>
-          <SettingRow
-            label="Setor"
-            sublabel="Segmento ou subdivisão do departamento"
-            last
-          >
-            <SettingInput
-              value={setor}
-              onChange={(value) => {
-                setSetor(value);
-                triggerAutoSave();
-              }}
-              placeholder="Ex: B2B"
-            />
-          </SettingRow>
+          {!TOP_EXEC_CARGOS.has(cargo) && (
+            <>
+              <SettingRow
+                label="Área de Trabalho"
+                sublabel={
+                  cargo === ""
+                    ? "Selecione o cargo primeiro"
+                    : "Categoria de atuação"
+                }
+              >
+                <GroupedSelect
+                  value={areaTrabalho}
+                  onChange={(value) => {
+                    setAreaTrabalho(value);
+                    triggerAutoSave();
+                  }}
+                  groups={AREA_TRABALHO_GROUPS}
+                  placeholder="Selecionar área"
+                  width={260}
+                  disabled={cargo === ""}
+                />
+              </SettingRow>
+              <SettingRow
+                label="Departamento(s)"
+                sublabel={
+                  cargo === "" || areaTrabalho === ""
+                    ? "Preencha Cargo e Área primeiro"
+                    : "Adicione tags com Enter ou vírgula"
+                }
+                last
+              >
+                <TagInput
+                  tags={departmentTags}
+                  onChange={(next) => {
+                    setDepartmentTags(next);
+                    triggerAutoSave();
+                  }}
+                  placeholder="Ex: RH, Comercial, TI"
+                  width={280}
+                  disabled={cargo === "" || areaTrabalho === ""}
+                />
+              </SettingRow>
+            </>
+          )}
         </SettingGroup>
       </div>
 
@@ -3674,412 +4332,6 @@ function SortableDockCard({
       >
         <Minus size={9} strokeWidth={2.5} />
       </button>
-    </div>
-  );
-}
-
-// ─── Tab IA — BYOK LLM config (Sprint 15 MX74) ────────────────────────────────
-
-interface LLMConfigPref {
-  provider: ProviderId;
-  baseUrl: string;
-  apiKey: string;
-  model: string;
-}
-
-const DEFAULT_LLM_CONFIG: LLMConfigPref = {
-  provider: "openai",
-  baseUrl: "",
-  apiKey: "",
-  model: "",
-};
-
-function TabIA() {
-  const llmConfigPref = useUserPreference<LLMConfigPref>(
-    "llm_config",
-    DEFAULT_LLM_CONFIG,
-  );
-  const cfg = llmConfigPref.value;
-  const setCfg = (next: LLMConfigPref) => {
-    llmConfigPref.set(next);
-  };
-
-  const [showKey, setShowKey] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<{
-    ok: boolean;
-    message: string;
-  } | null>(null);
-  const [detectedModels, setDetectedModels] = useState<string[]>([]);
-  const [detecting, setDetecting] = useState(false);
-
-  const preset = PROVIDER_PRESETS[cfg.provider];
-  const requiresKey = preset.requiresKey;
-  const isCustom = cfg.provider === "custom";
-  const isLocal = cfg.provider === "lmstudio" || cfg.provider === "ollama";
-
-  function handleProviderChange(id: ProviderId) {
-    const newPreset = PROVIDER_PRESETS[id];
-    setCfg({
-      provider: id,
-      baseUrl: newPreset.baseUrl,
-      apiKey: cfg.apiKey,
-      model: newPreset.models[0] ?? "",
-    });
-    setTestResult(null);
-    setDetectedModels([]);
-  }
-
-  async function handleDetectModels() {
-    setDetecting(true);
-    try {
-      const list = await fetchAvailableModels(cfg.baseUrl);
-      setDetectedModels(list);
-      if (list.length > 0 && !list.includes(cfg.model)) {
-        setCfg({ ...cfg, model: list[0] ?? "" });
-      }
-    } finally {
-      setDetecting(false);
-    }
-  }
-
-  async function handleTest() {
-    setTesting(true);
-    setTestResult(null);
-    try {
-      const result = await validateConfig({
-        format: preset.format,
-        baseUrl: cfg.baseUrl,
-        apiKey: cfg.apiKey,
-        model: cfg.model,
-      });
-      if (result.ok) {
-        setTestResult({ ok: true, message: "Conexão OK." });
-      } else {
-        setTestResult({
-          ok: false,
-          message: result.error ?? "Erro desconhecido",
-        });
-      }
-    } finally {
-      setTesting(false);
-    }
-  }
-
-  const availableModels =
-    detectedModels.length > 0 ? detectedModels : preset.models;
-  const isConfigured =
-    cfg.baseUrl.length > 0 &&
-    cfg.model.length > 0 &&
-    (!requiresKey || cfg.apiKey.length > 0);
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <ContentHeader
-        icon={Bot}
-        iconBg="rgba(99,102,241,0.22)"
-        iconColor="#818cf8"
-        title="Inteligência Artificial"
-        subtitle="Configure seu provedor de IA (BYOK) para ativar o Aether AI Copilot"
-      />
-
-      {!isConfigured && (
-        <div
-          style={{
-            padding: "12px 14px",
-            borderRadius: 10,
-            background: "rgba(99, 102, 241, 0.06)",
-            border: "1px solid rgba(99, 102, 241, 0.18)",
-            marginBottom: 18,
-            fontSize: 12,
-            color: "var(--text-secondary)",
-            display: "flex",
-            gap: 10,
-            alignItems: "flex-start",
-          }}
-        >
-          <Bot size={14} color="rgb(99, 102, 241)" style={{ marginTop: 2 }} />
-          <div>
-            <div
-              style={{
-                color: "var(--text-primary)",
-                fontWeight: 500,
-                marginBottom: 2,
-              }}
-            >
-              Configure seu provedor de IA
-            </div>
-            Escolha um provedor abaixo, cole sua chave de API (ou use um modelo
-            local com LM Studio/Ollama), selecione o modelo e teste a conexão.
-          </div>
-        </div>
-      )}
-
-      {isConfigured && (
-        <div
-          style={{
-            padding: "12px 14px",
-            borderRadius: 10,
-            background: "rgba(34, 197, 94, 0.06)",
-            border: "1px solid rgba(34, 197, 94, 0.18)",
-            marginBottom: 18,
-            fontSize: 12,
-            color: "var(--text-secondary)",
-            display: "flex",
-            gap: 10,
-            alignItems: "center",
-          }}
-        >
-          <Check size={14} color="rgb(34, 197, 94)" />
-          <div>
-            Provedor:{" "}
-            <strong style={{ color: "var(--text-primary)" }}>
-              {preset.label}
-            </strong>
-            {" · "}Modelo:{" "}
-            <strong style={{ color: "var(--text-primary)" }}>
-              {cfg.model}
-            </strong>
-          </div>
-        </div>
-      )}
-
-      <div>
-        <SectionLabel>Provedor</SectionLabel>
-        <select
-          value={cfg.provider}
-          onChange={(e) => handleProviderChange(e.target.value as ProviderId)}
-          style={{
-            width: "100%",
-            padding: "8px 10px",
-            borderRadius: 8,
-            border: "1px solid rgba(255,255,255,0.10)",
-            background: "rgba(255,255,255,0.04)",
-            color: "var(--text-primary)",
-            fontSize: 13,
-          }}
-        >
-          {(Object.values(PROVIDER_PRESETS) as ProviderPreset[]).map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.label}
-            </option>
-          ))}
-        </select>
-        {preset.hint !== undefined && (
-          <p
-            style={{
-              fontSize: 11,
-              color: "var(--text-tertiary)",
-              marginTop: 8,
-              lineHeight: 1.5,
-            }}
-          >
-            {preset.hint}
-          </p>
-        )}
-      </div>
-
-      {requiresKey && (
-        <div>
-          <SectionLabel>Chave de API</SectionLabel>
-          <div style={{ position: "relative" }}>
-            <input
-              type={showKey ? "text" : "password"}
-              value={cfg.apiKey}
-              onChange={(e) => setCfg({ ...cfg, apiKey: e.target.value })}
-              placeholder="sk-..."
-              autoComplete="off"
-              spellCheck={false}
-              style={{
-                width: "100%",
-                padding: "8px 36px 8px 10px",
-                borderRadius: 8,
-                border: "1px solid rgba(255,255,255,0.10)",
-                background: "rgba(255,255,255,0.04)",
-                color: "var(--text-primary)",
-                fontSize: 13,
-                fontFamily: "var(--font-mono, monospace)",
-              }}
-            />
-            <button
-              type="button"
-              onClick={() => setShowKey((v) => !v)}
-              aria-label={showKey ? "Ocultar chave" : "Mostrar chave"}
-              style={{
-                position: "absolute",
-                right: 8,
-                top: "50%",
-                transform: "translateY(-50%)",
-                background: "transparent",
-                border: "none",
-                color: "var(--text-tertiary)",
-                cursor: "pointer",
-                padding: 4,
-              }}
-            >
-              {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
-            </button>
-          </div>
-          {preset.docsUrl !== undefined && (
-            <a
-              href={preset.docsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                fontSize: 11,
-                color: "rgb(99, 102, 241)",
-                marginTop: 8,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4,
-              }}
-            >
-              Obter chave <ExternalLink size={10} />
-            </a>
-          )}
-        </div>
-      )}
-
-      <div>
-        <SectionLabel>Endpoint (Base URL)</SectionLabel>
-        <input
-          type="text"
-          value={cfg.baseUrl}
-          onChange={(e) => setCfg({ ...cfg, baseUrl: e.target.value })}
-          disabled={!isCustom}
-          placeholder="https://api.exemplo.com/v1"
-          style={{
-            width: "100%",
-            padding: "8px 10px",
-            borderRadius: 8,
-            border: "1px solid rgba(255,255,255,0.10)",
-            background: isCustom
-              ? "rgba(255,255,255,0.04)"
-              : "rgba(255,255,255,0.02)",
-            color: isCustom ? "var(--text-primary)" : "var(--text-tertiary)",
-            fontSize: 13,
-            fontFamily: "var(--font-mono, monospace)",
-          }}
-        />
-      </div>
-
-      <div>
-        <SectionLabel>Modelo</SectionLabel>
-        <div style={{ display: "flex", gap: 8 }}>
-          {availableModels.length > 0 ? (
-            <select
-              value={cfg.model}
-              onChange={(e) => setCfg({ ...cfg, model: e.target.value })}
-              style={{
-                flex: 1,
-                padding: "8px 10px",
-                borderRadius: 8,
-                border: "1px solid rgba(255,255,255,0.10)",
-                background: "rgba(255,255,255,0.04)",
-                color: "var(--text-primary)",
-                fontSize: 13,
-              }}
-            >
-              {availableModels.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <input
-              type="text"
-              value={cfg.model}
-              onChange={(e) => setCfg({ ...cfg, model: e.target.value })}
-              placeholder={
-                isLocal ? "Detectar modelos para listar" : "nome-do-modelo"
-              }
-              style={{
-                flex: 1,
-                padding: "8px 10px",
-                borderRadius: 8,
-                border: "1px solid rgba(255,255,255,0.10)",
-                background: "rgba(255,255,255,0.04)",
-                color: "var(--text-primary)",
-                fontSize: 13,
-                fontFamily: "var(--font-mono, monospace)",
-              }}
-            />
-          )}
-          {isLocal && (
-            <button
-              type="button"
-              onClick={handleDetectModels}
-              disabled={detecting}
-              style={{
-                padding: "8px 12px",
-                borderRadius: 8,
-                border: "1px solid rgba(255,255,255,0.10)",
-                background: "rgba(255,255,255,0.04)",
-                color: "var(--text-secondary)",
-                fontSize: 12,
-                cursor: detecting ? "wait" : "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              {detecting ? (
-                <Loader2 size={12} className="animate-spin" />
-              ) : (
-                <Zap size={12} />
-              )}
-              {detecting ? "Detectando..." : "Detectar modelos"}
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
-        <button
-          type="button"
-          onClick={handleTest}
-          disabled={testing || !isConfigured}
-          style={{
-            padding: "9px 14px",
-            borderRadius: 8,
-            border: "1px solid rgba(255,255,255,0.10)",
-            background: "rgba(255,255,255,0.04)",
-            color: "var(--text-primary)",
-            fontSize: 13,
-            cursor: testing || !isConfigured ? "not-allowed" : "pointer",
-            opacity: !isConfigured ? 0.5 : 1,
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
-          {testing && <Loader2 size={12} className="animate-spin" />}
-          Testar conexão
-        </button>
-      </div>
-
-      {testResult !== null && (
-        <div
-          style={{
-            marginTop: 14,
-            padding: "10px 12px",
-            borderRadius: 8,
-            background: testResult.ok
-              ? "rgba(34, 197, 94, 0.08)"
-              : "rgba(239, 68, 68, 0.08)",
-            border: `1px solid ${testResult.ok ? "rgba(34, 197, 94, 0.20)" : "rgba(239, 68, 68, 0.20)"}`,
-            color: testResult.ok ? "rgb(134, 239, 172)" : "rgb(252, 165, 165)",
-            fontSize: 12,
-            display: "flex",
-            gap: 8,
-            alignItems: "flex-start",
-          }}
-        >
-          {testResult.ok ? <Check size={14} /> : <AlertTriangle size={14} />}
-          <div>{testResult.message}</div>
-        </div>
-      )}
     </div>
   );
 }
@@ -6039,8 +6291,6 @@ function ToggleStackTile({
 
 function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
   const { email, avatarUrl } = useSessionStore();
-  const openApp = useOSStore((s) => s.openApp);
-  const setPendingTab = useGestorStore((s) => s.setPendingTab);
   const initials = email !== null ? email.slice(0, 2).toUpperCase() : "??";
   const displayName = email !== null ? email.split("@")[0] : "Usuário";
 
@@ -6413,17 +6663,49 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
           </div>
         </div>
 
-        {/* ── Email digest (1×1) ── */}
-        <ToggleStackTile
-          Icon={Mail}
-          color="#a78bfa"
-          bg="rgba(139,92,246,0.18)"
-          label="Email digest"
-          on={notif.email_notifications}
-          onToggle={() => toggleNotif("email_notifications")}
-          gridColumn="3 / span 1"
-          gridRow="3 / span 1"
-        />
+        {/* ── Notificações (1×1) — espelho do item de menu ── */}
+        <button
+          type="button"
+          onClick={() => onSelect("notificacoes")}
+          style={{
+            ...TILE_BASE,
+            gridColumn: "3 / span 1",
+            gridRow: "3 / span 1",
+            cursor: "pointer",
+            textAlign: "left",
+            transition: "background 160ms ease, border-color 160ms ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+            e.currentTarget.style.borderColor = "rgba(255,255,255,0.14)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+            e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)";
+          }}
+        >
+          <TileIcon Icon={Bell} color="#a78bfa" bg="rgba(139,92,246,0.18)" />
+          <div style={{ flex: 1 }} />
+          <p
+            style={{
+              fontSize: 13,
+              fontWeight: 600,
+              color: "var(--text-primary)",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Notificações
+          </p>
+          <p
+            style={{
+              fontSize: 11,
+              color: "var(--text-tertiary)",
+              marginTop: 2,
+            }}
+          >
+            Push, email e canais
+          </p>
+        </button>
 
         {/* ── Sons (1×1) ── */}
         <ToggleStackTile
@@ -6651,13 +6933,10 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
           </div>
         </button>
 
-        {/* ── Integrações (1×1) ── */}
+        {/* ── Minha Empresa (1×1) — espelho do item de menu ── */}
         <button
           type="button"
-          onClick={() => {
-            setPendingTab("integracoes");
-            openApp("gestor", "Gestor");
-          }}
+          onClick={() => onSelect("minha-empresa")}
           style={{
             ...TILE_BASE,
             gridColumn: "3 / span 1",
@@ -6675,7 +6954,11 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
             e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)";
           }}
         >
-          <TileIcon Icon={Link2} color="#fb923c" bg="rgba(249,115,22,0.18)" />
+          <TileIcon
+            Icon={Building2}
+            color="#fb923c"
+            bg="rgba(249,115,22,0.18)"
+          />
           <div style={{ flex: 1 }} />
           <p
             style={{
@@ -6685,7 +6968,7 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
               letterSpacing: "-0.01em",
             }}
           >
-            Integrações
+            Minha Empresa
           </p>
           <p
             style={{
@@ -6694,7 +6977,7 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
               marginTop: 2,
             }}
           >
-            0 conectadas
+            CNPJ, dados e logo
           </p>
         </button>
 
@@ -6762,8 +7045,6 @@ function TabContent({
       return <TabNotificacoes />;
     case "dados-privacidade":
       return <TabDadosPrivacidade />;
-    case "ia":
-      return <TabIA />;
     case "dock":
       return <TabDock />;
     case "mesa":
@@ -6781,10 +7062,21 @@ const SIDEBAR_ICON_W = 48;
 export function ConfiguracoesApp() {
   const drivers = useDrivers();
   const { activeCompanyId, avatarUrl, setAvatarUrl } = useSessionStore();
-  const [active, setActive] = useState<TabId>("home");
+  const pendingTab = useSettingsNavStore((s) => s.pendingTab);
+  const clearPendingTab = useSettingsNavStore((s) => s.clearPendingTab);
+  const [active, setActive] = useState<TabId>(pendingTab ?? "home");
   const [collapsed, setCollapsed] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const isHome = active === "home";
+
+  // Consome pending tab vindo de outros apps (ex.: context menu da Mesa
+  // pedindo "Papel de Parede" → tab "mesa").
+  useEffect(() => {
+    if (pendingTab !== null) {
+      setActive(pendingTab);
+      clearPendingTab();
+    }
+  }, [pendingTab, clearPendingTab]);
 
   // Hidrata logo da empresa (avatar do user já é hidratado em OSDesktop e
   // vive no session store)

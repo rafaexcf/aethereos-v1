@@ -6,7 +6,7 @@ import {
   AnimatePresence,
   type MotionStyle,
 } from "framer-motion";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, startTransition } from "react";
 import * as LucideIcons from "lucide-react";
 import type { LucideProps } from "lucide-react";
 import type { ComponentType } from "react";
@@ -16,6 +16,7 @@ import {
   CloudSun,
   Droplets,
   LayoutGrid,
+  LifeBuoy,
   Wind,
   X,
 } from "lucide-react";
@@ -30,6 +31,7 @@ import { useOSStore } from "../../stores/osStore";
 import { useDockStore } from "../../stores/dockStore";
 import { useInstalledModulesStore } from "../../stores/installedModulesStore";
 import { getApp, prefetchApp } from "../../apps/registry";
+import { AppContextMenu } from "./AppContextMenu";
 import type { OSApp } from "../../types/os";
 
 const SPRING_CONFIG = { mass: 0.08, stiffness: 180, damping: 11 };
@@ -41,7 +43,6 @@ const ICON_RANGE = 160;
 const HOVER_COLORS: Record<string, string> = {
   "ae-ai": "#8b5cf6",
   drive: "#06b6d4",
-  pessoas: "#8b5cf6",
   chat: "#06b6d4",
   settings: "#94a3b8",
   comercio: "#f0fc05",
@@ -616,16 +617,93 @@ function DockClockWidget() {
   );
 }
 
-/* ── Menu do sistema (···) ──────────────────────────────────────────── */
+/* ── Todos os apps (atalho direto) ──────────────────────────────────── */
 
-const SYSTEM_ITEMS = [
+function DockAppsLauncherWidget() {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipTimeout, setTooltipTimeout] = useState<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+
+  const openAppsLauncher = useOSStore((s) => s.openAppsLauncher);
+
+  function handleMouseEnter() {
+    const t = setTimeout(() => setShowTooltip(true), 550);
+    setTooltipTimeout(t);
+  }
+  function handleMouseLeave() {
+    setShowTooltip(false);
+    if (tooltipTimeout !== null) {
+      clearTimeout(tooltipTimeout);
+      setTooltipTimeout(null);
+    }
+  }
+
+  return (
+    <div className="relative flex flex-col items-center">
+      <AnimatePresence>
+        {showTooltip && (
+          <motion.div
+            initial={{ opacity: 0, y: 10, scale: 0.94 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 6, scale: 0.97 }}
+            transition={{ duration: 0.1 }}
+            className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 z-50 whitespace-nowrap pointer-events-none px-2.5 py-1"
+            style={{
+              background: "var(--bg-elevated)",
+              border: "1px solid var(--glass-border)",
+              borderRadius: "var(--radius-md)",
+              boxShadow: "var(--shadow-md)",
+              color: "var(--text-primary)",
+              fontSize: 12,
+              fontWeight: 500,
+              letterSpacing: "-0.01em",
+            }}
+          >
+            Todos os apps
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div
+        onClick={openAppsLauncher}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        className="flex flex-col items-center justify-center cursor-pointer"
+        style={{
+          width: ICON_BASE,
+          height: ICON_BASE,
+          borderRadius: "var(--radius-lg)",
+          gap: 2,
+          background: "transparent",
+        }}
+        onMouseOver={(e) => {
+          (e.currentTarget as HTMLElement).style.background =
+            "var(--glass-bg-hover)";
+        }}
+        onMouseOut={(e) => {
+          (e.currentTarget as HTMLElement).style.background = "transparent";
+        }}
+      >
+        <LayoutGrid
+          size={20}
+          strokeWidth={1.4}
+          style={{ color: "rgba(255,255,255,0.65)" }}
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ── Menu Suporte (popup) ───────────────────────────────────────────── */
+
+const SUPPORT_ITEMS = [
   { label: "Ocultar Dock", icon: "▬", key: "dock" },
-  { label: "Todos os apps", icon: "⊞", key: "apps" },
   { label: "Configurações", icon: "⚙", key: "settings" },
   { label: "Suporte", icon: "🛟", key: "support" },
 ] as const;
 
-function DockSystemMenuWidget() {
+function DockSupportMenuWidget() {
   const [open, setOpen] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
   const [tooltipTimeout, setTooltipTimeout] = useState<ReturnType<
@@ -634,13 +712,11 @@ function DockSystemMenuWidget() {
 
   const openApp = useOSStore((s) => s.openApp);
   const toggleDockHidden = useOSStore((s) => s.toggleDockHidden);
-  const openAppsLauncher = useOSStore((s) => s.openAppsLauncher);
   const openSupport = useOSStore((s) => s.openSupport);
 
-  function handleAction(key: (typeof SYSTEM_ITEMS)[number]["key"]) {
+  function handleAction(key: (typeof SUPPORT_ITEMS)[number]["key"]) {
     setOpen(false);
     if (key === "dock") toggleDockHidden();
-    else if (key === "apps") openAppsLauncher();
     else if (key === "settings") openApp("settings", "Configurações");
     else if (key === "support") openSupport();
   }
@@ -679,7 +755,7 @@ function DockSystemMenuWidget() {
               letterSpacing: "-0.01em",
             }}
           >
-            Menu do sistema
+            Suporte
           </motion.div>
         )}
       </AnimatePresence>
@@ -693,7 +769,7 @@ function DockSystemMenuWidget() {
               onClick={() => setOpen(false)}
             />
             <motion.div
-              key="sys-menu"
+              key="support-menu"
               initial={{ opacity: 0, y: 6, scale: 0.96 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 4, scale: 0.97 }}
@@ -710,7 +786,7 @@ function DockSystemMenuWidget() {
                 WebkitBackdropFilter: "blur(24px)",
               }}
             >
-              {SYSTEM_ITEMS.map((item) => (
+              {SUPPORT_ITEMS.map((item) => (
                 <button
                   key={item.key}
                   type="button"
@@ -776,7 +852,7 @@ function DockSystemMenuWidget() {
             : "transparent";
         }}
       >
-        <LayoutGrid
+        <LifeBuoy
           size={20}
           strokeWidth={1.4}
           style={{ color: "rgba(255,255,255,0.65)" }}
@@ -1057,11 +1133,13 @@ function DockIcon({
   mouseX,
   isOpen,
   isActiveTab,
+  onContextMenu,
 }: {
   app: OSApp;
   mouseX: ReturnType<typeof useMotionValue<number>>;
   isOpen: boolean;
   isActiveTab: boolean;
+  onContextMenu: (e: React.MouseEvent, appId: string) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const openApp = useOSStore((s) => s.openApp);
@@ -1172,11 +1250,15 @@ function DockIcon({
           borderRadius: "var(--radius-lg)",
           background: isOpen ? "var(--glass-bg)" : "transparent",
         }}
-        onClick={() =>
-          app.opensAsModal === true
-            ? toggleAIModal()
-            : openApp(app.id, app.name)
-        }
+        onClick={() => {
+          // INP: re-render do TabBar/AppFrame ao abrir/fechar tab eh nao-urgente,
+          // libera a thread pra paint do feedback visual antes do commit.
+          startTransition(() => {
+            if (app.opensAsModal === true) toggleAIModal();
+            else openApp(app.id, app.name);
+          });
+        }}
+        onContextMenu={(e) => onContextMenu(e, app.id)}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         className="relative flex items-center justify-center cursor-pointer"
@@ -1225,6 +1307,18 @@ export function Dock() {
 
   const openAppIds = new Set(tabs.map((t) => t.appId));
   const activeAppId = tabs.find((t) => t.id === activeTabId)?.appId;
+
+  // Sprint 26: menu de contexto do icone (Remover da Dock / Desinstalar).
+  const [iconCtx, setIconCtx] = useState<{
+    appId: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  const handleIconContextMenu = (e: React.MouseEvent, appId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIconCtx({ appId, x: e.clientX, y: e.clientY });
+  };
 
   return (
     <>
@@ -1290,9 +1384,10 @@ export function Dock() {
             boxShadow: "var(--shadow-dock)",
           }}
         >
-          {/* Widget: Tempo + Menu do sistema (esquerda) */}
+          {/* Widget: Tempo + Atalhos do sistema (esquerda) */}
           <DockWeatherWidget />
-          <DockSystemMenuWidget />
+          <DockAppsLauncherWidget />
+          <DockSupportMenuWidget />
           <DockDivider />
 
           {/* Apps */}
@@ -1303,6 +1398,7 @@ export function Dock() {
               mouseX={mouseX}
               isOpen={openAppIds.has(app.id)}
               isActiveTab={activeAppId === app.id}
+              onContextMenu={handleIconContextMenu}
             />
           ))}
 
@@ -1312,6 +1408,15 @@ export function Dock() {
           <DockNotifWidget />
         </motion.div>
       </motion.div>
+
+      {iconCtx !== null && (
+        <AppContextMenu
+          surface="dock"
+          appId={iconCtx.appId}
+          pos={{ x: iconCtx.x, y: iconCtx.y }}
+          onClose={() => setIconCtx(null)}
+        />
+      )}
     </>
   );
 }

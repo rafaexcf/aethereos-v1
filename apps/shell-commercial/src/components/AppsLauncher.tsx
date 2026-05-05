@@ -7,6 +7,7 @@ import type { ComponentType } from "react";
 import { X, Search } from "lucide-react";
 import { APP_REGISTRY } from "../apps/registry";
 import { useInstalledModulesStore } from "../stores/installedModulesStore";
+import { AppContextMenu } from "./os/AppContextMenu";
 
 interface AppsLauncherProps {
   open: boolean;
@@ -17,6 +18,12 @@ interface AppsLauncherProps {
 export function AppsLauncher({ open, onClose, onOpenApp }: AppsLauncherProps) {
   const [search, setSearch] = useState("");
   const installed = useInstalledModulesStore((s) => s.installed);
+  // Sprint 26: menu de contexto (Desinstalar) por app no launcher.
+  const [iconCtx, setIconCtx] = useState<{
+    appId: string;
+    x: number;
+    y: number;
+  } | null>(null);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -205,6 +212,15 @@ export function AppsLauncher({ open, onClose, onOpenApp }: AppsLauncherProps) {
                       onClose();
                       setSearch("");
                     }}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIconCtx({
+                        appId: app.id,
+                        x: e.clientX,
+                        y: e.clientY,
+                      });
+                    }}
                     style={{
                       display: "flex",
                       flexDirection: "column",
@@ -313,6 +329,15 @@ export function AppsLauncher({ open, onClose, onOpenApp }: AppsLauncherProps) {
               </span>
             </div>
           </motion.div>
+
+          {iconCtx !== null && (
+            <AppContextMenu
+              surface="launcher"
+              appId={iconCtx.appId}
+              pos={{ x: iconCtx.x, y: iconCtx.y }}
+              onClose={() => setIconCtx(null)}
+            />
+          )}
         </>
       )}
     </AnimatePresence>,

@@ -2,7 +2,6 @@ import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   HardDrive,
-  Contact,
   MessageSquare,
   Store,
   ChevronRight,
@@ -32,12 +31,6 @@ const TOUR_CARDS = [
     color: "#06b6d4",
     name: "Drive",
     desc: "Armazene documentos e arquivos da empresa com segurança.",
-  },
-  {
-    icon: Contact,
-    color: "#8b5cf6",
-    name: "Pessoas",
-    desc: "Gerencie clientes e contatos em um único lugar.",
   },
   {
     icon: MessageSquare,

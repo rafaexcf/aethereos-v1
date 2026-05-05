@@ -103,7 +103,6 @@ export async function seedCompanies(): Promise<void> {
   // modulos extras que companies existentes ja tenham instalado.
   const KERNEL_DEFAULT_MODULES = [
     "drive",
-    "pessoas",
     "chat",
     "settings",
     "rh",

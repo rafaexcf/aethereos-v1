@@ -51,19 +51,10 @@ export const DEFAULT_LAYOUT: MesaItem[] = [
     zIndex: 0,
   },
   {
-    id: "icon-pessoas",
-    type: "icon",
-    appId: "pessoas",
-    position: { x: 120, y: 20 },
-    size: { w: 80, h: 80 },
-    config: { name: "Pessoas" },
-    zIndex: 0,
-  },
-  {
     id: "icon-chat",
     type: "icon",
     appId: "chat",
-    position: { x: 220, y: 20 },
+    position: { x: 120, y: 20 },
     size: { w: 80, h: 80 },
     config: { name: "Mensagens" },
     zIndex: 0,
@@ -72,7 +63,7 @@ export const DEFAULT_LAYOUT: MesaItem[] = [
     id: "icon-settings",
     type: "icon",
     appId: "settings",
-    position: { x: 320, y: 20 },
+    position: { x: 220, y: 20 },
     size: { w: 80, h: 80 },
     config: { name: "Configurações" },
     zIndex: 0,
@@ -81,7 +72,7 @@ export const DEFAULT_LAYOUT: MesaItem[] = [
     id: "icon-rh",
     type: "icon",
     appId: "rh",
-    position: { x: 420, y: 20 },
+    position: { x: 320, y: 20 },
     size: { w: 80, h: 80 },
     config: { name: "RH" },
     zIndex: 0,
@@ -90,7 +81,7 @@ export const DEFAULT_LAYOUT: MesaItem[] = [
     id: "icon-magic-store",
     type: "icon",
     appId: "magic-store",
-    position: { x: 520, y: 20 },
+    position: { x: 420, y: 20 },
     size: { w: 80, h: 80 },
     config: { name: "Magic Store" },
     zIndex: 0,
@@ -114,6 +105,10 @@ interface MesaActions {
   setCustomWallpaper: (url: string) => void;
   /** Limpa wallpaper customizado e cai pro default */
   clearCustomWallpaper: () => void;
+  /** Adiciona widget de um app na proxima area livre da mesa. */
+  addWidget: (appId: string, size: { w: number; h: number }) => void;
+  /** Remove um item (icon ou widget) por id. */
+  removeItem: (itemId: string) => void;
 }
 
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -226,4 +221,75 @@ export const useMesaStore = create<MesaState & MesaActions>((set, get) => ({
     set({ wallpaper: DEFAULT_WALLPAPER, wallpaperUrl: null });
     scheduleSave(layout, DEFAULT_WALLPAPER, null);
   },
+
+  addWidget: (appId, size) => {
+    const { layout, wallpaper, wallpaperUrl } = get();
+    // Posicionamento heuristico: encontra primeiro slot livre num grid 240px
+    // a partir do canto superior direito (apos os icones de coluna 1-2).
+    const { x, y } = findNextFreeSlot(layout, size);
+    const id = `widget-${appId}-${Date.now()}`;
+    const next: MesaItem[] = [
+      ...layout,
+      {
+        id,
+        type: "widget",
+        appId,
+        position: { x, y },
+        size,
+        config: {},
+        zIndex: 0,
+      },
+    ];
+    set({ layout: next });
+    scheduleSave(next, wallpaper, wallpaperUrl);
+  },
+
+  removeItem: (itemId) => {
+    const { layout, wallpaper, wallpaperUrl } = get();
+    const next = layout.filter((it) => it.id !== itemId);
+    if (next.length === layout.length) return;
+    set({ layout: next });
+    scheduleSave(next, wallpaper, wallpaperUrl);
+  },
 }));
+
+// Heuristica simples: tenta posicoes em grid (gap 16px) percorrendo da
+// direita pra baixo, evitando colisao com items existentes.
+function findNextFreeSlot(
+  layout: MesaItem[],
+  size: { w: number; h: number },
+): { x: number; y: number } {
+  const PAD = 16;
+  const startX = 220; // depois da fileira inicial de icones (~5 x 100)
+  const startY = 120;
+  const cols = 4;
+  for (let row = 0; row < 6; row++) {
+    for (let col = 0; col < cols; col++) {
+      const x = startX + col * (size.w + PAD);
+      const y = startY + row * (size.h + PAD);
+      const collides = layout.some((it) =>
+        rectsOverlap(
+          { x, y, w: size.w, h: size.h },
+          {
+            x: it.position.x,
+            y: it.position.y,
+            w: it.size.w,
+            h: it.size.h,
+          },
+        ),
+      );
+      if (!collides) return { x, y };
+    }
+  }
+  // Fallback: empilhamento offset (raramente atingido).
+  return { x: startX + Math.random() * 40, y: 120 + Math.random() * 40 };
+}
+
+function rectsOverlap(
+  a: { x: number; y: number; w: number; h: number },
+  b: { x: number; y: number; w: number; h: number },
+): boolean {
+  return (
+    a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y
+  );
+}

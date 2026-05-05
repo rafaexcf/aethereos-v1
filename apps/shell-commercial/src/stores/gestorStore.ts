@@ -4,6 +4,7 @@ export type GestorTabId =
   | "visao-geral"
   | "aplicativos"
   | "integracoes"
+  | "ia"
   | "planos"
   | "cadastros"
   | "usuarios";

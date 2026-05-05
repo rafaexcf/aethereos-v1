@@ -38,9 +38,6 @@ export const COMPONENT_MAP: Record<
   drive: React.lazy(() =>
     import("./drive/index").then((m) => ({ default: m.DriveApp })),
   ),
-  pessoas: React.lazy(() =>
-    import("./pessoas/index").then((m) => ({ default: m.PessoasApp })),
-  ),
   chat: React.lazy(() =>
     import("./chat/index").then((m) => ({ default: m.ChatApp })),
   ),
@@ -167,18 +164,6 @@ export const APP_REGISTRY: OSApp[] = [
     color: "#06b6d4",
     component: React.lazy(() =>
       import("./drive/index").then((m) => ({ default: m.DriveApp })),
-    ),
-    showInDock: true,
-    closeable: true,
-    hasInternalNav: true,
-  },
-  {
-    id: "pessoas",
-    name: "Pessoas",
-    icon: "Contact",
-    color: "#8b5cf6",
-    component: React.lazy(() =>
-      import("./pessoas/index").then((m) => ({ default: m.PessoasApp })),
     ),
     showInDock: true,
     closeable: true,

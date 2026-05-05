@@ -51,7 +51,7 @@ const TYPE_CONFIG: Record<
 const APP_ICON: Record<string, React.FC<{ size?: number }>> = {
   Sistema: Monitor,
   Comércio: ShoppingCart,
-  Pessoas: Users,
+  RH: Users,
   Drive: HardDrive,
   Integrações: Workflow,
   Financeiro: DollarSign,

@@ -28,7 +28,22 @@ import {
   LayoutGrid,
   PanelLeftClose,
   PanelLeftOpen,
+  Bot,
+  Eye,
+  EyeOff,
+  Loader2,
+  AlertTriangle,
+  ExternalLink,
+  Zap,
 } from "lucide-react";
+import { useUserPreference } from "../../hooks/useUserPreference";
+import {
+  PROVIDER_PRESETS,
+  validateConfig,
+  fetchAvailableModels,
+  type ProviderId,
+  type ProviderPreset,
+} from "@aethereos/drivers-byok";
 import * as LucideIcons from "lucide-react";
 import type { LucideProps } from "lucide-react";
 import type { ComponentType } from "react";
@@ -70,6 +85,7 @@ const NAV_SECTIONS: {
     items: [
       { id: "aplicativos", label: "Aplicativos", icon: LayoutGrid },
       { id: "integracoes", label: "Integrações", icon: Link2 },
+      { id: "ia", label: "Inteligência Artificial", icon: Bot },
     ],
   },
   {
@@ -88,6 +104,7 @@ const TAB_LABELS: Record<GestorTabId, string> = {
   "visao-geral": "Visão Geral",
   aplicativos: "Aplicativos",
   integracoes: "Integrações",
+  ia: "Inteligência Artificial",
   planos: "Planos",
   cadastros: "Cadastros",
   usuarios: "Usuários",
@@ -1687,6 +1704,412 @@ function TabIntegracoes() {
   );
 }
 
+// ─── Tab IA — BYOK LLM config (Sprint 15 MX74) ────────────────────────────────
+
+interface LLMConfigPref {
+  provider: ProviderId;
+  baseUrl: string;
+  apiKey: string;
+  model: string;
+}
+
+const DEFAULT_LLM_CONFIG: LLMConfigPref = {
+  provider: "openai",
+  baseUrl: "",
+  apiKey: "",
+  model: "",
+};
+
+function TabIA() {
+  const llmConfigPref = useUserPreference<LLMConfigPref>(
+    "llm_config",
+    DEFAULT_LLM_CONFIG,
+  );
+  const cfg = llmConfigPref.value;
+  const setCfg = (next: LLMConfigPref) => {
+    llmConfigPref.set(next);
+  };
+
+  const [showKey, setShowKey] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{
+    ok: boolean;
+    message: string;
+  } | null>(null);
+  const [detectedModels, setDetectedModels] = useState<string[]>([]);
+  const [detecting, setDetecting] = useState(false);
+
+  const preset = PROVIDER_PRESETS[cfg.provider];
+  const requiresKey = preset.requiresKey;
+  const isCustom = cfg.provider === "custom";
+  const isLocal = cfg.provider === "lmstudio" || cfg.provider === "ollama";
+
+  function handleProviderChange(id: ProviderId) {
+    const newPreset = PROVIDER_PRESETS[id];
+    setCfg({
+      provider: id,
+      baseUrl: newPreset.baseUrl,
+      apiKey: cfg.apiKey,
+      model: newPreset.models[0] ?? "",
+    });
+    setTestResult(null);
+    setDetectedModels([]);
+  }
+
+  async function handleDetectModels() {
+    setDetecting(true);
+    try {
+      const list = await fetchAvailableModels(cfg.baseUrl);
+      setDetectedModels(list);
+      if (list.length > 0 && !list.includes(cfg.model)) {
+        setCfg({ ...cfg, model: list[0] ?? "" });
+      }
+    } finally {
+      setDetecting(false);
+    }
+  }
+
+  async function handleTest() {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const result = await validateConfig({
+        format: preset.format,
+        baseUrl: cfg.baseUrl,
+        apiKey: cfg.apiKey,
+        model: cfg.model,
+      });
+      if (result.ok) {
+        setTestResult({ ok: true, message: "Conexão OK." });
+      } else {
+        setTestResult({
+          ok: false,
+          message: result.error ?? "Erro desconhecido",
+        });
+      }
+    } finally {
+      setTesting(false);
+    }
+  }
+
+  const availableModels =
+    detectedModels.length > 0 ? detectedModels : preset.models;
+  const isConfigured =
+    cfg.baseUrl.length > 0 &&
+    cfg.model.length > 0 &&
+    (!requiresKey || cfg.apiKey.length > 0);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <ContentHeader
+        icon={Bot}
+        iconBg="rgba(99,102,241,0.22)"
+        iconColor="#818cf8"
+        title="Inteligência Artificial"
+        subtitle="Configure seu provedor de IA (BYOK) para ativar o Aether AI Copilot"
+      />
+
+      {!isConfigured && (
+        <div
+          style={{
+            padding: "12px 14px",
+            borderRadius: 10,
+            background: "rgba(99, 102, 241, 0.06)",
+            border: "1px solid rgba(99, 102, 241, 0.18)",
+            marginBottom: 18,
+            fontSize: 12,
+            color: "var(--text-secondary)",
+            display: "flex",
+            gap: 10,
+            alignItems: "flex-start",
+          }}
+        >
+          <Bot size={14} color="rgb(99, 102, 241)" style={{ marginTop: 2 }} />
+          <div>
+            <div
+              style={{
+                color: "var(--text-primary)",
+                fontWeight: 500,
+                marginBottom: 2,
+              }}
+            >
+              Configure seu provedor de IA
+            </div>
+            Escolha um provedor abaixo, cole sua chave de API (ou use um modelo
+            local com LM Studio/Ollama), selecione o modelo e teste a conexão.
+          </div>
+        </div>
+      )}
+
+      {isConfigured && (
+        <div
+          style={{
+            padding: "12px 14px",
+            borderRadius: 10,
+            background: "rgba(34, 197, 94, 0.06)",
+            border: "1px solid rgba(34, 197, 94, 0.18)",
+            marginBottom: 18,
+            fontSize: 12,
+            color: "var(--text-secondary)",
+            display: "flex",
+            gap: 10,
+            alignItems: "center",
+          }}
+        >
+          <Check size={14} color="rgb(34, 197, 94)" />
+          <div>
+            Provedor:{" "}
+            <strong style={{ color: "var(--text-primary)" }}>
+              {preset.label}
+            </strong>
+            {" · "}Modelo:{" "}
+            <strong style={{ color: "var(--text-primary)" }}>
+              {cfg.model}
+            </strong>
+          </div>
+        </div>
+      )}
+
+      <div>
+        <SectionLabel>Provedor</SectionLabel>
+        <select
+          value={cfg.provider}
+          onChange={(e) => handleProviderChange(e.target.value as ProviderId)}
+          style={{
+            width: "100%",
+            padding: "8px 10px",
+            borderRadius: 8,
+            border: "1px solid rgba(255,255,255,0.10)",
+            background: "rgba(255,255,255,0.04)",
+            color: "var(--text-primary)",
+            fontSize: 13,
+          }}
+        >
+          {(Object.values(PROVIDER_PRESETS) as ProviderPreset[]).map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.label}
+            </option>
+          ))}
+        </select>
+        {preset.hint !== undefined && (
+          <p
+            style={{
+              fontSize: 11,
+              color: "var(--text-tertiary)",
+              marginTop: 8,
+              lineHeight: 1.5,
+            }}
+          >
+            {preset.hint}
+          </p>
+        )}
+      </div>
+
+      {requiresKey && (
+        <div>
+          <SectionLabel>Chave de API</SectionLabel>
+          <div style={{ position: "relative" }}>
+            <input
+              type={showKey ? "text" : "password"}
+              value={cfg.apiKey}
+              onChange={(e) => setCfg({ ...cfg, apiKey: e.target.value })}
+              placeholder="sk-..."
+              autoComplete="off"
+              spellCheck={false}
+              style={{
+                width: "100%",
+                padding: "8px 36px 8px 10px",
+                borderRadius: 8,
+                border: "1px solid rgba(255,255,255,0.10)",
+                background: "rgba(255,255,255,0.04)",
+                color: "var(--text-primary)",
+                fontSize: 13,
+                fontFamily: "var(--font-mono, monospace)",
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowKey((v) => !v)}
+              aria-label={showKey ? "Ocultar chave" : "Mostrar chave"}
+              style={{
+                position: "absolute",
+                right: 8,
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "transparent",
+                border: "none",
+                color: "var(--text-tertiary)",
+                cursor: "pointer",
+                padding: 4,
+              }}
+            >
+              {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
+            </button>
+          </div>
+          {preset.docsUrl !== undefined && (
+            <a
+              href={preset.docsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontSize: 11,
+                color: "rgb(99, 102, 241)",
+                marginTop: 8,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+              }}
+            >
+              Obter chave <ExternalLink size={10} />
+            </a>
+          )}
+        </div>
+      )}
+
+      <div>
+        <SectionLabel>Endpoint (Base URL)</SectionLabel>
+        <input
+          type="text"
+          value={cfg.baseUrl}
+          onChange={(e) => setCfg({ ...cfg, baseUrl: e.target.value })}
+          disabled={!isCustom}
+          placeholder="https://api.exemplo.com/v1"
+          style={{
+            width: "100%",
+            padding: "8px 10px",
+            borderRadius: 8,
+            border: "1px solid rgba(255,255,255,0.10)",
+            background: isCustom
+              ? "rgba(255,255,255,0.04)"
+              : "rgba(255,255,255,0.02)",
+            color: isCustom ? "var(--text-primary)" : "var(--text-tertiary)",
+            fontSize: 13,
+            fontFamily: "var(--font-mono, monospace)",
+          }}
+        />
+      </div>
+
+      <div>
+        <SectionLabel>Modelo</SectionLabel>
+        <div style={{ display: "flex", gap: 8 }}>
+          {availableModels.length > 0 ? (
+            <select
+              value={cfg.model}
+              onChange={(e) => setCfg({ ...cfg, model: e.target.value })}
+              style={{
+                flex: 1,
+                padding: "8px 10px",
+                borderRadius: 8,
+                border: "1px solid rgba(255,255,255,0.10)",
+                background: "rgba(255,255,255,0.04)",
+                color: "var(--text-primary)",
+                fontSize: 13,
+              }}
+            >
+              {availableModels.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              type="text"
+              value={cfg.model}
+              onChange={(e) => setCfg({ ...cfg, model: e.target.value })}
+              placeholder={
+                isLocal ? "Detectar modelos para listar" : "nome-do-modelo"
+              }
+              style={{
+                flex: 1,
+                padding: "8px 10px",
+                borderRadius: 8,
+                border: "1px solid rgba(255,255,255,0.10)",
+                background: "rgba(255,255,255,0.04)",
+                color: "var(--text-primary)",
+                fontSize: 13,
+                fontFamily: "var(--font-mono, monospace)",
+              }}
+            />
+          )}
+          {isLocal && (
+            <button
+              type="button"
+              onClick={handleDetectModels}
+              disabled={detecting}
+              style={{
+                padding: "8px 12px",
+                borderRadius: 8,
+                border: "1px solid rgba(255,255,255,0.10)",
+                background: "rgba(255,255,255,0.04)",
+                color: "var(--text-secondary)",
+                fontSize: 12,
+                cursor: detecting ? "wait" : "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              {detecting ? (
+                <Loader2 size={12} className="animate-spin" />
+              ) : (
+                <Zap size={12} />
+              )}
+              {detecting ? "Detectando..." : "Detectar modelos"}
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+        <button
+          type="button"
+          onClick={handleTest}
+          disabled={testing || !isConfigured}
+          style={{
+            padding: "9px 14px",
+            borderRadius: 8,
+            border: "1px solid rgba(255,255,255,0.10)",
+            background: "rgba(255,255,255,0.04)",
+            color: "var(--text-primary)",
+            fontSize: 13,
+            cursor: testing || !isConfigured ? "not-allowed" : "pointer",
+            opacity: !isConfigured ? 0.5 : 1,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          {testing && <Loader2 size={12} className="animate-spin" />}
+          Testar conexão
+        </button>
+      </div>
+
+      {testResult !== null && (
+        <div
+          style={{
+            marginTop: 14,
+            padding: "10px 12px",
+            borderRadius: 8,
+            background: testResult.ok
+              ? "rgba(34, 197, 94, 0.08)"
+              : "rgba(239, 68, 68, 0.08)",
+            border: `1px solid ${testResult.ok ? "rgba(34, 197, 94, 0.20)" : "rgba(239, 68, 68, 0.20)"}`,
+            color: testResult.ok ? "rgb(134, 239, 172)" : "rgb(252, 165, 165)",
+            fontSize: 12,
+            display: "flex",
+            gap: 8,
+            alignItems: "flex-start",
+          }}
+        >
+          {testResult.ok ? <Check size={14} /> : <AlertTriangle size={14} />}
+          <div>{testResult.message}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Tab: Planos ──────────────────────────────────────────────────────────────
 
 function TabPlanos() {
@@ -3145,6 +3568,7 @@ export function GestorApp() {
             {active === "visao-geral" && <TabVisaoGeral onSelect={setActive} />}
             {active === "aplicativos" && <TabAplicativos />}
             {active === "integracoes" && <TabIntegracoes />}
+            {active === "ia" && <TabIA />}
             {active === "planos" && <TabPlanos />}
             {active === "usuarios" && <TabUsuarios />}
           </div>

@@ -15,10 +15,6 @@ const DriveApp = lazy(() =>
   import("../apps/drive/index").then((m) => ({ default: m.DriveApp })),
 );
 
-const PessoasApp = lazy(() =>
-  import("../apps/pessoas/index").then((m) => ({ default: m.PessoasApp })),
-);
-
 const ChatApp = lazy(() =>
   import("../apps/chat/index").then((m) => ({ default: m.ChatApp })),
 );
@@ -48,13 +44,6 @@ export const APP_REGISTRY: AppDefinition[] = [
     icon: "📁",
     minRole: "member",
     component: DriveApp,
-  },
-  {
-    id: "pessoas",
-    label: "Pessoas",
-    icon: "👥",
-    minRole: "member",
-    component: PessoasApp,
   },
   {
     id: "chat",
