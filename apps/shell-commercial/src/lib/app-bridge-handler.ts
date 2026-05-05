@@ -1,4 +1,4 @@
-import { BRIDGE_PROTOCOL } from "@aethereos/client";
+import { BRIDGE_PROTOCOL, METHOD_SCOPE_MAP } from "@aethereos/client";
 import type { CloudDrivers } from "./drivers";
 
 /**
@@ -45,6 +45,13 @@ export class AppBridgeHandler {
   /** Reference ao contentWindow do iframe que esta sendo servido. */
   readonly #iframeWindow: Window | null;
   #boundHandler: ((event: MessageEvent) => void) | null = null;
+  /**
+   * Sprint 23 MX126: cache de scopes concedidos. Carregado uma vez no
+   * handshake (ou no primeiro request) para evitar SELECT a cada metodo.
+   * null = ainda nao carregado.
+   */
+  #grantedScopes: ReadonlySet<string> | null = null;
+  #grantsLoadInflight: Promise<void> | null = null;
 
   constructor(
     drivers: CloudDrivers,
@@ -54,6 +61,46 @@ export class AppBridgeHandler {
     this.#drivers = drivers;
     this.#ctx = ctx;
     this.#iframeWindow = iframeWindow;
+  }
+
+  /**
+   * Pre-carrega grants do app no cache. Idempotente. Se ja estiver
+   * carregando, espera mesmo inflight. Sprint 23 MX126.
+   */
+  async loadGrants(): Promise<void> {
+    if (this.#grantedScopes !== null) return;
+    if (this.#grantsLoadInflight !== null) return this.#grantsLoadInflight;
+    this.#grantsLoadInflight = (async () => {
+      try {
+        const res = (await this.#drivers.data
+          .from("app_permission_grants")
+          .select("scope")
+          .eq("company_id", this.#ctx.companyId)
+          .eq("app_id", this.#ctx.appId)) as unknown as {
+          data: Array<{ scope: string }> | null;
+          error: { message: string } | null;
+        };
+        if (res.error !== null) {
+          // Em caso de erro, mantem grants vazios — fail-closed.
+          this.#grantedScopes = new Set();
+          return;
+        }
+        // R14: auth.read sempre concedido implicitamente (BASE_SCOPE).
+        const set = new Set<string>(["auth.read"]);
+        for (const r of res.data ?? []) set.add(r.scope);
+        this.#grantedScopes = set;
+      } catch {
+        this.#grantedScopes = new Set(["auth.read"]);
+      } finally {
+        this.#grantsLoadInflight = null;
+      }
+    })();
+    return this.#grantsLoadInflight;
+  }
+
+  /** Test/debug helper: retorna o set atual de scopes em cache. */
+  cachedGrants(): ReadonlySet<string> | null {
+    return this.#grantedScopes;
   }
 
   /** Comeca a escutar mensagens postMessage. */
@@ -101,12 +148,30 @@ export class AppBridgeHandler {
     if (data === null || typeof data !== "object") return;
 
     if (data.type === BRIDGE_PROTOCOL.TYPE_HANDSHAKE) {
+      // Sprint 23 MX126: pre-carrega grants no handshake para evitar
+      // SELECT na primeira chamada.
+      void this.loadGrants();
       this.#sendHandshakeAck(event.source);
       return;
     }
 
     if (data.type !== BRIDGE_PROTOCOL.TYPE_REQUEST) return;
     const req = data as RequestMessage;
+
+    // Sprint 23 MX126: valida permissao antes de executar.
+    const required = METHOD_SCOPE_MAP[req.method];
+    if (required !== undefined) {
+      // Garante grants carregados (cache lazy).
+      await this.loadGrants();
+      const granted = this.#grantedScopes ?? new Set<string>();
+      if (!granted.has(required)) {
+        this.#sendResponse(event.source, req.requestId, false, undefined, {
+          code: "PERMISSION_DENIED",
+          message: `App ${this.#ctx.appId} nao tem permissao ${required} (metodo ${req.method})`,
+        });
+        return;
+      }
+    }
 
     try {
       const result = await this.#executeMethod(req.method, req.params);

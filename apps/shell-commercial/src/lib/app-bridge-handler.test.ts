@@ -86,7 +86,11 @@ function makeMockDrivers(): {
 
   function mkBuilder(table: string, defaultData: unknown[] = []) {
     const chain: string[] = [];
-    const builder = {
+    const resolveQuery = () => {
+      fromCalls.push({ table, chain: [...chain] });
+      return { data: defaultData, error: null };
+    };
+    const builder: Record<string, unknown> = {
       select: vi.fn(() => {
         chain.push("select");
         return builder;
@@ -101,8 +105,7 @@ function makeMockDrivers(): {
       }),
       limit: vi.fn(() => {
         chain.push("limit");
-        fromCalls.push({ table, chain: [...chain] });
-        return Promise.resolve({ data: defaultData, error: null });
+        return Promise.resolve(resolveQuery());
       }),
       maybeSingle: vi.fn(() => {
         fromCalls.push({ table, chain: [...chain, "maybeSingle"] });
@@ -119,6 +122,10 @@ function makeMockDrivers(): {
         inserts.push({ table, row });
         return Promise.resolve({ error: null });
       }),
+      // Sprint 23 MX126: builder thenable — Supabase pattern. Necessario
+      // para queries que terminam em .eq() sem .limit() (ex: grants lookup).
+      then: (resolve: (v: unknown) => void, reject: (e: unknown) => void) =>
+        Promise.resolve(resolveQuery()).then(resolve, reject),
     };
     return builder;
   }
@@ -152,6 +159,15 @@ function makeMockDrivers(): {
             },
           ],
           notifications: [],
+          // Sprint 23 MX126: grants p/ os scopes que os testes exercem.
+          // PERMISSION_DENIED tests sobrescrevem este seed via prop.
+          app_permission_grants: [
+            { scope: "auth.read" },
+            { scope: "drive.read" },
+            { scope: "people.read" },
+            { scope: "notifications.send" },
+            { scope: "theme.read" },
+          ],
         };
         return mkBuilder(table, seedByTable[table] ?? []);
       }),
@@ -330,6 +346,41 @@ describe("AppBridgeHandler", () => {
       event: "theme.changed",
       data: { theme: "light" },
     });
+  });
+
+  it("Sprint 23 MX126: request sem grant retorna PERMISSION_DENIED", async () => {
+    // Pre-popula cache com grants restritos (sem people.write).
+    await handler.loadGrants();
+    env.fireMessage(
+      {
+        type: BRIDGE_PROTOCOL.TYPE_REQUEST,
+        requestId: "req-perm",
+        method: "people.create",
+        params: { data: { fullName: "X" } },
+      },
+      iframe.win,
+    );
+    await new Promise((r) => setTimeout(r, 0));
+    const resp = iframe.posted[0]?.data as {
+      success: boolean;
+      error?: { code: string; message: string };
+    };
+    expect(resp.success).toBe(false);
+    expect(resp.error?.code).toBe("PERMISSION_DENIED");
+    expect(resp.error?.message).toMatch(/people\.write/);
+  });
+
+  it("Sprint 23 MX126: HANDSHAKE pre-carrega grants no cache", async () => {
+    expect(handler.cachedGrants()).toBeNull();
+    env.fireMessage(
+      { type: BRIDGE_PROTOCOL.TYPE_HANDSHAKE, version: "1.0.0" },
+      iframe.win,
+    );
+    await new Promise((r) => setTimeout(r, 5));
+    const cache = handler.cachedGrants();
+    expect(cache).not.toBeNull();
+    expect(cache?.has("auth.read")).toBe(true);
+    expect(cache?.has("drive.read")).toBe(true);
   });
 
   it("stop: para de responder a mensagens", async () => {
