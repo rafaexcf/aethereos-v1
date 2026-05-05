@@ -27,6 +27,20 @@ Auditorias pré-staging (Sprint 20):
 - **[CODE_QUALITY_AUDIT.md](./CODE_QUALITY_AUDIT.md)** — TS strict, deps, drivers, testes
 - **[KNOWN_LIMITATIONS.md](./KNOWN_LIMITATIONS.md)** — 7 KLs com status taxonomia
 
+Compliance e governança (Sprint 31):
+
+- **[LICENSE](./LICENSE)** — BUSL-1.1 (Camada 0) + proprietária (Camadas 1/2)
+- **[CONTRIBUTING.md](./CONTRIBUTING.md)** — fluxo de PR, code-review checklist
+- **[SECURITY.md](./SECURITY.md)** — disclosure responsável, security@aethereos.io
+- **[CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)** — Contributor Covenant v2.1
+- **[BRAND_POLICY.md](./BRAND_POLICY.md)** — uso do nome, logo e cores oficiais
+- **[PRIVACY_POLICY.md](./PRIVACY_POLICY.md)** — LGPD art. 18, retenção, direitos do titular
+
+Eval & instrumentação (Sprint 31):
+
+- **[docs/copilot-eval-dataset.json](./docs/copilot-eval-dataset.json)** — seed de 50 queries (rag/proposal/direct/decline). Para validar Gate 4 da Fase 1, expandir para 500+ queries com uso real ao longo de 30 dias de dogfood.
+- **[docs/runbooks/auto-deploy.md](./docs/runbooks/auto-deploy.md)** — Vercel auto-deploy + Supabase migration flow
+
 ## Estrutura
 
 ```
