@@ -733,63 +733,56 @@ export function TabColaboradores() {
       pushToast("Sessão indisponível", "error");
       return;
     }
+    // Sprint 27 MX144: invite real via Edge Function /functions/v1/invite-member.
+    // Edge usa service_role pra criar user em auth.users + insert membership +
+    // emitir SCP event. Browser não tem permissão pra auth.admin.
     try {
-      // Tenta convite via Auth admin (geralmente nao disponivel no client com
-      // anon key). Se falhar, registra apenas o INSERT como pending.
-      let invitedUserId: string | null = null;
-      try {
-        const client = drivers.data.getClient();
-        const adminClient = client.auth as unknown as {
-          admin?: {
-            inviteUserByEmail?: (email: string) => Promise<{
-              data: { user: { id: string } | null } | null;
-              error: unknown;
-            }>;
-          };
-        };
-        const inviteFn = adminClient.admin?.inviteUserByEmail;
-        if (typeof inviteFn === "function") {
-          const inviteRes = await inviteFn(form.email);
-          if (
-            (inviteRes.error === null || inviteRes.error === undefined) &&
-            inviteRes.data?.user
-          ) {
-            invitedUserId = inviteRes.data.user.id;
-          }
-        }
-      } catch {
-        // ignore — fallback a apenas registrar membership como pending
-      }
-
-      if (invitedUserId === null) {
-        pushToast(
-          "Convite registrado (envio de email indisponível neste contexto)",
-          "info",
-        );
-        // Sem invitedUserId nao podemos criar membership (FK exige auth.users).
-        // Apenas notificamos que o registro fica pendente de processamento via
-        // Edge Function/admin.
-        setInviteOpen(false);
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as
+        | string
+        | undefined;
+      if (supabaseUrl === undefined || supabaseUrl === "") {
+        pushToast("Sessão sem URL Supabase", "error");
         return;
       }
-
-      const insertRes = (await drivers.data.from("tenant_memberships").insert({
-        user_id: invitedUserId,
-        company_id: activeCompanyId,
-        role: form.role,
-        status: "pending",
-        invited_by: userId,
-      })) as unknown as { error: unknown };
-      if (insertRes.error !== null && insertRes.error !== undefined) {
-        pushToast("Não foi possível registrar membership", "error");
+      const client = drivers.data.getClient();
+      const {
+        data: { session },
+      } = await client.auth.getSession();
+      const accessToken = session?.access_token ?? null;
+      if (accessToken === null) {
+        pushToast("Sessão expirada — faça login novamente", "error");
         return;
       }
-
-      pushToast(`Convite enviado para ${form.email}`, "success");
+      const res = await fetch(`${supabaseUrl}/functions/v1/invite-member`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          email: form.email,
+          role: form.role,
+          full_name: form.fullName ?? "",
+        }),
+      });
+      const json = (await res.json()) as {
+        success?: boolean;
+        message?: string;
+        error?: string;
+      };
+      if (!res.ok || json.success !== true) {
+        pushToast(json.error ?? "Convite falhou", "error");
+        return;
+      }
+      pushToast(
+        json.message ?? `Convite enviado para ${form.email}`,
+        "success",
+      );
       setInviteOpen(false);
       void loadMembers();
-    } catch {
-      pushToast("Erro ao enviar convite", "error");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erro ao enviar convite";
+      pushToast(msg, "error");
     }
   }
 
