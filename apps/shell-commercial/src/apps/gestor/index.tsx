@@ -57,6 +57,7 @@ import { TabCargosHierarquia } from "./tabs/CargosHierarquia";
 import { TabDepartamentos } from "./tabs/Departamentos";
 import { TabGrupos } from "./tabs/Grupos";
 import { TabPerfisAcesso } from "./tabs/PerfisAcesso";
+import { TabPermissoesEfetivas } from "./tabs/PermissoesEfetivas";
 import { TabRegrasApp } from "./tabs/RegrasApp";
 import { TabHorariosAcesso } from "./tabs/HorariosAcesso";
 import { TabRegrasDistribuicao } from "./tabs/RegrasDistribuicao";
@@ -123,6 +124,11 @@ const NAV_SECTIONS: {
     items: [
       { id: "perfis-acesso", label: "Perfis de Acesso", icon: BadgeCheck },
       { id: "regras-app", label: "Regras por App", icon: Settings2 },
+      {
+        id: "permissoes-efetivas",
+        label: "Permissões Efetivas",
+        icon: BadgeCheck,
+      },
       { id: "horarios-acesso", label: "Horários de Acesso", icon: Calendar },
     ],
   },
@@ -213,6 +219,7 @@ const TAB_LABELS: Record<GestorTabId, string> = {
   "perfis-acesso": "Perfis de Acesso",
   "regras-cargo": "Regras por Cargo",
   "regras-app": "Regras por App",
+  "permissoes-efetivas": "Permissões Efetivas",
   "horarios-acesso": "Horários de Acesso",
   aplicativos: "Apps Instalados",
   "regras-distribuicao": "Regras de Distribuição",
@@ -3015,6 +3022,7 @@ export function GestorApp() {
             {active === "perfis-acesso" && <TabPerfisAcesso />}
             {active === "regras-cargo" && <TabPerfisAcesso />}
             {active === "regras-app" && <TabRegrasApp />}
+            {active === "permissoes-efetivas" && <TabPermissoesEfetivas />}
             {active === "horarios-acesso" && <TabHorariosAcesso />}
             {/* Aplicativos */}
             {active === "aplicativos" && <TabAplicativos />}

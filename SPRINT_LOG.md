@@ -5,6 +5,64 @@ Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
 
 ---
 
+# Sprint 28 — Permissões Avançadas: Departamentos, Grupos, Regras de Apps
+
+Início: 2026-05-06
+Modelo: Claude Code (claude-opus-4-7-1m, Sprint 28 N=1, 2 agentes paralelos)
+Roadmap: `docs/sprint-prompts/SPRINT_28_PROMPT.md`
+
+## Origem
+
+Sprint 26 entregou fundação de tabelas (departments, groups, etc.) como
+scaffold. Sprint 28 alinha schema com o uso real, adiciona CRUD funcional,
+e introduz o motor de resolução de permissões efetivas (deny prevalece,
+owner/admin sempre veem).
+
+## Histórico de milestones (Sprint 28)
+
+| Milestone | Descrição                                                                                               | Commit  |
+| --------- | ------------------------------------------------------------------------------------------------------- | ------- |
+| MX150     | Migration alinhamento schema (drop+recreate company_roles + app_access_rules; ALTER tenant_memberships) | e440408 |
+| MX151     | TabDepartamentos CRUD real + associate members                                                          | (este)  |
+| MX152     | TabGrupos CRUD real + associate members (N:N)                                                           | (este)  |
+| MX153     | TabCargosHierarquia — 5 roles base + CRUD cargos custom                                                 | (este)  |
+| MX154     | TabRegrasApp — radios all/by-role/by-dept/by-group/blocked + sentinel `__all__`                         | (este)  |
+| MX155     | `lib/effective-permissions.ts` (pure fn, 9 unit tests) + TabPermissoesEfetivas                          | (este)  |
+| MX156     | SPRINT_LOG + gate final + deploy                                                                        | (este)  |
+
+## Arquitetura
+
+**Schema canônico (após MX150):**
+
+- `kernel.departments` (1:N), `kernel.department_members`
+- `kernel.groups` (N:N), `kernel.group_members`
+- `kernel.company_roles` (label custom + base_role CHECK)
+- `kernel.app_access_rules` (rule_type/rule_target/action allow|deny)
+- `kernel.tenant_memberships` ALTER ADD `department_id`, `custom_role_id`
+
+**Motor de resolução** (`lib/effective-permissions.ts`):
+
+- R12: owner/admin sempre veem (invariante)
+- R13: deny prevalece sobre allow
+- R14: sem regras → app visível pra todos
+- Sentinel `__all__` pra "Bloqueado total"
+- 9 unit tests cobrindo cada caso
+
+## Validações
+
+- TypeCheck: 26/26 ✓
+- Lint: 24/24 ✓
+- Unit tests effective-permissions: 9/9 ✓
+
+## Pendências fast-follow
+
+- Seed dev (3 deps + 2 grupos + 3 cargos custom + 2 rules)
+- Coluna "Departamento" + "Cargo custom" na lista TabColaboradores
+- Aplicar `useIsAppVisible` no Dock/Mesa/Launcher integrando rules
+- E2E tests específicos pra Gestor admin/non-admin
+
+---
+
 # Sprint 27 — Production Readiness: 8 bloqueadores resolvidos
 
 Início: 2026-05-05

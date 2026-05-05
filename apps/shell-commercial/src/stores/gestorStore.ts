@@ -16,6 +16,7 @@ export type GestorTabId =
   | "perfis-acesso"
   | "regras-cargo"
   | "regras-app"
+  | "permissoes-efetivas"
   | "horarios-acesso"
   // Aplicativos
   | "aplicativos"
