@@ -1,0 +1,45 @@
+{
+  "$schema": "https://aethereos.io/schemas/aethereos.app.schema.json",
+  "id": "demo-iframe",
+  "name": "Demo SDK",
+  "version": "1.0.0",
+  "description": "App de demonstracao do @aethereos/client SDK e App Bridge.",
+  "long_description": "Mini app iframe que valida o protocolo App Bridge end-to-end. Roda como pagina HTML estatica e usa postMessage para chamar metodos reais do shell (auth, drive, people, notifications, settings, theme).",
+  "developer": {
+    "name": "Aethereos",
+    "website": "https://aethereos.io"
+  },
+  "type": "native",
+  "category": "utilities",
+  "entry": {
+    "mode": "iframe",
+    "url": "/demo-iframe-app/index.html"
+  },
+  "icons": {
+    "lucide": "Puzzle"
+  },
+  "color": "#06b6d4",
+  "permissions": [
+    "auth.read",
+    "drive.read",
+    "people.read",
+    "notifications.send",
+    "settings.read",
+    "theme.read"
+  ],
+  "window": {
+    "defaultWidth": 720,
+    "defaultHeight": 600,
+    "resizable": true,
+    "maximizable": true
+  },
+  "pricing": {
+    "model": "free"
+  },
+  "security": {
+    "sandbox": true,
+    "allowedOrigins": []
+  },
+  "license": "BUSL-1.1",
+  "tags": ["demo", "sdk", "bridge", "iframe"]
+}

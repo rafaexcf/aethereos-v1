@@ -43,6 +43,12 @@ export {
   type ScopeDefinition,
 } from "./scopes.js";
 
+export {
+  AethereosManifestSchema,
+  parseManifest,
+  type AethereosManifest,
+} from "./manifest.js";
+
 export { AuthModule } from "./modules/auth.js";
 export { DriveModule } from "./modules/drive.js";
 export { PeopleModule } from "./modules/people.js";
