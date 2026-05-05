@@ -3,6 +3,7 @@ import {
   uuid,
   text,
   timestamp,
+  time,
   jsonb,
   bigserial,
   bigint,
@@ -667,3 +668,252 @@ export const companyContacts = kernelSchema.table(
 
 export type CompanyContact = typeof companyContacts.$inferSelect;
 export type NewCompanyContact = typeof companyContacts.$inferInsert;
+
+// ---------------------------------------------------------------------------
+// Sprint 26 — Departamentos, Grupos, Roles, Acessos, Settings, Alerts
+// ---------------------------------------------------------------------------
+
+export const departments = kernelSchema.table(
+  "departments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    managerUserId: uuid("manager_user_id"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("kernel_departments_company_idx").on(t.companyId, t.name),
+    index("kernel_departments_manager_idx").on(t.managerUserId),
+  ],
+);
+
+export type Department = typeof departments.$inferSelect;
+export type NewDepartment = typeof departments.$inferInsert;
+
+export const departmentMembers = kernelSchema.table(
+  "department_members",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    departmentId: uuid("department_id")
+      .notNull()
+      .references(() => departments.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull(),
+    joinedAt: timestamp("joined_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("kernel_department_members_company_idx").on(t.companyId),
+    index("kernel_department_members_dept_idx").on(t.departmentId),
+    index("kernel_department_members_user_idx").on(t.userId),
+    uniqueIndex("kernel_department_members_unique_idx").on(
+      t.departmentId,
+      t.userId,
+    ),
+  ],
+);
+
+export type DepartmentMember = typeof departmentMembers.$inferSelect;
+export type NewDepartmentMember = typeof departmentMembers.$inferInsert;
+
+export const groups = kernelSchema.table(
+  "groups",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    createdBy: uuid("created_by"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("kernel_groups_company_idx").on(t.companyId, t.name)],
+);
+
+export type Group = typeof groups.$inferSelect;
+export type NewGroup = typeof groups.$inferInsert;
+
+export const groupMembers = kernelSchema.table(
+  "group_members",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    groupId: uuid("group_id")
+      .notNull()
+      .references(() => groups.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull(),
+    joinedAt: timestamp("joined_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("kernel_group_members_company_idx").on(t.companyId),
+    index("kernel_group_members_group_idx").on(t.groupId),
+    index("kernel_group_members_user_idx").on(t.userId),
+    uniqueIndex("kernel_group_members_unique_idx").on(t.groupId, t.userId),
+  ],
+);
+
+export type GroupMember = typeof groupMembers.$inferSelect;
+export type NewGroupMember = typeof groupMembers.$inferInsert;
+
+export const companyRoles = kernelSchema.table(
+  "company_roles",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    label: text("label").notNull(),
+    mapsToRole: text("maps_to_role").notNull(),
+    defaultDepartmentId: uuid("default_department_id").references(
+      () => departments.id,
+      { onDelete: "set null" },
+    ),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("kernel_company_roles_company_idx").on(t.companyId, t.mapsToRole),
+    index("kernel_company_roles_default_dept_idx").on(t.defaultDepartmentId),
+  ],
+);
+
+export type CompanyRole = typeof companyRoles.$inferSelect;
+export type NewCompanyRole = typeof companyRoles.$inferInsert;
+
+export const appAccessRules = kernelSchema.table(
+  "app_access_rules",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    appId: text("app_id").notNull(),
+    ruleType: text("rule_type").notNull(),
+    ruleTarget: jsonb("rule_target").notNull().default([]),
+    allow: boolean("allow").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("kernel_app_access_rules_company_idx").on(t.companyId, t.appId),
+    uniqueIndex("kernel_app_access_rules_unique_idx").on(t.companyId, t.appId),
+  ],
+);
+
+export type AppAccessRule = typeof appAccessRules.$inferSelect;
+export type NewAppAccessRule = typeof appAccessRules.$inferInsert;
+
+export const accessSchedules = kernelSchema.table(
+  "access_schedules",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    scope: text("scope").notNull(),
+    scopeId: uuid("scope_id"),
+    weekdays: text("weekdays").array().notNull().default([]),
+    startTime: time("start_time"),
+    endTime: time("end_time"),
+    timezone: text("timezone").notNull().default("America/Sao_Paulo"),
+    allowEmergency: boolean("allow_emergency").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("kernel_access_schedules_company_idx").on(t.companyId, t.scope),
+    index("kernel_access_schedules_scope_id_idx").on(t.scopeId),
+  ],
+);
+
+export type AccessSchedule = typeof accessSchedules.$inferSelect;
+export type NewAccessSchedule = typeof accessSchedules.$inferInsert;
+
+export const companySettings = kernelSchema.table(
+  "company_settings",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    key: text("key").notNull(),
+    value: jsonb("value").notNull().default({}),
+    scope: text("scope").notNull().default("company"),
+    scopeId: uuid("scope_id"),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("kernel_company_settings_company_idx").on(t.companyId, t.key),
+    index("kernel_company_settings_scope_idx").on(
+      t.companyId,
+      t.scope,
+      t.scopeId,
+    ),
+    uniqueIndex("kernel_company_settings_unique_idx").on(
+      t.companyId,
+      t.key,
+      t.scope,
+      t.scopeId,
+    ),
+  ],
+);
+
+export type CompanySetting = typeof companySettings.$inferSelect;
+export type NewCompanySetting = typeof companySettings.$inferInsert;
+
+export const securityAlerts = kernelSchema.table(
+  "security_alerts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    userId: uuid("user_id"),
+    alertType: text("alert_type").notNull(),
+    severity: text("severity").notNull(),
+    payload: jsonb("payload").notNull().default({}),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("kernel_security_alerts_company_idx").on(t.companyId, t.createdAt),
+    index("kernel_security_alerts_severity_idx").on(
+      t.companyId,
+      t.severity,
+      t.createdAt,
+    ),
+    index("kernel_security_alerts_user_idx").on(t.userId, t.createdAt),
+  ],
+);
+
+export type SecurityAlert = typeof securityAlerts.$inferSelect;
+export type NewSecurityAlert = typeof securityAlerts.$inferInsert;

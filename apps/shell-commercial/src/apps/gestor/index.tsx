@@ -14,14 +14,11 @@ import {
   Cpu,
   HardDrive,
   ChevronRight,
-  UserPlus,
   Phone,
   BadgeCheck,
   Settings2,
   UserCheck,
   Package,
-  ArrowRight,
-  X,
   Calendar,
   ChevronDown,
   Search,
@@ -53,6 +50,34 @@ import { useGestorStore } from "../../stores/gestorStore";
 import type { GestorTabId } from "../../stores/gestorStore";
 import { useDrivers } from "../../lib/drivers-context";
 import { useSessionStore } from "../../stores/session";
+// Sprint 26 — redesign do Gestor: tabs novos do plano completo (paralelo).
+import { TabPainelGeral } from "./tabs/PainelGeral";
+import { TabColaboradores } from "./tabs/Colaboradores";
+import { TabCargosHierarquia } from "./tabs/CargosHierarquia";
+import { TabDepartamentos } from "./tabs/Departamentos";
+import { TabGrupos } from "./tabs/Grupos";
+import { TabPerfisAcesso } from "./tabs/PerfisAcesso";
+import { TabRegrasApp } from "./tabs/RegrasApp";
+import { TabHorariosAcesso } from "./tabs/HorariosAcesso";
+import { TabRegrasDistribuicao } from "./tabs/RegrasDistribuicao";
+import { TabConfigPorApp } from "./tabs/ConfigPorApp";
+import { TabLimitesUsoIA } from "./tabs/LimitesUsoIA";
+import { TabPermissoesIA } from "./tabs/PermissoesIA";
+import { TabHistoricoIA } from "./tabs/HistoricoIA";
+import { TabWebhooks } from "./tabs/Webhooks";
+import { TabApisExternas } from "./tabs/ApisExternas";
+import { TabConsumoLimites } from "./tabs/ConsumoLimites";
+import { TabHistoricoPagamentos } from "./tabs/HistoricoPagamentos";
+import { TabAutenticacao2FA } from "./tabs/Autenticacao2FA";
+import { TabSessoesAtivas } from "./tabs/SessoesAtivas";
+import { TabDispositivos } from "./tabs/Dispositivos";
+import { TabAlertasRisco } from "./tabs/AlertasRisco";
+import { TabAuditoriaLog } from "./tabs/AuditoriaLog";
+import { TabTrilhaAlteracoes } from "./tabs/TrilhaAlteracoes";
+import { TabExportarRelatorio } from "./tabs/ExportarRelatorio";
+import { TabLogoBranding } from "./tabs/LogoBranding";
+import { TabFusoIdioma } from "./tabs/FusoIdioma";
+import { TabLGPD } from "./tabs/LGPD";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -81,19 +106,98 @@ const NAV_SECTIONS: {
   items: { id: GestorTabId; label: string; icon: typeof BriefcaseBusiness }[];
 }[] = [
   {
-    label: "Workspace",
+    label: "Painel",
+    items: [{ id: "visao-geral", label: "Painel Geral", icon: LayoutGrid }],
+  },
+  {
+    label: "Pessoas & Equipe",
     items: [
-      { id: "aplicativos", label: "Aplicativos", icon: LayoutGrid },
-      { id: "integracoes", label: "Integrações", icon: Link2 },
-      { id: "ia", label: "Inteligência Artificial", icon: Bot },
+      { id: "colaboradores", label: "Colaboradores", icon: Users },
+      { id: "cargos-hierarquia", label: "Cargos & Hierarquia", icon: Network },
+      { id: "departamentos", label: "Departamentos", icon: Building2 },
+      { id: "grupos", label: "Grupos", icon: UserCheck },
     ],
   },
   {
-    label: "Organização",
+    label: "Permissões & Acessos",
     items: [
-      { id: "planos", label: "Planos", icon: CreditCard },
-      { id: "cadastros", label: "Cadastros", icon: ClipboardList },
-      { id: "usuarios", label: "Usuários", icon: Users },
+      { id: "perfis-acesso", label: "Perfis de Acesso", icon: BadgeCheck },
+      { id: "regras-app", label: "Regras por App", icon: Settings2 },
+      { id: "horarios-acesso", label: "Horários de Acesso", icon: Calendar },
+    ],
+  },
+  {
+    label: "Aplicativos",
+    items: [
+      { id: "aplicativos", label: "Apps Instalados", icon: Package },
+      {
+        id: "regras-distribuicao",
+        label: "Regras de Distribuição",
+        icon: ClipboardList,
+      },
+    ],
+  },
+  {
+    label: "Inteligência Artificial",
+    items: [
+      { id: "ia", label: "Provedor & Modelo", icon: Bot },
+      { id: "limites-uso-ia", label: "Limites de Uso", icon: Cpu },
+      { id: "permissoes-ia", label: "Permissões de IA", icon: BadgeCheck },
+      { id: "historico-ia", label: "Histórico & Custos", icon: HardDrive },
+    ],
+  },
+  {
+    label: "Integrações",
+    items: [
+      { id: "integracoes", label: "Conectores Ativos", icon: Link2 },
+      { id: "webhooks", label: "Webhooks", icon: Network },
+      { id: "apis-externas", label: "APIs Externas", icon: Settings2 },
+    ],
+  },
+  {
+    label: "Plano & Assinatura",
+    items: [
+      { id: "planos", label: "Plano Atual", icon: CreditCard },
+      { id: "consumo-limites", label: "Consumo & Limites", icon: Cpu },
+      {
+        id: "historico-pagamentos",
+        label: "Histórico de Pagamentos",
+        icon: FileText,
+      },
+    ],
+  },
+  {
+    label: "Segurança",
+    items: [
+      { id: "autenticacao-2fa", label: "Autenticação 2FA", icon: BadgeCheck },
+      { id: "sessoes-ativas", label: "Sessões Ativas", icon: Network },
+      { id: "dispositivos", label: "Dispositivos", icon: HardDrive },
+      { id: "alertas-risco", label: "Alertas de Risco", icon: Settings2 },
+    ],
+  },
+  {
+    label: "Auditoria",
+    items: [
+      { id: "auditoria-log", label: "Log de Ações", icon: ClipboardList },
+      {
+        id: "trilha-alteracoes",
+        label: "Trilha de Alterações",
+        icon: FileText,
+      },
+      {
+        id: "exportar-relatorio",
+        label: "Exportar Relatório",
+        icon: FileText,
+      },
+    ],
+  },
+  {
+    label: "Configurações Gerais",
+    items: [
+      { id: "cadastros", label: "Dados da Empresa", icon: Building2 },
+      { id: "logo-branding", label: "Logo & Branding", icon: Building2 },
+      { id: "fuso-idioma", label: "Fuso Horário & Idioma", icon: Calendar },
+      { id: "lgpd", label: "LGPD & Privacidade", icon: BadgeCheck },
     ],
   },
 ];
@@ -101,13 +205,40 @@ const NAV_SECTIONS: {
 const ALL_NAV_ITEMS = NAV_SECTIONS.flatMap((s) => s.items);
 
 const TAB_LABELS: Record<GestorTabId, string> = {
-  "visao-geral": "Visão Geral",
-  aplicativos: "Aplicativos",
-  integracoes: "Integrações",
-  ia: "Inteligência Artificial",
-  planos: "Planos",
-  cadastros: "Cadastros",
-  usuarios: "Usuários",
+  "visao-geral": "Painel Geral",
+  colaboradores: "Colaboradores",
+  "cargos-hierarquia": "Cargos & Hierarquia",
+  departamentos: "Departamentos",
+  grupos: "Grupos",
+  "perfis-acesso": "Perfis de Acesso",
+  "regras-cargo": "Regras por Cargo",
+  "regras-app": "Regras por App",
+  "horarios-acesso": "Horários de Acesso",
+  aplicativos: "Apps Instalados",
+  "regras-distribuicao": "Regras de Distribuição",
+  "config-por-app": "Configurações por App",
+  ia: "Provedor & Modelo",
+  "limites-uso-ia": "Limites de Uso de IA",
+  "permissoes-ia": "Permissões de IA",
+  "historico-ia": "Histórico & Custos",
+  integracoes: "Conectores Ativos",
+  webhooks: "Webhooks",
+  "apis-externas": "APIs Externas",
+  planos: "Plano Atual",
+  "consumo-limites": "Consumo & Limites",
+  "historico-pagamentos": "Histórico de Pagamentos",
+  "autenticacao-2fa": "Autenticação 2FA",
+  "sessoes-ativas": "Sessões Ativas",
+  dispositivos: "Dispositivos",
+  "alertas-risco": "Alertas de Risco",
+  "auditoria-log": "Log de Ações",
+  "trilha-alteracoes": "Trilha de Alterações",
+  "exportar-relatorio": "Exportar Relatório",
+  cadastros: "Dados da Empresa",
+  "logo-branding": "Logo & Branding",
+  "fuso-idioma": "Fuso Horário & Idioma",
+  lgpd: "LGPD & Privacidade",
+  usuarios: "Colaboradores",
 };
 
 const CADASTRO_ITEMS: {
@@ -142,42 +273,6 @@ const LLM_MODELS = [
   { value: "llama-3.3-70b", label: "Llama 3.3 70B", provider: "Meta" },
   { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro", provider: "Google" },
   { value: "deepseek-v3", label: "DeepSeek V3", provider: "DeepSeek" },
-];
-
-const MOCK_USERS = [
-  {
-    id: "1",
-    name: "Rafael Franco",
-    email: "rafael@empresa.com",
-    role: "Admin",
-    status: "ativo" as const,
-    lastSeen: "Agora",
-    initials: "RF",
-    color: "#6366f1",
-    joinedAt: "Jan 2024",
-  },
-  {
-    id: "2",
-    name: "Ana Costa",
-    email: "ana@empresa.com",
-    role: "Membro",
-    status: "ativo" as const,
-    lastSeen: "2h atrás",
-    initials: "AC",
-    color: "#10b981",
-    joinedAt: "Mar 2024",
-  },
-  {
-    id: "3",
-    name: "Carlos Melo",
-    email: "carlos@empresa.com",
-    role: "Membro",
-    status: "inativo" as const,
-    lastSeen: "5 dias atrás",
-    initials: "CM",
-    color: "#f59e0b",
-    joinedAt: "Jun 2024",
-  },
 ];
 
 const INTEGRATIONS = [
@@ -386,46 +481,6 @@ const PLANS = [
 const CURRENT_PLAN_ID = "pro";
 
 // ─── Design primitives ────────────────────────────────────────────────────────
-
-const TILE_BASE: React.CSSProperties = {
-  background: "rgba(255,255,255,0.04)",
-  border: "1px solid rgba(255,255,255,0.07)",
-  borderRadius: 14,
-  padding: 16,
-  display: "flex",
-  flexDirection: "column",
-  minHeight: 0,
-  overflow: "hidden",
-};
-
-function TileIcon({
-  Icon,
-  color,
-  bg,
-  size = 30,
-}: {
-  Icon: typeof BriefcaseBusiness;
-  color: string;
-  bg: string;
-  size?: number;
-}) {
-  return (
-    <div
-      style={{
-        width: size,
-        height: size,
-        borderRadius: 8,
-        background: bg,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
-      }}
-    >
-      <Icon size={size * 0.5} style={{ color }} strokeWidth={1.7} />
-    </div>
-  );
-}
 
 function ContentHeader({
   icon: Icon,
@@ -884,466 +939,6 @@ function ComingSoonSection({
       >
         Em breve
       </span>
-    </div>
-  );
-}
-
-// ─── Tab: Visão Geral (bento grid) ───────────────────────────────────────────
-
-function TabVisaoGeral({ onSelect }: { onSelect: (id: GestorTabId) => void }) {
-  const appsCount = APP_REGISTRY.filter((a) => a.id !== "mesa").length;
-  const integsConnected = INTEGRATIONS.filter((i) => i.defaultEnabled).length;
-  const currentPlan = PLANS.find((p) => p.id === CURRENT_PLAN_ID) ?? PLANS[0];
-  const activeUsers = MOCK_USERS.filter((u) => u.status === "ativo").length;
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* Hero */}
-      <div
-        style={{
-          padding: "24px 28px",
-          borderRadius: 16,
-          background:
-            "linear-gradient(135deg, rgba(16,185,129,0.16), rgba(5,150,105,0.06))",
-          border: "1px solid rgba(16,185,129,0.20)",
-        }}
-      >
-        <h1
-          style={{
-            fontSize: 22,
-            fontWeight: 700,
-            color: "var(--text-primary)",
-            letterSpacing: "-0.03em",
-            fontFamily: "var(--font-display)",
-            marginBottom: 6,
-            lineHeight: 1.2,
-          }}
-        >
-          Painel do Gestor
-        </h1>
-        <p
-          style={{
-            fontSize: 13,
-            color: "var(--text-secondary)",
-            lineHeight: 1.55,
-            maxWidth: 620,
-          }}
-        >
-          Visão consolidada do workspace — apps, integrações, planos, cadastro e
-          equipe.
-        </p>
-      </div>
-
-      {/* Bento grid */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gridAutoRows: "minmax(132px, auto)",
-          gap: 14,
-        }}
-      >
-        {/* ── Aplicativos (2×2) ── */}
-        <div
-          style={{
-            ...TILE_BASE,
-            gridColumn: "1 / span 2",
-            gridRow: "1 / span 2",
-            padding: 20,
-            background:
-              "linear-gradient(135deg, rgba(16,185,129,0.12), rgba(255,255,255,0.04))",
-            borderColor: "rgba(16,185,129,0.20)",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-            <TileIcon
-              Icon={LayoutGrid}
-              color="#34d399"
-              bg="rgba(16,185,129,0.18)"
-              size={44}
-            />
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <p
-                style={{
-                  fontSize: 28,
-                  fontWeight: 700,
-                  color: "var(--text-primary)",
-                  fontFamily: "var(--font-display)",
-                  letterSpacing: "-0.03em",
-                  lineHeight: 1,
-                }}
-              >
-                {appsCount}
-              </p>
-              <p
-                style={{
-                  fontSize: 12,
-                  color: "var(--text-tertiary)",
-                  marginTop: 3,
-                }}
-              >
-                apps instalados
-              </p>
-            </div>
-          </div>
-          <p
-            style={{
-              fontSize: 12,
-              color: "var(--text-secondary)",
-              lineHeight: 1.55,
-              marginTop: 16,
-              flex: 1,
-            }}
-          >
-            Gerencie os módulos instalados, configure cada app e controle
-            permissões de acesso por função.
-          </p>
-          <button
-            type="button"
-            onClick={() => onSelect("aplicativos")}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              background: "rgba(16,185,129,0.18)",
-              border: "1px solid rgba(16,185,129,0.32)",
-              borderRadius: 8,
-              padding: "8px 14px",
-              fontSize: 12,
-              fontWeight: 500,
-              color: "#6ee7b7",
-              cursor: "pointer",
-              marginTop: 12,
-              transition: "background 120ms ease",
-              alignSelf: "flex-start",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(16,185,129,0.28)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(16,185,129,0.18)";
-            }}
-          >
-            Gerenciar apps
-            <ArrowRight size={12} strokeWidth={2} />
-          </button>
-        </div>
-
-        {/* ── Integrações (1×1) ── */}
-        <div style={{ ...TILE_BASE, padding: 18 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: 12,
-            }}
-          >
-            <TileIcon
-              Icon={Link2}
-              color="#fbbf24"
-              bg="rgba(245,158,11,0.18)"
-              size={30}
-            />
-            <Badge variant={integsConnected > 0 ? "success" : "neutral"}>
-              {integsConnected} ativas
-            </Badge>
-          </div>
-          <p
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: "var(--text-primary)",
-              marginBottom: 4,
-            }}
-          >
-            Integrações
-          </p>
-          <p
-            style={{
-              fontSize: 11,
-              color: "var(--text-tertiary)",
-              lineHeight: 1.5,
-              flex: 1,
-            }}
-          >
-            {INTEGRATIONS.length} disponíveis
-          </p>
-          <button
-            type="button"
-            onClick={() => onSelect("integracoes")}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-              marginTop: 10,
-              background: "transparent",
-              border: "none",
-              padding: 0,
-              fontSize: 11,
-              fontWeight: 500,
-              color: "var(--text-tertiary)",
-              cursor: "pointer",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = "var(--text-primary)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = "var(--text-tertiary)";
-            }}
-          >
-            Ver todas <ChevronRight size={11} strokeWidth={2} />
-          </button>
-        </div>
-
-        {/* ── Plano (1×1) ── */}
-        <div
-          style={{
-            ...TILE_BASE,
-            padding: 18,
-            background: `${currentPlan.accentBg}`,
-            borderColor: currentPlan.accentBorder,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: 12,
-            }}
-          >
-            <TileIcon
-              Icon={CreditCard}
-              color={currentPlan.color}
-              bg={`${currentPlan.color}28`}
-              size={30}
-            />
-            <Badge variant="warning">Trial</Badge>
-          </div>
-          <p
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: "var(--text-primary)",
-              marginBottom: 2,
-            }}
-          >
-            Plano {currentPlan.name}
-          </p>
-          <p
-            style={{
-              fontSize: 20,
-              fontWeight: 700,
-              color: currentPlan.color,
-              fontFamily: "var(--font-display)",
-              letterSpacing: "-0.02em",
-            }}
-          >
-            {currentPlan.price}
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 400,
-                color: "var(--text-tertiary)",
-              }}
-            >
-              {currentPlan.period}
-            </span>
-          </p>
-          <button
-            type="button"
-            onClick={() => onSelect("planos")}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-              marginTop: "auto",
-              background: "transparent",
-              border: "none",
-              padding: 0,
-              fontSize: 11,
-              fontWeight: 500,
-              color: "var(--text-tertiary)",
-              cursor: "pointer",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = "var(--text-primary)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = "var(--text-tertiary)";
-            }}
-          >
-            Gerenciar plano <ChevronRight size={11} strokeWidth={2} />
-          </button>
-        </div>
-
-        {/* ── Cadastros (2×1) ── */}
-        <div style={{ ...TILE_BASE, gridColumn: "1 / span 2", padding: 18 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              marginBottom: 12,
-            }}
-          >
-            <TileIcon
-              Icon={ClipboardList}
-              color="#22d3ee"
-              bg="rgba(6,182,212,0.18)"
-              size={30}
-            />
-            <div>
-              <p
-                style={{
-                  fontSize: 13,
-                  fontWeight: 600,
-                  color: "var(--text-primary)",
-                }}
-              >
-                Cadastros
-              </p>
-              <p style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
-                Ficha da empresa, sócios, documentos
-              </p>
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {CADASTRO_ITEMS.slice(0, 4).map((item) => {
-              const Icon = item.icon;
-              return (
-                <span
-                  key={item.id}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 4,
-                    padding: "3px 8px",
-                    borderRadius: 6,
-                    background: "rgba(255,255,255,0.05)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    fontSize: 11,
-                    color: "var(--text-secondary)",
-                  }}
-                >
-                  <Icon size={10} strokeWidth={1.8} />
-                  {item.label}
-                </span>
-              );
-            })}
-          </div>
-          <button
-            type="button"
-            onClick={() => onSelect("cadastros")}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-              paddingTop: 12,
-              background: "transparent",
-              border: "none",
-              padding: 0,
-              fontSize: 11,
-              fontWeight: 500,
-              color: "var(--text-tertiary)",
-              cursor: "pointer",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = "var(--text-primary)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = "var(--text-tertiary)";
-            }}
-          >
-            Ver cadastros <ChevronRight size={11} strokeWidth={2} />
-          </button>
-        </div>
-
-        {/* ── Usuários (2×1) ── */}
-        <div style={{ ...TILE_BASE, gridColumn: "3 / span 2", padding: 18 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: 12,
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <TileIcon
-                Icon={Users}
-                color="#34d399"
-                bg="rgba(16,185,129,0.18)"
-                size={30}
-              />
-              <div>
-                <p
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: "var(--text-primary)",
-                  }}
-                >
-                  Usuários
-                </p>
-                <p style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
-                  {activeUsers} ativos · {MOCK_USERS.length} total
-                </p>
-              </div>
-            </div>
-            <Badge variant="success">{activeUsers} online</Badge>
-          </div>
-          <div style={{ display: "flex", gap: -6 }}>
-            {MOCK_USERS.map((u) => (
-              <div
-                key={u.id}
-                title={u.name}
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: "50%",
-                  background: `${u.color}28`,
-                  border: `1.5px solid ${u.color}55`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginLeft: -4,
-                }}
-              >
-                <span style={{ fontSize: 9, fontWeight: 700, color: u.color }}>
-                  {u.initials}
-                </span>
-              </div>
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={() => onSelect("usuarios")}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-              paddingTop: 12,
-              background: "transparent",
-              border: "none",
-              padding: 0,
-              fontSize: 11,
-              fontWeight: 500,
-              color: "var(--text-tertiary)",
-              cursor: "pointer",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = "var(--text-primary)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = "var(--text-tertiary)";
-            }}
-          >
-            Gerenciar equipe <ChevronRight size={11} strokeWidth={2} />
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
@@ -2822,262 +2417,6 @@ function TabCadastros({
   );
 }
 
-// ─── Tab: Usuários ────────────────────────────────────────────────────────────
-
-function TabUsuarios() {
-  const [inviteOpen, setInviteOpen] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState("");
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <ContentHeader
-        icon={Users}
-        iconBg="rgba(16,185,129,0.22)"
-        iconColor="#34d399"
-        title="Usuários"
-        subtitle={`${MOCK_USERS.length} membros com acesso ao workspace`}
-        right={
-          <button
-            type="button"
-            onClick={() => setInviteOpen(true)}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "8px 14px",
-              borderRadius: 8,
-              background: "rgba(99,102,241,0.16)",
-              border: "1px solid rgba(99,102,241,0.30)",
-              color: "#818cf8",
-              fontSize: 13,
-              fontWeight: 500,
-              cursor: "pointer",
-              transition: "background 150ms ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(99,102,241,0.24)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(99,102,241,0.16)";
-            }}
-          >
-            <UserPlus size={14} strokeWidth={2} />
-            Convidar
-          </button>
-        }
-      />
-
-      <div>
-        <SectionLabel>Membros</SectionLabel>
-        <SettingGroup>
-          {MOCK_USERS.map((user, i) => (
-            <SettingRow
-              key={user.id}
-              last={i === MOCK_USERS.length - 1}
-              label={user.name}
-              sublabel={user.email}
-              icon={
-                <div
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: "50%",
-                    background: `${user.color}28`,
-                    border: `1px solid ${user.color}44`,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0,
-                  }}
-                >
-                  <span
-                    style={{ fontSize: 11, fontWeight: 700, color: user.color }}
-                  >
-                    {user.initials}
-                  </span>
-                </div>
-              }
-            >
-              <span
-                style={{
-                  fontSize: 11,
-                  color: "var(--text-tertiary)",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {user.lastSeen}
-              </span>
-              <Badge variant={user.status === "ativo" ? "success" : "neutral"}>
-                {user.role}
-              </Badge>
-            </SettingRow>
-          ))}
-        </SettingGroup>
-      </div>
-
-      <div>
-        <SectionLabel>Acessos pendentes</SectionLabel>
-        <div
-          style={{
-            borderRadius: 12,
-            background: "rgba(255,255,255,0.02)",
-            border: "1px dashed rgba(255,255,255,0.07)",
-            padding: "20px 16px",
-            textAlign: "center",
-          }}
-        >
-          <p style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
-            Nenhum convite pendente
-          </p>
-        </div>
-      </div>
-
-      {inviteOpen && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 9000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "rgba(0,0,0,0.55)",
-            backdropFilter: "blur(6px)",
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setInviteOpen(false);
-          }}
-        >
-          <div
-            style={{
-              width: 400,
-              borderRadius: 16,
-              background: "var(--bg-elevated)",
-              border: "1px solid rgba(255,255,255,0.10)",
-              boxShadow: "var(--shadow-lg)",
-              padding: "24px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                marginBottom: 20,
-              }}
-            >
-              <h2
-                style={{
-                  fontSize: 17,
-                  fontWeight: 700,
-                  color: "var(--text-primary)",
-                  fontFamily: "var(--font-display)",
-                  letterSpacing: "-0.02em",
-                }}
-              >
-                Convidar membro
-              </h2>
-              <button
-                type="button"
-                onClick={() => setInviteOpen(false)}
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: "50%",
-                  border: "1px solid rgba(255,255,255,0.10)",
-                  background: "transparent",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  color: "var(--text-tertiary)",
-                }}
-              >
-                <X size={14} />
-              </button>
-            </div>
-            <p
-              style={{
-                fontSize: 13,
-                color: "var(--text-secondary)",
-                marginBottom: 16,
-              }}
-            >
-              O convidado receberá um email com o link de acesso ao workspace.
-            </p>
-            <label style={{ display: "block", marginBottom: 6 }}>
-              <span
-                style={{
-                  fontSize: 12,
-                  color: "var(--text-secondary)",
-                  fontWeight: 500,
-                }}
-              >
-                Email do convidado
-              </span>
-            </label>
-            <input
-              type="email"
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-              placeholder="nome@empresa.com"
-              style={{
-                width: "100%",
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.10)",
-                borderRadius: 8,
-                padding: "9px 12px",
-                fontSize: 13,
-                color: "var(--text-primary)",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
-            />
-            <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
-              <button
-                type="button"
-                onClick={() => setInviteOpen(false)}
-                style={{
-                  flex: 1,
-                  padding: "9px 0",
-                  borderRadius: 8,
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.10)",
-                  color: "var(--text-secondary)",
-                  fontSize: 13,
-                  cursor: "pointer",
-                }}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setInviteOpen(false);
-                  setInviteEmail("");
-                }}
-                style={{
-                  flex: 1,
-                  padding: "9px 0",
-                  borderRadius: 8,
-                  background: "rgba(99,102,241,0.20)",
-                  border: "1px solid rgba(99,102,241,0.35)",
-                  color: "#818cf8",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                Enviar convite
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 
 const ASIDE_STYLE: React.CSSProperties = {
@@ -3565,12 +2904,49 @@ export function GestorApp() {
               </span>
             </nav>
 
-            {active === "visao-geral" && <TabVisaoGeral onSelect={setActive} />}
+            {/* Painel */}
+            {active === "visao-geral" && <TabPainelGeral />}
+            {/* Pessoas & Equipe */}
+            {active === "colaboradores" && <TabColaboradores />}
+            {active === "usuarios" && <TabColaboradores />}
+            {active === "cargos-hierarquia" && <TabCargosHierarquia />}
+            {active === "departamentos" && <TabDepartamentos />}
+            {active === "grupos" && <TabGrupos />}
+            {/* Permissões & Acessos */}
+            {active === "perfis-acesso" && <TabPerfisAcesso />}
+            {active === "regras-cargo" && <TabPerfisAcesso />}
+            {active === "regras-app" && <TabRegrasApp />}
+            {active === "horarios-acesso" && <TabHorariosAcesso />}
+            {/* Aplicativos */}
             {active === "aplicativos" && <TabAplicativos />}
-            {active === "integracoes" && <TabIntegracoes />}
+            {active === "regras-distribuicao" && <TabRegrasDistribuicao />}
+            {active === "config-por-app" && <TabConfigPorApp />}
+            {/* Inteligência Artificial */}
             {active === "ia" && <TabIA />}
+            {active === "limites-uso-ia" && <TabLimitesUsoIA />}
+            {active === "permissoes-ia" && <TabPermissoesIA />}
+            {active === "historico-ia" && <TabHistoricoIA />}
+            {/* Integrações */}
+            {active === "integracoes" && <TabIntegracoes />}
+            {active === "webhooks" && <TabWebhooks />}
+            {active === "apis-externas" && <TabApisExternas />}
+            {/* Plano & Assinatura */}
             {active === "planos" && <TabPlanos />}
-            {active === "usuarios" && <TabUsuarios />}
+            {active === "consumo-limites" && <TabConsumoLimites />}
+            {active === "historico-pagamentos" && <TabHistoricoPagamentos />}
+            {/* Segurança */}
+            {active === "autenticacao-2fa" && <TabAutenticacao2FA />}
+            {active === "sessoes-ativas" && <TabSessoesAtivas />}
+            {active === "dispositivos" && <TabDispositivos />}
+            {active === "alertas-risco" && <TabAlertasRisco />}
+            {/* Auditoria */}
+            {active === "auditoria-log" && <TabAuditoriaLog />}
+            {active === "trilha-alteracoes" && <TabTrilhaAlteracoes />}
+            {active === "exportar-relatorio" && <TabExportarRelatorio />}
+            {/* Configurações Gerais */}
+            {active === "logo-branding" && <TabLogoBranding />}
+            {active === "fuso-idioma" && <TabFusoIdioma />}
+            {active === "lgpd" && <TabLGPD />}
           </div>
         </main>
       )}

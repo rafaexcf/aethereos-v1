@@ -1,7 +1,13 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ExternalLink, MinusCircle, Trash2 } from "lucide-react";
+import {
+  ExternalLink,
+  MinusCircle,
+  Trash2,
+  Pin,
+  PanelBottom,
+} from "lucide-react";
 import type { LucideProps } from "lucide-react";
 import type { ComponentType } from "react";
 import { useOSStore } from "../../stores/osStore";
@@ -36,7 +42,7 @@ interface MenuAction {
 }
 
 const MENU_W = 220;
-const MENU_H_ESTIMATE = 160;
+const MENU_H_ESTIMATE = 220;
 
 export function AppContextMenu({
   surface,
@@ -49,6 +55,9 @@ export function AppContextMenu({
   const openApp = useOSStore((s) => s.openApp);
   const layout = useMesaStore((s) => s.layout);
   const updateLayout = useMesaStore((s) => s.updateLayout);
+  const addIcon = useMesaStore((s) => s.addIcon);
+  const dockOrder = useDockStore((s) => s.order);
+  const addToDock = useDockStore((s) => s.addApp);
   const removeFromDock = useDockStore((s) => s.removeApp);
   const uninstallModule = useInstalledModulesStore((s) => s.uninstallModule);
   const drivers = useDrivers();
@@ -56,6 +65,10 @@ export function AppContextMenu({
 
   const app = getApp(appId);
   const protectedApp = isProtectedModule(appId);
+  const pinnedToMesa = layout.some(
+    (it) => it.type === "icon" && it.appId === appId,
+  );
+  const pinnedToDock = dockOrder.includes(appId);
 
   useEffect(() => {
     function handleDown(e: MouseEvent) {
@@ -111,6 +124,29 @@ export function AppContextMenu({
         onClose();
       },
       destructive: true,
+    });
+  }
+
+  if (surface === "launcher") {
+    actions.push({
+      label: "Fixar na Mesa",
+      icon: Pin,
+      onClick: () => {
+        addIcon(app.id);
+        onClose();
+      },
+      disabled: pinnedToMesa,
+      ...(pinnedToMesa ? { hint: "Já fixado" } : {}),
+    });
+    actions.push({
+      label: "Fixar na Dockbar",
+      icon: PanelBottom,
+      onClick: () => {
+        addToDock(app.id);
+        onClose();
+      },
+      disabled: pinnedToDock,
+      ...(pinnedToDock ? { hint: "Já fixado" } : {}),
     });
   }
 

@@ -159,7 +159,7 @@ export const APP_REGISTRY: OSApp[] = [
   },
   {
     id: "drive",
-    name: "Drive",
+    name: "Æ Drive",
     icon: "HardDrive",
     color: "#06b6d4",
     component: React.lazy(() =>

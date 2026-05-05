@@ -107,6 +107,8 @@ interface MesaActions {
   clearCustomWallpaper: () => void;
   /** Adiciona widget de um app na proxima area livre da mesa. */
   addWidget: (appId: string, size: { w: number; h: number }) => void;
+  /** Fixa icone do app na mesa. No-op se ja existir. */
+  addIcon: (appId: string) => void;
   /** Remove um item (icon ou widget) por id. */
   removeItem: (itemId: string) => void;
 }
@@ -244,6 +246,31 @@ export const useMesaStore = create<MesaState & MesaActions>((set, get) => ({
     scheduleSave(next, wallpaper, wallpaperUrl);
   },
 
+  addIcon: (appId) => {
+    const { layout, wallpaper, wallpaperUrl } = get();
+    // No-op se app ja tem icone na mesa.
+    if (layout.some((it) => it.type === "icon" && it.appId === appId)) {
+      return;
+    }
+    const size = { w: 80, h: 80 };
+    const { x, y } = findNextIconSlot(layout, size);
+    const id = `icon-${appId}-${Date.now()}`;
+    const next: MesaItem[] = [
+      ...layout,
+      {
+        id,
+        type: "icon",
+        appId,
+        position: { x, y },
+        size,
+        config: {},
+        zIndex: 0,
+      },
+    ];
+    set({ layout: next });
+    scheduleSave(next, wallpaper, wallpaperUrl);
+  },
+
   removeItem: (itemId) => {
     const { layout, wallpaper, wallpaperUrl } = get();
     const next = layout.filter((it) => it.id !== itemId);
@@ -292,4 +319,32 @@ function rectsOverlap(
   return (
     a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y
   );
+}
+
+// Icones percorrem coluna por linha — alinha com o padrao do DEFAULT_LAYOUT
+// (linha 1: x=20, 120, 220, 320, 420, 520; gap 100; padding 20).
+function findNextIconSlot(
+  layout: MesaItem[],
+  size: { w: number; h: number },
+): { x: number; y: number } {
+  const COLS = [20, 120, 220, 320, 420, 520, 620];
+  const ROW_GAP = 20;
+  for (let row = 0; row < 8; row++) {
+    for (const x of COLS) {
+      const y = 20 + row * (size.h + ROW_GAP);
+      const collides = layout.some((it) =>
+        rectsOverlap(
+          { x, y, w: size.w, h: size.h },
+          {
+            x: it.position.x,
+            y: it.position.y,
+            w: it.size.w,
+            h: it.size.h,
+          },
+        ),
+      );
+      if (!collides) return { x, y };
+    }
+  }
+  return { x: 20, y: 20 };
 }
