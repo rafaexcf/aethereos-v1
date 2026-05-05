@@ -257,6 +257,7 @@ export const APP_REGISTRY: OSApp[] = [
     showInDock: false,
     closeable: true,
     hasInternalNav: true,
+    requiresAdmin: true,
   },
   {
     id: "ae-ai",

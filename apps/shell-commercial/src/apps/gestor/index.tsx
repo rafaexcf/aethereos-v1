@@ -2762,10 +2762,17 @@ function GestorSidebar({
 
 export function GestorApp() {
   const { pendingTab, clearPendingTab } = useGestorStore();
+  const drivers = useDrivers();
+  const { userId, activeCompanyId } = useSessionStore();
   const [active, setActive] = useState<GestorTabId>(
     pendingTab ?? "visao-geral",
   );
   const [collapsed, setCollapsed] = useState(false);
+  // Sprint 27 MX146: role-gating — Gestor só pra owner/admin (R13).
+  // null = loading, "ok" = autorizado, "denied" = mostra access restricted.
+  const [authState, setAuthState] = useState<"loading" | "ok" | "denied">(
+    "loading",
+  );
 
   useEffect(() => {
     if (pendingTab !== null) {
@@ -2773,6 +2780,98 @@ export function GestorApp() {
       clearPendingTab();
     }
   }, [pendingTab, clearPendingTab]);
+
+  useEffect(() => {
+    if (drivers === null || userId === null || activeCompanyId === null) {
+      return;
+    }
+    void (async () => {
+      const { data } = await drivers.data
+        .from("tenant_memberships")
+        .select("role")
+        .eq("user_id", userId)
+        .eq("company_id", activeCompanyId)
+        .eq("status", "active")
+        .maybeSingle();
+      const role = (data as { role?: string } | null)?.role ?? "";
+      setAuthState(role === "owner" || role === "admin" ? "ok" : "denied");
+    })();
+  }, [drivers, userId, activeCompanyId]);
+
+  if (authState === "loading") {
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100%",
+          color: "var(--text-tertiary)",
+          fontSize: 13,
+        }}
+      >
+        Carregando…
+      </div>
+    );
+  }
+
+  if (authState === "denied") {
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100%",
+          gap: 14,
+          padding: 32,
+          textAlign: "center",
+          background: "var(--bg-elevated)",
+        }}
+      >
+        <div
+          style={{
+            width: 56,
+            height: 56,
+            borderRadius: 16,
+            background: "rgba(239,68,68,0.10)",
+            border: "1px solid rgba(239,68,68,0.32)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <BriefcaseBusiness
+            size={26}
+            strokeWidth={1.5}
+            style={{ color: "#fca5a5" }}
+          />
+        </div>
+        <div
+          style={{
+            fontSize: 17,
+            fontWeight: 600,
+            color: "var(--text-primary)",
+            letterSpacing: "-0.02em",
+          }}
+        >
+          Acesso restrito a administradores
+        </div>
+        <div
+          style={{
+            fontSize: 13,
+            color: "var(--text-secondary)",
+            maxWidth: 380,
+            lineHeight: 1.5,
+          }}
+        >
+          O Menu Gestor é exclusivo do owner e dos administradores da empresa.
+          Contate seu gestor se você precisar deste acesso.
+        </div>
+      </div>
+    );
+  }
 
   const isCadastros = active === "cadastros";
 
