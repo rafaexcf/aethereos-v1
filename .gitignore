@@ -68,3 +68,5 @@ tooling/e2e/*.deb
 .vercel
 .claude/
 .vercel/
+.claude/
+.vercel/
