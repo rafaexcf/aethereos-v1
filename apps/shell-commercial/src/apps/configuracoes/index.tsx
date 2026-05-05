@@ -74,6 +74,7 @@ import { useTheme } from "../../lib/theme/theme-provider";
 import { useGestorStore } from "../../stores/gestorStore";
 import { useRhStore } from "../../stores/rhStore";
 import { useSettingsNavStore } from "../../stores/settingsNavStore";
+import { TwoFactorAuth } from "../../components/shared/TwoFactorAuth";
 import { APP_REGISTRY } from "../registry";
 import { useSessionStore } from "../../stores/session";
 import { useDrivers } from "../../lib/drivers-context";
@@ -3183,9 +3184,9 @@ function TabPerfil({
         <SettingGroup>
           <SettingRow
             label="Autenticação em dois fatores"
-            sublabel="App autenticador (TOTP)"
+            sublabel="App autenticador (TOTP) — Google Authenticator, Authy, 1Password"
           >
-            <Badge variant="neutral">Em breve</Badge>
+            <TwoFactorAuth />
           </SettingRow>
           <SettingRow
             label="Tokens de API"
