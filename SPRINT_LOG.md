@@ -5,6 +5,135 @@ Modelo: Claude Code (claude-sonnet-4-6, sessão N=1)
 
 ---
 
+# Sprint 27 — Production Readiness: 8 bloqueadores resolvidos
+
+Início: 2026-05-05
+Modelo: Claude Code (claude-opus-4-7-1m, Sprint 27 N=1)
+Roadmap: `SPRINT_27_PROMPT.md` na raiz.
+
+## Origem
+
+Após Sprint 26 entregar redesign completo do Gestor (10 categorias, ~30 tabs,
+9 migrations RLS), Sprint 27 fecha os 10 bloqueadores para produção real:
+seed corrupto, error boundaries fracas, CORS aberto, email não configurado,
+sem invite real, CRUD incompleto, Gestor sem role-gate, sem rate limiting,
+sem headers de segurança, polish faltando.
+
+## Histórico de milestones (Sprint 27)
+
+| Milestone | Descrição                                                                  | Status | Commit  |
+| --------- | -------------------------------------------------------------------------- | ------ | ------- |
+| MX142     | seed.sql limpo + ErrorBoundary com Recarregar/Fechar + CORS allowlist      | DONE   | 1ff9f6e |
+| MX143     | Email transacional via Supabase Auth builtin (KL L16 — Resend fast-follow) | DONE   | a1bb8b2 |
+| MX144     | Edge Function invite-member + UI integrada via fetch(JWT)                  | DONE   | d6cb7e0 |
+| MX145     | Reset senha real (auth.resetPasswordForEmail) + CRUD completo              | DONE   | ae97a87 |
+| MX146     | Gestor MVP role gating (owner/admin only) + requiresAdmin flag             | DONE   | a36d440 |
+| MX147     | Rate limiting (kernel.rate_limits + RPC) + headers Vercel                  | DONE   | 676df78 |
+| MX148     | Title/meta/og + favicon SVG + helper friendlyError pt-BR                   | DONE   | 6699af4 |
+| MX149     | Gate final + SPRINT_LOG + deploy production                                | DONE   | (este)  |
+
+## Validação final
+
+Typecheck: 26/26 ✓
+Lint: 24/24 ✓
+Migrations novas: 10 (sprint 26) + 1 (sprint 27) = 11
+
+## Bloqueadores resolvidos
+
+1. ✅ Seed sql (era pg_dump corrompido) → stub com instruções claras pra
+   tooling/seed/
+2. ✅ Error boundaries (UI fraca, sem reload) → 2 botões + console.error
+   estruturado + título contextual
+3. ✅ CORS aberto (`*` hardcoded) → allowlist via ALLOWED_ORIGINS env
+   nas 11 Edge Functions
+4. ✅ Email não configurado → Supabase Auth builtin (KL L16) com fast-follow
+   pra Resend quando dominio ficar pronto
+5. ✅ Sem invite real → Edge Function privilegiada com role check +
+   detecção de duplicatas + reativação automática
+6. ✅ CRUD equipe incompleto → reset senha agora dispara real
+   resetPasswordForEmail
+7. ✅ Gestor sem role-gate → query async em tenant_memberships +
+   tela "Acesso restrito a administradores"
+8. ✅ Rate limiting ausente → kernel.rate_limits + RPC atômico aplicado
+   em scp-publish (100/min) e invite-member (10/hora)
+9. ✅ Headers de segurança → vercel.json com X-Frame-Options DENY,
+   nosniff, Referrer-Policy, Permissions-Policy
+10. ✅ Polish HTML/error UX → meta tags pt-BR, og tags, favicon SVG,
+    helper friendlyError com 11 status codes mapeados
+
+## Pendências fast-follow (Sprint 28+)
+
+- Resend SMTP custom quando dominio aethereos.io tiver DKIM/SPF
+- Rate limiting nas 9 Edge Functions restantes (cnpj-lookup, embed-text, etc)
+- Editar role inline em TabColaboradores (UPDATE com guard admin)
+- IA company config em company_settings (key llm_config_company)
+- Logo upload em company-logos bucket
+- Splash screen com timeout 10s + retry
+- Auditoria de catch blocks → aplicar friendlyError() global
+
+---
+
+# Sprint 26 — Redesign completo do Gestor: 10 categorias + 30 tabs
+
+Início: 2026-05-05
+Modelo: Claude Code (claude-opus-4-7-1m, Sprint 26 N=1, 5 agentes paralelos)
+Roadmap: prompt do usuário "Menu Gestor — Plano de Redesign Completo".
+
+## Origem
+
+Plano completo do Menu Gestor (~600 linhas de spec) entregue como
+documento. Executado em paralelo por 5 agentes especializados em uma
+única sprint, integrado em um pacote.
+
+## Categorias e cobertura (10 seções)
+
+| Categoria               | Tabs                                         | Status              |
+| ----------------------- | -------------------------------------------- | ------------------- |
+| Painel                  | Painel Geral                                 | ✅ data real        |
+| Pessoas & Equipe        | Colaboradores, Cargos, Departamentos, Grupos | ✅ Colab full CRUD  |
+| Permissões & Acessos    | Perfis, Regras App, Horários                 | ⚙️ UI + best-effort |
+| Aplicativos             | Apps Instalados, Regras Distribuição         | ✅ existente        |
+| Inteligência Artificial | Provedor, Limites, Permissões, Histórico     | ✅ BYOK + scaffolds |
+| Integrações             | Conectores, Webhooks, APIs Externas          | ✅ + scaffolds      |
+| Plano & Assinatura      | Plano Atual, Consumo, Histórico Pagamentos   | ⚙️ scaffolds Lago   |
+| Segurança               | 2FA, Sessões, Dispositivos, Alertas          | ⚙️ scaffolds        |
+| Auditoria               | Log de Ações, Trilha, Exportar               | ✅ Log real         |
+| Configurações Gerais    | Dados Empresa, Logo, Fuso, LGPD              | ⚙️ scaffolds        |
+
+## Migrations entregues (9 novas tabelas, todas com RLS por company_id)
+
+- `kernel.departments` + `department_members`
+- `kernel.groups` + `group_members`
+- `kernel.company_roles` (label custom → role kernel)
+- `kernel.app_access_rules` (modo distribuição por app)
+- `kernel.access_schedules` (janelas por scope)
+- `kernel.company_settings` (config hierárquica empresa/dept/user)
+- `kernel.security_alerts` (severity + payload)
+
+Drizzle schema sincronizado com 9 tables novas.
+
+## Commit principal
+
+`1258f2f feat(gestor): plano completo de redesign — 10 categorias, ~30 tabs, 9 migrations RLS`
+
+44 arquivos · +6944 / -1192
+
+## Trabalhos paralelos do mesmo sprint
+
+- Drive renomeado pra "Æ Drive" + redesign espelhando Configurações
+- AppContextMenu shared (mesa/dock/launcher) com Fixar Mesa/Dock
+- mesaStore.addIcon + addWidget + findNextIconSlot
+- Widget gallery com 12 widgets na Mesa
+- vercel.json SPA rewrite (fix 404 production)
+- App Pessoas removido completamente
+- Magic Store puter category removido
+- Dock support widget separado do apps launcher (com INP fix via startTransition)
+- Settings dropdowns profissionais (Cargo/Área/Departamento)
+- Notification toast resolve appId no registry com fallback
+- Tab IA movida pra Gestor
+
+---
+
 # Sprint 25 — Catálogo Open Source: 130+ apps externos na Magic Store
 
 Início: 2026-05-05
