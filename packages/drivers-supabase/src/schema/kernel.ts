@@ -468,6 +468,8 @@ export const tenantMemberships = kernelSchema.table(
     removedAt: timestamp("removed_at", { withTimezone: true }),
     lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
     loginCount: integer("login_count").notNull().default(0),
+    departmentId: uuid("department_id"),
+    customRoleId: uuid("custom_role_id"),
   },
   (t) => [
     index("kernel_memberships_user_id_idx2").on(t.userId),
@@ -777,6 +779,7 @@ export const groupMembers = kernelSchema.table(
 export type GroupMember = typeof groupMembers.$inferSelect;
 export type NewGroupMember = typeof groupMembers.$inferInsert;
 
+// Sprint 28 MX150: company_roles realinhada — base_role + description.
 export const companyRoles = kernelSchema.table(
   "company_roles",
   {
@@ -785,24 +788,23 @@ export const companyRoles = kernelSchema.table(
       .notNull()
       .references(() => companies.id, { onDelete: "cascade" }),
     label: text("label").notNull(),
-    mapsToRole: text("maps_to_role").notNull(),
-    defaultDepartmentId: uuid("default_department_id").references(
-      () => departments.id,
-      { onDelete: "set null" },
-    ),
+    baseRole: text("base_role").notNull(),
+    description: text("description").notNull().default(""),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
   (t) => [
-    index("kernel_company_roles_company_idx").on(t.companyId, t.mapsToRole),
-    index("kernel_company_roles_default_dept_idx").on(t.defaultDepartmentId),
+    index("kernel_company_roles_company_idx").on(t.companyId, t.baseRole),
+    uniqueIndex("kernel_company_roles_label_idx").on(t.companyId, t.label),
   ],
 );
 
 export type CompanyRole = typeof companyRoles.$inferSelect;
 export type NewCompanyRole = typeof companyRoles.$inferInsert;
 
+// Sprint 28 MX150: app_access_rules realinhada — uma row por target,
+// action allow/deny pra resolução com deny prevalecendo.
 export const appAccessRules = kernelSchema.table(
   "app_access_rules",
   {
@@ -812,15 +814,20 @@ export const appAccessRules = kernelSchema.table(
       .references(() => companies.id, { onDelete: "cascade" }),
     appId: text("app_id").notNull(),
     ruleType: text("rule_type").notNull(),
-    ruleTarget: jsonb("rule_target").notNull().default([]),
-    allow: boolean("allow").notNull().default(true),
+    ruleTarget: text("rule_target").notNull(),
+    action: text("action").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
   (t) => [
-    index("kernel_app_access_rules_company_idx").on(t.companyId, t.appId),
-    uniqueIndex("kernel_app_access_rules_unique_idx").on(t.companyId, t.appId),
+    index("kernel_app_access_rules_company_app_idx").on(t.companyId, t.appId),
+    uniqueIndex("kernel_app_access_rules_unique_idx").on(
+      t.companyId,
+      t.appId,
+      t.ruleType,
+      t.ruleTarget,
+    ),
   ],
 );
 
