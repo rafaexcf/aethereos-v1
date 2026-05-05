@@ -65,3 +65,6 @@ Thumbs.db
 
 # Pacotes deb baixados acidentalmente (Sprint 9.6 tentativa de install Playwright)
 tooling/e2e/*.deb
+.vercel
+.claude/
+.vercel/
