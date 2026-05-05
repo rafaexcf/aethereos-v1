@@ -32,6 +32,17 @@ export {
   type BridgeContext,
 } from "./types.js";
 
+export {
+  SCOPE_CATALOG,
+  METHOD_SCOPE_MAP,
+  SENSITIVE_SCOPES,
+  BASE_SCOPE,
+  isSensitiveScope,
+  getScope,
+  type ScopeId,
+  type ScopeDefinition,
+} from "./scopes.js";
+
 export { AuthModule } from "./modules/auth.js";
 export { DriveModule } from "./modules/drive.js";
 export { PeopleModule } from "./modules/people.js";
