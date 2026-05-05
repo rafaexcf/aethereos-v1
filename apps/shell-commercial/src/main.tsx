@@ -22,7 +22,12 @@ import { staffRoute } from "./routes/staff";
 import { boot } from "./lib/boot";
 import { DriversProvider } from "./lib/drivers-context";
 import { ThemeProvider } from "./lib/theme/theme-provider";
+import { installGlobalErrorHandlers } from "./lib/observability";
 import "./styles/globals.css";
+
+// Sprint 31 / MX171: captura uncaught exceptions + unhandled rejections.
+// Idempotente. Roteia para window.Sentry se disponível, senão console.error.
+installGlobalErrorHandlers();
 
 // Sprint 27 hotfix: deploy novo invalida chunks lazy (hashes mudam).
 // SPA antiga em cache do browser tenta `import()` chunk que retorna 404.

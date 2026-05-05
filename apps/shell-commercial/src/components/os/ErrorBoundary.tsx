@@ -1,4 +1,5 @@
 import { Component, type ReactNode, type ErrorInfo } from "react";
+import { reportError } from "../../lib/observability";
 
 interface Props {
   children: ReactNode;
@@ -20,13 +21,15 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   override componentDidCatch(error: Error, info: ErrorInfo) {
-    // Sprint 27 MX142: logging estruturado pra console (OTel pending).
-    // Permite debug rapido em prod sem derrubar o shell.
-    // eslint-disable-next-line no-console
-    console.error("[AppErrorBoundary]", error.message, {
-      stack: error.stack,
-      componentStack: info.componentStack,
-    });
+    // Sprint 31 MX171: roteia via observability — Sentry se disponível,
+    // console.error estruturado caso contrário.
+    const ctx: { tag: string; componentStack?: string } = {
+      tag: "AppErrorBoundary",
+    };
+    if (typeof info.componentStack === "string") {
+      ctx.componentStack = info.componentStack;
+    }
+    reportError(error, ctx);
   }
 
   handleReset = () => {

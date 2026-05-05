@@ -9,6 +9,9 @@ import { EnrichmentConsumer } from "./consumers/enrichment-consumer.js";
 const POLL_INTERVAL_MS = Number(process.env["SCP_POLL_INTERVAL_MS"] ?? "2000");
 const BATCH_SIZE = Number(process.env["SCP_BATCH_SIZE"] ?? "50");
 const MAX_ATTEMPTS = Number(process.env["SCP_MAX_ATTEMPTS"] ?? "3");
+const METRICS_FLUSH_EVERY = Number(
+  process.env["SCP_METRICS_FLUSH_EVERY"] ?? "100",
+);
 
 interface OutboxRow {
   id: number;
@@ -18,6 +21,38 @@ interface OutboxRow {
   payload: Record<string, unknown>;
   envelope: EventEnvelope;
   attempts: number;
+}
+
+// Sprint 31 / MX171: SLO instrumentation. Buffer in-memory de latencias
+// individuais. A cada METRICS_FLUSH_EVERY eventos, calcula p50/p95/p99 e
+// emite log estruturado consultavel via Vercel logs / Loki.
+const latencyBuffer: number[] = [];
+
+function recordLatency(processingMs: number): void {
+  latencyBuffer.push(processingMs);
+  if (latencyBuffer.length >= METRICS_FLUSH_EVERY) {
+    flushMetrics();
+  }
+}
+
+function flushMetrics(): void {
+  if (latencyBuffer.length === 0) return;
+  const sorted = [...latencyBuffer].sort((a, b) => a - b);
+  const len = sorted.length;
+  const pick = (q: number): number => {
+    const idx = Math.min(len - 1, Math.floor(q * len));
+    return sorted[idx] ?? 0;
+  };
+  jlog("info", "scp metrics flush", {
+    metric_name: "scp_event_processing_ms",
+    samples: len,
+    p50: pick(0.5),
+    p95: pick(0.95),
+    p99: pick(0.99),
+    min: sorted[0] ?? 0,
+    max: sorted[len - 1] ?? 0,
+  });
+  latencyBuffer.length = 0;
 }
 
 async function main(): Promise<void> {
@@ -53,6 +88,7 @@ async function main(): Promise<void> {
     if (shuttingDown) return;
     shuttingDown = true;
     jlog("info", "scp-worker shutting down", { signal });
+    flushMetrics();
     try {
       await sql.end({ timeout: 5 });
     } catch (e) {
@@ -106,6 +142,7 @@ async function processEvent(
   // pipeline — cada handle e wrappado em try/catch individual.
   const matched = consumers.filter((c) => c.matches(row.event_type));
   const errors: string[] = [];
+  const startedAt = performance.now();
 
   for (const consumer of matched) {
     try {
@@ -122,6 +159,9 @@ async function processEvent(
     }
   }
 
+  const processingMs = Math.round(performance.now() - startedAt);
+  recordLatency(processingMs);
+
   if (errors.length === 0) {
     await sql`
       UPDATE kernel.scp_outbox
@@ -134,6 +174,7 @@ async function processEvent(
       event_id: row.event_id,
       event_type: row.event_type,
       consumers: matched.map((c) => c.name),
+      processing_time_ms: processingMs,
     });
   } else {
     const newAttempts = row.attempts + 1;
@@ -151,6 +192,14 @@ async function processEvent(
         event_type: row.event_type,
         attempts: newAttempts,
         errors,
+        processing_time_ms: processingMs,
+      });
+    } else {
+      jlog("warn", "event retry", {
+        event_id: row.event_id,
+        event_type: row.event_type,
+        attempts: newAttempts,
+        processing_time_ms: processingMs,
       });
     }
   }
