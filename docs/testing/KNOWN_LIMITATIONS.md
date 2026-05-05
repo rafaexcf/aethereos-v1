@@ -284,3 +284,33 @@ LD_LIBRARY_PATH=/tmp/playwright-libs/usr/lib/x86_64-linux-gnu \
 ```
 
 **Não reportar:** Falha de libs em WSL2 sem a variável `LD_LIBRARY_PATH`. É limitação de ambiente, não bug do produto.
+
+---
+
+## L16. Email transacional via Supabase Auth builtin (Sprint 27 MX143)
+
+**Status:** MVP — Resend/SMTP custom como fast-follow.
+
+**Decisão:**
+
+- Templates de email (convite, reset senha, confirmação) usam o builtin do
+  Supabase Auth — sem provedor externo (Resend/SES/Postmark).
+- Funciona out-of-the-box no projeto cloud (Supabase Dashboard → Auth →
+  Email Templates), com rate limit de 4 emails/hora no plano free.
+- Templates editáveis via dashboard — customizar pra português ("Bem-vindo ao
+  Aethereos", "Redefina sua senha", "Você foi convidado para {company_name}").
+
+**Por que não Resend agora:**
+
+- Setup completo (DKIM, SPF, DMARC, domínio verificado) ultrapassa orçamento
+  de 1h definido no SPRINT_27_PROMPT.md (R15).
+- Free tier do builtin cobre dev e early adopters.
+
+**Próximos passos (fast-follow):**
+
+- Para volume >100 emails/dia: integrar Resend ou Postmark via Edge
+  Function `send-email` (recebe `{ to, template, data }`, autenticada
+  com service_role).
+- Configurar SMTP custom em Supabase Dashboard → Auth → SMTP Settings.
+
+**Não reportar:** rate limit de email no Supabase free tier.
