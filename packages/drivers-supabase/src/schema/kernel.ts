@@ -924,3 +924,143 @@ export const securityAlerts = kernelSchema.table(
 
 export type SecurityAlert = typeof securityAlerts.$inferSelect;
 export type NewSecurityAlert = typeof securityAlerts.$inferInsert;
+
+// ---------------------------------------------------------------------------
+// Sprint 29 — Persistência real de Tarefas, Kanban, Notas
+// ---------------------------------------------------------------------------
+
+export const tasks = kernelSchema.table(
+  "tasks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    description: text("description").notNull().default(""),
+    status: text("status").notNull().default("todo"),
+    priority: text("priority").notNull().default("medium"),
+    dueDate: date("due_date"),
+    assignedTo: uuid("assigned_to"),
+    createdBy: uuid("created_by").notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("kernel_tasks_company_status_idx").on(
+      t.companyId,
+      t.status,
+      t.sortOrder,
+    ),
+  ],
+);
+
+export type Task = typeof tasks.$inferSelect;
+export type NewTask = typeof tasks.$inferInsert;
+
+export const kanbanBoards = kernelSchema.table(
+  "kanban_boards",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    name: text("name").notNull().default("Meu Board"),
+    createdBy: uuid("created_by").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("kernel_kanban_boards_company_idx").on(t.companyId)],
+);
+
+export type KanbanBoard = typeof kanbanBoards.$inferSelect;
+export type NewKanbanBoard = typeof kanbanBoards.$inferInsert;
+
+export const kanbanColumns = kernelSchema.table(
+  "kanban_columns",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    boardId: uuid("board_id")
+      .notNull()
+      .references(() => kanbanBoards.id, { onDelete: "cascade" }),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    color: text("color").default("#64748b"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("kernel_kanban_columns_board_idx").on(t.boardId, t.sortOrder)],
+);
+
+export type KanbanColumn = typeof kanbanColumns.$inferSelect;
+export type NewKanbanColumn = typeof kanbanColumns.$inferInsert;
+
+export const kanbanCards = kernelSchema.table(
+  "kanban_cards",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    columnId: uuid("column_id")
+      .notNull()
+      .references(() => kanbanColumns.id, { onDelete: "cascade" }),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    description: text("description").notNull().default(""),
+    color: text("color"),
+    assignedTo: uuid("assigned_to"),
+    dueDate: date("due_date"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdBy: uuid("created_by").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("kernel_kanban_cards_column_idx").on(t.columnId, t.sortOrder)],
+);
+
+export type KanbanCard = typeof kanbanCards.$inferSelect;
+export type NewKanbanCard = typeof kanbanCards.$inferInsert;
+
+export const notes = kernelSchema.table(
+  "notes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    companyId: uuid("company_id")
+      .notNull()
+      .references(() => companies.id, { onDelete: "cascade" }),
+    title: text("title").notNull().default("Sem título"),
+    content: text("content").notNull().default(""),
+    color: text("color").default("#fbbf24"),
+    pinned: boolean("pinned").notNull().default(false),
+    archived: boolean("archived").notNull().default(false),
+    createdBy: uuid("created_by").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("kernel_notes_company_idx").on(t.companyId, t.archived)],
+);
+
+export type Note = typeof notes.$inferSelect;
+export type NewNote = typeof notes.$inferInsert;
