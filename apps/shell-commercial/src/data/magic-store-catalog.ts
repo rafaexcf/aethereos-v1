@@ -14,6 +14,9 @@ export type MagicStoreCategory =
   | "games"
   | "utilities"
   | "puter"
+  | "dev-tools"
+  | "design"
+  | "data"
   | "beta"
   | "coming_soon"
   | "installed";

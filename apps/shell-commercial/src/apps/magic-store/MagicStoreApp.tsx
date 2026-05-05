@@ -37,6 +37,10 @@ import {
   Bot,
   Trash2,
   Download,
+  CheckCircle2,
+  Code,
+  Palette,
+  Gamepad2,
 } from "lucide-react";
 import { type MagicStoreApp as CatalogApp } from "../../data/magic-store-catalog";
 import { useMagicStoreCatalog } from "./catalog-adapter";
@@ -71,31 +75,6 @@ const STORE_SIDEBAR_W = 239;
 const STORE_SIDEBAR_ICON_W = 48;
 
 type Status = "available" | "beta" | "coming_soon";
-
-const STATUS_LABELS: Record<Status, string> = {
-  available: "Disponível",
-  beta: "Beta",
-  coming_soon: "Em breve",
-};
-
-const STATUS_TONES: Record<Status, { fg: string; bg: string; border: string }> =
-  {
-    available: {
-      fg: "#34d399",
-      bg: "rgba(16,185,129,0.14)",
-      border: "rgba(16,185,129,0.28)",
-    },
-    beta: {
-      fg: "#fbbf24",
-      bg: "rgba(245,158,11,0.14)",
-      border: "rgba(245,158,11,0.28)",
-    },
-    coming_soon: {
-      fg: "var(--text-tertiary)",
-      bg: "rgba(255,255,255,0.06)",
-      border: "rgba(255,255,255,0.10)",
-    },
-  };
 
 const ICON_MAP: Record<
   string,
@@ -156,7 +135,10 @@ const SIDEBAR_CONFIGS: Record<NavTab, SidebarSection[]> = {
         { id: "vertical", label: "Verticais B2B", icon: Building2 },
         { id: "ai", label: "Inteligência Artificial", icon: Bot },
         { id: "productivity", label: "Produtividade", icon: TrendingUp },
-        { id: "games", label: "Jogos", icon: Puzzle },
+        { id: "dev-tools", label: "Dev Tools", icon: Code },
+        { id: "design", label: "Design & Mídia", icon: Palette },
+        { id: "data", label: "Dados & BI", icon: BarChart3 },
+        { id: "games", label: "Jogos", icon: Gamepad2 },
         { id: "utilities", label: "Utilitários", icon: Workflow },
         { id: "puter", label: "Puter & OS abertos", icon: Globe },
       ],
@@ -197,7 +179,7 @@ const SIDEBAR_CONFIGS: Record<NavTab, SidebarSection[]> = {
     {
       title: "Tipo",
       items: [
-        { id: "all", label: "Todas", icon: Globe },
+        { id: "all", label: "Todas as Integrações", icon: Globe },
         { id: "erp", label: "ERP & Financeiro", icon: Building2 },
         { id: "crm", label: "CRM & Vendas", icon: ShoppingCart },
         { id: "ecommerce", label: "E-commerce", icon: Tag },
@@ -544,26 +526,70 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 function StatusBadge({ status }: { status: Status }) {
-  const tone = STATUS_TONES[status];
+  // Sprint 24+: redesign para diferenciar visualmente "Disponível" de
+  // "Instalado" (antes ambos eram pills verdes uppercase quase identicos).
+  // available  => outline limpo + Download icon, tom neutro/cyan (acao)
+  // beta       => outline ambar (cuidado/preview)
+  // coming_soon => outline pontilhado, tom apagado
+  if (status === "available") {
+    return (
+      <span
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 5,
+          padding: "3px 9px",
+          borderRadius: 6,
+          fontSize: 11,
+          fontWeight: 500,
+          color: "#67e8f9",
+          background: "transparent",
+          border: "1px solid rgba(34,211,238,0.35)",
+        }}
+      >
+        <Download size={11} strokeWidth={2} />
+        Disponível
+      </span>
+    );
+  }
+  if (status === "beta") {
+    return (
+      <span
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 5,
+          padding: "3px 9px",
+          borderRadius: 6,
+          fontSize: 11,
+          fontWeight: 500,
+          color: "#fbbf24",
+          background: "transparent",
+          border: "1px solid rgba(245,158,11,0.4)",
+        }}
+      >
+        <Sparkles size={11} strokeWidth={2} />
+        Beta
+      </span>
+    );
+  }
   return (
     <span
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: 4,
-        padding: "3px 8px",
-        borderRadius: 999,
-        fontSize: 10,
-        fontWeight: 600,
-        letterSpacing: "0.02em",
-        textTransform: "uppercase",
-        background: tone.bg,
-        color: tone.fg,
-        border: `1px solid ${tone.border}`,
+        gap: 5,
+        padding: "3px 9px",
+        borderRadius: 6,
+        fontSize: 11,
+        fontWeight: 500,
+        color: "var(--text-tertiary)",
+        background: "transparent",
+        border: "1px dashed rgba(255,255,255,0.18)",
       }}
     >
-      {status === "available" && <Check size={10} strokeWidth={2.5} />}
-      {STATUS_LABELS[status]}
+      <Clock size={11} strokeWidth={2} />
+      Em breve
     </span>
   );
 }
@@ -671,24 +697,25 @@ function DisabledButton({ children }: { children: React.ReactNode }) {
 }
 
 function InstalledBadge() {
+  // Sprint 24+: badge "instalado" agora tem forma distinta do "Disponível":
+  // pill solido verde + CheckCircle2 — comunica "ja seu" vs outline neutro
+  // do disponivel (acao pendente).
   return (
     <span
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: 4,
-        padding: "3px 8px",
+        gap: 5,
+        padding: "3px 9px",
         borderRadius: 999,
-        fontSize: 10,
-        fontWeight: 600,
-        letterSpacing: "0.02em",
-        textTransform: "uppercase",
-        background: "rgba(34,197,94,0.14)",
-        color: "#34d399",
-        border: "1px solid rgba(34,197,94,0.28)",
+        fontSize: 11,
+        fontWeight: 500,
+        background: "rgba(34,197,94,0.18)",
+        color: "#86efac",
+        border: "1px solid rgba(34,197,94,0.32)",
       }}
     >
-      <Check size={10} strokeWidth={2.5} />
+      <CheckCircle2 size={12} strokeWidth={2} />
       Instalado
     </span>
   );
@@ -1051,6 +1078,10 @@ function StoreHeader({
           );
         })}
       </nav>
+
+      {/* Spacer simetrico ao logo (width:200) para a nav ficar centralizada
+          em relacao ao header inteiro, nao apenas ao espaco restante. */}
+      <div style={{ width: 200, flexShrink: 0 }} aria-hidden />
     </header>
   );
 }
@@ -1453,6 +1484,65 @@ function HorizontalCarousel({
   );
 }
 
+/* ─── Category Carousel (Sprint 25) ───────────────────────────────────────── */
+
+function CategoryCarousel({
+  label,
+  apps,
+  accent,
+  onSelect,
+  onNavigate,
+  installed,
+}: {
+  label: string;
+  apps: CatalogApp[];
+  accent: string;
+  onSelect: (app: CatalogApp) => void;
+  onNavigate: () => void;
+  installed: ReadonlySet<string>;
+}) {
+  return (
+    <section>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          justifyContent: "space-between",
+          marginBottom: 12,
+        }}
+      >
+        <SectionLabel>{label}</SectionLabel>
+        <button
+          type="button"
+          onClick={onNavigate}
+          style={{
+            fontSize: 11,
+            color: accent,
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: 0,
+          }}
+        >
+          Ver todos →
+        </button>
+      </div>
+      <HorizontalCarousel cardWidth={240}>
+        {apps.map((app) => (
+          <div key={app.id} style={{ scrollSnapAlign: "start" }}>
+            <AppCard
+              app={app}
+              onSelect={onSelect}
+              size="md"
+              installed={installed.has(app.id)}
+            />
+          </div>
+        ))}
+      </HorizontalCarousel>
+    </section>
+  );
+}
+
 /* ─── Teaser Card (coming soon) ───────────────────────────────────────────── */
 
 function TeaserCard({ item }: { item: TeaserItem }) {
@@ -1823,6 +1913,11 @@ function StoreFrontPage({
     (a) => a.status === "available" || a.status === "beta",
   );
   const verticals = catalog.filter((a) => a.category === "vertical");
+  const aiApps = catalog.filter((a) => a.category === "ai");
+  const devTools = catalog.filter((a) => a.category === "dev-tools");
+  const designApps = catalog.filter((a) => a.category === "design");
+  const dataApps = catalog.filter((a) => a.category === "data");
+  const games = catalog.filter((a) => a.category === "games");
 
   if (heroApp === undefined) return null;
 
@@ -2064,6 +2159,66 @@ function StoreFrontPage({
           ))}
         </HorizontalCarousel>
       </section>
+
+      {/* AI carousel */}
+      {aiApps.length > 0 && (
+        <CategoryCarousel
+          label="Inteligência Artificial"
+          apps={aiApps}
+          accent="#a78bfa"
+          onSelect={onSelect}
+          onNavigate={() => onNavigate("apps")}
+          installed={installed}
+        />
+      )}
+
+      {/* Dev Tools carousel */}
+      {devTools.length > 0 && (
+        <CategoryCarousel
+          label="Dev Tools"
+          apps={devTools}
+          accent="#22d3ee"
+          onSelect={onSelect}
+          onNavigate={() => onNavigate("apps")}
+          installed={installed}
+        />
+      )}
+
+      {/* Design carousel */}
+      {designApps.length > 0 && (
+        <CategoryCarousel
+          label="Design & Mídia"
+          apps={designApps}
+          accent="#f472b6"
+          onSelect={onSelect}
+          onNavigate={() => onNavigate("apps")}
+          installed={installed}
+        />
+      )}
+
+      {/* Data & BI carousel */}
+      {dataApps.length > 0 && (
+        <CategoryCarousel
+          label="Dados & BI"
+          apps={dataApps}
+          accent="#34d399"
+          onSelect={onSelect}
+          onNavigate={() => onNavigate("apps")}
+          installed={installed}
+        />
+      )}
+
+      {/* Games carousel */}
+      {games.length > 0 && (
+        <CategoryCarousel
+          label="Jogos"
+          apps={games}
+          accent="#fbbf24"
+          onSelect={onSelect}
+          onNavigate={() => onNavigate("apps")}
+          installed={installed}
+        />
+      )}
 
       {/* Plugins teaser */}
       <section>
