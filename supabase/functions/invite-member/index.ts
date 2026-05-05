@@ -8,6 +8,7 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders, handlePreflight } from "../_shared/cors.ts";
+import { checkRateLimit, rateLimitResponse } from "../_shared/rate-limit.ts";
 
 interface InviteBody {
   email?: string;
@@ -50,6 +51,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
   } = await userClient.auth.getUser(jwt);
   if (authError !== null || user === null) {
     return json(401, { error: "Unauthorized" });
+  }
+
+  // Rate limit (Sprint 27 MX147): 10 convites/hora por user.
+  const rlAdmin = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const rl = await checkRateLimit(rlAdmin, user.id, "invite-member", 10, 3600);
+  if (!rl.allowed) {
+    return rateLimitResponse(rl, cors);
   }
 
   // 2. Body parse.

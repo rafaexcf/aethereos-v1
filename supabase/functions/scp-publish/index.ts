@@ -8,6 +8,7 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders, handlePreflight } from "../_shared/cors.ts";
+import { checkRateLimit, rateLimitResponse } from "../_shared/rate-limit.ts";
 
 // Todos os event types registrados no scp-registry.
 // Mantido em sincronia com packages/scp-registry/src/schemas/*.ts.
@@ -138,6 +139,15 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   if (authError !== null || user === null) {
     return jsonResponse({ error: "unauthorized" }, 401, origin);
+  }
+
+  // --- Rate limit (Sprint 27 MX147): 100 req/min por user ---
+  const rlAdmin = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const rl = await checkRateLimit(rlAdmin, user.id, "scp-publish", 100, 60);
+  if (!rl.allowed) {
+    return rateLimitResponse(rl, corsHeaders(origin));
   }
 
   // --- 2. Extrair company_id do JWT (active_company_id injetado pelo custom_access_token hook) ---
