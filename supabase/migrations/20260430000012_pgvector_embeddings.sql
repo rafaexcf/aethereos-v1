@@ -59,6 +59,7 @@ RETURNS TABLE (
 LANGUAGE sql
 SECURITY INVOKER
 STABLE
+SET search_path = public, extensions
 AS $$
   SELECT
     e.id,
@@ -67,11 +68,11 @@ AS $$
     e.chunk_index,
     e.chunk_text,
     e.metadata,
-    1 - (e.embedding <=> p_query_vector) AS score
+    1 - (e.embedding OPERATOR(extensions.<=>) p_query_vector) AS score
   FROM kernel.embeddings e
   WHERE e.company_id = p_company_id
     AND (p_source_type IS NULL OR e.source_type = p_source_type)
-  ORDER BY e.embedding <=> p_query_vector
+  ORDER BY e.embedding OPERATOR(extensions.<=>) p_query_vector
   LIMIT p_top_k;
 $$;
 
