@@ -70,7 +70,10 @@ const NAV_TABS: { id: NavTab; label: string }[] = [
   { id: "distros", label: "Distros" },
 ];
 
-const CONTENT_MAX_W = 1080;
+// Sprint 27 redesign: largura dobrada (1080 → 2160) — único app com
+// content-area larga, inspirado no business.apple.com (centered hero +
+// generous whitespace + premium card grid).
+const CONTENT_MAX_W = 2160;
 const STORE_SIDEBAR_W = 239;
 const STORE_SIDEBAR_ICON_W = 48;
 
@@ -508,15 +511,18 @@ function SparklesText({ children }: { children: React.ReactNode }) {
 /* ─── Primitives ──────────────────────────────────────────────────────────── */
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
+  // Sprint 27 redesign: Apple-style hero label — maior, mais espaçada,
+  // serve como "kicker" acima dos títulos grandes das seções.
   return (
     <p
       style={{
-        fontSize: 11,
-        fontWeight: 600,
-        color: "var(--text-tertiary)",
-        letterSpacing: "0.07em",
-        textTransform: "uppercase",
-        marginBottom: 12,
+        fontSize: 32,
+        fontWeight: 700,
+        color: "var(--text-primary)",
+        letterSpacing: "-0.025em",
+        marginBottom: 24,
+        fontFamily: "var(--font-display)",
+        lineHeight: 1.1,
       }}
     >
       {children}
@@ -1108,41 +1114,41 @@ function HeroBanner({
     <div
       style={{
         position: "relative",
-        borderRadius: 20,
-        padding: "36px 40px",
+        borderRadius: 28,
+        padding: "72px 80px",
         overflow: "hidden",
-        minHeight: 240,
+        minHeight: 420,
         display: "flex",
         alignItems: "center",
         background: `linear-gradient(120deg, ${app.color}28 0%, rgba(15,21,27,0.6) 55%, rgba(6,9,18,0.92) 100%)`,
         border: "1px solid rgba(255,255,255,0.07)",
         boxShadow:
-          "0 20px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)",
+          "0 32px 80px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05)",
       }}
     >
       <div
         style={{
           position: "absolute",
-          right: -60,
-          top: -60,
-          width: 360,
-          height: 360,
+          right: -120,
+          top: -120,
+          width: 560,
+          height: 560,
           borderRadius: "50%",
-          background: `radial-gradient(circle, ${app.color}40 0%, transparent 65%)`,
-          filter: "blur(50px)",
+          background: `radial-gradient(circle, ${app.color}48 0%, transparent 65%)`,
+          filter: "blur(80px)",
           pointerEvents: "none",
         }}
       />
       <div
         style={{
           position: "absolute",
-          right: 120,
-          bottom: -80,
-          width: 240,
-          height: 240,
+          right: 160,
+          bottom: -120,
+          width: 360,
+          height: 360,
           borderRadius: "50%",
-          background: `radial-gradient(circle, ${app.color}22 0%, transparent 70%)`,
-          filter: "blur(40px)",
+          background: `radial-gradient(circle, ${app.color}28 0%, transparent 70%)`,
+          filter: "blur(60px)",
           pointerEvents: "none",
         }}
       />
@@ -1151,26 +1157,26 @@ function HeroBanner({
           position: "relative",
           display: "flex",
           alignItems: "center",
-          gap: 32,
+          gap: 64,
           flex: 1,
         }}
       >
-        <div style={{ flex: 1, maxWidth: 520 }}>
+        <div style={{ flex: 1, maxWidth: 880 }}>
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 6,
-              marginBottom: 12,
+              gap: 8,
+              marginBottom: 24,
             }}
           >
-            <Sparkles size={11} style={{ color: app.color }} strokeWidth={2} />
+            <Sparkles size={13} style={{ color: app.color }} strokeWidth={2} />
             <span
               style={{
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: 700,
                 color: app.color,
-                letterSpacing: "0.1em",
+                letterSpacing: "0.14em",
                 textTransform: "uppercase",
               }}
             >
@@ -1179,23 +1185,25 @@ function HeroBanner({
           </div>
           <h2
             style={{
-              fontSize: 32,
+              fontSize: 64,
               fontWeight: 700,
               color: "var(--text-primary)",
-              letterSpacing: "-0.04em",
-              lineHeight: 1.1,
+              letterSpacing: "-0.045em",
+              lineHeight: 1.04,
               fontFamily: "var(--font-display)",
-              marginBottom: 10,
+              marginBottom: 20,
             }}
           >
             {app.name}
           </h2>
           <p
             style={{
-              fontSize: 14,
+              fontSize: 19,
               color: "var(--text-secondary)",
-              lineHeight: 1.6,
-              marginBottom: 20,
+              lineHeight: 1.55,
+              marginBottom: 36,
+              maxWidth: 720,
+              fontWeight: 400,
             }}
           >
             {app.longDescription}
@@ -1247,21 +1255,21 @@ function HeroBanner({
         >
           <div
             style={{
-              width: 120,
-              height: 120,
-              borderRadius: 30,
+              width: 200,
+              height: 200,
+              borderRadius: 48,
               background: `linear-gradient(140deg, ${app.color}48, ${app.color}18)`,
-              border: `1.5px solid ${app.color}50`,
+              border: `2px solid ${app.color}50`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: `0 0 60px ${app.color}30, 0 16px 48px rgba(0,0,0,0.4)`,
+              boxShadow: `0 0 100px ${app.color}40, 0 24px 64px rgba(0,0,0,0.45)`,
             }}
           >
             <AppIconBox
               iconName={app.icon}
               color={app.color}
-              size={120}
+              size={200}
               radius={30}
             />
           </div>
@@ -2017,7 +2025,7 @@ function StoreFrontPage({
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 44 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 80 }}>
       {/* Main hero */}
       <HeroBanner
         app={heroApp}
@@ -2444,33 +2452,42 @@ function AppsTabPage({
       style={{
         flex: 1,
         overflowY: "auto",
-        padding: "28px 32px 160px",
+        padding: "56px 48px 200px",
         scrollbarWidth: "none",
       }}
     >
       <div style={{ maxWidth: CONTENT_MAX_W, margin: "0 auto" }}>
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 48 }}>
           <h2
             style={{
-              fontSize: 22,
+              fontSize: 48,
               fontWeight: 700,
               color: "var(--text-primary)",
-              letterSpacing: "-0.03em",
-              marginBottom: 4,
+              letterSpacing: "-0.04em",
+              lineHeight: 1.05,
+              fontFamily: "var(--font-display)",
+              marginBottom: 8,
             }}
           >
             {filterLabel}
           </h2>
-          <p style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
-            {filtered.length} aplicativo{filtered.length !== 1 ? "s" : ""}
+          <p
+            style={{
+              fontSize: 16,
+              color: "var(--text-secondary)",
+              fontWeight: 400,
+            }}
+          >
+            {filtered.length} aplicativo{filtered.length !== 1 ? "s" : ""}{" "}
+            disponí{filtered.length !== 1 ? "veis" : "vel"}
           </p>
         </div>
         {filtered.length > 0 ? (
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-              gap: 14,
+              gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+              gap: 24,
             }}
           >
             {filtered.map((app) => (
@@ -2537,24 +2554,32 @@ function TeaserTabPage({
       style={{
         flex: 1,
         overflowY: "auto",
-        padding: "28px 32px 160px",
+        padding: "56px 48px 200px",
         scrollbarWidth: "none",
       }}
     >
       <div style={{ maxWidth: CONTENT_MAX_W, margin: "0 auto" }}>
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 48 }}>
           <h2
             style={{
-              fontSize: 22,
+              fontSize: 48,
               fontWeight: 700,
               color: "var(--text-primary)",
-              letterSpacing: "-0.03em",
-              marginBottom: 4,
+              letterSpacing: "-0.04em",
+              lineHeight: 1.05,
+              fontFamily: "var(--font-display)",
+              marginBottom: 8,
             }}
           >
             {filterLabel}
           </h2>
-          <p style={{ fontSize: 13, color: "var(--text-tertiary)" }}>
+          <p
+            style={{
+              fontSize: 16,
+              color: "var(--text-secondary)",
+              fontWeight: 400,
+            }}
+          >
             {emptyLabel}
           </p>
         </div>
@@ -2562,8 +2587,8 @@ function TeaserTabPage({
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-              gap: 14,
+              gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+              gap: 24,
             }}
           >
             {filtered.map((item) => (
