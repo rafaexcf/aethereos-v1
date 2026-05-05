@@ -908,9 +908,31 @@ export function TabColaboradores() {
                     member={m}
                     onSuspend={() => void updateStatus(m.user_id, "blocked")}
                     onReactivate={() => void updateStatus(m.user_id, "active")}
-                    onResetPassword={() =>
-                      pushToast("Reset de senha ainda não implementado", "info")
-                    }
+                    onResetPassword={() => {
+                      // Sprint 27 MX145: dispara reset via Supabase Auth.
+                      // Email vai pelo builtin (KL L16). Sem admin API
+                      // necessária — endpoint público com email do user.
+                      if (drivers === null || m.email === null) {
+                        pushToast("Email do colaborador indisponível", "error");
+                        return;
+                      }
+                      const client = drivers.data.getClient();
+                      void client.auth
+                        .resetPasswordForEmail(m.email)
+                        .then(({ error }) => {
+                          if (error !== null) {
+                            pushToast(
+                              `Reset falhou: ${error.message}`,
+                              "error",
+                            );
+                            return;
+                          }
+                          pushToast(
+                            `Email de reset enviado para ${m.email}`,
+                            "success",
+                          );
+                        });
+                    }}
                     onRemove={() => void updateStatus(m.user_id, "removed")}
                   />
                 </SettingRow>
