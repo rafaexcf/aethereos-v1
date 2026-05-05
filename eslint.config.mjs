@@ -25,6 +25,8 @@ export default tseslint.config(
       // Seed e smoke test são CLIs — console.log é intencionalmente o output
       "tooling/seed/**",
       "tooling/smoke/**",
+      // Scripts ad-hoc em tools/ rodam em Node CLI
+      "tools/**",
     ],
   },
 );

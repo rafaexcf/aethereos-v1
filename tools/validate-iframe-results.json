@@ -1,0 +1,394 @@
+{
+  "generated_at": "2026-05-05T05:22:52.960Z",
+  "summary": {
+    "total": 64,
+    "iframe": 36,
+    "weblink": 28
+  },
+  "results": [
+    {
+      "url": "https://excalidraw.com",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://app.diagrams.net",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "CSP frame-ancestors: 'self' https://teams.microsoft.com https://*.cloud.microsoft https://*.sharepoint.com https://*.sharepoint.de"
+    },
+    {
+      "url": "https://www.tldraw.com",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://stackedit.io/app",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://mermaid.live",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://markmap.js.org/repl",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://hoppscotch.io",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "CSP frame-ancestors: 'self'"
+    },
+    {
+      "url": "https://editor.swagger.io",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://jsoncrack.com/editor",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://jsonhero.io",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://gchq.github.io/CyberChef",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://it-tools.tech",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://squoosh.app",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://jakearchibald.github.io/svgomg/",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://viliusle.github.io/miniPaint/",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://audiomass.co",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://www.sharedrop.io",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://snapdrop.net",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://monkeytype.com",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "XFO: DENY"
+    },
+    {
+      "url": "https://play2048.co",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "CSP frame-ancestors: 'self' https://next.play2048.co https://play2048.co https://play2048-co.translate.goog"
+    },
+    {
+      "url": "https://hexgl.bkcore.com",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://hextris.io",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://lichess.org",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "XFO: DENY"
+    },
+    {
+      "url": "https://openscope.co",
+      "status": 0,
+      "mode": "weblink",
+      "reason": "fetch error: This operation was aborted"
+    },
+    {
+      "url": "https://www.photopea.com",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://studio.polotno.com",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://sqlime.org",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://webhook.site",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "XFO: DENY"
+    },
+    {
+      "url": "https://regex101.com",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "XFO: SAMEORIGIN"
+    },
+    {
+      "url": "https://vscode.dev",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "CSP frame-ancestors: 'none'"
+    },
+    {
+      "url": "https://app.affine.pro",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "XFO: SAMEORIGIN"
+    },
+    {
+      "url": "https://pomofocus.io",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "CSP frame-ancestors: 'self' https://notion.so https://*.notion.so https://notion.site https://*.notion.site https://notion.com https://*.notion.com"
+    },
+    {
+      "url": "https://loremipsum.io",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://cal.com",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://rallly.co",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://sli.dev",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://www.canva.com",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "XFO: deny"
+    },
+    {
+      "url": "https://www.figma.com",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "XFO: SAMEORIGIN"
+    },
+    {
+      "url": "https://claude.ai",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "CSP frame-ancestors: 'self'"
+    },
+    {
+      "url": "https://chat.openai.com",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://gemini.google.com",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "XFO: DENY"
+    },
+    {
+      "url": "https://www.perplexity.ai",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "XFO: DENY"
+    },
+    {
+      "url": "https://huggingface.co/chat",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "CSP frame-ancestors: https://huggingface.co"
+    },
+    {
+      "url": "https://puter.com",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "XFO: SAMEORIGIN"
+    },
+    {
+      "url": "https://poe.com",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "XFO: sameorigin"
+    },
+    {
+      "url": "https://copilot.microsoft.com",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://grok.x.ai",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "CSP frame-ancestors: 'none'"
+    },
+    {
+      "url": "https://fast.com",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://www.qrcode-monkey.com",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://colorhunt.co",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://emojipedia.org",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "XFO: SAMEORIGIN"
+    },
+    {
+      "url": "https://www.remove.bg",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "XFO: SAMEORIGIN"
+    },
+    {
+      "url": "https://tinypng.com",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "XFO: SAMEORIGIN"
+    },
+    {
+      "url": "https://temp-mail.org",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "XFO: DENY"
+    },
+    {
+      "url": "https://passer-by.com/pacman/",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://www.chess.com",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "XFO: SAMEORIGIN"
+    },
+    {
+      "url": "https://www.nytimes.com/games/wordle",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "XFO: DENY"
+    },
+    {
+      "url": "https://sudoku.com",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "XFO: SAMEORIGIN always;"
+    },
+    {
+      "url": "https://www.nytimes.com/crosswords",
+      "status": 200,
+      "mode": "weblink",
+      "reason": "XFO: DENY"
+    },
+    {
+      "url": "https://minesweeper.online",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://solitaire.io",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://slither.io",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://agar.io",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    },
+    {
+      "url": "https://www.geoguessr.com",
+      "status": 200,
+      "mode": "iframe",
+      "reason": "Sem bloqueio detectado"
+    }
+  ]
+}
