@@ -40,6 +40,9 @@ import {
 } from "lucide-react";
 import { type MagicStoreApp as CatalogApp } from "../../data/magic-store-catalog";
 import { useMagicStoreCatalog } from "./catalog-adapter";
+import { useAppRegistryStore } from "../../stores/appRegistryStore";
+import { isSensitiveScope } from "@aethereos/client";
+import { PermissionConsentModal } from "../../components/shared/PermissionConsentModal";
 import { useDrivers } from "../../lib/drivers-context";
 import { useSessionStore } from "../../stores/session";
 import { useOSStore } from "../../stores/osStore";
@@ -2750,30 +2753,86 @@ export function MagicStoreApp() {
   const installError = useInstalledModulesStore((s) => s.error);
   const installModule = useInstalledModulesStore((s) => s.installModule);
   const uninstallModule = useInstalledModulesStore((s) => s.uninstallModule);
+  const grantScopes = useInstalledModulesStore((s) => s.grantScopes);
+
+  // Sprint 23 MX125: state do modal de consentimento.
+  const [consentApp, setConsentApp] = useState<{
+    id: string;
+    name: string;
+    icon?: string;
+    color?: string;
+    scopes: readonly string[];
+  } | null>(null);
+
+  const installCore = useCallback(
+    async (moduleId: string, scopesToGrant: readonly string[]) => {
+      if (drivers === null || activeCompanyId === null || userId === null)
+        return;
+      await installModule(drivers, activeCompanyId, moduleId);
+      const nowInstalled = useInstalledModulesStore
+        .getState()
+        .installed.has(moduleId);
+      if (!nowInstalled) return;
+      // Sprint 23: grava grants para os scopes aceitos.
+      if (scopesToGrant.length > 0) {
+        await grantScopes(
+          drivers,
+          activeCompanyId,
+          userId,
+          moduleId,
+          scopesToGrant,
+        );
+      }
+      void drivers.scp.publishEvent(
+        "platform.module.installed",
+        {
+          company_id: activeCompanyId,
+          module: moduleId,
+          installed_by: userId,
+        },
+        { actor: { type: "human", user_id: userId } },
+      );
+    },
+    [drivers, activeCompanyId, userId, installModule, grantScopes],
+  );
 
   const install = useCallback(
     async (moduleId: string) => {
       if (drivers === null || activeCompanyId === null || userId === null)
         return;
-      await installModule(drivers, activeCompanyId, moduleId);
-      // Sprint 16: emite SCP event apos install bem-sucedido
-      const nowInstalled = useInstalledModulesStore
-        .getState()
-        .installed.has(moduleId);
-      if (nowInstalled) {
-        void drivers.scp.publishEvent(
-          "platform.module.installed",
-          {
-            company_id: activeCompanyId,
-            module: moduleId,
-            installed_by: userId,
-          },
-          { actor: { type: "human", user_id: userId } },
-        );
+      // Sprint 23 MX125: consulta scopes declarados em app_registry.
+      const entry = useAppRegistryStore.getState().apps.get(moduleId);
+      const declared = entry?.permissions ?? [];
+      const sensitives = declared.filter((s) => isSensitiveScope(s));
+
+      if (sensitives.length === 0) {
+        // Sem scopes sensitive: install + auto-grant todos os declarados.
+        await installCore(moduleId, declared);
+        return;
       }
+
+      // Tem scopes sensitive: pede consentimento.
+      setConsentApp({
+        id: moduleId,
+        name: entry?.name ?? moduleId,
+        ...(entry?.icon !== undefined && { icon: entry.icon }),
+        ...(entry?.color !== undefined && { color: entry.color }),
+        scopes: declared,
+      });
     },
-    [drivers, activeCompanyId, userId, installModule],
+    [drivers, activeCompanyId, userId, installCore],
   );
+
+  const handleConsentAccept = useCallback(async () => {
+    if (consentApp === null) return;
+    const target = consentApp;
+    setConsentApp(null);
+    await installCore(target.id, target.scopes);
+  }, [consentApp, installCore]);
+
+  const handleConsentCancel = useCallback(() => {
+    setConsentApp(null);
+  }, []);
 
   const uninstall = useCallback(
     async (moduleId: string) => {
@@ -3101,6 +3160,18 @@ export function MagicStoreApp() {
           {/* Tab main content */}
           {renderTabMainContent()}
         </div>
+      )}
+
+      {consentApp !== null && (
+        <PermissionConsentModal
+          open={true}
+          appName={consentApp.name}
+          appIcon={consentApp.icon ?? null}
+          appColor={consentApp.color ?? null}
+          scopes={consentApp.scopes}
+          onAccept={handleConsentAccept}
+          onCancel={handleConsentCancel}
+        />
       )}
     </div>
   );

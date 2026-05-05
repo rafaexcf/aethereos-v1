@@ -35,6 +35,17 @@ interface InstalledModulesActions {
     companyId: string,
     moduleId: string,
   ) => Promise<void>;
+  /**
+   * Sprint 23 MX125: insere grants em kernel.app_permission_grants para
+   * cada scope. Idempotente via UNIQUE constraint.
+   */
+  grantScopes: (
+    drivers: CloudDrivers,
+    companyId: string,
+    userId: string,
+    appId: string,
+    scopes: readonly string[],
+  ) => Promise<void>;
   subscribeRealtime: (drivers: CloudDrivers, companyId: string) => void;
   reset: () => void;
 }
@@ -101,6 +112,33 @@ export const useInstalledModulesStore = create<
       const np = new Set(get().pending);
       np.delete(moduleId);
       set({ pending: np });
+    }
+  },
+
+  grantScopes: async (drivers, companyId, userId, appId, scopes) => {
+    if (scopes.length === 0) return;
+    const rows = scopes.map((scope) => ({
+      company_id: companyId,
+      app_id: appId,
+      scope,
+      granted_by: userId,
+    }));
+    try {
+      const res = (await drivers.data
+        .from("app_permission_grants")
+        .upsert(rows, {
+          onConflict: "company_id,app_id,scope",
+        })) as unknown as {
+        error: { message: string } | null;
+      };
+      if (res.error !== null) {
+        // Permite que o install prossiga mesmo se grants falharem (R12:
+        // grants podem ser concedidos depois via UI de revogacao).
+        // Apenas armazena o erro pra debug.
+        set({ error: `grants partial: ${res.error.message}` });
+      }
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : "Erro ao gravar grants" });
     }
   },
 
