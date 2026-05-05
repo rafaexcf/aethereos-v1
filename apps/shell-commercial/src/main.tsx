@@ -24,6 +24,42 @@ import { DriversProvider } from "./lib/drivers-context";
 import { ThemeProvider } from "./lib/theme/theme-provider";
 import "./styles/globals.css";
 
+// Sprint 27 hotfix: deploy novo invalida chunks lazy (hashes mudam).
+// SPA antiga em cache do browser tenta `import()` chunk que retorna 404.
+// Detectamos a falha e recarregamos a página UMA VEZ pra pegar o
+// index.html novo (com hashes atualizados). Flag em sessionStorage
+// previne loop em caso de erro real do deploy novo.
+const RELOAD_FLAG = "aethereos:chunk-reload";
+
+function isChunkLoadError(reason: unknown): boolean {
+  if (reason === null || reason === undefined) return false;
+  const msg =
+    reason instanceof Error
+      ? reason.message
+      : typeof reason === "string"
+        ? reason
+        : "";
+  return (
+    /Failed to fetch dynamically imported module/i.test(msg) ||
+    /Importing a module script failed/i.test(msg) ||
+    /ChunkLoadError/i.test(msg)
+  );
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("unhandledrejection", (e) => {
+    if (!isChunkLoadError(e.reason)) return;
+    if (sessionStorage.getItem(RELOAD_FLAG) === "1") return;
+    sessionStorage.setItem(RELOAD_FLAG, "1");
+    window.location.reload();
+  });
+  // Limpa flag em load bem-sucedido — permite novo reload se outro
+  // deploy chegar durante a sessao do user.
+  window.addEventListener("load", () => {
+    setTimeout(() => sessionStorage.removeItem(RELOAD_FLAG), 5000);
+  });
+}
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   loginRoute,
