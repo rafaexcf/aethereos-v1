@@ -3041,7 +3041,14 @@ export function MagicStoreApp() {
       }
       return;
     }
-    if (src.type === "weblink" || src.type === "iframe") {
+    // Sprint 25 MX139: iframe apps abrem como tab no shell (AppFrame
+    // delega para IframeAppFrame quando entry_mode='iframe' no
+    // app_registry). Weblinks vao para nova aba via window.open.
+    if (src.type === "iframe") {
+      openApp(app.id, app.name);
+      return;
+    }
+    if (src.type === "weblink") {
       window.open(src.target, "_blank", "noopener,noreferrer");
       return;
     }
