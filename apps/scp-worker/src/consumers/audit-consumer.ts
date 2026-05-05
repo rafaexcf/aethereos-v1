@@ -19,8 +19,10 @@ import { jlog, type InlineConsumer } from "../consumer.js";
  *   payload      = envelope.payload
  *   resource_*   = derivado de payload se reconhecivel (file_id, person_id, etc)
  *
- * Idempotencia: nao verificada (audit_log e append-only por design — replay
- * cria nova row, util para auditoria de replay).
+ * Idempotencia (Sprint 31 / MX170): kernel.audit_log.event_id é UNIQUE.
+ * Re-disparar o mesmo envelope (replay) faz INSERT ... ON CONFLICT DO
+ * NOTHING e nao duplica linhas. O auditor consulta replay_count em
+ * kernel.scp_outbox para distinguir replays.
  */
 export class AuditConsumer implements InlineConsumer {
   readonly name = "AuditConsumer";
@@ -60,10 +62,12 @@ export class AuditConsumer implements InlineConsumer {
     try {
       await sql`
         INSERT INTO kernel.audit_log
-          (company_id, actor_id, actor_type, action, resource_type, resource_id, payload)
+          (company_id, actor_id, actor_type, action, resource_type, resource_id, payload, event_id)
         VALUES
           (${companyId}, ${actorId}, ${actorType}, ${envelope.type},
-           ${resourceType}, ${resourceId}, ${JSON.stringify(payload)}::jsonb)
+           ${resourceType}, ${resourceId}, ${JSON.stringify(payload)}::jsonb,
+           ${envelope.id})
+        ON CONFLICT (event_id) DO NOTHING
       `;
     } catch (e) {
       // R12: audit nao bloqueia pipeline. Loga e segue (caller decide retry).
