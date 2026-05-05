@@ -46,6 +46,15 @@ interface InstalledModulesActions {
     appId: string,
     scopes: readonly string[],
   ) => Promise<void>;
+  /**
+   * Sprint 23 MX128: revoga 1 scope para um app.
+   */
+  revokeScope: (
+    drivers: CloudDrivers,
+    companyId: string,
+    appId: string,
+    scope: string,
+  ) => Promise<void>;
   subscribeRealtime: (drivers: CloudDrivers, companyId: string) => void;
   reset: () => void;
 }
@@ -139,6 +148,24 @@ export const useInstalledModulesStore = create<
       }
     } catch (e) {
       set({ error: e instanceof Error ? e.message : "Erro ao gravar grants" });
+    }
+  },
+
+  revokeScope: async (drivers, companyId, appId, scope) => {
+    try {
+      const res = (await drivers.data
+        .from("app_permission_grants")
+        .delete()
+        .eq("company_id", companyId)
+        .eq("app_id", appId)
+        .eq("scope", scope)) as unknown as {
+        error: { message: string } | null;
+      };
+      if (res.error !== null) {
+        set({ error: res.error.message });
+      }
+    } catch (e) {
+      set({ error: e instanceof Error ? e.message : "Erro ao revogar" });
     }
   },
 

@@ -43,6 +43,7 @@ import { useMagicStoreCatalog } from "./catalog-adapter";
 import { useAppRegistryStore } from "../../stores/appRegistryStore";
 import { isSensitiveScope } from "@aethereos/client";
 import { PermissionConsentModal } from "../../components/shared/PermissionConsentModal";
+import { PermissionsSection } from "./PermissionsSection";
 import { useDrivers } from "../../lib/drivers-context";
 import { useSessionStore } from "../../stores/session";
 import { useOSStore } from "../../stores/osStore";
@@ -2728,6 +2729,9 @@ function AppDetailView({
           </HorizontalCarousel>
         </section>
       )}
+
+      {/* Sprint 23 MX128: secao de permissoes (so aparece se installed=true) */}
+      <PermissionsSection appId={app.id} installed={installed} />
     </div>
   );
 }
