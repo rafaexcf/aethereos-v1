@@ -1,6 +1,6 @@
-# ARCHITECTURE_OVERVIEW.md — Aethereos Sprint 20 (MX110)
+# ARCHITECTURE_OVERVIEW.md — Aethereos Sprint 32 (MX180)
 
-> Visão geral pré-staging. Estado em **2026-05-04** (313 commits).
+> Visão geral selo final Camada 1. Estado em **2026-05-06**.
 > Para detalhe constitucional: `docs/AETHEREOS_FUNDAMENTACAO_v4_3.md`.
 > Para auditorias específicas: `SECURITY_AUDIT.md` + `CODE_QUALITY_AUDIT.md`.
 
@@ -36,8 +36,8 @@ aethereos/
 │   ├── seed/                  # Seed data para dev
 │   └── smoke/                 # Smoke test (auth + RLS)
 ├── supabase/
-│   ├── migrations/            # 73 migrations (kernel.* + storage policies)
-│   └── functions/             # 11 Edge Functions
+│   ├── migrations/            # 99 migrations (kernel.* + storage policies)
+│   └── functions/             # 16 Edge Functions
 ├── infra/local/               # docker-compose.dev.yml (NATS, LiteLLM, OTel...)
 ├── docs/                      # ADRs (24) + runbooks
 └── tsconfig.base.json         # strict + 6 flags adicionais
@@ -205,7 +205,7 @@ Bloqueios de CI (`.dependency-cruiser.cjs` + revisão humana):
                             RLS: user_id = auth.uid()
 ```
 
-RLS coverage (Sprint 20 MX106): **68/68 tabelas** kernel com RLS habilitado. **99 policies** ativas. Anon **negado** no schema kernel (USAGE não concedido).
+RLS coverage (Sprint 32 MX175): **81/81 tabelas** kernel com RLS habilitado. **123 policies** ativas. Anon **negado** no schema kernel (USAGE não concedido).
 
 JWT claims:
 
@@ -231,21 +231,53 @@ JWT claims:
 
 ---
 
-## 8. Edge Functions (11)
+## 8. Edge Functions (16)
 
-| Função                | verify_jwt  | Função                                 |
-| --------------------- | ----------- | -------------------------------------- |
-| activate-module       | ✓           | Magic Store: instala módulo            |
-| cnpj-lookup           | ✗ (público) | Lookup CNPJ na ReceitaWS (pre-auth)    |
-| complete-onboarding   | ✓           | Onboarding wizard                      |
-| context-snapshot      | ✓           | Sprint 19: agrega contexto de entidade |
-| create-company        | ✓           | Cria company + tenant_memberships      |
-| embed-text            | ✓           | Wrapper LiteLLM /embeddings            |
-| register-company      | ✗ (público) | Cria user via Auth API (pre-auth)      |
-| scp-publish           | ✓           | Outbox writer (browser → SCP)          |
-| staff-approve-company | ✓           | Platform admin: aprova company         |
-| staff-company-detail  | ✓           | Platform admin: detalha company        |
-| staff-list-companies  | ✓           | Platform admin: lista companies        |
+| Função                  | verify_jwt  | Função                                        |
+| ----------------------- | ----------- | --------------------------------------------- |
+| activate-module         | ✓           | Magic Store: instala módulo                   |
+| cnpj-lookup             | ✗ (público) | Lookup CNPJ na ReceitaWS (pre-auth)           |
+| complete-onboarding     | ✓           | Onboarding wizard                             |
+| context-snapshot        | ✓           | Sprint 19: agrega contexto de entidade        |
+| create-company          | ✓           | Cria company + tenant_memberships             |
+| embed-text              | ✓           | Wrapper LiteLLM /embeddings                   |
+| **export-company-data** | ✓           | LGPD Art. 18 — export owner-only (Sprint 30)  |
+| **force-logout**        | ✓           | Encerra sessões remotas (Sprint 30)           |
+| **health**              | ✗ (público) | Status check para monitor externo (Sprint 31) |
+| **invite-member**       | ✓           | Convite por email + role-check (Sprint 27)    |
+| register-company        | ✗ (público) | Cria user via Auth API (pre-auth)             |
+| scp-publish             | ✓           | Outbox writer (browser → SCP)                 |
+| staff-approve-company   | ✓           | Platform admin: aprova company                |
+| staff-company-detail    | ✓           | Platform admin: detalha company               |
+| staff-list-companies    | ✓           | Platform admin: lista companies               |
+
+## 8.1. Apps com persistência server-side (Sprint 29)
+
+Migração de localStorage → Postgres em apps de produtividade:
+
+- **kernel.tasks** + **kernel.task_lists** — backing store do app Tarefas
+- **kernel.kanban_boards** + **kanban_columns** + **kanban_cards** + activity / attachments / labels / comments / checklist_items — Kanban completo
+- **kernel.notes** + **kernel.note_labels** + **kernel.note_label_links** — Bloco de Notas
+
+Cada tabela usa o mesmo padrão RLS por company_id e responde via SCP a eventos de mudança.
+
+## 8.2. Permissões avançadas (Sprint 28)
+
+- **kernel.departments** + **kernel.department_members** — hierarquia organizacional.
+- **kernel.groups** + **kernel.group_members** — agrupamento ad-hoc.
+- **kernel.company_roles** — papéis customizados por tenant.
+- **kernel.app_access_rules** — controle granular de acesso por app, departamento, grupo.
+- **kernel.access_schedules** — janelas temporais de acesso.
+- **kernel.company_settings** — configuração por tenant (theme, BYOK LLM, etc.).
+
+UI: Menu Gestor (Sprint 27) consome essas tabelas para gerência humana.
+
+## 8.3. Segurança enterprise (Sprint 30)
+
+- **kernel.security_alerts** — alertas detectados (login suspeito, força bruta).
+- **kernel.login_history** — sessões ativas com `is_active`/`logout_at` (alvo de force-logout).
+- 2FA TOTP via Supabase Auth MFA.
+- Exportação LGPD via `export-company-data` (owner-only, rate-limit 3/h, 50MB).
 
 ---
 
@@ -265,20 +297,20 @@ Supabase local via `pnpm db:start` (CLI Supabase).
 
 ## 10. Camadas de teste
 
-| Tipo             | Quantidade | Localização                                         |
-| ---------------- | ---------- | --------------------------------------------------- |
-| Unit tests       | 27 files   | `packages/*/​__tests__/`, `apps/*/​__tests__/unit/` |
-| RLS isolation    | 2 files    | `apps/scp-worker/__tests__/`                        |
-| E2E (Playwright) | 34 specs   | `tooling/e2e/tests/`                                |
-| Smoke (auth+RLS) | 1 script   | `tooling/smoke/`                                    |
-| Seed (dev data)  | 1 script   | `tooling/seed/`                                     |
+| Tipo             | Quantidade          | Localização                                         |
+| ---------------- | ------------------- | --------------------------------------------------- |
+| Unit tests       | 36 files            | `packages/*/​__tests__/`, `apps/*/​__tests__/unit/` |
+| RLS isolation    | 2 files             | `apps/scp-worker/__tests__/`                        |
+| E2E (Playwright) | 11 specs / 34 cases | `tooling/e2e/tests/`                                |
+| Smoke (auth+RLS) | 1 script            | `tooling/smoke/`                                    |
+| Seed (dev data)  | 1 script            | `tooling/seed/`                                     |
 
 Gates de CI (`pnpm ci:full`):
 
-1. `pnpm typecheck` — 25/25
-2. `pnpm lint` — 23/23
-3. `pnpm deps:check` — 0 errors (47 warnings em dist + 9 ciclos em apps internos)
-4. `pnpm test` — 19/19 tasks (188+ tests)
+1. `pnpm typecheck` — 26/26
+2. `pnpm lint` — 24/24
+3. `pnpm deps:check` — 0 errors
+4. `pnpm test` — todas as tasks
 5. `pnpm test:isolation` — RLS cross-tenant
 6. `pnpm build` — 11/11
 

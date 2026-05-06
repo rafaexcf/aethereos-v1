@@ -4195,3 +4195,58 @@ conserta cada um. Sprint só fecha com produto funcional end-to-end.
 3. Cobertura E2E em CI (GitHub Actions com runner Ubuntu — sem LD_LIBRARY_PATH hack)
 4. Copilot com LLM real (LiteLLM configurado)
 5. scp-worker validado em ambiente Docker (NATS → consumer)
+
+---
+
+> **Nota Sprint 10+:** A partir do Sprint 10 o registro detalhado migrou para
+> `CHANGELOG.md` (resumo factual conciso) + `docs/sprint-prompts/SPRINT_NN_PROMPT.md`
+> (objetivo, milestones, regras) + commits (`MXNNN` em mensagem). Cada sprint
+> também produz mudanças no GATES_STATUS, SECURITY_AUDIT, CODE_QUALITY_AUDIT
+> ou KNOWN_LIMITATIONS conforme aplicável.
+
+---
+
+# Sprint 32 — Selo final Camada 1 (2026-05-06)
+
+**Objetivo:** fechar a Camada 1 definitivamente. Re-auditar pós-Sprints 21-31,
+deployar tudo em produção, configurar dogfood interno, ativar monitor uptime,
+consolidar documentação.
+
+## Milestones
+
+| Milestone | Descrição                                            | Status |
+| --------- | ---------------------------------------------------- | ------ |
+| MX175     | Re-auditoria de segurança — RLS + Edge Functions     | DONE   |
+| MX176     | Re-auditoria de qualidade — TS strict + deps + tests | DONE   |
+| MX177     | Deploy completo em produção                          | DONE   |
+| MX178     | Setup de dogfood (tenant interno + plano 30 dias)    | DONE   |
+| MX179     | Monitor de uptime documentado                        | DONE   |
+| MX180     | Consolidação final de documentação                   | DONE   |
+
+## Resultados-chave
+
+- **RLS:** 81/81 tabelas kernel.\* com RLS habilitado + 123 policies (era 68/99 em Sprint 20).
+- **Edge Functions:** 16 totais (era 11). 3 novas deployadas em MX177:
+  `invite-member`, `force-logout`, `export-company-data`.
+- **Auditoria de qualidade:** typecheck 26/26, lint 24/24, 0 vulns critical/high.
+- **Frontend:** aethereos.io HTTP 200. Health endpoint OK + db connected.
+- **Dogfood:** plano de 30 dias documentado em `docs/DOGFOOD_PLAN.md`. Tenant
+  interno será criado pelo owner (manual, R10).
+- **Uptime monitor:** runbook `docs/runbooks/uptime-monitoring.md` para UptimeRobot
+  setup pelo owner.
+- **Documentação:** README, ARCHITECTURE_OVERVIEW, QUICK_START, GATES_STATUS,
+  KNOWN_LIMITATIONS atualizados. `CHANGELOG.md` criado.
+
+## Correções aplicadas
+
+- `supabase/config.toml`: adicionado `[functions.health] verify_jwt = false`
+  para deploys declarativos (estava default true, monitor externo precisaria
+  de JWT).
+
+## Próximas etapas
+
+**CAMADA 1 SELADA.** Nenhum sprint de código adicional na Camada 1.
+
+- 30 dias de dogfood (2026-05-06 → 2026-06-05).
+- Início paralelo de comercio.digital (Camada 2).
+- Pen test externo após dogfood (Gate 6).

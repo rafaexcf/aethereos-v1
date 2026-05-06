@@ -1,6 +1,7 @@
 # KNOWN_LIMITATIONS.md
 
-Limitações conhecidas com status atualizado em **Sprint 20 MX108** (auditoria pré-staging).
+Limitações conhecidas. Última revisão: **Sprint 32 MX180** (selo final Camada 1).
+Histórico: Sprint 20 MX108 (pré-staging), Sprint 31 MX174 (gates finais), Sprint 32 (re-revisão).
 
 Status legend:
 

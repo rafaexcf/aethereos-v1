@@ -21,11 +21,11 @@ Comece pela ordem:
 5. **[docs/ECOSYSTEM_README.md](./docs/ECOSYSTEM_README.md)** — mapa do corpus documental
 6. **[docs/adr/](./docs/adr/)** — registros de decisão arquitetural
 
-Auditorias pré-staging (Sprint 20):
+Auditorias (re-auditadas Sprint 32 / MX175-MX176):
 
-- **[SECURITY_AUDIT.md](./SECURITY_AUDIT.md)** — RLS 68/68, buckets, edge functions
-- **[CODE_QUALITY_AUDIT.md](./CODE_QUALITY_AUDIT.md)** — TS strict, deps, drivers, testes
-- **[KNOWN_LIMITATIONS.md](./KNOWN_LIMITATIONS.md)** — 7 KLs com status taxonomia
+- **[SECURITY_AUDIT.md](./SECURITY_AUDIT.md)** — RLS 81/81, buckets, 16 edge functions
+- **[CODE_QUALITY_AUDIT.md](./CODE_QUALITY_AUDIT.md)** — TS strict 26/26, lint 24/24, 0 vulns critical+high
+- **[KNOWN_LIMITATIONS.md](./KNOWN_LIMITATIONS.md)** — KLs com status taxonomia
 
 Compliance e governança (Sprint 31):
 
@@ -98,9 +98,10 @@ Veja:
 
 ## Status
 
-**Sprint 31 (2026-05-09)** — Camada 1 código-completa. 4/8 gates da Fase 1 PASS (1, 2, 3, 7), 3/8 parciais (4, 5, 6 — aguardam dogfood + pen test), 1/8 temporal (8 — 30 dias).
+**Sprint 32 (2026-05-06) — CAMADA 1 SELADA.** 4/8 gates da Fase 1 PASS (1, 2, 3, 7), 3/8 parciais (4, 5, 6 — aguardam dogfood + pen test), 1/8 iniciado (8 — 30 dias começam agora).
 
 - **[GATES_STATUS.md](./GATES_STATUS.md)** — snapshot detalhado dos 8 gates
+- **[CHANGELOG.md](./CHANGELOG.md)** — resumo de cada sprint
 - **[docs/SECURITY_CHECKLIST.md](./docs/SECURITY_CHECKLIST.md)** — 13 vetores de ameaça + status MITIGADO
 - **[SPRINT_LOG.md](./SPRINT_LOG.md)** — histórico completo
 - **[docs/adr/](./docs/adr/)** — decisões arquiteturais

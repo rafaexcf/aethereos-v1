@@ -189,6 +189,57 @@ Para inspecionar via UI:
 - Ver cards de resumo + tabela dos últimos 20 records
 - Click em "Snapshot" em qualquer linha → drawer mostra records + related_events + embedding_count
 
+## 8.5. Convidar colaboradores e criar departamentos (Sprint 27-28)
+
+Após criar a company, owner/admin podem expandir a equipe:
+
+1. Mesa > **Gestor** > aba **Equipe** > **Convidar colaborador**
+2. Email + role (admin / manager / member / viewer) → Edge Function `invite-member` cria membership pendente + dispara invite Supabase Auth.
+3. Convidado recebe email com link de signup; ao confirmar, role é ativado.
+
+Departamentos e grupos:
+
+1. Mesa > **Gestor** > aba **Departamentos** > **Novo departamento** (e.g., Desenvolvimento, Produto)
+2. Mesa > **Gestor** > aba **Grupos** > criar grupo ad-hoc (e.g., "Squad Camada 1")
+3. Mesa > **Gestor** > aba **Acessos** > definir regras `app_access_rules` por departamento/grupo + janela temporal opcional (`access_schedules`).
+
+## 8.6. Apps com persistência: Tarefas, Kanban, Bloco de Notas (Sprint 29)
+
+Sprint 29 migrou esses apps de localStorage para Postgres com RLS:
+
+- **Tarefas** (`kernel.tasks`, `kernel.task_lists`) — listas + tarefas por company_id.
+- **Kanban** (`kernel.kanban_boards/columns/cards` + activity/attachments/labels/comments/checklist) — boards multi-coluna persistentes.
+- **Bloco de Notas** (`kernel.notes`, `kernel.note_labels`) — markdown notes com labels.
+
+Sem mudança de UI — só backing store. Funciona idêntico em qualquer device do mesmo tenant.
+
+## 8.7. Configurar 2FA TOTP (Sprint 30)
+
+1. Configurações > **Segurança** > **Ativar 2FA TOTP**
+2. Aplicativo authenticator (Google Authenticator, Authy, 1Password) escaneia QR code.
+3. Confirmar com 6 dígitos atuais → TOTP ativo na próxima sessão.
+4. Codigos de backup (8) gerados — guarde fora do Aethereos.
+
+## 8.8. Exportar dados da company (LGPD Art. 18)
+
+Apenas owner pode exportar:
+
+1. Configurações > **Privacidade & LGPD** > **Exportar dados da empresa**
+2. Edge Function `export-company-data` gera JSON com: companies, memberships,
+   profiles, contacts, files (sem storage_path), scp_outbox últimos 90d, etc.
+3. Download direto do browser (limite 50 MB).
+
+Não inclui senhas, tokens, secrets. Rate-limit: 3 exports/hora.
+
+## 8.9. Encerrar sessões remotas
+
+1. Configurações > **Segurança** > **Sessões ativas** lista todos os logins.
+2. Para encerrar uma sessão específica: clique em **Encerrar**.
+3. Para encerrar TODAS exceto a atual: **Encerrar outras sessões**.
+
+Edge Function `force-logout` marca `kernel.login_history.is_active=false`;
+shell consulta no boot/poll e desconecta automaticamente.
+
 ## 9. Rodar gates de CI
 
 ```bash

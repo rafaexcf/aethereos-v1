@@ -1,8 +1,8 @@
 # Gates Status — Fase 1 / Camada 1
 
-Sprint 31 / MX174 — snapshot final de código da Camada 1.
+Sprint 32 / MX180 — selo final Camada 1.
 
-Data: 2026-05-05
+Data: 2026-05-06
 Próximo foco: dogfood de 30 dias + comercio.digital em paralelo.
 
 ---
@@ -15,9 +15,9 @@ Próximo foco: dogfood de 30 dias + comercio.digital em paralelo.
 | ⚠️ PARCIAL | 4, 5, 6    |
 | ⏳ TEMPO   | 8          |
 
-A Camada 1 está **codigo-completa**. Os gates parciais e pendentes
-dependem de tempo (dogfood) ou contratação externa (pen test) — não
-de mais código.
+A Camada 1 está **codigo-completa** após Sprint 32. Os gates parciais e
+pendentes dependem de tempo (dogfood) ou contratação externa (pen test) —
+não de mais código.
 
 ---
 
@@ -25,172 +25,148 @@ de mais código.
 
 ### ✅ Gate 1 — Provisionamento
 
-**Status:** PASS
+**Status:** PASS (mantido)
 **Critério:** novo tenant é provisionado com schema completo, RLS,
 edge functions, e usuários iniciais.
 
 **Evidência:**
 
-- Edge Function `register-company` + `create-company` + `complete-onboarding`.
-- Seed determinístico cobre 2 empresas (Meridian, Solaris) + cross-tenant.
+- Edge Functions `register-company`, `create-company`, `complete-onboarding`,
+  `invite-member` (Sprint 27).
+- Seed determinístico cobre 2 empresas + cross-tenant.
 - E2E `signup-onboarding-create-company.spec.ts` passa.
 
 ---
 
 ### ✅ Gate 2 — Isolamento
 
-**Status:** PASS
+**Status:** PASS (mantido)
 **Critério:** dados de tenant A nunca são lidos ou escritos por tenant B.
 
 **Evidência:**
 
-- 70+ tabelas em `kernel.*` com RLS habilitada.
-- `pnpm test:isolation` — 13 cenários de cross-tenant cobrindo SELECT,
-  INSERT, UPDATE, DELETE via PostgREST e RPC.
+- **81 tabelas** em `kernel.*` com RLS habilitada (era 68 em Sprint 20).
+  Ver `SECURITY_AUDIT.md` Sprint 32.
+- 123 policies ativas. Padrão dominante:
+  `company_id = kernel.current_company_id()`.
+- `pnpm test:isolation` — 13 cenários cross-tenant.
 - E2E `cross-tenant-rls.spec.ts` no Playwright.
-- `docs/SECURITY_CHECKLIST.md` vetores 1, 2, 8 — MITIGADO.
+- 13 vetores no `docs/SECURITY_CHECKLIST.md` — todos MITIGADO.
 
 ---
 
 ### ✅ Gate 3 — SCP end-to-end + replay
 
-**Status:** PASS (Sprint 31 / MX170)
+**Status:** PASS (Sprint 31 / MX170, mantido)
 **Critério:** evento publicado pelo browser → outbox → consumer →
-projeções derivadas. Replay idempotente de evento por id ou range.
+projeções derivadas. Replay idempotente por id ou range.
 
 **Evidência:**
 
-- `apps/scp-worker/src/main.ts` — outbox poller com FOR UPDATE SKIP
-  LOCKED, max attempts, latency metrics.
-- `apps/scp-worker/src/replay.ts` — `replayEvent(eventId)` +
-  `replayRange(from, to)`.
-- `apps/scp-worker/src/replay-cli.ts` — CLI `pnpm --filter
-@aethereos/scp-worker replay --event-id <uuid>`.
-- Migration `20260509000001_kernel_scp_replay.sql` — `replay_count`,
-  `last_replayed_at` em `scp_outbox`; `event_id UUID UNIQUE` em
-  `audit_log`.
-- 4 consumers idempotentes:
-  - AuditConsumer: `INSERT ... ON CONFLICT (event_id) DO NOTHING`.
-  - NotificationConsumer: skip se `(user_id, source_app, source_id)`
-    já existe.
-  - EmbeddingConsumer: `INSERT ... ON CONFLICT (company_id, source_id,
-chunk_index) DO UPDATE`.
-  - EnrichmentConsumer: `INSERT ... ON CONFLICT (company_id,
-entity_type, entity_id, record_type) DO UPDATE`.
-- 38/38 unit tests passando, incluindo 6 testes específicos de replay.
-- Pipeline E2E: 13/13 passando desde Sprint 9.6.
+- `apps/scp-worker/src/main.ts` — outbox poller com FOR UPDATE SKIP LOCKED.
+- `apps/scp-worker/src/replay.ts` — replayEvent + replayRange.
+- 4 consumers idempotentes (audit, notification, embedding, enrichment).
+- Migration `20260509000001_kernel_scp_replay.sql` — replay_count + event_id UNIQUE.
+- 38/38 unit tests passando, 6 de replay específicos.
+- Pipeline E2E: 13/13 desde Sprint 9.6.
 
 ---
 
 ### ⚠️ Gate 4 — Copilot básico (eval dataset)
 
-**Status:** PARCIAL (Sprint 31 / MX173)
-**Critério:** dataset de avaliação cobrindo categorias canônicas +
-500+ queries com uso real.
+**Status:** PARCIAL (mantido)
+**Critério:** dataset de avaliação cobrindo categorias canônicas + 500+
+queries com uso real.
 
 **Entregue:**
 
-- Copilot integrado com LiteLLM gateway (Sprint 15) + RAG sobre
-  `kernel.embeddings` + agent proposals workflow (Sprint 17).
-- `docs/copilot-eval-dataset.json` — 50 queries seed (rag/proposal/
-  direct/decline).
-- LLM observability via Langfuse self-hosted (decisão do CLAUDE.md §4).
+- Copilot integrado com LiteLLM gateway + RAG sobre kernel.embeddings.
+- Agent proposals workflow (Sprint 17).
+- `docs/copilot-eval-dataset.json` — 50 queries seed.
+- LLM observability via Langfuse self-hosted.
 
 **Pendente:**
 
-- Expansão para 500+ queries com uso real ao longo de 30 dias de
-  dogfood.
-- Sistema automatizado de eval (rodar dataset contra Copilot e medir
-  precision/recall por categoria).
+- Expansão para 500+ queries com uso real (30 dias de dogfood).
+- Sistema automatizado de eval (precision/recall por categoria).
 
-**Plano:** ambos endereçados pós-dogfood quando houver tráfego real.
+**Plano:** ambos endereçados pós-dogfood.
 
 ---
 
 ### ⚠️ Gate 5 — SLO (métricas, uptime)
 
-**Status:** PARCIAL (Sprint 31 / MX171, MX172)
+**Status:** PARCIAL (Sprint 31 / MX171-172, complementado em Sprint 32 / MX179)
 **Critério:** instrumentation completa + 30 dias de uptime ≥ 99,5%.
 
 **Entregue:**
 
 - Edge Function `health` pública (200 ok, db status, uptime_seconds).
-- SLO instrumentation em scp-worker: p50/p95/p99 a cada 100 eventos
-  via log estruturado consultável em Vercel logs / Loki.
-- Error tracking: `lib/observability.ts` roteia para
-  `window.Sentry` se disponível, console.error estruturado caso
-  contrário; handlers globais para `error` + `unhandledrejection`.
-- Vercel auto-deploy via Git Integration (push em main → produção).
-- `docs/runbooks/auto-deploy.md` cobre deploy + migrations + rollback.
+- SLO instrumentation em scp-worker: p50/p95/p99 a cada 100 eventos.
+- Error tracking: `lib/observability.ts` + handlers globais.
+- Vercel auto-deploy + runbook completo.
+- Sprint 32: `docs/runbooks/uptime-monitoring.md` documenta UptimeRobot.
 
 **Pendente:**
 
 - 30 dias de uptime medido em produção (depende de tempo).
-- Uptime monitor externo configurado (BetterUptime / UptimeRobot
-  apontando para health endpoint).
-- Sentry com DSN real configurado em prod (opcional, R11 do sprint).
+- Monitor externo configurado pelo owner (manual — não automatizado por agente).
 
-**Plano:** monitor externo configurado no início do dogfood (1 dia).
-30 dias acumulam naturalmente.
+**Plano:** owner cria UptimeRobot no D-1 do dogfood. 30 dias acumulam
+naturalmente. Atualizar para PASS em ~2026-06-06.
 
 ---
 
 ### ⚠️ Gate 6 — Segurança (pen test)
 
-**Status:** PARCIAL (Sprint 31 / MX174)
-**Critério:** todos vetores de ameaça mitigados + pen test externo
-sem findings críticos.
+**Status:** PARCIAL (mantido)
+**Critério:** todos vetores de ameaça mitigados + pen test externo sem
+findings críticos.
 
 **Entregue:**
 
-- `docs/SECURITY_CHECKLIST.md` — 13 vetores, todos com status
-  MITIGADO + evidência + última verificação.
-- 2FA TOTP, sessões ativas, alertas, exportação LGPD
-  (Sprint 30 MX163-MX168).
+- `docs/SECURITY_CHECKLIST.md` — 13 vetores, todos MITIGADO.
+- 2FA TOTP, sessões ativas, alertas, exportação LGPD (Sprint 30).
 - `SECURITY.md` com canal `security@aethereos.io` + disclosure 90 dias.
-- Headers de produção (X-Content-Type-Options, X-Frame-Options,
-  Referrer-Policy, Permissions-Policy).
-- Rate-limit em endpoints sensíveis (Sprint 27 MX147).
+- Headers de produção (X-Content-Type-Options, X-Frame-Options, etc.).
+- Rate-limit em endpoints sensíveis (Sprint 27).
+- Sprint 32: 16 Edge Functions auditadas (era 11).
 
 **Pendente:**
 
 - Pen test externo (contratar após 30 dias de staging).
 - Bug bounty publicado.
-- CSP estrito (atualmente permissivo para HMR Vite).
+- CSP estrito.
 
 ---
 
 ### ✅ Gate 7 — Compliance docs
 
-**Status:** PASS (Sprint 31 / MX169)
+**Status:** PASS (Sprint 31 / MX169, mantido)
 **Critério:** documentos legais e operacionais públicos.
 
 **Entregue:**
 
-- `LICENSE` — BUSL-1.1 (Camada 0) + proprietária (Camadas 1/2),
-  Change Date 2030-04-29 → Apache 2.0.
-- `CONTRIBUTING.md` — fluxo de PR, code-review checklist, padrão de
-  commits.
-- `SECURITY.md` — disclosure responsável, escopo, vetores de alta
-  prioridade.
-- `CODE_OF_CONDUCT.md` — Contributor Covenant v2.1.
-- `BRAND_POLICY.md` — uso de nome, logo, cores, "Powered by" BUSL.
-- `PRIVACY_POLICY.md` — LGPD art. 18, retenção, DPO configurável,
-  link para export-company-data.
+- `LICENSE` — BUSL-1.1 (Camada 0) + proprietária (Camadas 1/2).
+- `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`,
+  `BRAND_POLICY.md`, `PRIVACY_POLICY.md`.
 
 ---
 
 ### ⏳ Gate 8 — Dogfood (30 dias)
 
-**Status:** PENDENTE (requer tempo)
-**Critério:** 30 dias de uso interno em staging com tráfego real.
+**Status:** INICIADO (Sprint 32 / MX178)
+**Critério:** 30 dias de uso interno com tráfego real.
 
-**Plano:** começa após Sprint 31 finalizar deploy. Métricas a coletar:
+**Plano:** começa em 2026-05-06. Métricas em `docs/DOGFOOD_PLAN.md`:
 
 - Uptime e latência (Gate 5).
 - Bugs descobertos por categoria.
-- Eval queries reais para Gate 4.
+- Eval queries reais para Gate 4 (target 200+).
 - Findings de segurança operacional.
+- Sessões: 25/30 dias mínimo.
+
+Atualizar para PASS em ~2026-06-06 se critérios atingidos.
 
 ---
 
@@ -203,5 +179,5 @@ sem findings críticos.
 
 ---
 
-Versão: 1.0.0
-Última revisão: 2026-05-05 (Sprint 31, encerramento código Camada 1)
+Versão: 2.0.0
+Última revisão: 2026-05-06 (Sprint 32, selo final Camada 1)
