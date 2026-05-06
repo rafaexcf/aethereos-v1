@@ -22,11 +22,18 @@ import { staffRoute } from "./routes/staff";
 import { boot } from "./lib/boot";
 import { DriversProvider } from "./lib/drivers-context";
 import { ThemeProvider } from "./lib/theme/theme-provider";
-import { installGlobalErrorHandlers } from "./lib/observability";
+import {
+  installGlobalErrorHandlers,
+  initSentryIfConfigured,
+} from "./lib/observability";
 import "./styles/globals.css";
 
+// Sprint 33 / MX186: inicializa Sentry se VITE_SENTRY_DSN estiver definida.
+// No-op em dev/staging sem DSN; em prod com DSN ativa captura uncaught.
+initSentryIfConfigured();
+
 // Sprint 31 / MX171: captura uncaught exceptions + unhandled rejections.
-// Idempotente. Roteia para window.Sentry se disponível, senão console.error.
+// Idempotente. Roteia para Sentry (se inicializado) ou console.error.
 installGlobalErrorHandlers();
 
 // Sprint 27 hotfix: deploy novo invalida chunks lazy (hashes mudam).
