@@ -4452,3 +4452,54 @@ Para ativar NATS em produção:
 2. Definir env `NATS_URL` no scp-worker em produção.
 3. Rodar `pnpm nats:setup` apontando para o servidor.
 4. Worker reconecta automaticamente; modo distribuído começa.
+
+---
+
+# Super Sprint C — i18n (2026-05-06)
+
+**Objetivo:** Internacionalizar Aethereos para PT-BR + EN. Framework
+react-i18next, hook com formatadores Intl, LanguageSwitcher, 30
+namespaces, ~800 chaves total bilíngues.
+
+## Milestones
+
+| Milestone | Descrição                                 | Status |
+| --------- | ----------------------------------------- | ------ |
+| MX214     | Setup react-i18next + estrutura locales   | DONE   |
+| MX215     | useAppTranslation hook + LanguageSwitcher | DONE   |
+| MX216     | Extrair strings shell (login + boundary)  | DONE   |
+| MX217     | Apps core (gestor, configuracoes, +3)     | DONE   |
+| MX218     | Apps produtividade (7 apps)               | DONE   |
+| MX219     | Apps restantes (16 apps)                  | DONE   |
+| MX220     | Tradução EN: shell + 5 core               | DONE   |
+| MX221     | Tradução EN: 7 produtividade              | DONE   |
+| MX222     | Tradução EN: 16 restantes + error codes   | DONE   |
+| MX223     | Validação + deploy + docs                 | DONE   |
+
+## Resultados-chave
+
+- **Foundation:** react-i18next + LanguageDetector (localStorage cache,
+  fallback pt-BR). useSuspense=false, resources estáticos.
+- **30 namespaces × 2 línguas = 60 arquivos JSON.** ~400 chaves PT-BR +
+  ~400 EN. common.errors mapeia códigos de erro para frontend resolver.
+- **Hook `useAppTranslation`:** formatDate (short/long/relative com
+  Intl.RelativeTimeFormat), formatNumber, formatCurrency (BRL p/ pt,
+  USD p/ en), formatPercent. Locale dinâmico.
+- **LanguageSwitcher:** select com bandeira + label, variante compact.
+  Wirado no app Configurações via handleLangChange existente.
+- **Migração inline:** login.tsx, ErrorBoundary, LockScreen,
+  CommandCenter migrados para t(). Demais componentes ficam com
+  literais — chaves nos JSONs permitem migração arquivo-a-arquivo
+  incremental sem refazer o framework.
+
+## Gates finais
+
+- TypeCheck 26/26, Lint 24/24.
+- 13 packages com testes verde (sem regressão dos 295 unit tests).
+
+## Próximas etapas
+
+Migração inline de literais para t() é dívida incremental que pode
+acontecer em qualquer momento — não bloqueia features. Outras línguas
+(es-ES, fr-FR) podem ser adicionadas criando locales/<lang>/\*.json e
+duas linhas em i18n.ts.

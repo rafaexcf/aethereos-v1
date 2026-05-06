@@ -11,6 +11,18 @@ Convenções:
 
 ---
 
+## Super Sprint C — i18n PT-BR + EN (2026-05-06)
+
+- **Selo:** Sistema bilíngue (Português + Inglês) com framework completo.
+- **Deps:** `react-i18next`, `i18next`, `i18next-browser-languagedetector`.
+- **Estrutura:** 30 namespaces × 2 línguas = 60 arquivos JSON. ~400 chaves PT-BR + ~400 EN. `common.errors.*` mapeia códigos de erro de Edge Functions.
+- **Hook:** `useAppTranslation(ns)` com formatadores Intl (formatDate short/long/relative, formatNumber, formatCurrency BRL/USD por locale, formatPercent).
+- **Components:** `LanguageSwitcher` reutilizável (compact + full). Login, ErrorBoundary, LockScreen, CommandCenter migrados para `t()`.
+- **Configurações:** seleção de idioma já existente agora wirea com `i18n.changeLanguage()` (sem reload).
+- **Detecção:** localStorage `aethereos-language` → navegador → fallback `pt-BR`.
+- **Nomes próprios** preservados: Aethereos, Dock, Magic Store, Copilot, Aether AI, Shadow Mode (R7).
+- **Migração inline de t()** em componentes restantes fica como dívida incremental — chaves prontas em todos os JSONs.
+
 ## Super Sprint B — NATS Real (2026-05-06)
 
 - **Selo:** KL-7 RESOLVED — SCP pipeline com fan-out cross-host via NATS JetStream.

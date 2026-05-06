@@ -1,6 +1,8 @@
 # Aethereos
 
 > OS B2B no navegador organizado em três camadas. Camada 0 open source local-first, Camada 1 proprietária multi-tenant com SCP e AI Copilot, Camada 2 distribuições verticais bundlando Camada 1 + SaaS pré-instalados.
+>
+> Idiomas: 🇧🇷 Português (Brasil) · 🇺🇸 English. Troca em Configurações > Idioma & região.
 
 ## Início
 
