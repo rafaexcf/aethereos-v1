@@ -1,1 +1,18 @@
-{}
+{
+  "title": "Kanban",
+  "boards": "Boards",
+  "new_board": "New board",
+  "new_card": "New card",
+  "new_column": "New column",
+  "card_title": "Card title",
+  "drag_to_move": "Drag to move",
+  "default_columns": {
+    "todo": "To Do",
+    "in_progress": "In Progress",
+    "done": "Done"
+  },
+  "no_boards": "No boards created.",
+  "search_placeholder": "Search boards…",
+  "card_count_one": "{{count}} card",
+  "card_count_other": "{{count}} cards"
+}

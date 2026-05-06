@@ -1,1 +1,17 @@
-{}
+{
+  "title": "Calendar",
+  "today": "Today",
+  "new_event": "New event",
+  "event_title": "Title",
+  "event_time": "Time",
+  "all_day": "All day",
+  "description": "Description",
+  "color": "Color",
+  "calendars": "Calendars",
+  "no_events": "No events scheduled.",
+  "view": {
+    "month": "Month",
+    "week": "Week",
+    "day": "Day"
+  }
+}

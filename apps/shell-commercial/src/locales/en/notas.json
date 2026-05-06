@@ -1,1 +1,21 @@
-{}
+{
+  "title": "Notes",
+  "new_note": "New note",
+  "untitled": "Untitled",
+  "saving": "Saving…",
+  "saved": "Saved",
+  "pin": "Pin",
+  "unpin": "Unpin",
+  "search_placeholder": "Search notes…",
+  "no_notes": "No notes.",
+  "checklist": "Checklist",
+  "labels": "Labels",
+  "colors": {
+    "default": "Default",
+    "yellow": "Yellow",
+    "green": "Green",
+    "blue": "Blue",
+    "red": "Red",
+    "purple": "Purple"
+  }
+}

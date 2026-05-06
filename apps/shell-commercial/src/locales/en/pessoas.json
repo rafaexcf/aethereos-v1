@@ -1,1 +1,17 @@
-{}
+{
+  "title": "People",
+  "new_contact": "New contact",
+  "name": "Name",
+  "email": "Email",
+  "phone": "Phone",
+  "company": "Company",
+  "position": "Position",
+  "favorites": "Favorites",
+  "all_contacts": "All",
+  "groups": "Groups",
+  "no_contacts": "No contacts saved.",
+  "search_placeholder": "Search contacts…",
+  "addresses": "Addresses",
+  "add_method": "Add phone or email",
+  "save_contact": "Save contact"
+}

@@ -1,1 +1,22 @@
-{}
+{
+  "title": "Tasks",
+  "new_task": "New task",
+  "title_label": "Title",
+  "description_label": "Description",
+  "priority": "Priority",
+  "priority_low": "Low",
+  "priority_medium": "Medium",
+  "priority_high": "High",
+  "priority_urgent": "Urgent",
+  "status": "Status",
+  "status_pending": "To do",
+  "status_completed": "Completed",
+  "due_date": "Due date",
+  "assign_to": "Assign to",
+  "filter_all": "All",
+  "filter_pending": "Pending",
+  "filter_completed": "Completed",
+  "no_tasks": "No tasks found.",
+  "search_placeholder": "Search tasks…",
+  "lists": "Lists"
+}

@@ -1,1 +1,16 @@
-{}
+{
+  "title": "Chat",
+  "new_conversation": "New conversation",
+  "new_channel": "Create channel",
+  "members": "Members",
+  "online": "Online",
+  "offline": "Offline",
+  "typing": "is typing…",
+  "input_placeholder": "Type your message…",
+  "send": "Send",
+  "no_messages": "No messages yet.",
+  "no_channels": "No channels available.",
+  "channels": "Channels",
+  "direct_messages": "Direct messages",
+  "search_placeholder": "Search conversations…"
+}

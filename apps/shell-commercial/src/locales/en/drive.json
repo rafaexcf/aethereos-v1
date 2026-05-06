@@ -1,1 +1,19 @@
-{}
+{
+  "title": "Drive",
+  "my_files": "My files",
+  "shared": "Shared",
+  "trash": "Trash",
+  "upload": "Upload file",
+  "new_folder": "New folder",
+  "rename": "Rename",
+  "download": "Download",
+  "share": "Share",
+  "no_files": "No files here.",
+  "search_placeholder": "Search files…",
+  "size": "Size",
+  "type": "Type",
+  "modified": "Modified",
+  "owner": "Owner",
+  "selected_count_one": "{{count}} item selected",
+  "selected_count_other": "{{count}} items selected"
+}
