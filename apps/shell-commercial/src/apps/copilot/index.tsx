@@ -943,8 +943,36 @@ export function CopilotDrawer({
         };
         proposalId = proposal.id;
         setProposals((prev) => [...prev, proposal]);
-        // Persist proposal to DB
-        void data.from("agent_proposals").insert({
+
+        // Super Sprint A / MX200 — avalia policy ANTES de inserir.
+        // Resultado: allow → status=approved + auto_resolved; deny → rejected;
+        // require_approval → pending (fluxo manual antigo).
+        const policyMod = await import("../../lib/policy/browser-evaluator");
+        let evalResult: Awaited<
+          ReturnType<typeof policyMod.evaluateProposal>
+        > | null = null;
+        try {
+          evalResult = await policyMod.evaluateProposal(data, {
+            companyId,
+            intentType: proposal.intentType,
+            actorId: userId,
+            payload: proposal.payload as Record<string, unknown>,
+            proposalId: proposal.id,
+          });
+        } catch {
+          // Falha na avaliação: cai pro fluxo legado (status=pending).
+        }
+
+        const proposalStatus =
+          evalResult === null
+            ? "pending"
+            : evalResult.result === "allow"
+              ? "approved"
+              : evalResult.result === "deny"
+                ? "rejected"
+                : "pending";
+
+        const proposalRow: Record<string, unknown> = {
           id: proposal.id,
           company_id: companyId,
           agent_id: agentId.current ?? DEMO_AGENT_ID,
@@ -952,10 +980,21 @@ export function CopilotDrawer({
           supervising_user_id: userId,
           intent_type: proposal.intentType,
           payload: proposal.payload,
-          ...(correlationId !== undefined
-            ? { correlation_id: correlationId }
-            : {}),
-        });
+          status: proposalStatus,
+        };
+        if (correlationId !== undefined)
+          proposalRow["correlation_id"] = correlationId;
+        if (evalResult !== null) {
+          proposalRow["policy_evaluation_id"] = evalResult.evaluationId;
+          if (evalResult.result === "allow" || evalResult.result === "deny") {
+            proposalRow["auto_resolved"] = true;
+            proposalRow["auto_resolved_reason"] = evalResult.reason;
+            if (evalResult.result === "deny") {
+              proposalRow["rejection_reason"] = evalResult.reason;
+            }
+          }
+        }
+        void data.from("agent_proposals").insert(proposalRow);
         // Emit SCP event
         void scp.publishEvent(
           "agent.copilot.action_proposed",
