@@ -1,1 +1,15 @@
-{}
+{
+  "title": "Human Resources",
+  "employees": "Employees",
+  "new_employee": "New employee",
+  "name": "Full name",
+  "position": "Position",
+  "department": "Department",
+  "hire_date": "Hire date",
+  "status": "Status",
+  "active": "Active",
+  "inactive": "Inactive",
+  "search_placeholder": "Search employees…",
+  "no_employees": "No employees registered.",
+  "delete_blocked_linked": "Cannot delete an employee linked to a user account."
+}

@@ -1,1 +1,18 @@
-{}
+{
+  "title": "Polls",
+  "new_poll": "New poll",
+  "poll_title": "Poll title",
+  "options": "Options",
+  "add_option": "Add option",
+  "multiple_choice": "Multiple choice",
+  "anonymous": "Anonymous",
+  "closes_at": "Closes at",
+  "vote": "Vote",
+  "results": "Results",
+  "close_poll": "Close poll",
+  "votes_count_one": "{{count}} vote",
+  "votes_count_other": "{{count}} votes",
+  "no_polls": "No polls created.",
+  "open": "Open",
+  "closed": "Closed"
+}

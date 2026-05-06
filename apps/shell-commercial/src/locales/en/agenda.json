@@ -1,1 +1,14 @@
-{}
+{
+  "title": "Phonebook",
+  "contacts": "Contacts",
+  "favorites": "Favorites",
+  "groups": "Groups",
+  "search_placeholder": "Search contacts…",
+  "call": "Call",
+  "send_email": "Send email",
+  "copy_phone": "Copy phone",
+  "no_contacts": "No contacts saved.",
+  "phone": "Phone",
+  "email": "Email",
+  "favorite": "Favorite"
+}

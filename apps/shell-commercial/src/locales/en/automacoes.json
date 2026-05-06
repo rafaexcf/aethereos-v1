@@ -1,1 +1,12 @@
-{}
+{
+  "title": "Automations",
+  "new_automation": "New automation",
+  "active_automations": "Active automations",
+  "history": "Run history",
+  "trigger": "Trigger",
+  "actions": "Actions",
+  "enable": "Enable",
+  "disable": "Disable",
+  "no_automations": "No automations created.",
+  "last_run": "Last run"
+}

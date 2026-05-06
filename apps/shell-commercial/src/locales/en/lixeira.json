@@ -1,1 +1,10 @@
-{}
+{
+  "title": "Trash",
+  "restore": "Restore",
+  "delete_permanent": "Delete permanently",
+  "empty_trash": "Empty trash",
+  "no_items": "Trash is empty.",
+  "deleted_at": "Deleted at",
+  "auto_delete_in": "Auto-delete in {{days}} days",
+  "confirm_empty": "Are you sure you want to empty the trash? This cannot be undone."
+}

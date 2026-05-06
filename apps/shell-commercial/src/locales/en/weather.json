@@ -1,1 +1,15 @@
-{}
+{
+  "title": "Weather",
+  "temperature": "Temperature",
+  "humidity": "Humidity",
+  "wind": "Wind",
+  "feels_like": "Feels like",
+  "uv_index": "UV index",
+  "visibility": "Visibility",
+  "search_city": "Search city",
+  "current_location": "Current location",
+  "forecast": "Forecast",
+  "next_days": "Next days",
+  "no_data": "Could not load weather. Please try again.",
+  "request_location": "Allow location access"
+}

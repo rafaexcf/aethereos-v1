@@ -1,1 +1,15 @@
-{}
+{
+  "title": "Voice Recorder",
+  "record": "Record",
+  "pause": "Pause",
+  "resume": "Resume",
+  "stop": "Stop",
+  "save_to_drive": "Save to Drive",
+  "new_recording": "New recording",
+  "discard": "Discard",
+  "playback": "Play",
+  "recordings": "Recordings",
+  "no_recordings": "No recordings saved.",
+  "no_microphone": "No microphone detected.",
+  "permission_denied": "Microphone permission denied."
+}

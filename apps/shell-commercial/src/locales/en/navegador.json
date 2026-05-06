@@ -1,1 +1,14 @@
-{}
+{
+  "title": "Browser",
+  "url_placeholder": "Enter URL or search…",
+  "go": "Go",
+  "back": "Back",
+  "forward": "Forward",
+  "reload": "Reload",
+  "home": "Home",
+  "bookmarks": "Bookmarks",
+  "history": "History",
+  "new_tab": "New tab",
+  "close_tab": "Close tab",
+  "no_bookmarks": "No bookmarks yet."
+}

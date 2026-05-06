@@ -1,1 +1,24 @@
-{}
+{
+  "title": "Clock",
+  "tabs": {
+    "clock": "World clock",
+    "stopwatch": "Stopwatch",
+    "timer": "Timer",
+    "alarm": "Alarm",
+    "pomodoro": "Pomodoro"
+  },
+  "actions": {
+    "start": "Start",
+    "pause": "Pause",
+    "resume": "Resume",
+    "reset": "Reset",
+    "lap": "Lap",
+    "stop": "Stop"
+  },
+  "alarm": {
+    "new": "New alarm",
+    "no_alarms": "No alarms set.",
+    "label": "Label",
+    "repeat": "Repeat"
+  }
+}

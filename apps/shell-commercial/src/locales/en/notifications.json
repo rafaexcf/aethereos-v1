@@ -1,1 +1,16 @@
-{}
+{
+  "title": "Notifications",
+  "mark_as_read": "Mark as read",
+  "mark_all_as_read": "Mark all as read",
+  "no_notifications": "No notifications.",
+  "filter_unread": "Unread",
+  "filter_all": "All",
+  "clear_all": "Clear all",
+  "settings": "Notification settings",
+  "minutes_ago_one": "{{count}} minute ago",
+  "minutes_ago_other": "{{count}} minutes ago",
+  "hours_ago_one": "{{count}} hour ago",
+  "hours_ago_other": "{{count}} hours ago",
+  "days_ago_one": "{{count}} day ago",
+  "days_ago_other": "{{count}} days ago"
+}

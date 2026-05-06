@@ -1,1 +1,12 @@
-{}
+{
+  "title": "Audit",
+  "log_title": "Action log",
+  "actor": "Actor",
+  "action": "Action",
+  "resource": "Resource",
+  "date": "Date",
+  "filter": "Filter",
+  "export": "Export",
+  "no_entries": "No audit entries.",
+  "search_placeholder": "Search log…"
+}

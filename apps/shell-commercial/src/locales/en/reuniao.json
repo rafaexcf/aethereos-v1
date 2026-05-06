@@ -1,1 +1,13 @@
-{}
+{
+  "title": "Meeting",
+  "schedule_meeting": "Schedule meeting",
+  "join_meeting": "Join meeting",
+  "start_meeting": "Start meeting",
+  "end_meeting": "End meeting",
+  "meeting_title": "Meeting title",
+  "participants": "Participants",
+  "scheduled_for": "Scheduled for",
+  "no_meetings": "No meetings scheduled.",
+  "recording": "Recording",
+  "transcript": "Transcript"
+}

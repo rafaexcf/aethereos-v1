@@ -1,1 +1,12 @@
-{}
+{
+  "title": "Camera",
+  "take_photo": "Take photo",
+  "record_video": "Record video",
+  "stop": "Stop",
+  "save_to_drive": "Save to Drive",
+  "discard": "Discard",
+  "switch_camera": "Switch camera",
+  "no_camera": "No camera detected.",
+  "permission_denied": "Camera permission denied. Enable it in your browser settings.",
+  "saved": "Saved to Drive!"
+}

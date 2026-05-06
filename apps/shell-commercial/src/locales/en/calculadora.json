@@ -1,1 +1,11 @@
-{}
+{
+  "title": "Calculator",
+  "modes": {
+    "standard": "Standard",
+    "scientific": "Scientific",
+    "hp12c": "HP 12C"
+  },
+  "history": "History",
+  "clear_history": "Clear history",
+  "no_history": "No recent calculations."
+}

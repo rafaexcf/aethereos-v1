@@ -1,1 +1,14 @@
-{}
+{
+  "title": "PDF Viewer",
+  "no_pdfs": "No PDFs found. Upload a PDF via Drive.",
+  "page": "Page",
+  "page_of": "Page {{current}} of {{total}}",
+  "zoom_in": "Zoom in",
+  "zoom_out": "Zoom out",
+  "fullscreen": "Fullscreen",
+  "previous_page": "Previous page",
+  "next_page": "Next page",
+  "ai_chat": "Chat with PDF",
+  "ai_summary": "AI-generated summary",
+  "loading_pdf": "Loading PDF…"
+}
