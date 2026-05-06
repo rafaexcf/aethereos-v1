@@ -1,7 +1,9 @@
 import { createRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { Trans } from "react-i18next";
 import { rootRoute } from "./__root";
 import { useSessionStore } from "../stores/session";
+import { useAppTranslation } from "../hooks/useAppTranslation";
 
 export const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -10,6 +12,7 @@ export const loginRoute = createRoute({
 });
 
 function LoginPage() {
+  const { t } = useAppTranslation("shell");
   const navigate = useNavigate();
   const { drivers, setAuthSession, setActiveCompany } = useSessionStore();
   const [email, setEmail] = useState("");
@@ -76,10 +79,16 @@ function LoginPage() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-100">
         <div className="w-full max-w-sm space-y-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
-          <h1 className="text-xl font-semibold">Verifique seu e-mail</h1>
+          <h1 className="text-xl font-semibold">
+            {t("login.magic_link_sent_title")}
+          </h1>
           <p className="text-sm text-zinc-400">
-            Enviamos um link de acesso para <strong>{email}</strong>. Clique no
-            link para entrar.
+            <Trans
+              i18nKey="login.magic_link_sent_body"
+              ns="shell"
+              values={{ email }}
+              components={{ strong: <strong /> }}
+            />
           </p>
         </div>
       </main>
@@ -90,14 +99,16 @@ function LoginPage() {
     <main className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-100">
       <div className="w-full max-w-sm space-y-6 rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Aethereos</h1>
-          <p className="mt-1 text-sm text-zinc-400">Entre na sua conta</p>
+          <h1 className="text-2xl font-bold tracking-tight">
+            {t("login.title")}
+          </h1>
+          <p className="mt-1 text-sm text-zinc-400">{t("login.subtitle")}</p>
         </div>
 
         <form onSubmit={handleSignIn} className="space-y-4">
           <div className="space-y-1">
             <label className="block text-sm font-medium" htmlFor="email">
-              E-mail
+              {t("login.email_label")}
             </label>
             <input
               id="email"
@@ -111,7 +122,7 @@ function LoginPage() {
 
           <div className="space-y-1">
             <label className="block text-sm font-medium" htmlFor="password">
-              Senha
+              {t("login.password_label")}
             </label>
             <input
               id="password"
@@ -134,14 +145,14 @@ function LoginPage() {
             disabled={loading}
             className="w-full rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-violet-500 disabled:opacity-50"
           >
-            {loading ? "Entrando..." : "Entrar"}
+            {loading ? t("login.submitting") : t("login.submit")}
           </button>
         </form>
 
         <div className="relative">
           <hr className="border-zinc-700" />
           <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-zinc-900 px-2 text-xs text-zinc-500">
-            ou
+            {t("login.or")}
           </span>
         </div>
 
@@ -151,14 +162,14 @@ function LoginPage() {
             disabled={loading || email === ""}
             className="w-full rounded-lg border border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:border-zinc-500 disabled:opacity-50"
           >
-            Entrar com link mágico
+            {t("login.magic_link")}
           </button>
         </form>
 
         <p className="text-center text-sm text-zinc-500">
-          Sem conta?{" "}
+          {t("login.no_account")}{" "}
           <a href="/signup" className="text-violet-400 hover:text-violet-300">
-            Criar conta
+            {t("login.create_account")}
           </a>
         </p>
       </div>

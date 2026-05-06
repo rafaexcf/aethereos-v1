@@ -1,5 +1,8 @@
 import { Component, type ReactNode, type ErrorInfo } from "react";
+import i18n from "../../i18n";
 import { reportError } from "../../lib/observability";
+
+const tShell = (key: string): string => i18n.t(key, { ns: "shell" }) as string;
 
 interface Props {
   children: ReactNode;
@@ -81,7 +84,7 @@ export class ErrorBoundary extends Component<Props, State> {
                   letterSpacing: "-0.02em",
                 }}
               >
-                Algo deu errado neste app
+                {tShell("error_boundary.title")}
               </p>
               <p
                 className="mt-1.5 font-mono text-center"
@@ -115,7 +118,7 @@ export class ErrorBoundary extends Component<Props, State> {
                   e.currentTarget.style.background = "rgba(99,102,241,0.85)";
                 }}
               >
-                Recarregar
+                {tShell("error_boundary.reload")}
               </button>
               <button
                 onClick={this.handleReset}
@@ -137,7 +140,7 @@ export class ErrorBoundary extends Component<Props, State> {
                   e.currentTarget.style.color = "var(--text-secondary)";
                 }}
               >
-                Fechar
+                {tShell("error_boundary.close")}
               </button>
             </div>
           </div>

@@ -5,6 +5,7 @@ import { Lock, LogOut } from "lucide-react";
 import { useDrivers } from "../../lib/drivers-context";
 import { useSessionStore } from "../../stores/session";
 import { useModalA11y } from "../shared/useModalA11y";
+import { useAppTranslation } from "../../hooks/useAppTranslation";
 
 function useClock(): string {
   const [now, setNow] = useState(() => new Date());
@@ -32,6 +33,7 @@ function useToday(): string {
 }
 
 export function LockScreen() {
+  const { t } = useAppTranslation("shell");
   const navigate = useNavigate();
   const drivers = useDrivers();
   const email = useSessionStore((s) => s.email);
@@ -252,8 +254,8 @@ export function LockScreen() {
               setPassword(e.currentTarget.value);
               if (error !== null) setError(null);
             }}
-            placeholder="Senha"
-            aria-label="Senha para desbloquear"
+            placeholder={t("lockscreen.password_placeholder")}
+            aria-label={t("lockscreen.password_placeholder")}
             autoComplete="current-password"
             disabled={submitting}
             style={{
@@ -301,7 +303,7 @@ export function LockScreen() {
             transition: "background 100ms",
           }}
         >
-          {submitting ? "Verificando…" : "Desbloquear"}
+          {submitting ? t("lockscreen.unlocking") : t("lockscreen.unlock")}
         </button>
 
         <button

@@ -1,1 +1,92 @@
-{}
+{
+  "login": {
+    "title": "Aethereos",
+    "subtitle": "Entre na sua conta",
+    "email_label": "E-mail",
+    "password_label": "Senha",
+    "submit": "Entrar",
+    "submitting": "Entrando…",
+    "or": "ou",
+    "magic_link": "Entrar com link mágico",
+    "no_account": "Sem conta?",
+    "create_account": "Criar conta",
+    "magic_link_sent_title": "Verifique seu e-mail",
+    "magic_link_sent_body": "Enviamos um link de acesso para <strong>{{email}}</strong>. Clique no link para entrar."
+  },
+  "register": {
+    "title": "Criar conta",
+    "subtitle": "Comece a usar o Aethereos",
+    "name_label": "Nome completo",
+    "email_label": "E-mail",
+    "password_label": "Senha",
+    "password_confirm_label": "Confirmar senha",
+    "company_label": "Nome da empresa",
+    "cnpj_label": "CNPJ",
+    "submit": "Criar conta",
+    "submitting": "Criando…",
+    "have_account": "Já tem conta?",
+    "sign_in": "Entrar"
+  },
+  "topbar": {
+    "search_placeholder": "Buscar…",
+    "menu_profile": "Perfil",
+    "menu_settings": "Configurações",
+    "menu_switch_company": "Trocar empresa",
+    "menu_sign_out": "Sair",
+    "lock_screen": "Bloquear tela"
+  },
+  "tabbar": {
+    "close_tab": "Fechar aba",
+    "close_others": "Fechar outras",
+    "close_all": "Fechar todas"
+  },
+  "mesa": {
+    "label": "Área de trabalho",
+    "context_new_shortcut": "Novo atalho",
+    "context_change_wallpaper": "Alterar wallpaper",
+    "context_arrange_icons": "Reorganizar ícones"
+  },
+  "lockscreen": {
+    "title": "Tela bloqueada",
+    "password_placeholder": "Digite sua senha",
+    "unlock": "Desbloquear",
+    "unlocking": "Desbloqueando…",
+    "wrong_password": "Senha incorreta. Tente novamente.",
+    "session_expired": "Sessão expirada. Faça login novamente."
+  },
+  "splash": {
+    "loading": "Carregando…",
+    "connecting": "Conectando…"
+  },
+  "launcher": {
+    "title": "Aplicativos",
+    "search_placeholder": "Buscar aplicativo…",
+    "all": "Todos",
+    "system": "Sistema",
+    "productivity": "Produtividade",
+    "communication": "Comunicação",
+    "utilities": "Utilitários",
+    "no_results": "Nenhum aplicativo encontrado."
+  },
+  "onboarding": {
+    "welcome_title": "Bem-vindo ao Aethereos",
+    "welcome_body": "Vamos configurar sua empresa em alguns passos.",
+    "step_company": "Sua empresa",
+    "step_team": "Sua equipe",
+    "step_apps": "Aplicativos",
+    "step_done": "Tudo pronto!",
+    "skip": "Pular",
+    "next": "Próximo",
+    "finish": "Concluir"
+  },
+  "error_boundary": {
+    "title": "Algo deu errado neste app",
+    "reload": "Recarregar",
+    "close": "Fechar"
+  },
+  "select_company": {
+    "title": "Selecione uma empresa",
+    "create_new": "Criar nova empresa",
+    "no_companies": "Você ainda não pertence a nenhuma empresa."
+  }
+}
