@@ -11,6 +11,16 @@ Convenções:
 
 ---
 
+## Super Sprint A — Policy Engine completo (2026-05-06)
+
+- **Selo:** Governance-as-Code operacional. Agentes avaliados automaticamente: allow / deny / require_approval.
+- **Schema:** 3 tabelas — `kernel.action_intents` (catálogo global, 25 intents seed), `kernel.policies` (per-company, draft/active/archived), `kernel.policy_evaluations` (append-only audit).
+- **Runtime:** `PolicyEngine` em `@aethereos/kernel/policy` — cache 5min, deny short-circuit, defaults user=allow / agent=require_approval, dryRun mode. 13 unit tests.
+- **Integração:** Copilot avalia ANTES de inserir proposal; allow → status=approved + auto_resolved, deny → rejected, require_approval → fluxo manual.
+- **Policy Studio:** novo tab no Gestor (Permissões & Acessos > Políticas) com lista, YAML editor, edit/duplicate/activate/archive, simulação dryRun de 90 dias, métricas top 5 intents + breakdown allow/deny/escalar, 3 templates hardcoded (Conservador, Moderado, Operações Financeiras).
+- **Audit:** badge "Auto-aprovado/rejeitado por política" em proposals; drawer com policy_evaluations row (resultado + reason + matched_rule JSON).
+- **Deps:** js-yaml ^4 (+ types) para YAML serialize/parse.
+
 ## Sprint 34 — Quick Wins F2 (2026-05-06)
 
 - **Selo:** KL-8 RESOLVED — PDF embedding funcional.

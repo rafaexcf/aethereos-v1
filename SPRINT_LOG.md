@@ -4351,3 +4351,56 @@ revelou que 3 já estavam). PDF Embedding desbloqueia RAG (KL-8 RESOLVED).
 
 Sprint 34 fecha últimos quick wins de F1. Camada 1 plenamente operacional
 com PDF embedding ativo. Próximo: começar comercio.digital durante dogfood.
+
+---
+
+# Super Sprint A — Policy Engine completo (2026-05-06)
+
+**Objetivo:** Construir Policy Engine inteiro: tabelas, action intents seed,
+runtime engine, integração com proposals, Policy Studio UI no Gestor,
+explicar decisão no audit, métricas no dashboard.
+
+## Milestones
+
+| Milestone | Descrição                                          | Status |
+| --------- | -------------------------------------------------- | ------ |
+| MX197     | Migration: action_intents + policies + evaluations | DONE   |
+| MX198     | Seed 25 action intents                             | DONE   |
+| MX199     | PolicyEngine runtime + 13 unit tests               | DONE   |
+| MX200     | Integrar engine com Agent Proposals                | DONE   |
+| MX201     | Policy Studio CRUD (lista + YAML editor)           | DONE   |
+| MX202     | Simulação de impacto 90 dias                       | DONE   |
+| MX203     | 3 templates hardcoded                              | DONE   |
+| MX204     | Explicar decisão no audit                          | DONE   |
+| MX205     | Métricas no Policy Studio                          | DONE   |
+| MX206     | Deploy + docs                                      | DONE   |
+
+## Resultados-chave
+
+- **3 tabelas novas** (81 → 84 tabelas kernel.\*): action_intents (global,
+  25 seed), policies (per-company, RLS), policy_evaluations (append-only).
+- **PolicyEngine** em `@aethereos/kernel/policy`: cache 5min, deny
+  short-circuit (R8), defaults user=allow / agent=require_approval,
+  dryRun mode. 13 unit tests + 35 totais kernel.
+- **Integração Copilot:** proposals criadas via Copilot agora são
+  pré-avaliadas; allow→approved, deny→rejected, require_approval→pending.
+- **Policy Studio** (Gestor > Permissões > Políticas):
+  - Lista filtrada por status com badges e contadores.
+  - Editor YAML com validação inline (js-yaml).
+  - Templates hardcoded (Conservador, Moderado, Operações Financeiras).
+  - Simulação 90 dias dryRun com barras de progresso.
+  - Métricas: políticas ativas, avaliações 30d, distribuição allow/deny,
+    top 5 intents.
+- **Audit explain:** badge inline "Auto-aprovado/rejeitado por política"
+  em proposals; drawer com matched_rule JSON, reason, intent.
+
+## Gates finais
+
+- TypeCheck 26/26, Lint 24/24, audit 0 vulns.
+- 38 unit tests scp-worker + 35 kernel + 36 specs total.
+- Migrations remotas em sync (3 novas aplicadas).
+
+## Próximas etapas
+
+Policy Engine pronto para uso real durante dogfood. Owner pode criar
+políticas iniciais via templates e ajustar conforme uso real.
