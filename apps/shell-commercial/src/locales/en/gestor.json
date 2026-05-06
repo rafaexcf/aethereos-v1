@@ -1,1 +1,63 @@
-{}
+{
+  "title": "Manager",
+  "subtitle": "Company admin panel",
+  "sections": {
+    "dashboard": "Overview",
+    "team": "Team",
+    "departments": "Departments",
+    "groups": "Groups",
+    "roles": "Roles & Hierarchy",
+    "permissions": "Permissions & Access",
+    "apps": "Apps",
+    "ai": "Artificial Intelligence",
+    "integrations": "Integrations",
+    "plan": "Plan & Billing",
+    "security": "Security",
+    "audit": "Audit",
+    "general_settings": "General Settings"
+  },
+  "team": {
+    "total_members": "Total team members",
+    "invite": "Invite",
+    "suspend": "Suspend",
+    "remove": "Remove",
+    "no_members": "No team members.",
+    "search_placeholder": "Search members…"
+  },
+  "departments": {
+    "title": "Departments",
+    "new": "New department",
+    "name": "Name",
+    "manager": "Manager",
+    "members": "Members",
+    "no_departments": "No departments registered."
+  },
+  "groups": {
+    "title": "Groups",
+    "new": "New group",
+    "members": "Members"
+  },
+  "policies": {
+    "title": "Policies",
+    "subtitle": "Governance-as-Code: YAML rules that automatically evaluate agent actions.",
+    "new": "New policy",
+    "use_template": "Use template",
+    "active_count": "Active policies",
+    "evaluations_30d": "Evaluations (30d)",
+    "distribution": "Distribution",
+    "top_intents": "Top intents",
+    "filter_all": "All",
+    "filter_active": "Active",
+    "filter_draft": "Drafts",
+    "filter_archived": "Archived",
+    "no_policies": "No policies.",
+    "simulate": "Simulate impact",
+    "activate": "Activate",
+    "archive": "Archive",
+    "duplicate": "Duplicate"
+  },
+  "actions": {
+    "save_draft": "Save as draft",
+    "activate_now": "Activate now"
+  }
+}

@@ -1,1 +1,43 @@
-{}
+{
+  "title": "Settings",
+  "subtitle": "Customize your experience",
+  "tabs": {
+    "home": "Home",
+    "profile": "My profile",
+    "company": "My company",
+    "appearance": "Appearance",
+    "notifications": "Notifications",
+    "dock": "Dock",
+    "mesa": "Desktop",
+    "language": "Language & region",
+    "ai": "Artificial intelligence",
+    "data_privacy": "Data & privacy",
+    "about": "About"
+  },
+  "language": {
+    "title": "Language & region",
+    "description": "Choose the interface language. Changes apply immediately.",
+    "select_label": "Interface language"
+  },
+  "appearance": {
+    "title": "Appearance",
+    "theme": "Theme",
+    "theme_dark": "Dark",
+    "theme_light": "Light",
+    "theme_system": "System",
+    "wallpaper": "Wallpaper"
+  },
+  "ai": {
+    "title": "Artificial intelligence",
+    "provider": "Provider",
+    "model": "Model",
+    "api_key": "API key",
+    "test_connection": "Test connection",
+    "connection_ok": "Connection OK",
+    "save": "Save"
+  },
+  "actions": {
+    "save_changes": "Save changes",
+    "discard": "Discard"
+  }
+}

@@ -1,1 +1,41 @@
-{}
+{
+  "title": "Governance",
+  "tabs": {
+    "agents": "Agents",
+    "capabilities": "Capabilities",
+    "invariants": "Invariants",
+    "shadow": "Shadow Mode",
+    "context": "Context Engine"
+  },
+  "proposals": {
+    "title": "Proposals",
+    "filter_pending": "Pending",
+    "filter_approved": "Approved",
+    "filter_rejected": "Rejected",
+    "filter_executed": "Executed",
+    "filter_expired": "Expired",
+    "approve": "Approve",
+    "reject": "Reject",
+    "execute": "Execute",
+    "auto_approved_badge": "Auto-approved by policy",
+    "auto_rejected_badge": "Auto-rejected by policy",
+    "no_proposals": "No proposals for this view.",
+    "explain_decision": "Policy evaluation"
+  },
+  "policy_evaluation": {
+    "policy": "Policy",
+    "intent": "Intent",
+    "result_allow": "Allowed",
+    "result_deny": "Blocked",
+    "result_require_approval": "Requires approval",
+    "matched_rule": "Matched rule",
+    "no_policy": "(no policy — default)"
+  },
+  "context_engine": {
+    "title": "Context Engine",
+    "records_label": "Context records",
+    "embeddings_label": "Indexed embeddings",
+    "snapshot": "Snapshot",
+    "no_records": "No records generated yet."
+  }
+}
