@@ -155,6 +155,9 @@ importers:
       postgres:
         specifier: ^3.4.5
         version: 3.4.9
+      unpdf:
+        specifier: ^1.6.2
+        version: 1.6.2
     devDependencies:
       "@aethereos/config-eslint":
         specifier: workspace:*
@@ -8225,6 +8228,17 @@ packages:
       }
     engines: { node: ">= 10.0.0" }
 
+  unpdf@1.6.2:
+    resolution:
+      {
+        integrity: sha512-zQ80ySoPuPHOsvIoRp/nJyQt8TOUoTh1+WBCGcBvlddQNgKDLRwm0AY3x8Q35I7+kIiRSgqMx+Ma2pl9McIp7A==,
+      }
+    peerDependencies:
+      "@napi-rs/canvas": ^0.1.69
+    peerDependenciesMeta:
+      "@napi-rs/canvas":
+        optional: true
+
   upath@1.2.0:
     resolution:
       {
@@ -13654,6 +13668,8 @@ snapshots:
       crypto-random-string: 2.0.0
 
   universalify@2.0.1: {}
+
+  unpdf@1.6.2: {}
 
   upath@1.2.0: {}
 

@@ -77,15 +77,22 @@ Status legend:
 
 ---
 
-## KL-8 — EmbeddingConsumer só lê texto cru (sem extração de PDF binário) — **ACCEPTED_F1**
+## KL-8 — EmbeddingConsumer só lê texto cru (sem extração de PDF binário) — **RESOLVED Sprint 34 MX195**
 
-**Sintoma:** Upload de PDF binário em Drive faz EmbeddingConsumer ler bytes como texto via Storage REST GET — embeddings ficam ruins para RAG.
-**Causa:** EmbeddingConsumer usa `await res.text()` direto. mime types text/plain e text/markdown funcionam; application/pdf precisa de extrator (pdf-parse, unpdf).
-**Impacto F1:** PDFs degradam silenciosamente em RAG. Não bloqueia outros consumers (audit + notification corretos).
-**Decisão Sprint 20:** **ACCEPTED_F1**. Adicionar `pdf-parse` é trivial mas não-prioritário pré-staging.
-**Workaround atual:** Já há skip-by-mime; basta tirar `application/pdf` de `SUPPORTED_TYPES` se a qualidade do RAG estiver visivelmente comprometida.
-**Fix futuro:** Adicionar `pdf-parse` em scp-worker, branchar por mime_type → extrair texto → chunkificar.
-**Sprint de origem:** 18 (MX93).
+**Resolução:** `apps/scp-worker/src/consumers/embedding-consumer.ts` agora usa `unpdf` (Node-native, ESM-friendly, sem bindings) para extrair texto de PDFs. Branching por `mime_type`:
+
+- `text/plain` / `text/markdown` → fluxo antigo (`fetchStorageText`)
+- `application/pdf` → `fetchStoragePdfText` (download bytes + `unpdf.extractText`)
+- Outros mime types → skip silencioso
+
+Limites e edge cases:
+
+- Max 500.000 chars por PDF (~100-200 páginas) — R9 do Sprint 34.
+- PDF vazio / escaneado (sem texto extraível) → skip com log warning (OCR é F2+).
+- PDF protegido por senha → skip com log warning.
+- Import dinâmico de unpdf (`await import("unpdf")`) — sem custo se nenhum PDF chegar.
+
+Verificado: 38/38 unit tests do scp-worker passando.
 
 ---
 

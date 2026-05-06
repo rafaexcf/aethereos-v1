@@ -16,10 +16,11 @@
   },
   "dependencies": {
     "@aethereos/drivers": "workspace:*",
-    "@aethereos/drivers-supabase": "workspace:*",
     "@aethereos/drivers-nats": "workspace:*",
+    "@aethereos/drivers-supabase": "workspace:*",
     "@aethereos/kernel": "workspace:*",
-    "postgres": "^3.4.5"
+    "postgres": "^3.4.5",
+    "unpdf": "^1.6.2"
   },
   "devDependencies": {
     "@aethereos/config-eslint": "workspace:*",

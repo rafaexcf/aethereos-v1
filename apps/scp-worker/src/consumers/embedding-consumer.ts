@@ -4,11 +4,13 @@ import { jlog, type InlineConsumer } from "../consumer.js";
 
 const CHUNK_SIZE = 800;
 const CHUNK_OVERLAP = 100;
-const SUPPORTED_FILE_TYPES = new Set([
-  "text/plain",
-  "text/markdown",
-  "application/pdf", // KL-8: lido como texto cru, qualidade ruim em PDFs binarios
-]);
+// Sprint 34 MX195 — limite de chars para evitar processar PDFs gigantes.
+// 500k chars ≈ 100-200 páginas de texto denso ≈ ~625 chunks de 800 chars.
+const MAX_PDF_CHARS = 500_000;
+// Texto puro: extraído via fetchStorageText (await res.text()).
+const PLAIN_TEXT_TYPES = new Set(["text/plain", "text/markdown"]);
+// PDF: extraído via unpdf (Sprint 34 MX195 — resolve KL-8).
+const PDF_MIME = "application/pdf";
 
 /**
  * Eventos que disparam embedding:
@@ -124,7 +126,9 @@ export class EmbeddingConsumer implements InlineConsumer {
     }
 
     const mt = mime_type ?? "text/plain";
-    if (!SUPPORTED_FILE_TYPES.has(mt)) {
+    const isPlainText = PLAIN_TEXT_TYPES.has(mt);
+    const isPdf = mt === PDF_MIME;
+    if (!isPlainText && !isPdf) {
       return;
     }
 
@@ -133,20 +137,43 @@ export class EmbeddingConsumer implements InlineConsumer {
       return;
     }
 
-    const text = await fetchStorageText(
-      this.#supabaseUrl,
-      this.#serviceRoleKey,
-      storage_path,
-    );
-    if (text === null || text.trim().length === 0) {
+    let rawText: string | null;
+    if (isPdf) {
+      rawText = await fetchStoragePdfText(
+        this.#supabaseUrl,
+        this.#serviceRoleKey,
+        storage_path,
+        MAX_PDF_CHARS,
+      );
+      if (rawText === null) {
+        jlog(
+          "warn",
+          "embedding skip: pdf parse failed (binary/encrypted/scan?)",
+          {
+            file_id,
+            storage_path,
+          },
+        );
+        return;
+      }
+    } else {
+      rawText = await fetchStorageText(
+        this.#supabaseUrl,
+        this.#serviceRoleKey,
+        storage_path,
+      );
+    }
+
+    if (rawText === null || rawText.trim().length === 0) {
       jlog("warn", "embedding skip: empty/unreadable file", {
         file_id,
         storage_path,
+        mime_type: mt,
       });
       return;
     }
 
-    const chunks = chunkText(text.trim(), CHUNK_SIZE, CHUNK_OVERLAP);
+    const chunks = chunkText(rawText.trim(), CHUNK_SIZE, CHUNK_OVERLAP);
     let embedded = 0;
 
     for (let i = 0; i < chunks.length; i++) {
@@ -428,6 +455,51 @@ async function fetchStorageText(
     });
     if (!res.ok) return null;
     return await res.text();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Sprint 34 MX195 — PDF text extraction via unpdf (resolve KL-8).
+ *
+ * unpdf é Node-native, sem bindings, ESM-friendly. Funciona em scp-worker
+ * (Node.js puro) sem complicação de bundler.
+ *
+ * Limita a maxChars para evitar embedar PDFs gigantes (500k ≈ 100 págs).
+ * Retorna null se: download falha, parse falha, PDF protegido, PDF
+ * escaneado (text vazio — OCR é F2+).
+ */
+async function fetchStoragePdfText(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  storagePath: string,
+  maxChars: number,
+): Promise<string | null> {
+  try {
+    const res = await fetch(`${supabaseUrl}/storage/v1/object/${storagePath}`, {
+      headers: { Authorization: `Bearer ${serviceRoleKey}` },
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!res.ok) return null;
+    const buffer = await res.arrayBuffer();
+    if (buffer.byteLength === 0) return null;
+
+    // Import dinâmico para não pagar custo se nenhum PDF chegar (raro, mas
+    // mantém scp-worker enxuto). unpdf não tem default export — usa named.
+    const { extractText, getDocumentProxy } = await import("unpdf");
+    const pdf = await getDocumentProxy(new Uint8Array(buffer));
+    const result = await extractText(pdf, { mergePages: true });
+
+    // result.text pode ser string OU string[]. Normaliza.
+    const text = Array.isArray(result.text)
+      ? result.text.join("\n")
+      : result.text;
+    if (typeof text !== "string" || text.trim().length === 0) {
+      // PDF escaneado (sem texto extraível) ou protegido.
+      return null;
+    }
+    return text.length > maxChars ? text.slice(0, maxChars) : text;
   } catch {
     return null;
   }
