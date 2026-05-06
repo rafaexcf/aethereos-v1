@@ -77,6 +77,14 @@ export const useOSStore = create<OSState & OSActions>((set, get) => ({
       return;
     }
 
+    // Apps marcados como opensAsModal (ex: "ae-ai" → CopilotDrawer)
+    // nao criam aba — disparam o modal global. Centraliza a logica que
+    // antes vivia espalhada em Dock/AppsLauncher/CommandCenter/Mesa.
+    if (entry?.opens_as_modal === true) {
+      get().openAIModal();
+      return;
+    }
+
     const { tabs, activeTabId } = get();
     const existing = tabs.find((t) => t.appId === appId);
 

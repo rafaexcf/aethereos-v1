@@ -7,6 +7,7 @@ import type { ComponentType } from "react";
 import { X, Search } from "lucide-react";
 import { APP_REGISTRY } from "../apps/registry";
 import { useInstalledModulesStore } from "../stores/installedModulesStore";
+import { useOSStore } from "../stores/osStore";
 import { AppContextMenu } from "./os/AppContextMenu";
 
 interface AppsLauncherProps {
@@ -18,6 +19,7 @@ interface AppsLauncherProps {
 export function AppsLauncher({ open, onClose, onOpenApp }: AppsLauncherProps) {
   const [search, setSearch] = useState("");
   const installed = useInstalledModulesStore((s) => s.installed);
+  const openAIModal = useOSStore((s) => s.openAIModal);
   // Sprint 26: menu de contexto (Desinstalar) por app no launcher.
   const [iconCtx, setIconCtx] = useState<{
     appId: string;
@@ -208,7 +210,14 @@ export function AppsLauncher({ open, onClose, onOpenApp }: AppsLauncherProps) {
                     key={app.id}
                     type="button"
                     onClick={() => {
-                      onOpenApp(app.id, app.name);
+                      // Apps com opensAsModal (ex: Aether AI) usam o
+                      // CopilotDrawer global em vez de abrir janela com
+                      // placeholder. Mesmo comportamento do Dock.
+                      if (app.opensAsModal === true) {
+                        openAIModal();
+                      } else {
+                        onOpenApp(app.id, app.name);
+                      }
                       onClose();
                       setSearch("");
                     }}
