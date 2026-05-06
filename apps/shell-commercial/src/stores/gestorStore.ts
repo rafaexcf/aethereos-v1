@@ -18,6 +18,7 @@ export type GestorTabId =
   | "regras-app"
   | "permissoes-efetivas"
   | "horarios-acesso"
+  | "politicas"
   // Aplicativos
   | "aplicativos"
   | "regras-distribuicao"

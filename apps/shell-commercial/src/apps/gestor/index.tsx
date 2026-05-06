@@ -79,6 +79,7 @@ import { TabExportarRelatorio } from "./tabs/ExportarRelatorio";
 import { TabLogoBranding } from "./tabs/LogoBranding";
 import { TabFusoIdioma } from "./tabs/FusoIdioma";
 import { TabLGPD } from "./tabs/LGPD";
+import { TabPoliticas } from "./tabs/Politicas";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -130,6 +131,7 @@ const NAV_SECTIONS: {
         icon: BadgeCheck,
       },
       { id: "horarios-acesso", label: "Horários de Acesso", icon: Calendar },
+      { id: "politicas", label: "Políticas (Policy Engine)", icon: BadgeCheck },
     ],
   },
   {
@@ -221,6 +223,7 @@ const TAB_LABELS: Record<GestorTabId, string> = {
   "regras-app": "Regras por App",
   "permissoes-efetivas": "Permissões Efetivas",
   "horarios-acesso": "Horários de Acesso",
+  politicas: "Políticas (Policy Engine)",
   aplicativos: "Apps Instalados",
   "regras-distribuicao": "Regras de Distribuição",
   "config-por-app": "Configurações por App",
@@ -3024,6 +3027,7 @@ export function GestorApp() {
             {active === "regras-app" && <TabRegrasApp />}
             {active === "permissoes-efetivas" && <TabPermissoesEfetivas />}
             {active === "horarios-acesso" && <TabHorariosAcesso />}
+            {active === "politicas" && <TabPoliticas />}
             {/* Aplicativos */}
             {active === "aplicativos" && <TabAplicativos />}
             {active === "regras-distribuicao" && <TabRegrasDistribuicao />}
