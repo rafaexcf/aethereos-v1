@@ -1,3 +1,4 @@
+import * as React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AppShell } from "@aethereos/ui-shell";
 import { KERNEL_CAPABILITIES } from "@aethereos/kernel";
@@ -49,6 +50,10 @@ interface ProposalRow {
   created_at: string;
   expires_at: string;
   payload?: Record<string, unknown> | null;
+  // Super Sprint A / MX200, MX204
+  auto_resolved?: boolean | null;
+  auto_resolved_reason?: string | null;
+  policy_evaluation_id?: string | null;
 }
 
 function formatDateTime(iso: string): string {
@@ -87,6 +92,158 @@ interface ContextSnapshot {
     payload_preview: Record<string, unknown>;
   }>;
   embedding_count: number;
+}
+
+// ─── Super Sprint A / MX204 — Explain policy decision ─────────────────────
+
+interface PolicyEvaluationDetail {
+  id: string;
+  policy_id: string | null;
+  intent_id: string;
+  result: "allow" | "deny" | "require_approval";
+  matched_rules: object[];
+  reason: string;
+  parameters: Record<string, unknown>;
+  evaluated_at: string;
+  policy_name?: string | null;
+}
+
+function PolicyEvaluationExplain(props: {
+  evaluationId: string;
+  autoResolvedReason: string | null;
+}): React.JSX.Element {
+  const drivers = useDrivers();
+  const [detail, setDetail] = useState<PolicyEvaluationDetail | null>(null);
+
+  useEffect(() => {
+    if (drivers === null) return;
+    void (async () => {
+      const { data } = (await drivers.data
+        .from("policy_evaluations")
+        .select(
+          "id,policy_id,intent_id,result,matched_rules,reason,parameters,evaluated_at,policies(name)",
+        )
+        .eq("id", props.evaluationId)
+        .maybeSingle()) as unknown as {
+        data:
+          | (Omit<PolicyEvaluationDetail, "policy_name"> & {
+              policies?: { name: string } | null;
+            })
+          | null;
+      };
+      if (data === null) return;
+      setDetail({
+        ...data,
+        policy_name: data.policies?.name ?? null,
+      });
+    })();
+  }, [drivers, props.evaluationId]);
+
+  const resultColors: Record<string, { bg: string; fg: string }> = {
+    allow: { bg: "rgba(34,197,94,0.15)", fg: "#22c55e" },
+    deny: { bg: "rgba(239,68,68,0.15)", fg: "#ef4444" },
+    require_approval: { bg: "rgba(245,158,11,0.15)", fg: "#f59e0b" },
+  };
+
+  const c = detail !== null ? resultColors[detail.result] : null;
+  return (
+    <div
+      style={{
+        marginTop: 6,
+        padding: 10,
+        background: "rgba(99,102,241,0.06)",
+        border: "1px solid rgba(99,102,241,0.2)",
+        borderRadius: 8,
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 10,
+          textTransform: "uppercase",
+          letterSpacing: 0.5,
+          color: "#a5b4fc",
+          fontWeight: 600,
+        }}
+      >
+        Avaliação de política
+      </div>
+      {detail === null ? (
+        <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
+          Carregando…
+        </span>
+      ) : (
+        <>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 11,
+              flexWrap: "wrap",
+            }}
+          >
+            <span
+              style={{
+                padding: "2px 6px",
+                borderRadius: 4,
+                background: c?.bg ?? "transparent",
+                color: c?.fg ?? "var(--text-secondary)",
+                fontWeight: 600,
+              }}
+            >
+              {detail.result}
+            </span>
+            <span style={{ color: "var(--text-secondary)" }}>
+              {detail.policy_name ?? "(sem política — default)"}
+            </span>
+            <span style={{ color: "var(--text-tertiary)" }}>
+              · intent: {detail.intent_id}
+            </span>
+          </div>
+          <div
+            style={{
+              fontSize: 11,
+              color: "var(--text-secondary)",
+              fontStyle: "italic",
+            }}
+          >
+            {detail.reason || props.autoResolvedReason || "—"}
+          </div>
+          {detail.matched_rules.length > 0 && (
+            <details>
+              <summary
+                style={{
+                  fontSize: 10,
+                  color: "var(--text-tertiary)",
+                  cursor: "pointer",
+                }}
+              >
+                Regra aplicada
+              </summary>
+              <pre
+                style={{
+                  margin: "4px 0 0 0",
+                  fontSize: 10,
+                  fontFamily: "var(--font-mono, monospace)",
+                  color: "var(--text-tertiary)",
+                  background: "rgba(0,0,0,0.25)",
+                  padding: 6,
+                  borderRadius: 4,
+                  maxHeight: 120,
+                  overflow: "auto",
+                }}
+              >
+                {JSON.stringify(detail.matched_rules, null, 2)}
+              </pre>
+            </details>
+          )}
+        </>
+      )}
+    </div>
+  );
 }
 
 function TabContext({
@@ -1395,6 +1552,28 @@ function TabShadow({
                       {formatDateTime(p.created_at)}
                     </span>
                   </div>
+                  {p.auto_resolved === true && (
+                    <span
+                      title={p.auto_resolved_reason ?? ""}
+                      style={{
+                        fontSize: 10,
+                        padding: "2px 8px",
+                        borderRadius: 999,
+                        background:
+                          p.status === "rejected"
+                            ? "rgba(239,68,68,0.15)"
+                            : "rgba(99,102,241,0.15)",
+                        color: p.status === "rejected" ? "#ef4444" : "#a5b4fc",
+                        marginRight: 6,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {p.status === "rejected"
+                        ? "Auto-rejeitado"
+                        : "Auto-aprovado"}{" "}
+                      por política
+                    </span>
+                  )}
                   <span
                     style={{
                       fontSize: 10,
@@ -1433,6 +1612,14 @@ function TabShadow({
                     >
                       {JSON.stringify(p.payload ?? {}, null, 2)}
                     </pre>
+                    {/* Super Sprint A / MX204 — Explicar decisão */}
+                    {p.policy_evaluation_id !== null &&
+                      p.policy_evaluation_id !== undefined && (
+                        <PolicyEvaluationExplain
+                          evaluationId={p.policy_evaluation_id}
+                          autoResolvedReason={p.auto_resolved_reason ?? null}
+                        />
+                      )}
                     {p.reviewed_at !== null && (
                       <span
                         style={{ fontSize: 10, color: "var(--text-tertiary)" }}
@@ -1546,7 +1733,7 @@ export function GovernancaApp() {
           d.data
             .from("agent_proposals")
             .select(
-              "id,agent_id,intent_type,status,supervising_user_id,reviewed_by,reviewed_at,rejection_reason,created_at,expires_at,payload",
+              "id,agent_id,intent_type,status,supervising_user_id,reviewed_by,reviewed_at,rejection_reason,created_at,expires_at,payload,auto_resolved,auto_resolved_reason,policy_evaluation_id",
             )
             .order("created_at", { ascending: false })
             .limit(50),
