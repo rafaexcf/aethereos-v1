@@ -4311,3 +4311,43 @@ Apps reais, testes E2E expandidos, refatoração, CI E2E, mobile, deploy.
 
 **CAMADA 1 ENCERRADA DEFINITIVAMENTE.** Próximo trabalho de código:
 **comercio.digital (Camada 2)** em paralelo aos 30 dias de dogfood.
+
+---
+
+# Sprint 34 — Quick Wins F2 (2026-05-06)
+
+**Objetivo:** 4 quick wins. Apps placeholder viram funcionais (auditoria
+revelou que 3 já estavam). PDF Embedding desbloqueia RAG (KL-8 RESOLVED).
+
+## Milestones
+
+| Milestone | Descrição                     | Status                             |
+| --------- | ----------------------------- | ---------------------------------- |
+| MX192     | Weather app com API real      | AUDIT (já completo — open-meteo)   |
+| MX193     | Câmera funcional              | AUDIT (já completo — kernel-media) |
+| MX194     | Gravador de voz funcional     | AUDIT (já completo — kernel-voice) |
+| MX195     | PDF Embedding (resolver KL-8) | DONE                               |
+| MX196     | Testes + deploy + docs        | DONE                               |
+
+## Resultados-chave
+
+- **MX192-MX194:** auditoria documentou que apps já tinham APIs reais e
+  persistência. Weather usa `api.open-meteo.com` (escolha melhor que
+  wttr.in suggested no sprint); Câmera salva em `kernel-media`; Gravador
+  em `kernel-voice` + tabela `voice_recordings`.
+- **MX195:** EmbeddingConsumer agora processa PDFs via `unpdf`
+  (Node-native, ESM, sem bindings). Branching por mime_type. Limite de
+  500k chars (~100-200 páginas), skip gracioso para PDFs escaneados ou
+  protegidos. Import dinâmico zero-overhead. **KL-8 → RESOLVED**.
+- 38/38 unit tests scp-worker passando.
+
+## Gates finais
+
+- TypeCheck: 26/26, Lint: 24/24, audit 0 vulns.
+- Migrations remotas em sync (sem novas).
+- 54 E2E preservados.
+
+## Próximas etapas
+
+Sprint 34 fecha últimos quick wins de F1. Camada 1 plenamente operacional
+com PDF embedding ativo. Próximo: começar comercio.digital durante dogfood.

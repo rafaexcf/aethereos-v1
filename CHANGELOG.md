@@ -11,6 +11,12 @@ Convenções:
 
 ---
 
+## Sprint 34 — Quick Wins F2 (2026-05-06)
+
+- **Selo:** KL-8 RESOLVED — PDF embedding funcional.
+- **Apps:** EmbeddingConsumer no scp-worker agora processa PDFs via `unpdf` (Node-native, sem bindings). Branching por mime_type, limite 500k chars, skip gracioso para PDFs escaneados/protegidos.
+- **Auditoria:** Weather/Câmera/Gravador já tinham APIs reais e persistência (open-meteo, kernel-media, kernel-voice). Documentado em runbook.
+
 ## Sprint 33 — Consolidação final (2026-05-06)
 
 - **Selo:** Camada 1 ENCERRADA DEFINITIVAMENTE. Pronto para Camada 2.
