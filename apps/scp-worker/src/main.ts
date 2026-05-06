@@ -1,5 +1,6 @@
 import postgres from "postgres";
-import type { EventEnvelope } from "@aethereos/drivers";
+import type { EventEnvelope, Subscription } from "@aethereos/drivers";
+import { NatsEventBusDriver } from "@aethereos/drivers-nats";
 import { jlog, type InlineConsumer } from "./consumer.js";
 import { AuditConsumer } from "./consumers/audit-consumer.js";
 import { NotificationConsumer } from "./consumers/notification-consumer.js";
@@ -12,6 +13,12 @@ const MAX_ATTEMPTS = Number(process.env["SCP_MAX_ATTEMPTS"] ?? "3");
 const METRICS_FLUSH_EVERY = Number(
   process.env["SCP_METRICS_FLUSH_EVERY"] ?? "100",
 );
+
+// Super Sprint B / MX210 — NATS opcional. Se NATS_URL não definido, modo
+// inline (behavior legado). Se definido e conectado, publica eventos no
+// NATS para consumers distribuídos. R7: sistema funciona sem NATS.
+const NATS_URL = process.env["NATS_URL"] ?? "";
+const NATS_RECONNECT_INTERVAL_MS = 5000;
 
 interface OutboxRow {
   id: number;
@@ -55,6 +62,14 @@ function flushMetrics(): void {
   latencyBuffer.length = 0;
 }
 
+interface WorkerContext {
+  sql: postgres.Sql;
+  consumers: InlineConsumer[];
+  nats: NatsEventBusDriver | null;
+  natsConnected: boolean;
+  natsSubscriptions: Subscription[];
+}
+
 async function main(): Promise<void> {
   const dbUrl =
     process.env["DATABASE_URL"] ??
@@ -74,8 +89,21 @@ async function main(): Promise<void> {
     new EmbeddingConsumer({ supabaseUrl, supabaseAnonKey }),
   ];
 
+  // Super Sprint B / MX210 — Connect NATS se NATS_URL definido.
+  const ctx: WorkerContext = {
+    sql,
+    consumers,
+    nats: null,
+    natsConnected: false,
+    natsSubscriptions: [],
+  };
+  if (NATS_URL !== "") {
+    await tryConnectNats(ctx);
+  }
+
   jlog("info", "scp-worker started", {
-    mode: "inline",
+    mode: ctx.natsConnected ? "nats" : "inline",
+    nats_url: NATS_URL !== "" ? NATS_URL : "(unset)",
     db: dbUrl.replace(/:[^:@]+@/, ":***@"),
     poll_interval_ms: POLL_INTERVAL_MS,
     batch_size: BATCH_SIZE,
@@ -89,6 +117,20 @@ async function main(): Promise<void> {
     shuttingDown = true;
     jlog("info", "scp-worker shutting down", { signal });
     flushMetrics();
+    for (const sub of ctx.natsSubscriptions) {
+      try {
+        await sub.unsubscribe();
+      } catch {
+        // ignore
+      }
+    }
+    if (ctx.nats !== null) {
+      try {
+        await ctx.nats.close();
+      } catch {
+        // ignore
+      }
+    }
     try {
       await sql.end({ timeout: 5 });
     } catch (e) {
@@ -99,9 +141,14 @@ async function main(): Promise<void> {
   process.on("SIGTERM", () => void shutdown("SIGTERM"));
   process.on("SIGINT", () => void shutdown("SIGINT"));
 
+  // Reconnect loop em background (R12).
+  if (NATS_URL !== "") {
+    void natsReconnectLoop(ctx, () => shuttingDown);
+  }
+
   while (!shuttingDown) {
     try {
-      await processBatch(sql, consumers);
+      await processBatch(ctx);
     } catch (e) {
       jlog("error", "outbox poll error", { error: String(e) });
     }
@@ -110,13 +157,42 @@ async function main(): Promise<void> {
   }
 }
 
-async function processBatch(
-  sql: postgres.Sql,
-  consumers: InlineConsumer[],
+async function tryConnectNats(ctx: WorkerContext): Promise<void> {
+  const driver = new NatsEventBusDriver({ servers: NATS_URL });
+  const result = await driver.connect();
+  if (result.ok) {
+    ctx.nats = driver;
+    ctx.natsConnected = true;
+    jlog("info", "nats connected — distributed mode", { url: NATS_URL });
+  } else {
+    ctx.nats = null;
+    ctx.natsConnected = false;
+    jlog("warn", "nats unavailable — inline fallback mode", {
+      url: NATS_URL,
+      error: String(result.error.message),
+    });
+  }
+}
+
+async function natsReconnectLoop(
+  ctx: WorkerContext,
+  isShuttingDown: () => boolean,
 ): Promise<void> {
+  while (!isShuttingDown()) {
+    await sleep(NATS_RECONNECT_INTERVAL_MS);
+    if (ctx.natsConnected) continue;
+    // Tentativa de reconexão.
+    await tryConnectNats(ctx);
+    if (ctx.natsConnected) {
+      jlog("info", "nats reconnected — switching back to distributed mode");
+    }
+  }
+}
+
+async function processBatch(ctx: WorkerContext): Promise<void> {
   // FOR UPDATE SKIP LOCKED — multiplas instancias do worker podem rodar
   // concorrentemente sem reprocessar mesma row (R11).
-  const rows = await sql<OutboxRow[]>`
+  const rows = await ctx.sql<OutboxRow[]>`
     SELECT id, company_id, event_type, event_id, payload, envelope, attempts
     FROM kernel.scp_outbox
     WHERE status = 'pending'
@@ -129,40 +205,65 @@ async function processBatch(
   if (rows.length === 0) return;
 
   for (const row of rows) {
-    await processEvent(sql, row, consumers);
+    await processEvent(ctx, row);
   }
 }
 
-async function processEvent(
-  sql: postgres.Sql,
-  row: OutboxRow,
-  consumers: InlineConsumer[],
-): Promise<void> {
-  // Match consumers + executa cada um. R12: consumer NUNCA bloqueia o
-  // pipeline — cada handle e wrappado em try/catch individual.
-  const matched = consumers.filter((c) => c.matches(row.event_type));
+async function processEvent(ctx: WorkerContext, row: OutboxRow): Promise<void> {
+  const { sql, consumers } = ctx;
+  const envelope = row.envelope ?? buildFallbackEnvelope(row);
   const errors: string[] = [];
   const startedAt = performance.now();
+  let mode: "nats" | "inline" = "inline";
+  let consumersUsed: string[] = [];
 
-  for (const consumer of matched) {
-    try {
-      await consumer.handle(row.envelope ?? buildFallbackEnvelope(row), sql);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      errors.push(`${consumer.name}: ${msg}`);
-      jlog("warn", "consumer error", {
-        consumer: consumer.name,
+  // Super Sprint B / MX210 — Se NATS conectado, publica para o stream
+  // (consumers distribuídos do MX211 vão processar). Senão, fluxo inline
+  // legado (Sprint 18).
+  if (ctx.natsConnected && ctx.nats !== null) {
+    const pubResult = await ctx.nats.publish(envelope);
+    if (pubResult.ok) {
+      mode = "nats";
+      consumersUsed = ["nats:dispatched"];
+    } else {
+      const errMsg = String(pubResult.error.message);
+      errors.push(`nats.publish: ${errMsg}`);
+      jlog("warn", "nats publish failed — falling back to inline", {
         event_id: row.event_id,
-        event_type: row.event_type,
-        error: msg,
+        error: errMsg,
       });
+      // Marca como desconectado; reconnectLoop tentará restaurar.
+      ctx.natsConnected = false;
+      // E processa inline neste evento para não perder.
+    }
+  }
+
+  if (mode === "inline") {
+    // R12: consumer NUNCA bloqueia o pipeline — cada handle wrappado.
+    const matched = consumers.filter((c) => c.matches(row.event_type));
+    consumersUsed = matched.map((c) => c.name);
+    for (const consumer of matched) {
+      try {
+        await consumer.handle(envelope, sql);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        errors.push(`${consumer.name}: ${msg}`);
+        jlog("warn", "consumer error", {
+          consumer: consumer.name,
+          event_id: row.event_id,
+          event_type: row.event_type,
+          error: msg,
+        });
+      }
     }
   }
 
   const processingMs = Math.round(performance.now() - startedAt);
   recordLatency(processingMs);
 
-  if (errors.length === 0) {
+  // Filtra erros transientes do NATS — se inline já recuperou, não conta.
+  const blockingErrors = mode === "nats" ? errors : errors;
+  if (blockingErrors.length === 0) {
     await sql`
       UPDATE kernel.scp_outbox
       SET status = 'published',
@@ -173,7 +274,8 @@ async function processEvent(
     jlog("info", "event published", {
       event_id: row.event_id,
       event_type: row.event_type,
-      consumers: matched.map((c) => c.name),
+      mode,
+      consumers: consumersUsed,
       processing_time_ms: processingMs,
     });
   } else {
