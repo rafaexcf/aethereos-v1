@@ -1,1 +1,43 @@
-{}
+{
+  "title": "Configurações",
+  "subtitle": "Personalize sua experiência",
+  "tabs": {
+    "home": "Início",
+    "profile": "Meu perfil",
+    "company": "Minha empresa",
+    "appearance": "Aparência",
+    "notifications": "Notificações",
+    "dock": "Dock",
+    "mesa": "Área de trabalho",
+    "language": "Idioma & região",
+    "ai": "Inteligência artificial",
+    "data_privacy": "Dados & privacidade",
+    "about": "Sobre"
+  },
+  "language": {
+    "title": "Idioma & região",
+    "description": "Escolha o idioma da interface. A mudança é aplicada imediatamente.",
+    "select_label": "Idioma da interface"
+  },
+  "appearance": {
+    "title": "Aparência",
+    "theme": "Tema",
+    "theme_dark": "Escuro",
+    "theme_light": "Claro",
+    "theme_system": "Sistema",
+    "wallpaper": "Wallpaper"
+  },
+  "ai": {
+    "title": "Inteligência artificial",
+    "provider": "Provedor",
+    "model": "Modelo",
+    "api_key": "Chave de API",
+    "test_connection": "Testar conexão",
+    "connection_ok": "Conexão OK",
+    "save": "Salvar"
+  },
+  "actions": {
+    "save_changes": "Salvar alterações",
+    "discard": "Descartar"
+  }
+}

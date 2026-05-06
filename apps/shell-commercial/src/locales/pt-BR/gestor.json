@@ -1,1 +1,63 @@
-{}
+{
+  "title": "Gestor",
+  "subtitle": "Painel administrativo da empresa",
+  "sections": {
+    "dashboard": "Painel Geral",
+    "team": "Equipe",
+    "departments": "Departamentos",
+    "groups": "Grupos",
+    "roles": "Cargos & Hierarquia",
+    "permissions": "Permissões & Acessos",
+    "apps": "Aplicativos",
+    "ai": "Inteligência Artificial",
+    "integrations": "Integrações",
+    "plan": "Plano & Assinatura",
+    "security": "Segurança",
+    "audit": "Auditoria",
+    "general_settings": "Configurações Gerais"
+  },
+  "team": {
+    "total_members": "Total de colaboradores",
+    "invite": "Convidar",
+    "suspend": "Suspender",
+    "remove": "Remover",
+    "no_members": "Nenhum colaborador.",
+    "search_placeholder": "Buscar colaborador…"
+  },
+  "departments": {
+    "title": "Departamentos",
+    "new": "Novo departamento",
+    "name": "Nome",
+    "manager": "Gerente",
+    "members": "Membros",
+    "no_departments": "Nenhum departamento cadastrado."
+  },
+  "groups": {
+    "title": "Grupos",
+    "new": "Novo grupo",
+    "members": "Membros"
+  },
+  "policies": {
+    "title": "Políticas",
+    "subtitle": "Governance-as-Code: regras YAML que avaliam ações de agentes automaticamente.",
+    "new": "Nova política",
+    "use_template": "Usar template",
+    "active_count": "Políticas ativas",
+    "evaluations_30d": "Avaliações (30d)",
+    "distribution": "Distribuição",
+    "top_intents": "Top intents",
+    "filter_all": "Todas",
+    "filter_active": "Ativas",
+    "filter_draft": "Rascunhos",
+    "filter_archived": "Arquivadas",
+    "no_policies": "Nenhuma política.",
+    "simulate": "Simular impacto",
+    "activate": "Ativar",
+    "archive": "Arquivar",
+    "duplicate": "Duplicar"
+  },
+  "actions": {
+    "save_draft": "Salvar como rascunho",
+    "activate_now": "Ativar agora"
+  }
+}

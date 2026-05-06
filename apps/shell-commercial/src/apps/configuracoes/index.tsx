@@ -78,6 +78,7 @@ import { TwoFactorAuth } from "../../components/shared/TwoFactorAuth";
 import { APP_REGISTRY } from "../registry";
 import { useSessionStore } from "../../stores/session";
 import { useDrivers } from "../../lib/drivers-context";
+import i18n from "../../i18n";
 import { AnimatedThemeToggler } from "../../components/ui/animated-theme-toggler";
 import {
   useMesaStore,
@@ -5549,6 +5550,14 @@ function TabSobre() {
 
   function handleLangChange(value: string) {
     setLang(value);
+    // Super Sprint C / MX217 — wirea com react-i18next.
+    // Mapeia "en-US" → "en" (i18n.ts usa códigos curtos).
+    const i18nCode = value.startsWith("en")
+      ? "en"
+      : value.startsWith("pt")
+        ? "pt-BR"
+        : value;
+    void i18n.changeLanguage(i18nCode);
     if (!langInitializedRef.current) return;
     if (drivers === null || userId === null) return;
     setLangSaveState("saving");
@@ -5658,7 +5667,6 @@ function TabSobre() {
               options={[
                 { value: "pt-BR", label: "Português (Brasil)" },
                 { value: "en-US", label: "English (US)" },
-                { value: "es-ES", label: "Español" },
               ]}
             />
           </SettingRow>
@@ -6581,7 +6589,6 @@ function TabHome({ onSelect }: { onSelect: (id: TabId) => void }) {
               options={[
                 { value: "pt-BR", label: "Português (Brasil)" },
                 { value: "en-US", label: "English (US)" },
-                { value: "es-ES", label: "Español" },
               ]}
             />
           </div>

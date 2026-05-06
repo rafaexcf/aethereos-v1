@@ -1,1 +1,38 @@
-{}
+{
+  "title": "Magic Store",
+  "subtitle": "Loja de aplicativos da Aethereos",
+  "categories": {
+    "all": "Todos",
+    "applications": "Aplicativos",
+    "plugins": "Plugins",
+    "widgets": "Widgets",
+    "integrations": "Integrações",
+    "distros": "Distros"
+  },
+  "actions": {
+    "install": "Instalar",
+    "uninstall": "Desinstalar",
+    "open": "Abrir",
+    "details": "Detalhes",
+    "back_to_catalog": "Voltar ao catálogo"
+  },
+  "labels": {
+    "developer": "Desenvolvedor",
+    "license": "Licença",
+    "version": "Versão",
+    "permissions_requested": "Permissões solicitadas",
+    "about_this_app": "Sobre este app",
+    "screenshots": "Capturas de tela",
+    "coming_soon": "Em breve",
+    "beta": "Beta",
+    "included": "Incluído no OS"
+  },
+  "search_placeholder": "Buscar aplicativos…",
+  "empty_state": "Nenhum aplicativo encontrado.",
+  "consent_modal": {
+    "title": "Permissões solicitadas",
+    "intro": "Este aplicativo solicita acesso a:",
+    "approve": "Aprovar e instalar",
+    "cancel": "Cancelar"
+  }
+}
