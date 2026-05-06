@@ -142,3 +142,50 @@
     animation: none;
     mix-blend-mode: normal;
 }
+
+/* ─── Sprint 33 / MX190 — responsividade básica ─────────────────────────────
+ *
+ * Aethereos é projetado para desktop (Mesa, Dock, multi-tab). Em viewport
+ * mobile (<768px), mostramos um aviso fixo no topo. O OS fica acessível
+ * por baixo (não bloqueamos), mas o usuário sabe que a experiência é
+ * sub-ótima. R13 do Sprint 33: NÃO redesenhar — apenas prevenir quebra.
+ */
+
+@media (max-width: 767px) {
+  /* Banner fixo no topo, não-bloqueante */
+  body::before {
+    content: "Aethereos é otimizado para desktop. Em mobile, alguns recursos podem não funcionar bem.";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100000;
+    background: rgba(99, 102, 241, 0.95);
+    color: white;
+    padding: 8px 16px;
+    font-size: 12px;
+    text-align: center;
+    font-weight: 500;
+    line-height: 1.4;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+  }
+
+  /* TabBar: permite scroll horizontal em telas estreitas */
+  [data-testid="tabbar"] {
+    overflow-x: auto !important;
+  }
+
+  /* Apps com min-width grande: permite scroll interno */
+  [data-testid^="tab-"] > * {
+    min-width: 0 !important;
+  }
+}
+
+/* Tablet ajustes pequenos (768-1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  [data-testid="topbar"] {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
