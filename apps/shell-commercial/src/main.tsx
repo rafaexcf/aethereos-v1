@@ -26,6 +26,7 @@ import {
   installGlobalErrorHandlers,
   initSentryIfConfigured,
 } from "./lib/observability";
+import "./i18n"; // Super Sprint C / MX214 — inicializa react-i18next
 import "./styles/globals.css";
 
 // Sprint 33 / MX186: inicializa Sentry se VITE_SENTRY_DSN estiver definida.
