@@ -1384,10 +1384,10 @@ export function Dock() {
             boxShadow: "var(--shadow-dock)",
           }}
         >
-          {/* Widget: Tempo + Atalhos do sistema (esquerda) */}
+          {/* Widget: Tempo + Calendário + Launcher (esquerda) */}
           <DockWeatherWidget />
+          <DockClockWidget />
           <DockAppsLauncherWidget />
-          <DockSupportMenuWidget />
           <DockDivider />
 
           {/* Apps */}
@@ -1402,9 +1402,9 @@ export function Dock() {
             />
           ))}
 
-          {/* Widget: Calendário + Notificações (direita) */}
+          {/* Widget: Suporte + Notificações (direita) */}
           <DockDivider />
-          <DockClockWidget />
+          <DockSupportMenuWidget />
           <DockNotifWidget />
         </motion.div>
       </motion.div>
