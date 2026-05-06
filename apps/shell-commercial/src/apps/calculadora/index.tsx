@@ -511,21 +511,29 @@ function HPKey({
   const isWide = variant === "wide";
   const isTopFin = variant === "topfin";
 
+  // HP-12C autentico:
+  //   - f key: laranja brilhante (#f48a1a) com texto preto
+  //   - g key: azul (#1f6dc4) com texto branco
+  //   - topfin (n, i, PV, PMT, FV): prata escovado, texto branco
+  //   - demais teclas: dark grey/preto, texto branco creme
   const baseBg = isFKey
-    ? "linear-gradient(180deg, #f0c060 0%, #c89030 50%, #a87020 100%)"
+    ? "linear-gradient(180deg, #f9a838 0%, #ed8a18 50%, #c66a08 100%)"
     : isGKey
-      ? "linear-gradient(180deg, #6090c0 0%, #3060a0 50%, #1e4080 100%)"
-      : "linear-gradient(180deg, #2a2a2c 0%, #1a1a1c 60%, #0e0e10 100%)";
+      ? "linear-gradient(180deg, #4a8edc 0%, #1f6dc4 50%, #0e4d96 100%)"
+      : isTopFin
+        ? "linear-gradient(180deg, #5e5854 0%, #423d39 55%, #2e2a26 100%)"
+        : "linear-gradient(180deg, #2c2a28 0%, #1a1816 60%, #0c0b0a 100%)";
 
   const labelColor = isFKey
     ? "#1a0a00"
     : isGKey
-      ? "#fff"
+      ? "#ffffff"
       : isTopFin
-        ? "#fff"
+        ? "#f4ece0"
         : "#f0e8d8";
-  const topAnnotationColor = "#e8b840";
-  const bottomAnnotationColor = "#5da8e0";
+  // Anotação superior (f label) em laranja, inferior (g label) em azul claro
+  const topAnnotationColor = "#f4a020";
+  const bottomAnnotationColor = "#7ec0f4";
 
   const mainSize =
     (isWide ? 11 : main.length > 3 ? 9 : main.length > 1 ? 11 : 13) * fontScale;
@@ -560,17 +568,18 @@ function HPKey({
         onClick={onClick}
         style={{
           width: "100%",
-          height: 32,
-          borderRadius: 4,
+          height: 30,
+          borderRadius: 3,
           background: baseBg,
           border: "1px solid #000",
           boxShadow:
-            "0 2px 0 rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.4)",
+            "0 2px 0 rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 -1px 0 rgba(0,0,0,0.45)",
           color: labelColor,
           fontSize: mainSize,
           fontWeight: 700,
-          fontFamily: "var(--font-display, 'Helvetica Neue', sans-serif)",
-          letterSpacing: "0.02em",
+          fontFamily:
+            "'Helvetica Neue', 'Helvetica', 'Arial Narrow', sans-serif",
+          letterSpacing: "0.01em",
           cursor: "pointer",
           userSelect: "none",
           transition: "transform 60ms, box-shadow 60ms",
@@ -1870,75 +1879,33 @@ export function CalculadoraApp() {
     <div
       style={{
         width: 420,
-        borderRadius: 18,
+        borderRadius: 14,
+        // HP-12C clássico: corpo bronze/preto com gradiente sutil
         background:
-          "linear-gradient(180deg, #d8b25a 0%, #c89230 18%, #b08020 32%, #2a2622 32.1%, #1a1614 100%)",
-        border: "1px solid #1a1208",
+          "linear-gradient(180deg, #2b2520 0%, #1f1a16 22%, #14110e 100%)",
+        border: "1px solid #050403",
         boxShadow:
-          "0 24px 60px rgba(0,0,0,0.7), inset 0 2px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.55)",
+          "0 24px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(220,180,120,0.18), inset 0 -1px 0 rgba(0,0,0,0.6)",
         overflow: "hidden",
-        padding: "0 0 18px 0",
+        padding: "0 0 16px 0",
         fontFamily: "var(--font-display, 'Helvetica Neue', sans-serif)",
+        position: "relative",
       }}
     >
+      {/* Faixa dourada fina no topo — assinatura visual do HP-12C */}
       <div
         style={{
-          padding: "10px 18px 0",
-          display: "flex",
-          alignItems: "flex-end",
-          justifyContent: "space-between",
+          height: 4,
+          background:
+            "linear-gradient(180deg, #e6c878 0%, #c89030 50%, #8a5e18 100%)",
+          boxShadow: "inset 0 -1px 0 rgba(0,0,0,0.45)",
         }}
-      >
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-start",
-            lineHeight: 1,
-          }}
-        >
-          <span
-            style={{
-              fontSize: 9,
-              fontWeight: 700,
-              color: "#3a2400",
-              letterSpacing: "0.18em",
-              textTransform: "uppercase",
-            }}
-          >
-            HEWLETT · PACKARD
-          </span>
-        </div>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-          <span
-            style={{
-              fontFamily: "Georgia, 'Times New Roman', serif",
-              fontStyle: "italic",
-              fontSize: 22,
-              fontWeight: 700,
-              color: "#2a1500",
-              letterSpacing: "-0.04em",
-            }}
-          >
-            hp
-          </span>
-          <span
-            style={{
-              fontFamily: "Georgia, 'Times New Roman', serif",
-              fontSize: 18,
-              fontWeight: 700,
-              color: "#2a1500",
-              letterSpacing: "0.02em",
-            }}
-          >
-            12c
-          </span>
-        </div>
-      </div>
+      />
 
+      {/* Header: HEWLETT · PACKARD + hp 12c em dourado */}
       <div
         style={{
-          padding: "4px 18px 12px",
+          padding: "10px 18px 6px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -1948,35 +1915,76 @@ export function CalculadoraApp() {
           style={{
             fontSize: 8,
             fontWeight: 700,
-            color: "#3a2400",
-            letterSpacing: "0.2em",
+            color: "#c89438",
+            letterSpacing: "0.22em",
+            textTransform: "uppercase",
+          }}
+        >
+          HEWLETT · PACKARD
+        </span>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
+          <span
+            style={{
+              fontFamily: "'Helvetica Neue', Arial, sans-serif",
+              fontStyle: "italic",
+              fontSize: 26,
+              fontWeight: 700,
+              color: "#e8c878",
+              letterSpacing: "-0.05em",
+              lineHeight: 1,
+              textShadow: "0 1px 0 rgba(0,0,0,0.5)",
+            }}
+          >
+            hp
+          </span>
+          <span
+            style={{
+              fontFamily: "'Helvetica Neue', Arial, sans-serif",
+              fontSize: 16,
+              fontWeight: 700,
+              color: "#e8c878",
+              letterSpacing: "0.04em",
+              lineHeight: 1,
+              textShadow: "0 1px 0 rgba(0,0,0,0.5)",
+            }}
+          >
+            12C
+          </span>
+        </div>
+      </div>
+
+      <div
+        style={{
+          padding: "0 18px 12px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-start",
+        }}
+      >
+        <span
+          style={{
+            fontSize: 7,
+            fontWeight: 700,
+            color: "#9c7028",
+            letterSpacing: "0.24em",
             textTransform: "uppercase",
           }}
         >
           Financial Calculator
         </span>
-        <span
-          style={{
-            fontSize: 8,
-            fontWeight: 700,
-            color: "#3a2400",
-            letterSpacing: "0.18em",
-            textTransform: "uppercase",
-          }}
-        >
-          Platinum Edition
-        </span>
       </div>
 
       <div
         style={{
+          // LCD verde-acinzentado clássico HP-12C
           margin: "0 18px 14px",
-          background: "linear-gradient(180deg, #c8d0c0 0%, #a0a898 100%)",
-          border: "2px solid #1a1614",
-          borderRadius: 4,
+          background:
+            "linear-gradient(180deg, #b6c4a8 0%, #9bab8e 60%, #8a9c80 100%)",
+          border: "2px solid #0a0806",
+          borderRadius: 3,
           boxShadow:
-            "inset 0 2px 4px rgba(0,0,0,0.35), inset 0 -1px 0 rgba(255,255,255,0.20)",
-          padding: "10px 14px 8px",
+            "inset 0 2px 5px rgba(0,0,0,0.45), inset 0 -1px 0 rgba(255,255,255,0.18), 0 1px 0 rgba(220,180,120,0.10)",
+          padding: "9px 14px 7px",
           position: "relative",
         }}
       >
@@ -2067,7 +2075,7 @@ export function CalculadoraApp() {
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(5, 1fr)",
-            gap: 6,
+            gap: 5,
           }}
         >
           <HPKey
@@ -2235,7 +2243,7 @@ export function CalculadoraApp() {
         </div>
       </div>
 
-      <div style={{ padding: "8px 18px 0" }}>
+      <div style={{ padding: "10px 18px 0" }}>
         <button
           type="button"
           onClick={() =>
@@ -2249,18 +2257,18 @@ export function CalculadoraApp() {
           style={{
             width: "100%",
             padding: "5px",
-            borderRadius: 4,
+            borderRadius: 3,
             border: "1px solid #000",
             background:
-              "linear-gradient(180deg, #2a2a2c 0%, #1a1a1c 60%, #0e0e10 100%)",
-            color: "#e8b840",
-            fontSize: 9,
+              "linear-gradient(180deg, #1c1a18 0%, #110f0d 60%, #060504 100%)",
+            color: "#c89438",
+            fontSize: 8,
             cursor: "pointer",
-            letterSpacing: "0.12em",
+            letterSpacing: "0.16em",
             textTransform: "uppercase",
             fontWeight: 700,
             boxShadow:
-              "0 2px 0 rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.12)",
+              "0 1px 0 rgba(0,0,0,0.55), inset 0 1px 0 rgba(220,180,120,0.14)",
           }}
         >
           Limpar Registros Financeiros
