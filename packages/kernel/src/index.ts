@@ -24,6 +24,29 @@ export type { AuditEntry, AuditLogDriver } from "./audit/logger.js";
 export { PermissionEngine, KERNEL_CAPABILITIES } from "./permissions/index.js";
 export type { AuthorizationResult, Capability } from "./permissions/index.js";
 
+// Policy Engine (Super Sprint A — MX199)
+export { PolicyEngine, evaluateConditions } from "./policy/index.js";
+export type {
+  ActionIntentRow,
+  ActorType,
+  AllowRule,
+  AppliesTo,
+  ConditionMap,
+  ConditionOperator,
+  DenyRule,
+  EvaluationContext,
+  MatchedPolicy,
+  PolicyDataSource,
+  PolicyEngineOptions,
+  PolicyEvaluationInput,
+  PolicyEvaluationResult,
+  PolicyJson,
+  PolicyResult,
+  PolicyRow,
+  PolicyRule,
+  RequireApprovalRule,
+} from "./policy/index.js";
+
 // Invariants
 export {
   INVARIANT_OPERATIONS,
