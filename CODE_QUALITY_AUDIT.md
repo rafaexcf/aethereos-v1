@@ -1,6 +1,9 @@
-# CODE_QUALITY_AUDIT.md — Aethereos Sprint 32 (MX176)
+# CODE_QUALITY_AUDIT.md — Aethereos Sprint 33 (MX191)
 
-> Re-auditoria de qualidade pós-Sprints 21-31. Estado em **2026-05-06**.
+> Re-auditoria final pré-Camada 2. Estado em **2026-05-06**.
+> Sprint 32 (MX176) cobriu re-auditoria pós-Sprints 21-31.
+> Sprint 33 (MX191) atualiza com god components decision (KL-14) +
+> Sentry real (MX186) + 54 E2E (MX187).
 > Sprint 20 (MX107) cobriu 25 tasks typecheck + 27 unit tests + 34 E2E.
 > Sprint 32 (MX176) re-audita após adição de @aethereos/client, AppBridge,
 > 136 apps no catálogo, Menu Gestor, departamentos, persistência, 2FA/LGPD,
@@ -118,18 +121,20 @@ $ find apps/ packages/ -name "*.test.ts" -o -name "*.test.tsx" \
 Era 27 em Sprint 20. **+9 arquivos** desde então (scp-worker replay,
 @aethereos/client, kernel novos modelos, drivers ampliados).
 
-### E2E tests
+### E2E tests (Sprint 33 MX187)
 
 ```bash
 $ find tooling/e2e/tests -name "*.spec.ts" | wc -l
-11
+18
 $ grep -hE "^\s*test\(" tooling/e2e/tests/*.spec.ts | wc -l
-34
+54
 ```
 
-11 spec files, **34 test cases** (idêntico a Sprint 20). 33 passing + 1
-skipped (governanca pré-existente). R6 do sprint preservado: 33+ E2E não
-podem quebrar.
+**18 spec files, 54 test cases** (era 11/34 em Sprint 32).
++7 specs novos: gestor, tarefas, kanban, notas, calendario, seguranca, permissions.
++20 test cases.
+33 passing + 1 skipped (governanca) + 20 novos com test.skip() resiliente
+quando estado não está disponível.
 
 ### Specs
 

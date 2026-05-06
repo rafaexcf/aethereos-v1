@@ -11,6 +11,16 @@ Convenções:
 
 ---
 
+## Sprint 33 — Consolidação final (2026-05-06)
+
+- **Selo:** Camada 1 ENCERRADA DEFINITIVAMENTE. Pronto para Camada 2.
+- **Seed:** ampliado para 22 tabelas — extras.ts cobre departments, groups, company_roles, tasks, kanban, notes, app_permission_grants.
+- **Apps:** Sentry integrado (`@sentry/react`) com init condicional via VITE_SENTRY_DSN.
+- **E2E:** expandido de 34 para 54 testes — +7 specs (gestor, tarefas, kanban, notas, calendario, seguranca, permissions).
+- **Mobile:** responsividade básica via media queries — banner <768px, ajustes TabBar/TopBar.
+- **God components:** decisão técnica documentada (KL-14) — refatoração adiada para sprint pós-dogfood com E2E-first.
+- **Auditorias:** Calendário/PDF/Agenda/Enquetes já tinham persistência (Sprints 5-22); CI E2E já existia (MX69 Sprint 14).
+
 ## Sprint 32 — Selo final Camada 1 (2026-05-06)
 
 - **Selo:** Camada 1 código-completa. Re-auditorias de segurança e qualidade.

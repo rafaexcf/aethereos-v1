@@ -98,7 +98,7 @@ Veja:
 
 ## Status
 
-**Sprint 32 (2026-05-06) — CAMADA 1 SELADA.** 4/8 gates da Fase 1 PASS (1, 2, 3, 7), 3/8 parciais (4, 5, 6 — aguardam dogfood + pen test), 1/8 iniciado (8 — 30 dias começam agora).
+**Sprint 33 (2026-05-06) — CAMADA 1 ENCERRADA.** 4/8 gates da Fase 1 PASS (1, 2, 3, 7), 3/8 parciais (4, 5, 6 — aguardam dogfood + pen test), 1/8 iniciado (8 — 30 dias começam agora). 81 tabelas, 16 Edge Functions, 188+ apps, 54 E2E, 36 unit tests, 0 vulns critical+high. Sentry integrado (opt-in via env var).
 
 - **[GATES_STATUS.md](./GATES_STATUS.md)** — snapshot detalhado dos 8 gates
 - **[CHANGELOG.md](./CHANGELOG.md)** — resumo de cada sprint

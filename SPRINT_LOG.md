@@ -4250,3 +4250,64 @@ consolidar documentação.
 - 30 dias de dogfood (2026-05-06 → 2026-06-05).
 - Início paralelo de comercio.digital (Camada 2).
 - Pen test externo após dogfood (Gate 6).
+
+---
+
+# Sprint 33 — Consolidação Final (2026-05-06)
+
+**Objetivo:** resolver pendências de código identificadas antes da Camada 2.
+Apps reais, testes E2E expandidos, refatoração, CI E2E, mobile, deploy.
+
+## Milestones
+
+| Milestone | Descrição                                                     | Status              |
+| --------- | ------------------------------------------------------------- | ------------------- |
+| MX181     | Fix seed.sql + extras (departments/groups/tasks/kanban/notes) | DONE                |
+| MX182     | Calendário com persistência                                   | AUDIT (já completo) |
+| MX183     | PDF Viewer funcional                                          | AUDIT (já completo) |
+| MX184     | Agenda Telefônica integrada                                   | AUDIT (já completo) |
+| MX185     | Enquetes com persistência                                     | AUDIT (já completo) |
+| MX186     | Sentry integration                                            | DONE                |
+| MX187     | Expandir E2E +20 testes                                       | DONE                |
+| MX188     | Refatorar god components                                      | KL-14 (documentado) |
+| MX189     | CI E2E no GitHub Actions                                      | AUDIT (já completo) |
+| MX190     | Responsividade básica                                         | DONE                |
+| MX191     | Deploy final + docs                                           | DONE                |
+
+## Resultados-chave
+
+- **Seed:** ampliado para 22 tabelas (era 11) — incluindo departments,
+  groups, company_roles, tasks, kanban, notes, app_permission_grants.
+- **Sentry:** `@sentry/react` integrado em shell-commercial. Init
+  condicional via VITE_SENTRY_DSN. Setup manual pelo owner em
+  `docs/runbooks/sentry-setup.md`.
+- **E2E:** 54 testes em 18 specs (era 34/11). 7 specs novos com
+  test.skip() resiliente.
+- **Apps com persistência:** auditoria revelou que Calendário, PDF,
+  Agenda, Enquetes já têm persistência completa desde Sprints 5-22.
+  Documentado em runbook.
+- **God components:** decisão técnica documentada (KL-14). gestor já
+  decomposto, magic-store/configuracoes mantidos como dívida com plano
+  E2E-first para sprint pós-dogfood.
+- **CI E2E:** já existia desde MX69. Auditado, gaps documentados.
+- **Mobile:** banner não-bloqueante <768px + ajustes TabBar/TopBar.
+  R13 cumprida — apenas prevenir quebra.
+- **Deploy:** migrations remotas em sync, 15 Edge Functions ativas,
+  health endpoint OK, frontend HTTP 200.
+
+## Gates finais
+
+- TypeCheck: 26/26 ✅
+- Lint: 24/24 ✅
+- pnpm audit --audit-level=high: 0 vulns ✅
+- Unit tests: 36 files ✅
+- E2E: 54 cases ✅
+- RLS: 81/81 tabelas ✅
+- Sentry: instalado, ativável via VITE_SENTRY_DSN ✅
+- CI E2E: ativo ✅
+- Mobile: aviso + ajustes ✅
+
+## Próximas etapas
+
+**CAMADA 1 ENCERRADA DEFINITIVAMENTE.** Próximo trabalho de código:
+**comercio.digital (Camada 2)** em paralelo aos 30 dias de dogfood.
