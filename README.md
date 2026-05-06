@@ -41,6 +41,13 @@ Eval & instrumentação (Sprint 31):
 - **[docs/copilot-eval-dataset.json](./docs/copilot-eval-dataset.json)** — seed de 50 queries (rag/proposal/direct/decline). Para validar Gate 4 da Fase 1, expandir para 500+ queries com uso real ao longo de 30 dias de dogfood.
 - **[docs/runbooks/auto-deploy.md](./docs/runbooks/auto-deploy.md)** — Vercel auto-deploy + Supabase migration flow
 
+Operação e monitoramento (Sprint 32):
+
+- **[docs/runbooks/uptime-monitoring.md](./docs/runbooks/uptime-monitoring.md)** — UptimeRobot setup para health endpoint + frontend, status page, alertas por email.
+- **[docs/runbooks/sprint-32-deploy.md](./docs/runbooks/sprint-32-deploy.md)** — log do deploy completo Sprint 32.
+- **[docs/DOGFOOD_PLAN.md](./docs/DOGFOOD_PLAN.md)** — plano de uso interno por 30 dias (Gate 8).
+- Health endpoint público: `https://oublhirkojyipwtmkzvw.supabase.co/functions/v1/health` (200 OK + JSON).
+
 ## Estrutura
 
 ```
