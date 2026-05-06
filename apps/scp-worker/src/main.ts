@@ -6,6 +6,7 @@ import { AuditConsumer } from "./consumers/audit-consumer.js";
 import { NotificationConsumer } from "./consumers/notification-consumer.js";
 import { EmbeddingConsumer } from "./consumers/embedding-consumer.js";
 import { EnrichmentConsumer } from "./consumers/enrichment-consumer.js";
+import { startNatsConsumers } from "./nats-consumers.js";
 
 const POLL_INTERVAL_MS = Number(process.env["SCP_POLL_INTERVAL_MS"] ?? "2000");
 const BATCH_SIZE = Number(process.env["SCP_BATCH_SIZE"] ?? "50");
@@ -99,6 +100,14 @@ async function main(): Promise<void> {
   };
   if (NATS_URL !== "") {
     await tryConnectNats(ctx);
+    if (ctx.natsConnected && ctx.nats !== null) {
+      // Super Sprint B / MX211 — Subscribe os 4 consumer groups.
+      ctx.natsSubscriptions = await startNatsConsumers(
+        ctx.nats,
+        sql,
+        consumers,
+      );
+    }
   }
 
   jlog("info", "scp-worker started", {
@@ -183,8 +192,14 @@ async function natsReconnectLoop(
     if (ctx.natsConnected) continue;
     // Tentativa de reconexão.
     await tryConnectNats(ctx);
-    if (ctx.natsConnected) {
+    if (ctx.natsConnected && ctx.nats !== null) {
       jlog("info", "nats reconnected — switching back to distributed mode");
+      // Re-subscribe consumer groups após reconexão.
+      ctx.natsSubscriptions = await startNatsConsumers(
+        ctx.nats,
+        ctx.sql,
+        ctx.consumers,
+      );
     }
   }
 }
