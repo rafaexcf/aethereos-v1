@@ -66,14 +66,22 @@ Status legend:
 
 ---
 
-## KL-7 — SCP pipeline em modo inline (sem fan-out cross-host) — **ACCEPTED_F1**
+## KL-7 — SCP pipeline sem fan-out cross-host — **RESOLVED Super Sprint B (MX208-MX213)**
 
-**Sintoma:** scp-worker consome eventos do outbox e distribui apenas para consumers em-processo. Em multi-host (F2+), eventos NÃO se propagam entre instâncias.
-**Causa:** NATS local funcionou dentro do container mas não acessível via host (port forwarding WSL2). Por R13 do Sprint 18 optou-se pelo modo inline. Pacote `@aethereos/drivers-nats` permanece para uso futuro.
-**Impacto F1:** Single-host funciona perfeitamente. `FOR UPDATE SKIP LOCKED` garante non-overlap entre múltiplos workers locais lendo o mesmo outbox.
-**Decisão Sprint 20:** **ACCEPTED_F1**. Fan-out cross-host é exclusivamente F2+.
-**Fix futuro (F2):** ressuscitar drivers-nats, criar `SCP_MODE=inline|nats` env switch, publicar pra subject `scp.<event_type>` paralelo ao INSERT no outbox.
-**Sprint de origem:** 18 (MX90).
+**Resolução:** SCP pipeline agora suporta NATS JetStream como barramento distribuído. Fallback inline preservado quando NATS offline.
+
+Componentes:
+
+- `infra/local/docker-compose.dev.yml` — NATS 2.11 com JetStream, 256MB mem / 1GB file storage.
+- `tools/nats-setup.mjs` — script idempotente cria stream `SCP_EVENTS` (workqueue, 7d retention) + 4 consumer groups durables (audit, embedding, notification, enrichment) com max_deliver=5, ack_wait=30s.
+- `packages/drivers-nats/src/nats-event-bus-driver.ts` — `NatsEventBusDriver` com connect/publish/subscribe/subscribeGroup/close. Defaults alinhados ao setup script.
+- `apps/scp-worker/src/main.ts` — env `NATS_URL` controla modo. Sem var = inline (legado). Com var conectado = poller publica no stream + 4 consumer groups processam em paralelo. Reconnect a cada 5s.
+- `apps/scp-worker/src/nats-consumers.ts` — `startNatsConsumers` wires os 4 grupos a `InlineConsumer.matches/handle` reaproveitados.
+- `supabase/functions/health/index.ts` — health endpoint reporta `nats: 'configured' | 'not_configured'`.
+
+R7 cumprida: sistema funciona perfeitamente sem NATS (fallback inline transparente).
+R8 cumprida: consumers já são idempotentes desde Sprint 31 replay (ON CONFLICT DO NOTHING / UPSERT).
+R14: produção atual continua inline (NATS_URL não definido em Vercel/Supabase Cloud). NATS será ativado em F2+ quando escala exigir.
 
 ---
 

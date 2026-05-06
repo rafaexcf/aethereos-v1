@@ -4404,3 +4404,51 @@ explicar decisão no audit, métricas no dashboard.
 
 Policy Engine pronto para uso real durante dogfood. Owner pode criar
 políticas iniciais via templates e ajustar conforme uso real.
+
+---
+
+# Super Sprint B — NATS Real (2026-05-06)
+
+**Objetivo:** Ativar NATS JetStream como barramento real do SCP. Outbox
+poller publica eventos em NATS. 4 consumers migram de inline para
+subscriptions independentes. Fallback automático inline. KL-7 resolvida.
+
+## Milestones
+
+| Milestone | Descrição                                         | Status |
+| --------- | ------------------------------------------------- | ------ |
+| MX208     | Docker NATS + JetStream + setup script            | DONE   |
+| MX209     | NatsEventBusDriver: defaults + subscribeGroup     | DONE   |
+| MX210     | Outbox poller publica no NATS + fallback inline   | DONE   |
+| MX211     | 4 consumer groups via NATS subscriptions          | DONE   |
+| MX212     | Health endpoint + reconnect + métricas mode-aware | DONE   |
+| MX213     | Testes + KL-7 RESOLVED + docs                     | DONE   |
+
+## Resultados-chave
+
+- **Infra:** NATS 2.11 com JetStream + script idempotente
+  `tools/nats-setup.mjs` (stream SCP_EVENTS, 4 durables com
+  max_deliver=5, ack_wait=30s).
+- **Driver:** `NatsEventBusDriver.subscribeGroup()` para consumer
+  groups durables. Defaults alinhados (SCP_EVENTS / scp.).
+- **Worker:** ENV `NATS_URL` controla modo. Reconexão automática a
+  cada 5s. Métricas com `nats_count` / `inline_count` a cada 100 eventos.
+- **Health:** campo `nats: configured | not_configured`.
+- **R7 cumprida:** sistema funciona perfeitamente sem NATS.
+- **R14 cumprida:** produção continua inline.
+- **KL-7 RESOLVED.**
+
+## Gates finais
+
+- TypeCheck 26/26, Lint 24/24, audit 0 vulns.
+- 295 unit tests passando (todos packages + apps).
+- 38/38 scp-worker tests verde.
+
+## Próximas etapas
+
+Para ativar NATS em produção:
+
+1. Provisionar NATS server (Synadia Cloud / NATS Operator K8s / etc.)
+2. Definir env `NATS_URL` no scp-worker em produção.
+3. Rodar `pnpm nats:setup` apontando para o servidor.
+4. Worker reconecta automaticamente; modo distribuído começa.

@@ -11,6 +11,15 @@ Convenções:
 
 ---
 
+## Super Sprint B — NATS Real (2026-05-06)
+
+- **Selo:** KL-7 RESOLVED — SCP pipeline com fan-out cross-host via NATS JetStream.
+- **Infra:** `docker-compose.dev.yml` NATS 2.11 com JetStream + `tools/nats-setup.mjs` (idempotente: stream `SCP_EVENTS`, 4 consumer groups durables com max_deliver=5).
+- **Drivers:** `NatsEventBusDriver` ganha `subscribeGroup(name, handler)` para consumer groups pré-criados.
+- **scp-worker:** ENV `NATS_URL` controla modo. Sem var = inline (legado). Com var = poller publica no stream + 4 consumer groups (audit/embedding/notification/enrichment) processam em paralelo. Reconnect a cada 5s. Métricas com nats_count/inline_count.
+- **Health:** Edge Function `health` retorna `nats: 'configured' | 'not_configured'`.
+- **Produção:** continua inline (Vercel/Supabase Cloud sem NATS_URL). NATS opcional para F2+.
+
 ## Super Sprint A — Policy Engine completo (2026-05-06)
 
 - **Selo:** Governance-as-Code operacional. Agentes avaliados automaticamente: allow / deny / require_approval.
