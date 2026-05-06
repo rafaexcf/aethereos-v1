@@ -27,6 +27,9 @@ services:
       - "--http_port=8222"
       - "--cluster_name=aethereos-dev"
       - "--name=aethereos-nats-dev"
+      # Super Sprint B / MX208 — limites para SCP_EVENTS stream (~1GB / 256MB).
+      - "--max_mem_store=256MB"
+      - "--max_file_store=1GB"
     volumes:
       - nats_data:/data
     healthcheck:
