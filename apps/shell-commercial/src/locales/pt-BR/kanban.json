@@ -1,1 +1,18 @@
-{}
+{
+  "title": "Kanban",
+  "boards": "Quadros",
+  "new_board": "Novo quadro",
+  "new_card": "Novo card",
+  "new_column": "Nova coluna",
+  "card_title": "Título do card",
+  "drag_to_move": "Arraste para mover",
+  "default_columns": {
+    "todo": "A Fazer",
+    "in_progress": "Em Progresso",
+    "done": "Concluído"
+  },
+  "no_boards": "Nenhum quadro criado.",
+  "search_placeholder": "Buscar quadro…",
+  "card_count_one": "{{count}} card",
+  "card_count_other": "{{count}} cards"
+}

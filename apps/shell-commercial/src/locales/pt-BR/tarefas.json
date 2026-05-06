@@ -1,1 +1,22 @@
-{}
+{
+  "title": "Tarefas",
+  "new_task": "Nova tarefa",
+  "title_label": "Título",
+  "description_label": "Descrição",
+  "priority": "Prioridade",
+  "priority_low": "Baixa",
+  "priority_medium": "Média",
+  "priority_high": "Alta",
+  "priority_urgent": "Urgente",
+  "status": "Status",
+  "status_pending": "A fazer",
+  "status_completed": "Concluída",
+  "due_date": "Data de vencimento",
+  "assign_to": "Atribuir a",
+  "filter_all": "Todas",
+  "filter_pending": "Pendentes",
+  "filter_completed": "Concluídas",
+  "no_tasks": "Nenhuma tarefa encontrada.",
+  "search_placeholder": "Buscar tarefa…",
+  "lists": "Listas"
+}

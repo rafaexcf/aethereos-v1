@@ -1,1 +1,21 @@
-{}
+{
+  "title": "Bloco de Notas",
+  "new_note": "Nova nota",
+  "untitled": "Sem título",
+  "saving": "Salvando…",
+  "saved": "Salvo",
+  "pin": "Fixar",
+  "unpin": "Desafixar",
+  "search_placeholder": "Buscar notas…",
+  "no_notes": "Nenhuma nota.",
+  "checklist": "Lista",
+  "labels": "Etiquetas",
+  "colors": {
+    "default": "Padrão",
+    "yellow": "Amarelo",
+    "green": "Verde",
+    "blue": "Azul",
+    "red": "Vermelho",
+    "purple": "Roxo"
+  }
+}

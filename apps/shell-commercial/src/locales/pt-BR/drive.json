@@ -1,1 +1,19 @@
-{}
+{
+  "title": "Drive",
+  "my_files": "Meus arquivos",
+  "shared": "Compartilhados",
+  "trash": "Lixeira",
+  "upload": "Enviar arquivo",
+  "new_folder": "Nova pasta",
+  "rename": "Renomear",
+  "download": "Baixar",
+  "share": "Compartilhar",
+  "no_files": "Nenhum arquivo aqui.",
+  "search_placeholder": "Buscar arquivos…",
+  "size": "Tamanho",
+  "type": "Tipo",
+  "modified": "Modificado",
+  "owner": "Proprietário",
+  "selected_count_one": "{{count}} item selecionado",
+  "selected_count_other": "{{count}} itens selecionados"
+}

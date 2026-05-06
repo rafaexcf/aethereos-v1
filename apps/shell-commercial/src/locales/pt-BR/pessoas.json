@@ -1,1 +1,17 @@
-{}
+{
+  "title": "Pessoas",
+  "new_contact": "Novo contato",
+  "name": "Nome",
+  "email": "E-mail",
+  "phone": "Telefone",
+  "company": "Empresa",
+  "position": "Cargo",
+  "favorites": "Favoritos",
+  "all_contacts": "Todos",
+  "groups": "Grupos",
+  "no_contacts": "Nenhum contato cadastrado.",
+  "search_placeholder": "Buscar contato…",
+  "addresses": "Endereços",
+  "add_method": "Adicionar telefone ou e-mail",
+  "save_contact": "Salvar contato"
+}
