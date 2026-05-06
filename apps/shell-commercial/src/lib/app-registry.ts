@@ -1,5 +1,5 @@
 import type { ComponentType } from "react";
-import { lazy } from "react";
+import { lazyWithRetry as lazy } from "./lazy-with-retry";
 
 export interface AppDefinition {
   id: string;

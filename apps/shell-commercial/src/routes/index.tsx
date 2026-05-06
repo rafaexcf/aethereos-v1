@@ -16,7 +16,10 @@ import { SupportModal } from "../components/SupportModal";
 import { NotificationToast } from "../components/NotificationToast";
 import { useWindowsStore } from "../stores/windows";
 import { APP_REGISTRY, getApp } from "../lib/app-registry";
-import { CopilotDrawer } from "../apps/copilot/index";
+import { lazyWithRetry } from "../lib/lazy-with-retry";
+const CopilotDrawer = lazyWithRetry(() =>
+  import("../apps/copilot/index").then((m) => ({ default: m.CopilotDrawer })),
+);
 import { UniversalSearch } from "../search/UniversalSearch";
 
 export const indexRoute = createRoute({
@@ -436,18 +439,20 @@ function DesktopPage() {
       <UniversalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
 
       {/* AI Copilot Drawer — Ctrl+I / Cmd+I (movido do Ctrl+K) */}
-      {drivers !== null && (
-        <CopilotDrawer
-          open={copilotOpen}
-          onClose={() => setCopilotOpen(false)}
-          llm={drivers.llm}
-          obs={drivers.obs}
-          data={drivers.data}
-          scp={drivers.scp}
-          userId={userId}
-          companyId={activeCompanyId}
-          correlationId={crypto.randomUUID()}
-        />
+      {drivers !== null && copilotOpen && (
+        <Suspense fallback={null}>
+          <CopilotDrawer
+            open={copilotOpen}
+            onClose={() => setCopilotOpen(false)}
+            llm={drivers.llm}
+            obs={drivers.obs}
+            data={drivers.data}
+            scp={drivers.scp}
+            userId={userId}
+            companyId={activeCompanyId}
+            correlationId={crypto.randomUUID()}
+          />
+        </Suspense>
       )}
     </div>
   );

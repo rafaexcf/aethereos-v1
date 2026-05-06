@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { Suspense, useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
@@ -13,7 +13,12 @@ import { useSessionStore } from "../../stores/session";
 import { useOSStore } from "../../stores/osStore";
 import { useMesaStore, getWallpaperStyle } from "../../stores/mesaStore";
 import { useSettingsNavStore } from "../../stores/settingsNavStore";
-import { CopilotDrawer } from "../../apps/copilot/index";
+import { lazyWithRetry } from "../../lib/lazy-with-retry";
+const CopilotDrawer = lazyWithRetry(() =>
+  import("../../apps/copilot/index").then((m) => ({
+    default: m.CopilotDrawer,
+  })),
+);
 import { AppsLauncher } from "../AppsLauncher";
 import { SupportModal } from "../SupportModal";
 import { NotificationToast } from "../NotificationToast";
@@ -249,6 +254,18 @@ export function OSDesktop() {
     setAvatarUrl,
   } = useSessionStore();
   const { aiModalOpen, closeAIModal } = useOSStore();
+  // Sprint 31 fast-follow (INP): só monta o CopilotDrawer apos primeira
+  // abertura. Reduz blocking time do clique no Bot do Dock (drawer pesado +
+  // motion enter animation reconciliam fora do critical path).
+  const [drawerEverOpened, setDrawerEverOpened] = useState(false);
+  useEffect(() => {
+    if (aiModalOpen && !drawerEverOpened) {
+      // Defer um tick: o paint do feedback do clique acontece antes do mount.
+      const t = setTimeout(() => setDrawerEverOpened(true), 0);
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, [aiModalOpen, drawerEverOpened]);
   const appsLauncherOpen = useOSStore((s) => s.appsLauncherOpen);
   const closeAppsLauncher = useOSStore((s) => s.closeAppsLauncher);
   const openAppsLauncher = useOSStore((s) => s.openAppsLauncher);
@@ -415,19 +432,21 @@ export function OSDesktop() {
         onDismiss={() => setToastNotif(null)}
       />
 
-      {/* AI Copilot drawer */}
-      {drivers !== null && (
-        <CopilotDrawer
-          open={aiModalOpen}
-          onClose={closeAIModal}
-          llm={drivers.llm}
-          obs={drivers.obs}
-          data={drivers.data}
-          scp={drivers.scp}
-          userId={userId}
-          companyId={activeCompanyId}
-          correlationId={crypto.randomUUID()}
-        />
+      {/* AI Copilot drawer — montado apos primeira abertura (INP fix) */}
+      {drivers !== null && drawerEverOpened && (
+        <Suspense fallback={null}>
+          <CopilotDrawer
+            open={aiModalOpen}
+            onClose={closeAIModal}
+            llm={drivers.llm}
+            obs={drivers.obs}
+            data={drivers.data}
+            scp={drivers.scp}
+            userId={userId}
+            companyId={activeCompanyId}
+            correlationId={crypto.randomUUID()}
+          />
+        </Suspense>
       )}
 
       {/* Onboarding wizard — shown when onboarding_completed=false */}

@@ -1,11 +1,12 @@
 import React, { type ComponentType, type LazyExoticComponent } from "react";
 import type { OSApp } from "../types/os";
+import { lazyWithRetry } from "../lib/lazy-with-retry";
 
 // ADR-0024: Camada 1 é OS B2B genérico. Apps verticais (Comércio, LOGITIX, ERP)
 // são Camada 2 standalone — não vivem aqui. Magic Store é o launcher deles.
 
 function makePlaceholder(appName: string, sprintTarget?: string) {
-  return React.lazy(() =>
+  return lazyWithRetry(() =>
     import("../components/AppPlaceholder").then((m) => ({
       default: () =>
         React.createElement(m.AppPlaceholder, {
@@ -32,106 +33,106 @@ export const COMPONENT_MAP: Record<
   string,
   LazyExoticComponent<ComponentType>
 > = {
-  mesa: React.lazy(() =>
+  mesa: lazyWithRetry(() =>
     import("./mesa/MesaApp").then((m) => ({ default: m.MesaApp })),
   ),
-  drive: React.lazy(() =>
+  drive: lazyWithRetry(() =>
     import("./drive/index").then((m) => ({ default: m.DriveApp })),
   ),
-  chat: React.lazy(() =>
+  chat: lazyWithRetry(() =>
     import("./chat/index").then((m) => ({ default: m.ChatApp })),
   ),
-  rh: React.lazy(() =>
+  rh: lazyWithRetry(() =>
     import("./rh/index").then((m) => ({ default: m.RHApp })),
   ),
-  "magic-store": React.lazy(() =>
+  "magic-store": lazyWithRetry(() =>
     import("./magic-store/index").then((m) => ({ default: m.MagicStoreApp })),
   ),
-  weather: React.lazy(() =>
+  weather: lazyWithRetry(() =>
     import("./weather/index").then((m) => ({ default: m.WeatherApp })),
   ),
-  settings: React.lazy(() =>
+  settings: lazyWithRetry(() =>
     import("./configuracoes/index").then((m) => ({
       default: m.ConfiguracoesApp,
     })),
   ),
-  notifications: React.lazy(() =>
+  notifications: lazyWithRetry(() =>
     import("./notifications/NotificationsApp").then((m) => ({
       default: m.NotificationsApp,
     })),
   ),
-  gestor: React.lazy(() =>
+  gestor: lazyWithRetry(() =>
     import("./gestor/index").then((m) => ({ default: m.GestorApp })),
   ),
   "ae-ai": makePlaceholder("Aether AI"),
-  calendar: React.lazy(() =>
+  calendar: lazyWithRetry(() =>
     import("./calendario/CalendarApp").then((m) => ({
       default: m.CalendarApp,
     })),
   ),
-  governanca: React.lazy(() =>
+  governanca: lazyWithRetry(() =>
     import("./governanca/index").then((m) => ({ default: m.GovernancaApp })),
   ),
-  auditoria: React.lazy(() =>
+  auditoria: lazyWithRetry(() =>
     import("./auditoria/index").then((m) => ({ default: m.AuditoriaApp })),
   ),
-  "bloco-de-notas": React.lazy(() =>
+  "bloco-de-notas": lazyWithRetry(() =>
     import("./bloco-de-notas/index").then((m) => ({
       default: m.BlocoDeNotasApp,
     })),
   ),
-  tarefas: React.lazy(() =>
+  tarefas: lazyWithRetry(() =>
     import("./tarefas/index").then((m) => ({ default: m.TarefasApp })),
   ),
-  "agenda-telefonica": React.lazy(() =>
+  "agenda-telefonica": lazyWithRetry(() =>
     import("./agenda-telefonica/index").then((m) => ({
       default: m.AgendaTelefonicaApp,
     })),
   ),
-  calculadora: React.lazy(() =>
+  calculadora: lazyWithRetry(() =>
     import("./calculadora/index").then((m) => ({ default: m.CalculadoraApp })),
   ),
-  relogio: React.lazy(() =>
+  relogio: lazyWithRetry(() =>
     import("./relogio/index").then((m) => ({ default: m.RelogioApp })),
   ),
-  camera: React.lazy(() =>
+  camera: lazyWithRetry(() =>
     import("./camera/index").then((m) => ({ default: m.CameraApp })),
   ),
-  "gravador-de-voz": React.lazy(() =>
+  "gravador-de-voz": lazyWithRetry(() =>
     import("./gravador-de-voz/index").then((m) => ({
       default: m.GravadorDeVozApp,
     })),
   ),
-  enquetes: React.lazy(() =>
+  enquetes: lazyWithRetry(() =>
     import("./enquetes/index").then((m) => ({ default: m.EnquetesApp })),
   ),
-  navegador: React.lazy(() =>
+  navegador: lazyWithRetry(() =>
     import("./navegador/index").then((m) => ({ default: m.NavegadorApp })),
   ),
-  kanban: React.lazy(() =>
+  kanban: lazyWithRetry(() =>
     import("./kanban/index").then((m) => ({ default: m.KanbanApp })),
   ),
-  lixeira: React.lazy(() =>
+  lixeira: lazyWithRetry(() =>
     import("./lixeira/index").then((m) => ({ default: m.LixeiraApp })),
   ),
-  planilhas: React.lazy(() =>
+  planilhas: lazyWithRetry(() =>
     import("./planilhas/index").then((m) => ({ default: m.PlanilhasApp })),
   ),
-  documentos: React.lazy(() =>
+  documentos: lazyWithRetry(() =>
     import("./documentos/index").then((m) => ({ default: m.DocumentosApp })),
   ),
-  apresentacoes: React.lazy(() =>
+  apresentacoes: lazyWithRetry(() =>
     import("./apresentacoes/index").then((m) => ({
       default: m.ApresentacoesApp,
     })),
   ),
-  pdf: React.lazy(() =>
+  pdf: lazyWithRetry(() =>
     import("./pdf/index").then((m) => ({ default: m.PdfApp })),
   ),
-  automacoes: React.lazy(() =>
+  automacoes: lazyWithRetry(() =>
     import("./automacoes/index").then((m) => ({ default: m.AutomacoesApp })),
   ),
-  reuniao: React.lazy(() =>
+  reuniao: lazyWithRetry(() =>
     import("./reuniao/index").then((m) => ({ default: m.ReuniaoApp })),
   ),
 };
@@ -149,7 +150,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Mesa",
     icon: "Monitor",
     color: "#64748b",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./mesa/MesaApp").then((m) => ({ default: m.MesaApp })),
     ),
     showInDock: false,
@@ -162,7 +163,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Æ Drive",
     icon: "HardDrive",
     color: "#06b6d4",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./drive/index").then((m) => ({ default: m.DriveApp })),
     ),
     showInDock: true,
@@ -174,7 +175,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Mensagens",
     icon: "MessageSquare",
     color: "#06b6d4",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./chat/index").then((m) => ({ default: m.ChatApp })),
     ),
     showInDock: true,
@@ -186,7 +187,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "RH",
     icon: "Users",
     color: "#8b5cf6",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./rh/index").then((m) => ({ default: m.RHApp })),
     ),
     showInDock: true,
@@ -198,7 +199,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Æ Magic Store",
     icon: "Store",
     color: "#0ea5e9",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./magic-store/index").then((m) => ({ default: m.MagicStoreApp })),
     ),
     showInDock: true,
@@ -211,7 +212,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Tempo",
     icon: "CloudSun",
     color: "#60a5fa",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./weather/index").then((m) => ({ default: m.WeatherApp })),
     ),
     showInDock: false,
@@ -223,7 +224,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Configurações",
     icon: "Settings",
     color: "#64748b",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./configuracoes/index").then((m) => ({
         default: m.ConfiguracoesApp,
       })),
@@ -237,7 +238,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Notificações",
     icon: "Bell",
     color: "#8b5cf6",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./notifications/NotificationsApp").then((m) => ({
         default: m.NotificationsApp,
       })),
@@ -251,7 +252,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Gestor",
     icon: "BriefcaseBusiness",
     color: "#6366f1",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./gestor/index").then((m) => ({ default: m.GestorApp })),
     ),
     showInDock: false,
@@ -276,7 +277,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Calendário",
     icon: "CalendarDays",
     color: "#8b5cf6",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./calendario/CalendarApp").then((m) => ({
         default: m.CalendarApp,
       })),
@@ -290,7 +291,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Governança",
     icon: "Shield",
     color: "#ef4444",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./governanca/index").then((m) => ({ default: m.GovernancaApp })),
     ),
     showInDock: false,
@@ -303,7 +304,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Auditoria",
     icon: "ClipboardList",
     color: "#f59e0b",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./auditoria/index").then((m) => ({ default: m.AuditoriaApp })),
     ),
     showInDock: false,
@@ -316,7 +317,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Bloco de Notas",
     icon: "StickyNote",
     color: "#f59e0b",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./bloco-de-notas/index").then((m) => ({
         default: m.BlocoDeNotasApp,
       })),
@@ -330,7 +331,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Tarefas",
     icon: "ListChecks",
     color: "#3b82f6",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./tarefas/index").then((m) => ({ default: m.TarefasApp })),
     ),
     showInDock: false,
@@ -342,7 +343,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Contatos Telefônicos",
     icon: "BookUser",
     color: "#10b981",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./agenda-telefonica/index").then((m) => ({
         default: m.AgendaTelefonicaApp,
       })),
@@ -356,7 +357,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Calculadora",
     icon: "Calculator",
     color: "#f97316",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./calculadora/index").then((m) => ({
         default: m.CalculadoraApp,
       })),
@@ -370,7 +371,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Relógio",
     icon: "Clock",
     color: "#6366f1",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./relogio/index").then((m) => ({ default: m.RelogioApp })),
     ),
     showInDock: false,
@@ -382,7 +383,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Câmera",
     icon: "Camera",
     color: "#1a1a2e",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./camera/index").then((m) => ({ default: m.CameraApp })),
     ),
     showInDock: false,
@@ -394,7 +395,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Gravador de Voz",
     icon: "Mic",
     color: "#ef4444",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./gravador-de-voz/index").then((m) => ({
         default: m.GravadorDeVozApp,
       })),
@@ -408,7 +409,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Enquetes",
     icon: "Vote",
     color: "#6366f1",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./enquetes/index").then((m) => ({ default: m.EnquetesApp })),
     ),
     showInDock: false,
@@ -420,7 +421,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Navegador",
     icon: "Globe",
     color: "#0ea5e9",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./navegador/index").then((m) => ({ default: m.NavegadorApp })),
     ),
     showInDock: false,
@@ -432,7 +433,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Kanban",
     icon: "Kanban",
     color: "#6366f1",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./kanban/index").then((m) => ({ default: m.KanbanApp })),
     ),
     showInDock: false,
@@ -444,7 +445,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Lixeira",
     icon: "Trash2",
     color: "#64748b",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./lixeira/index").then((m) => ({ default: m.LixeiraApp })),
     ),
     showInDock: false,
@@ -456,7 +457,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Planilhas",
     icon: "Grid3x3",
     color: "#10b981",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./planilhas/index").then((m) => ({ default: m.PlanilhasApp })),
     ),
     showInDock: false,
@@ -468,7 +469,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Documentos",
     icon: "FileText",
     color: "#3b82f6",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./documentos/index").then((m) => ({ default: m.DocumentosApp })),
     ),
     showInDock: false,
@@ -480,7 +481,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Apresentações",
     icon: "Monitor",
     color: "#f59e0b",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./apresentacoes/index").then((m) => ({
         default: m.ApresentacoesApp,
       })),
@@ -494,7 +495,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "PDF",
     icon: "FileText",
     color: "#ef4444",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./pdf/index").then((m) => ({ default: m.PdfApp })),
     ),
     showInDock: false,
@@ -506,7 +507,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Automações",
     icon: "Workflow",
     color: "#10b981",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./automacoes/index").then((m) => ({ default: m.AutomacoesApp })),
     ),
     showInDock: false,
@@ -518,7 +519,7 @@ export const APP_REGISTRY: OSApp[] = [
     name: "Reuniões",
     icon: "Video",
     color: "#0ea5e9",
-    component: React.lazy(() =>
+    component: lazyWithRetry(() =>
       import("./reuniao/index").then((m) => ({ default: m.ReuniaoApp })),
     ),
     showInDock: false,
