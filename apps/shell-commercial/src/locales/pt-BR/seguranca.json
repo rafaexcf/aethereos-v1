@@ -1,1 +1,21 @@
-{}
+{
+  "title": "Segurança",
+  "two_factor": "Autenticação em dois fatores (2FA)",
+  "two_factor_description": "Proteja sua conta com código de aplicativo authenticator.",
+  "enable": "Ativar",
+  "disable": "Desativar",
+  "active": "Ativo",
+  "scan_qr": "Escaneie o QR code com seu authenticator",
+  "enter_code": "Digite o código de 6 dígitos",
+  "backup_codes": "Códigos de backup",
+  "sessions": "Sessões ativas",
+  "this_session": "Esta sessão",
+  "end_session": "Encerrar sessão",
+  "end_other_sessions": "Encerrar outras sessões",
+  "no_sessions": "Nenhuma sessão ativa.",
+  "alerts": "Alertas de segurança",
+  "no_alerts": "Nenhum alerta no momento.",
+  "device": "Dispositivo",
+  "ip": "IP",
+  "last_seen": "Última atividade"
+}

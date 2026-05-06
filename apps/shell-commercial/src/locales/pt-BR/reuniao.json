@@ -1,1 +1,13 @@
-{}
+{
+  "title": "Reunião",
+  "schedule_meeting": "Agendar reunião",
+  "join_meeting": "Entrar na reunião",
+  "start_meeting": "Iniciar reunião",
+  "end_meeting": "Encerrar reunião",
+  "meeting_title": "Título da reunião",
+  "participants": "Participantes",
+  "scheduled_for": "Agendada para",
+  "no_meetings": "Nenhuma reunião agendada.",
+  "recording": "Gravação",
+  "transcript": "Transcrição"
+}

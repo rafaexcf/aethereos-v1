@@ -1,1 +1,14 @@
-{}
+{
+  "title": "Agenda Telefônica",
+  "contacts": "Contatos",
+  "favorites": "Favoritos",
+  "groups": "Grupos",
+  "search_placeholder": "Buscar contato…",
+  "call": "Ligar",
+  "send_email": "Enviar e-mail",
+  "copy_phone": "Copiar telefone",
+  "no_contacts": "Nenhum contato cadastrado.",
+  "phone": "Telefone",
+  "email": "E-mail",
+  "favorite": "Favoritar"
+}

@@ -1,1 +1,16 @@
-{}
+{
+  "title": "Notificações",
+  "mark_as_read": "Marcar como lida",
+  "mark_all_as_read": "Marcar todas como lidas",
+  "no_notifications": "Nenhuma notificação.",
+  "filter_unread": "Não lidas",
+  "filter_all": "Todas",
+  "clear_all": "Limpar todas",
+  "settings": "Configurar notificações",
+  "minutes_ago_one": "há {{count}} minuto",
+  "minutes_ago_other": "há {{count}} minutos",
+  "hours_ago_one": "há {{count}} hora",
+  "hours_ago_other": "há {{count}} horas",
+  "days_ago_one": "há {{count}} dia",
+  "days_ago_other": "há {{count}} dias"
+}

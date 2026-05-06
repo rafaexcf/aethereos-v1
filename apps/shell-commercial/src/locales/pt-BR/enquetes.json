@@ -1,1 +1,18 @@
-{}
+{
+  "title": "Enquetes",
+  "new_poll": "Nova enquete",
+  "poll_title": "Título da enquete",
+  "options": "Opções",
+  "add_option": "Adicionar opção",
+  "multiple_choice": "Múltipla escolha",
+  "anonymous": "Anônima",
+  "closes_at": "Fechar em",
+  "vote": "Votar",
+  "results": "Resultados",
+  "close_poll": "Fechar enquete",
+  "votes_count_one": "{{count}} voto",
+  "votes_count_other": "{{count}} votos",
+  "no_polls": "Nenhuma enquete criada.",
+  "open": "Aberta",
+  "closed": "Fechada"
+}

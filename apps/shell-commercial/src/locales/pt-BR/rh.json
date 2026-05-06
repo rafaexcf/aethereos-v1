@@ -1,1 +1,15 @@
-{}
+{
+  "title": "Recursos Humanos",
+  "employees": "Colaboradores",
+  "new_employee": "Novo colaborador",
+  "name": "Nome completo",
+  "position": "Cargo",
+  "department": "Departamento",
+  "hire_date": "Data de admissão",
+  "status": "Status",
+  "active": "Ativo",
+  "inactive": "Inativo",
+  "search_placeholder": "Buscar colaborador…",
+  "no_employees": "Nenhum colaborador cadastrado.",
+  "delete_blocked_linked": "Não é possível excluir um colaborador vinculado a uma conta de usuário."
+}

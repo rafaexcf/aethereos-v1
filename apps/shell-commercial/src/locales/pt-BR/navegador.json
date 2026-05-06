@@ -1,1 +1,14 @@
-{}
+{
+  "title": "Navegador",
+  "url_placeholder": "Digite uma URL ou pesquise…",
+  "go": "Ir",
+  "back": "Voltar",
+  "forward": "Avançar",
+  "reload": "Recarregar",
+  "home": "Início",
+  "bookmarks": "Favoritos",
+  "history": "Histórico",
+  "new_tab": "Nova aba",
+  "close_tab": "Fechar aba",
+  "no_bookmarks": "Nenhum favorito ainda."
+}

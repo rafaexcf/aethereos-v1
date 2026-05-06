@@ -1,1 +1,12 @@
-{}
+{
+  "title": "Câmera",
+  "take_photo": "Tirar foto",
+  "record_video": "Gravar vídeo",
+  "stop": "Parar",
+  "save_to_drive": "Salvar no Drive",
+  "discard": "Descartar",
+  "switch_camera": "Trocar câmera",
+  "no_camera": "Nenhuma câmera detectada.",
+  "permission_denied": "Permissão de câmera negada. Habilite nas configurações do navegador.",
+  "saved": "Salvo no Drive!"
+}

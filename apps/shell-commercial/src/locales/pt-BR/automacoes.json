@@ -1,1 +1,12 @@
-{}
+{
+  "title": "Automações",
+  "new_automation": "Nova automação",
+  "active_automations": "Automações ativas",
+  "history": "Histórico de execuções",
+  "trigger": "Gatilho",
+  "actions": "Ações",
+  "enable": "Ativar",
+  "disable": "Desativar",
+  "no_automations": "Nenhuma automação criada.",
+  "last_run": "Última execução"
+}

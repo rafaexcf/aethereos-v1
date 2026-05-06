@@ -1,1 +1,10 @@
-{}
+{
+  "title": "Lixeira",
+  "restore": "Restaurar",
+  "delete_permanent": "Excluir permanentemente",
+  "empty_trash": "Esvaziar lixeira",
+  "no_items": "Lixeira vazia.",
+  "deleted_at": "Excluído em",
+  "auto_delete_in": "Exclusão automática em {{days}} dias",
+  "confirm_empty": "Tem certeza que deseja esvaziar a lixeira? Esta ação é irreversível."
+}

@@ -1,1 +1,12 @@
-{}
+{
+  "title": "Auditoria",
+  "log_title": "Log de ações",
+  "actor": "Ator",
+  "action": "Ação",
+  "resource": "Recurso",
+  "date": "Data",
+  "filter": "Filtrar",
+  "export": "Exportar",
+  "no_entries": "Nenhuma entrada de auditoria.",
+  "search_placeholder": "Buscar log…"
+}

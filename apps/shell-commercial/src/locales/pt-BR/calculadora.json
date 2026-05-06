@@ -1,1 +1,11 @@
-{}
+{
+  "title": "Calculadora",
+  "modes": {
+    "standard": "Padrão",
+    "scientific": "Científica",
+    "hp12c": "HP 12C"
+  },
+  "history": "Histórico",
+  "clear_history": "Limpar histórico",
+  "no_history": "Sem cálculos recentes."
+}

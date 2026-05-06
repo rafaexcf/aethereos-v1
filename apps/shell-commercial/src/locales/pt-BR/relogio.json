@@ -1,1 +1,24 @@
-{}
+{
+  "title": "Relógio",
+  "tabs": {
+    "clock": "Relógio mundial",
+    "stopwatch": "Cronômetro",
+    "timer": "Timer",
+    "alarm": "Alarme",
+    "pomodoro": "Pomodoro"
+  },
+  "actions": {
+    "start": "Iniciar",
+    "pause": "Pausar",
+    "resume": "Continuar",
+    "reset": "Reiniciar",
+    "lap": "Volta",
+    "stop": "Parar"
+  },
+  "alarm": {
+    "new": "Novo alarme",
+    "no_alarms": "Nenhum alarme configurado.",
+    "label": "Etiqueta",
+    "repeat": "Repetir"
+  }
+}

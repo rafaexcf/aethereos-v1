@@ -1,1 +1,15 @@
-{}
+{
+  "title": "Gravador de Voz",
+  "record": "Gravar",
+  "pause": "Pausar",
+  "resume": "Continuar",
+  "stop": "Parar",
+  "save_to_drive": "Salvar no Drive",
+  "new_recording": "Nova gravação",
+  "discard": "Descartar",
+  "playback": "Reproduzir",
+  "recordings": "Gravações",
+  "no_recordings": "Nenhuma gravação salva.",
+  "no_microphone": "Nenhum microfone detectado.",
+  "permission_denied": "Permissão de microfone negada."
+}

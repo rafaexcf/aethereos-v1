@@ -1,1 +1,15 @@
-{}
+{
+  "title": "Clima",
+  "temperature": "Temperatura",
+  "humidity": "Umidade",
+  "wind": "Vento",
+  "feels_like": "Sensação térmica",
+  "uv_index": "Índice UV",
+  "visibility": "Visibilidade",
+  "search_city": "Buscar cidade",
+  "current_location": "Localização atual",
+  "forecast": "Previsão",
+  "next_days": "Próximos dias",
+  "no_data": "Não foi possível carregar o clima. Tente novamente.",
+  "request_location": "Permitir acesso à localização"
+}

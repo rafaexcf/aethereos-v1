@@ -1,1 +1,14 @@
-{}
+{
+  "title": "Visualizador de PDF",
+  "no_pdfs": "Nenhum PDF encontrado. Envie um PDF pelo Drive.",
+  "page": "Página",
+  "page_of": "Página {{current}} de {{total}}",
+  "zoom_in": "Aumentar zoom",
+  "zoom_out": "Diminuir zoom",
+  "fullscreen": "Tela cheia",
+  "previous_page": "Página anterior",
+  "next_page": "Próxima página",
+  "ai_chat": "Conversar com o PDF",
+  "ai_summary": "Resumo gerado por IA",
+  "loading_pdf": "Carregando PDF…"
+}
