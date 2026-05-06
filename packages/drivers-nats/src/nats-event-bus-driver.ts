@@ -39,8 +39,11 @@ export class NatsEventBusDriver implements EventBusDriver {
 
   constructor(config: NatsEventBusConfig) {
     this.#config = config;
-    this.#streamName = config.streamName ?? "AE_SCP";
-    this.#subjectPrefix = config.streamSubjectPrefix ?? "ae.scp";
+    // Super Sprint B / MX209: defaults alinhados com tools/nats-setup.mjs
+    // (stream SCP_EVENTS, subject prefix `scp`). Ainda configurável se outros
+    // contextos quiserem stream separado.
+    this.#streamName = config.streamName ?? "SCP_EVENTS";
+    this.#subjectPrefix = config.streamSubjectPrefix ?? "scp";
   }
 
   async connect(): Promise<Result<void, NetworkError>> {
@@ -147,6 +150,56 @@ export class NatsEventBusDriver implements EventBusDriver {
       const consumer = await js.consumers.get(this.#streamName, consumerName);
       const msgs = await consumer.consume({ max_messages: maxInFlight });
       const subId = `${eventType}:${Date.now()}`;
+
+      void (async () => {
+        for await (const msg of msgs) {
+          try {
+            const envelope = JSON.parse(sc.decode(msg.data)) as EventEnvelope;
+            await handler(envelope);
+            msg.ack();
+          } catch {
+            msg.nak();
+          }
+        }
+      })();
+
+      return ok({
+        id: subId,
+        unsubscribe: async () => {
+          msgs.stop();
+        },
+      });
+    } catch (e) {
+      return err(new NetworkError(String(e)));
+    }
+  }
+
+  /**
+   * Super Sprint B / MX209 — Consumer group subscription.
+   *
+   * Subscribe a um durable consumer pré-criado (via tools/nats-setup.mjs),
+   * recebendo TODOS os eventos do stream que casam com o filter_subject
+   * configurado naquele consumer. Diferente de subscribe(), não cria
+   * consumer baseado em event_type — usa o consumer group existente.
+   *
+   * Útil para fan-out paralelo: 4 grupos (audit, embedding, notification,
+   * enrichment) processam o mesmo stream de eventos independentemente.
+   */
+  async subscribeGroup(
+    consumerName: string,
+    handler: EventHandler,
+  ): Promise<Result<Subscription, NetworkError | UnavailableError>> {
+    const js = this.#js;
+    if (js === null) {
+      return err(
+        new UnavailableError("NATS not connected. Call connect() first."),
+      );
+    }
+
+    try {
+      const consumer = await js.consumers.get(this.#streamName, consumerName);
+      const msgs = await consumer.consume();
+      const subId = `group:${consumerName}:${Date.now()}`;
 
       void (async () => {
         for await (const msg of msgs) {
