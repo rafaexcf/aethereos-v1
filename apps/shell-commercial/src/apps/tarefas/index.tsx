@@ -12,6 +12,8 @@ import {
   Loader,
   CheckCircle2,
   XCircle,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { useDrivers } from "../../lib/drivers-context";
 import { useSessionStore } from "../../stores/session";
@@ -135,6 +137,58 @@ function asTaskList(rows: unknown): Task[] {
   return rows as Task[];
 }
 
+// ─── Sidebar constants (alinhado com Agenda Telefonica) ──────────────────────
+
+const SIDEBAR_W = 239;
+const SIDEBAR_ICON_W = 48;
+
+const ASIDE_STYLE: React.CSSProperties = {
+  width: "100%",
+  height: "100%",
+  background: "rgba(15,21,27,0.82)",
+  display: "flex",
+  flexDirection: "column",
+  overflowY: "auto",
+  boxShadow: "inset -1px 0 0 rgba(255,255,255,0.08)",
+  scrollbarWidth: "none",
+};
+
+function navStyle(isActive: boolean): React.CSSProperties {
+  return {
+    width: "100%",
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    padding: "6px 8px",
+    cursor: "pointer",
+    textAlign: "left",
+    transition:
+      "background 120ms ease, color 120ms ease, border-color 120ms ease, margin 120ms ease",
+    marginBottom: 2,
+    fontSize: 13,
+    ...(isActive
+      ? {
+          borderRadius: "8px 0 0 8px",
+          borderTop: "1px solid rgba(255,255,255,0.08)",
+          borderLeft: "1px solid rgba(255,255,255,0.08)",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          borderRight: "1px solid transparent",
+          background: "var(--bg-elevated)",
+          color: "var(--text-primary)",
+          fontWeight: 500,
+          marginRight: 0,
+        }
+      : {
+          borderRadius: 8,
+          border: "1px solid transparent",
+          background: "transparent",
+          color: "var(--text-secondary)",
+          fontWeight: 400,
+          marginRight: 8,
+        }),
+  };
+}
+
 // ─── Sidebar nav item ─────────────────────────────────────────────────────────
 
 function SidebarItem({
@@ -152,31 +206,22 @@ function SidebarItem({
   count?: number;
   color?: string;
 }) {
-  const [hovered, setHovered] = useState(false);
   return (
     <button
       type="button"
       onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        width: "100%",
-        padding: "7px 10px",
-        background: active
-          ? "rgba(59,130,246,0.18)"
-          : hovered
-            ? "rgba(255,255,255,0.05)"
-            : "transparent",
-        border: "1px solid transparent",
-        borderRadius: 8,
-        color: active ? "rgba(255,255,255,0.95)" : "var(--text-secondary)",
-        fontSize: 13,
-        cursor: "pointer",
-        textAlign: "left",
-        transition: "background 80ms ease, color 80ms ease",
+      style={navStyle(active)}
+      onMouseEnter={(e) => {
+        if (!active) {
+          e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+          e.currentTarget.style.color = "var(--text-primary)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!active) {
+          e.currentTarget.style.background = "transparent";
+          e.currentTarget.style.color = "var(--text-secondary)";
+        }
       }}
     >
       <span
@@ -200,19 +245,86 @@ function SidebarItem({
         {label}
       </span>
       {typeof count === "number" && count > 0 && (
-        <span
-          style={{
-            fontSize: 10,
-            color: "var(--text-tertiary)",
-            background: "rgba(255,255,255,0.06)",
-            padding: "1px 6px",
-            borderRadius: 10,
-            flexShrink: 0,
-          }}
-        >
+        <span style={{ fontSize: 11, color: "var(--text-tertiary)" }}>
           {count}
         </span>
       )}
+    </button>
+  );
+}
+
+// ─── Collapsed icon button ────────────────────────────────────────────────────
+
+function SidebarIconButton({
+  active,
+  onClick,
+  title,
+  children,
+  variant = "default",
+}: {
+  active?: boolean;
+  onClick: () => void;
+  title: string;
+  children: React.ReactNode;
+  variant?: "default" | "primary";
+}) {
+  const isPrimary = variant === "primary";
+  return (
+    <button
+      type="button"
+      title={title}
+      onClick={onClick}
+      style={{
+        width: 36,
+        height: 36,
+        borderRadius: 8,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "pointer",
+        flexShrink: 0,
+        transition: "background 120ms ease",
+        ...(isPrimary
+          ? {
+              background: "#3b82f6",
+              border: "none",
+              color: "#fff",
+              marginBottom: 4,
+            }
+          : active === true
+            ? {
+                border: "1px solid rgba(255,255,255,0.08)",
+                background: "rgba(255,255,255,0.08)",
+                color: "var(--text-primary)",
+              }
+            : {
+                border: "1px solid transparent",
+                background: "transparent",
+                color: "var(--text-secondary)",
+              }),
+      }}
+      onMouseEnter={(e) => {
+        if (isPrimary) {
+          e.currentTarget.style.background = "#2563eb";
+          return;
+        }
+        if (active !== true) {
+          e.currentTarget.style.background = "rgba(255,255,255,0.05)";
+          e.currentTarget.style.color = "var(--text-primary)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (isPrimary) {
+          e.currentTarget.style.background = "#3b82f6";
+          return;
+        }
+        if (active !== true) {
+          e.currentTarget.style.background = "transparent";
+          e.currentTarget.style.color = "var(--text-secondary)";
+        }
+      }}
+    >
+      {children}
     </button>
   );
 }
@@ -221,15 +333,23 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div
       style={{
-        fontSize: 10,
-        fontWeight: 600,
-        color: "var(--text-tertiary)",
-        textTransform: "uppercase",
-        letterSpacing: "0.06em",
-        padding: "12px 10px 6px",
+        display: "flex",
+        alignItems: "center",
+        padding: "10px 8px 4px",
       }}
     >
-      {children}
+      <span
+        style={{
+          flex: 1,
+          fontSize: 10,
+          fontWeight: 600,
+          color: "var(--text-tertiary)",
+          letterSpacing: "0.07em",
+          textTransform: "uppercase",
+        }}
+      >
+        {children}
+      </span>
     </div>
   );
 }
@@ -678,6 +798,7 @@ export function TarefasApp() {
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>("all");
+  const [collapsed, setCollapsed] = useState(false);
 
   const [editing, setEditing] = useState<{
     mode: "create" | "edit";
@@ -897,6 +1018,137 @@ export function TarefasApp() {
     );
   }
 
+  // ── Sidebar (alinhado com Agenda Telefonica) ──
+  const sidebarExpanded = (
+    <>
+      {/* Nova tarefa button */}
+      <div style={{ padding: "10px 10px 4px" }}>
+        <button
+          type="button"
+          onClick={() => setEditing({ mode: "create", task: null })}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+            padding: "6px 10px",
+            borderRadius: 8,
+            background: "#3b82f6",
+            border: "none",
+            color: "#fff",
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: "pointer",
+            width: "100%",
+            transition: "background 120ms",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "#2563eb";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "#3b82f6";
+          }}
+        >
+          <Plus size={13} />
+          Nova tarefa
+        </button>
+      </div>
+
+      <div style={{ padding: "4px 0 16px 8px", flex: 1 }}>
+        <SectionLabel>Status</SectionLabel>
+        <SidebarItem
+          active={statusFilter === "all"}
+          onClick={() => setStatusFilter("all")}
+          icon={<Inbox size={15} />}
+          label="Todas"
+          count={counts.total}
+        />
+        {STATUS_ORDER.map((s) => {
+          const Icon = STATUS_CFG[s].icon;
+          return (
+            <SidebarItem
+              key={s}
+              active={statusFilter === s}
+              onClick={() => setStatusFilter(s)}
+              icon={<Icon size={15} />}
+              label={STATUS_CFG[s].label}
+              count={counts.byStatus[s]}
+              color={STATUS_CFG[s].color}
+            />
+          );
+        })}
+
+        <SectionLabel>Prioridade</SectionLabel>
+        <SidebarItem
+          active={priorityFilter === "all"}
+          onClick={() => setPriorityFilter("all")}
+          icon={<Filter size={15} />}
+          label="Todas"
+        />
+        {PRIORITY_ORDER.map((p) => (
+          <SidebarItem
+            key={p}
+            active={priorityFilter === p}
+            onClick={() => setPriorityFilter(p)}
+            icon={
+              <div
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  background: PRIORITY_CFG[p].color,
+                  flexShrink: 0,
+                }}
+              />
+            }
+            label={PRIORITY_CFG[p].label}
+            count={counts.byPriority[p]}
+          />
+        ))}
+      </div>
+    </>
+  );
+
+  const sidebarCollapsed = (
+    <nav
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        padding: "12px 0",
+        gap: 2,
+      }}
+    >
+      <SidebarIconButton
+        title="Nova tarefa"
+        variant="primary"
+        onClick={() => setEditing({ mode: "create", task: null })}
+      >
+        <Plus size={16} />
+      </SidebarIconButton>
+      <SidebarIconButton
+        active={statusFilter === "all"}
+        title="Todas"
+        onClick={() => setStatusFilter("all")}
+      >
+        <Inbox size={16} />
+      </SidebarIconButton>
+      {STATUS_ORDER.map((s) => {
+        const Icon = STATUS_CFG[s].icon;
+        return (
+          <SidebarIconButton
+            key={s}
+            active={statusFilter === s}
+            title={STATUS_CFG[s].label}
+            onClick={() => setStatusFilter(s)}
+          >
+            <Icon size={16} color={STATUS_CFG[s].color} />
+          </SidebarIconButton>
+        );
+      })}
+    </nav>
+  );
+
   return (
     <div
       style={{
@@ -905,119 +1157,95 @@ export function TarefasApp() {
         background: "#191d21",
         color: "var(--text-primary)",
         overflow: "hidden",
+        position: "relative",
       }}
     >
       {/* ─── Sidebar ──────────────────────────────────────────────────── */}
-      <aside
+      <div
         style={{
-          width: 200,
-          background: "#11161c",
-          boxShadow: "inset -1px 0 0 rgba(255,255,255,0.08)",
-          display: "flex",
-          flexDirection: "column",
+          width: collapsed ? SIDEBAR_ICON_W : SIDEBAR_W,
           flexShrink: 0,
-          overflowY: "auto",
+          overflow: "hidden",
+          transition: "width 250ms ease",
+          position: "relative",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "14px 14px 6px",
-          }}
-        >
-          <ListChecks size={16} color="#3b82f6" />
-          <span
+        <aside style={ASIDE_STYLE}>
+          {/* App identity header */}
+          <div
             style={{
-              fontSize: 13,
-              fontWeight: 600,
-              color: "var(--text-primary)",
-            }}
-          >
-            Tarefas
-          </span>
-        </div>
-
-        <div style={{ padding: "0 8px 8px" }}>
-          <button
-            type="button"
-            onClick={() => setEditing({ mode: "create", task: null })}
-            style={{
-              width: "100%",
-              padding: "7px 10px",
-              background: "#3b82f6",
-              border: "none",
-              borderRadius: 8,
-              color: "white",
-              fontSize: 13,
-              fontWeight: 500,
-              cursor: "pointer",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
+              justifyContent: collapsed ? "center" : undefined,
+              gap: collapsed ? 0 : 10,
+              padding: "16px 14px 12px",
+              flexShrink: 0,
             }}
           >
-            <Plus size={13} strokeWidth={2.5} />
-            Nova tarefa
-          </button>
-        </div>
-
-        <SectionLabel>Status</SectionLabel>
-        <div style={{ padding: "0 8px" }}>
-          <SidebarItem
-            active={statusFilter === "all"}
-            onClick={() => setStatusFilter("all")}
-            icon={<Inbox size={14} />}
-            label="Todas"
-            count={counts.total}
-          />
-          {STATUS_ORDER.map((s) => {
-            const Icon = STATUS_CFG[s].icon;
-            return (
-              <SidebarItem
-                key={s}
-                active={statusFilter === s}
-                onClick={() => setStatusFilter(s)}
-                icon={<Icon size={14} />}
-                label={STATUS_CFG[s].label}
-                count={counts.byStatus[s]}
-                color={STATUS_CFG[s].color}
-              />
-            );
-          })}
-        </div>
-
-        <SectionLabel>Prioridade</SectionLabel>
-        <div style={{ padding: "0 8px 16px" }}>
-          <SidebarItem
-            active={priorityFilter === "all"}
-            onClick={() => setPriorityFilter("all")}
-            icon={<Filter size={14} />}
-            label="Todas"
-          />
-          {PRIORITY_ORDER.map((p) => (
-            <SidebarItem
-              key={p}
-              active={priorityFilter === p}
-              onClick={() => setPriorityFilter(p)}
-              icon={
-                <div
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    background: PRIORITY_CFG[p].color,
-                  }}
-                />
-              }
-              label={PRIORITY_CFG[p].label}
-              count={counts.byPriority[p]}
+            <ListChecks
+              size={18}
+              strokeWidth={1.6}
+              style={{ color: "var(--text-primary)", flexShrink: 0 }}
             />
-          ))}
-        </div>
-      </aside>
+            {!collapsed && (
+              <span
+                style={{
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: "var(--text-primary)",
+                  letterSpacing: "-0.02em",
+                  fontFamily: "var(--font-display)",
+                }}
+              >
+                Tarefas
+              </span>
+            )}
+          </div>
+          {collapsed ? sidebarCollapsed : sidebarExpanded}
+        </aside>
+      </div>
+
+      {/* Collapse toggle */}
+      <button
+        type="button"
+        aria-label={collapsed ? "Expandir sidebar" : "Colapsar sidebar"}
+        onClick={() => setCollapsed((v) => !v)}
+        style={{
+          position: "absolute",
+          left: (collapsed ? SIDEBAR_ICON_W : SIDEBAR_W) - 14,
+          top: "50%",
+          transform: "translateY(-50%)",
+          transition: "left 250ms ease",
+          zIndex: 10,
+          width: 28,
+          height: 28,
+          borderRadius: "50%",
+          background: "rgba(15,21,27,0.95)",
+          border: "1px solid rgba(255,255,255,0.10)",
+          cursor: "pointer",
+          color: "var(--text-tertiary)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "rgba(40,55,80,0.95)";
+          e.currentTarget.style.borderColor = "rgba(255,255,255,0.20)";
+          e.currentTarget.style.color = "var(--text-primary)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "rgba(15,21,27,0.95)";
+          e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)";
+          e.currentTarget.style.color = "var(--text-tertiary)";
+        }}
+      >
+        {collapsed ? (
+          <PanelLeftOpen size={16} strokeWidth={1.8} />
+        ) : (
+          <PanelLeftClose size={16} strokeWidth={1.8} />
+        )}
+      </button>
 
       {/* ─── Content ─────────────────────────────────────────────────── */}
       <main
