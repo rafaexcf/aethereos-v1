@@ -34,10 +34,13 @@ interface OutboxRow {
 // Sprint 31 / MX171: SLO instrumentation. Buffer in-memory de latencias
 // individuais. A cada METRICS_FLUSH_EVERY eventos, calcula p50/p95/p99 e
 // emite log estruturado consultavel via Vercel logs / Loki.
+// Super Sprint B / MX212: também conta nats vs inline para visibilidade.
 const latencyBuffer: number[] = [];
+const modeCounters: { nats: number; inline: number } = { nats: 0, inline: 0 };
 
-function recordLatency(processingMs: number): void {
+function recordLatency(processingMs: number, mode: "nats" | "inline"): void {
   latencyBuffer.push(processingMs);
+  modeCounters[mode] += 1;
   if (latencyBuffer.length >= METRICS_FLUSH_EVERY) {
     flushMetrics();
   }
@@ -59,8 +62,12 @@ function flushMetrics(): void {
     p99: pick(0.99),
     min: sorted[0] ?? 0,
     max: sorted[len - 1] ?? 0,
+    nats_count: modeCounters.nats,
+    inline_count: modeCounters.inline,
   });
   latencyBuffer.length = 0;
+  modeCounters.nats = 0;
+  modeCounters.inline = 0;
 }
 
 interface WorkerContext {
@@ -274,7 +281,7 @@ async function processEvent(ctx: WorkerContext, row: OutboxRow): Promise<void> {
   }
 
   const processingMs = Math.round(performance.now() - startedAt);
-  recordLatency(processingMs);
+  recordLatency(processingMs, mode);
 
   // Filtra erros transientes do NATS — se inline já recuperou, não conta.
   const blockingErrors = mode === "nats" ? errors : errors;

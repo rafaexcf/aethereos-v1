@@ -77,12 +77,25 @@ Deno.serve(async (req: Request): Promise<Response> => {
     dbError = "service role key não configurada";
   }
 
+  // Super Sprint B / MX212 — NATS status reportado pelo health endpoint.
+  // 'not_configured' = NATS_URL não setado no Edge Function env (esperado
+  // em produção atual — Vercel + Supabase Cloud sem NATS server).
+  // 'connected' / 'disconnected' apenas se um NATS_URL estiver presente
+  // e tivermos validado a conexão (não fazemos ping aqui no endpoint;
+  // status NATS real vem do worker, que faz reconnect próprio).
+  const natsUrl = Deno.env.get("NATS_URL");
+  const nats: "not_configured" | "configured" =
+    typeof natsUrl === "string" && natsUrl !== ""
+      ? "configured"
+      : "not_configured";
+
   const status: "ok" | "degraded" = db === "connected" ? "ok" : "degraded";
   const body: Record<string, unknown> = {
     status,
     timestamp,
     version: VERSION,
     db,
+    nats,
     uptime_seconds: uptimeSeconds,
   };
   if (dbError !== undefined) {
