@@ -77,6 +77,12 @@ async function main(): Promise<void> {
   console.log("\nPasso 7: Copilot proposals");
   await seedProposals(users);
 
+  console.log(
+    "\nPasso 8: Departments, groups, roles, tasks, kanban, notes, grants (Sprint 33 MX181)",
+  );
+  const { seedExtras } = await import("./extras.js");
+  await seedExtras({ users });
+
   // Validação pós-seed: conta registros reais no banco
   console.log("\nValidação pós-seed (contagem real no banco):");
   const { supabase: sb } = await import("./client.js");
@@ -92,6 +98,17 @@ async function main(): Promise<void> {
     "chat_channels",
     "chat_messages",
     "agent_proposals",
+    "departments",
+    "department_members",
+    "groups",
+    "group_members",
+    "company_roles",
+    "tasks",
+    "kanban_boards",
+    "kanban_columns",
+    "kanban_cards",
+    "notes",
+    "app_permission_grants",
   ];
   for (const tbl of tables) {
     const { count, error: ce } = await sb
