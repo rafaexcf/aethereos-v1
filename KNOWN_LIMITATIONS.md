@@ -144,6 +144,24 @@ Status legend:
 
 ---
 
+## KL-14 — God components em configuracoes/magic-store (Sprint 33 MX188) — **ACCEPTED_F1**
+
+**Sintoma:** `apps/configuracoes/index.tsx` (7278 linhas) e `magic-store/MagicStoreApp.tsx` (3414 linhas) são monolíticos. Sintomas clássicos de god component (alta complexidade, múltiplas responsabilidades).
+**Causa:** crescimento orgânico ao longo de Sprints 6-30, nunca pago de volta porque (a) ambos funcionam corretamente em produção, (b) sprints priorizaram features novas, (c) cada split exige E2E novo para evitar regressão silenciosa.
+**Impacto:** dívida técnica de manutenção. Modificar uma seção exige carregar 7000 linhas de contexto. Risco de modificações inadvertidas em outras seções.
+**Estado atual:** `gestor` já está decomposto (28 tabs em arquivos separados). `configuracoes` e `magic-store` continuam monolíticos.
+**Decisão Sprint 33:** **ACCEPTED_F1**. Refatorar agora seria sem cobertura de testes que validem o split — risco de regressão silenciosa durante 30 dias de dogfood. Plano: sprint dedicada pós-dogfood com E2E-first.
+**Workaround atual:** code review extra-cuidadoso ao tocar nesses arquivos. Adicionar tests E2E novos antes de tocar em UX.
+**Fix futuro (sprint pós-dogfood):**
+
+1. Escrever E2E por tab/seção ANTES da refatoração.
+2. Refatorar incrementalmente (1 tab por commit) com CI E2E como gate.
+3. Padrão alvo: shell + tabs em arquivos separados (mesmo padrão de gestor).
+   **Sprint de origem:** identificado em Sprint 20 MX107, documentado MX188.
+   **Doc:** `docs/runbooks/sprint-33-god-component-refactor.md`.
+
+---
+
 ## RESOLVIDOS
 
 ### ~~KL-3 — 3 testes E2E de onboarding skipped~~ — RESOLVIDO Sprint 14 MX66
