@@ -89,7 +89,22 @@ Em seguida criar conta admin no `localhost:3003`, gerar API key, e setar
 
 ## NF-e (Opção D — futuro)
 
-Por enquanto, fatura é exibida no portal do Gestor sem ser nota fiscal
-oficial. Para emissão automática (NFe.io / Enotas / Focus NFe) ver
-sprint futuro. Texto no portal: "Para solicitar nota fiscal, entre em
-contato: financeiro@aethereos.io".
+Decisão: **Opção D — emissão manual mediada por contato** até que o
+volume de faturas justifique integrar um provedor fiscal.
+
+- Histórico de pagamentos (Gestor > Plano & Assinatura > Histórico)
+  exibe a fatura como item da tabela com `invoice_number`, período,
+  valor BRL e status. Ao final da seção, banner direciona o cliente
+  para `financeiro@aethereos.io` para solicitar NF-e.
+- Quando o volume justificar, integrar um dos:
+  - **NFe.io** — REST API + webhook de status. Free tier para
+    desenvolvimento.
+  - **Enotas** — UI completa + REST. Bom para SaaS multi-cliente.
+  - **Focus NFe** — mais maduro mas mais caro.
+- Implementação futura: ao receber `invoice.paid` (webhook do gateway),
+  chamar API do provedor com CNPJ do cliente, valor, item de serviço,
+  guardar PDF retornado em `kernel.invoices.pdf_url`. Coluna já existe.
+
+R15: NF-e não bloqueia este sprint. Detalhes técnicos da integração
+ficam para sprint dedicado quando provedor estiver decidido e CNPJ
+do Aethereos verificado.
