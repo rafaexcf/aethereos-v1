@@ -24,6 +24,7 @@ import { SupabaseBrowserVectorDriver } from "@aethereos/drivers-supabase/browser
 import type { SupabaseBrowserDataDriver } from "@aethereos/drivers-supabase/browser";
 import type { ScpPublisherBrowser } from "../../lib/scp-publisher-browser";
 import { executeProposal } from "../../lib/proposal-executor";
+import { createBrowserQuotaEnforcer } from "../../lib/quota";
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -817,6 +818,24 @@ export function CopilotDrawer({
     setMessages((prev) => [...prev, userMsg]);
     setDraft("");
     setLoading(true);
+
+    // HOTFIX — Quota check antes de chamar LLM. Free: 100 queries/mês.
+    const quotaEnforcer = createBrowserQuotaEnforcer(data, companyId);
+    const quotaCheck = await quotaEnforcer.checkAIQuery(companyId);
+    if (!quotaCheck.allowed) {
+      setLoading(false);
+      const blockedMsg: CopilotMessage = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content:
+          quotaCheck.reason ??
+          "Limite de consultas IA atingido este mês. Faça upgrade do plano em Gestor > Plano & Assinatura.",
+        isDegraded: false,
+        createdAt: new Date(),
+      };
+      setMessages((prev) => [...prev, blockedMsg]);
+      return;
+    }
 
     // Persist user message fire-and-forget
     if (conversationId.current !== null) {

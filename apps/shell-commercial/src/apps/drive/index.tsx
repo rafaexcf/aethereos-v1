@@ -23,6 +23,7 @@ import type { LucideProps } from "lucide-react";
 import type { ComponentType } from "react";
 import { useSessionStore } from "../../stores/session";
 import { useDrivers } from "../../lib/drivers-context";
+import { createBrowserQuotaEnforcer } from "../../lib/quota";
 
 // ─── Domain ──────────────────────────────────────────────────────────────────
 
@@ -902,8 +903,25 @@ export function DriveApp() {
   async function handleUpload(uploadedFiles: FileList) {
     if (drivers === null || activeCompanyId === null || userId === null) return;
     const client = drivers.data.getClient();
+    const quotaEnforcer = createBrowserQuotaEnforcer(
+      drivers.data,
+      activeCompanyId,
+    );
 
     for (const f of Array.from(uploadedFiles)) {
+      // HOTFIX — Quota check antes do upload. Free: 500 MB.
+      const quotaCheck = await quotaEnforcer.checkFileUpload(
+        activeCompanyId,
+        f.size,
+      );
+      if (!quotaCheck.allowed) {
+        setError(
+          quotaCheck.reason ??
+            "Limite de armazenamento atingido. Faça upgrade do plano em Gestor > Plano & Assinatura.",
+        );
+        break;
+      }
+
       const storagePath = `${activeCompanyId}/${currentFolderId ?? "root"}/${crypto.randomUUID()}-${f.name}`;
       const { error: uploadErr } = await client.storage
         .from("kernel-files")
