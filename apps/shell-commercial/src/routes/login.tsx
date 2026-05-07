@@ -80,9 +80,34 @@ function LoginPage() {
     backgroundRepeat: "no-repeat",
   };
 
-  // Card translúcido + blur para ficar legível sobre qualquer foto.
-  const CARD_CLASSES =
-    "w-full max-w-sm rounded-2xl border border-white/10 bg-zinc-900/70 p-8 backdrop-blur-xl shadow-2xl";
+  // Liquid Glass — parâmetros (mapeados para CSS):
+  //   refração 100 → backdrop blur 50px (máximo perceptível)
+  //   profundidade 100 → outer shadow forte + inset shadow definindo bordo
+  //   dispersão 0 → sem chromatic aberration
+  //   gelo 100 → backdrop saturate 180% + blur (frost máximo)
+  //   splay 100 → inset highlight largo (12px blur radius)
+  //   cor #000000 @ 20% → background rgba(0,0,0,0.20)
+  //   luz -45° @ 80% → highlight upper-left rgba(255,255,255,0.80) +
+  //                    shadow opposite (bottom-right) rgba(0,0,0,0.40)
+  const CARD_STYLE: React.CSSProperties = {
+    background: "rgba(0,0,0,0.20)",
+    backdropFilter: "blur(50px) saturate(180%)",
+    WebkitBackdropFilter: "blur(50px) saturate(180%)",
+    border: "1px solid rgba(255,255,255,0.10)",
+    borderRadius: 24,
+    boxShadow: [
+      // Inset highlight (luz @ -45° / 80%) — cima-esquerda mais clara
+      "inset 2px 2px 12px rgba(255,255,255,0.55)",
+      "inset 1px 1px 0 rgba(255,255,255,0.80)",
+      // Inset shadow oposta (depth / 100) — baixo-direita mais escura
+      "inset -2px -2px 10px rgba(0,0,0,0.35)",
+      "inset -1px -1px 0 rgba(0,0,0,0.40)",
+      // Outer drop shadow (profundidade 100)
+      "0 30px 60px -10px rgba(0,0,0,0.65)",
+      "0 8px 24px -4px rgba(0,0,0,0.50)",
+    ].join(", "),
+  };
+  const CARD_CLASSES = "w-full max-w-sm p-8";
 
   if (magicLinkSent) {
     return (
@@ -90,7 +115,7 @@ function LoginPage() {
         className="flex min-h-screen items-center justify-center text-zinc-100"
         style={PAGE_BG}
       >
-        <div className={`${CARD_CLASSES} space-y-4`}>
+        <div className={`${CARD_CLASSES} space-y-4`} style={CARD_STYLE}>
           <h1 className="text-xl font-semibold">Verifique seu e-mail</h1>
           <p className="text-sm text-zinc-300">
             Enviamos um link de acesso para <strong>{email}</strong>. Clique no
@@ -106,7 +131,7 @@ function LoginPage() {
       className="flex min-h-screen items-center justify-center text-zinc-100"
       style={PAGE_BG}
     >
-      <div className={`${CARD_CLASSES} space-y-6`}>
+      <div className={`${CARD_CLASSES} space-y-6`} style={CARD_STYLE}>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Aethereos</h1>
           <p className="mt-1 text-sm text-zinc-400">Entre na sua conta</p>
