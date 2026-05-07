@@ -1,5 +1,6 @@
 -- pgcrypto necessário para gen_random_bytes() em api_key default.
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- Em Supabase, extensions ficam no schema 'extensions' (não public).
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
 
 -- Super Sprint F / MX243 — Developer Console schema.
 --
@@ -28,7 +29,7 @@ CREATE TABLE IF NOT EXISTS kernel.developer_accounts (
   email                TEXT         NOT NULL,
   bio                  TEXT         NOT NULL DEFAULT '',
   avatar_url           TEXT,
-  api_key              TEXT         NOT NULL DEFAULT encode(gen_random_bytes(32), 'hex'),
+  api_key              TEXT         NOT NULL DEFAULT encode(extensions.gen_random_bytes(32), 'hex'),
   status               TEXT         NOT NULL DEFAULT 'active'
                           CHECK (status IN ('active','suspended','banned')),
   accepted_terms_at    TIMESTAMPTZ,
