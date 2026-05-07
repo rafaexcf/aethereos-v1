@@ -287,6 +287,20 @@ export const APP_REGISTRY: OSApp[] = [
     hasInternalNav: true,
   },
   {
+    id: "developer-console",
+    name: "Developer Console",
+    icon: "Sparkles",
+    color: "#a78bfa",
+    component: lazyWithRetry(() =>
+      import("./developer-console/index").then((m) => ({
+        default: m.DeveloperConsoleApp,
+      })),
+    ),
+    showInDock: false,
+    closeable: true,
+    hasInternalNav: false,
+  },
+  {
     id: "governanca",
     name: "Governança",
     icon: "Shield",
