@@ -107,13 +107,18 @@ function SignupPage() {
             borderRight: "1px solid rgba(255,255,255,0.06)",
           }}
         >
-          {/* Brand */}
+          {/* Brand — idêntico ao TopBar da área logada */}
           <div className="flex items-center justify-center">
             <span
-              className="text-sm font-semibold uppercase"
-              style={{ letterSpacing: "0.18em" }}
+              style={{
+                fontSize: 15,
+                fontWeight: 700,
+                letterSpacing: "-0.02em",
+                color: "var(--text-primary)",
+                fontFamily: "var(--font-display)",
+              }}
             >
-              Aethereos
+              ÆTHEREOS
             </span>
           </div>
 
