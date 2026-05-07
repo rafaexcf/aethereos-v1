@@ -32,6 +32,7 @@ import { useDockStore } from "../../stores/dockStore";
 import { useInstalledModulesStore } from "../../stores/installedModulesStore";
 import { getApp, prefetchApp } from "../../apps/registry";
 import { AppContextMenu } from "./AppContextMenu";
+import { shadeColor } from "../shared/AppIcon";
 import type { OSApp } from "../../types/os";
 
 const SPRING_CONFIG = { mass: 0.08, stiffness: 180, damping: 11 };
@@ -1241,14 +1242,18 @@ function DockIcon({
         }}
       />
 
-      {/* Icon container */}
+      {/* Apple-style squircle (gradient + gloss + sombra). Animação
+          de magnification mantida via motion.div. Tap dá squish leve. */}
       <motion.div
         ref={ref}
         style={{
           width: size,
           height: size,
-          borderRadius: "var(--radius-lg)",
-          background: isOpen ? "var(--glass-bg)" : "transparent",
+          borderRadius: "22.37%",
+          background: `linear-gradient(180deg, ${shadeColor(app.color, 22)} 0%, ${app.color} 55%, ${shadeColor(app.color, -18)} 100%)`,
+          boxShadow:
+            "inset 0 1px 0 rgba(255,255,255,0.32), inset 0 -1px 0 rgba(0,0,0,0.18), 0 4px 18px rgba(0,0,0,0.42)",
+          overflow: "hidden",
         }}
         onClick={() => {
           // INP: re-render do TabBar/AppFrame ao abrir/fechar tab eh nao-urgente,
@@ -1266,23 +1271,33 @@ function DockIcon({
         role="button"
         aria-label={app.name}
         data-testid={`dock-app-${app.id}`}
-        onHoverStart={(e) => {
-          (e.target as HTMLElement).style.background = "var(--glass-bg-hover)";
-        }}
-        onHoverEnd={(e) => {
-          (e.target as HTMLElement).style.background = isOpen
-            ? "var(--glass-bg)"
-            : "transparent";
-        }}
       >
+        {/* Gloss top-half */}
+        <span
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            height: "48%",
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,0.24) 0%, rgba(255,255,255,0) 100%)",
+            pointerEvents: "none",
+          }}
+        />
         <motion.div
           style={{ width: iconSize, height: iconSize }}
-          className="flex items-center justify-center"
+          className="flex items-center justify-center relative"
         >
           <Icon
-            size={24}
-            strokeWidth={1.4}
-            style={{ color: "rgba(255,255,255,0.75)" }}
+            size={Math.max(14, ICON_BASE * 0.5)}
+            strokeWidth={1.6}
+            style={{
+              color: "#ffffff",
+              filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.20))",
+            }}
+            absoluteStrokeWidth
           />
         </motion.div>
       </motion.div>

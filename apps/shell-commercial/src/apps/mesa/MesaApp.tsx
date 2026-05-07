@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
-import * as LucideIcons from "lucide-react";
-import type { LucideProps } from "lucide-react";
-import type { ComponentType } from "react";
 import { useMesaStore, getWallpaperStyle } from "../../stores/mesaStore";
+import { AppIcon } from "../../components/shared/AppIcon";
 import { useOSStore } from "../../stores/osStore";
 import { useInstalledModulesStore } from "../../stores/installedModulesStore";
 import { useSettingsNavStore } from "../../stores/settingsNavStore";
@@ -39,11 +37,6 @@ function DesktopIcon({
 
   if (!app) return null;
 
-  const Icon =
-    (LucideIcons as unknown as Record<string, ComponentType<LucideProps>>)[
-      app.icon
-    ] ?? LucideIcons.Box;
-
   const appId = app.id;
   const appName = app.name;
 
@@ -72,38 +65,30 @@ function DesktopIcon({
       }}
     >
       <div
-        className="flex items-center justify-center transition-all duration-150"
+        className="transition-all duration-150"
         style={{
-          width: 48,
-          height: 48,
-          background: selected ? "rgba(37, 99, 235, 0.1)" : "var(--glass-bg)",
-          border: selected
-            ? "1px solid var(--border-focus)"
-            : "1px solid var(--glass-border)",
-          borderRadius: "var(--radius-lg)",
+          transform: selected ? "scale(1.04)" : "scale(1)",
+          filter: selected
+            ? "drop-shadow(0 0 0 3px rgba(96,165,250,0.45))"
+            : "none",
         }}
         onMouseEnter={(e) => {
           if (!selected) {
-            const el = e.currentTarget;
-            el.style.background = "var(--glass-bg-hover)";
-            el.style.borderColor = "var(--glass-border-hover)";
-            el.style.boxShadow = "var(--shadow-sm)";
-            el.style.transform = "scale(1.05)";
+            e.currentTarget.style.transform = "scale(1.05)";
           }
         }}
         onMouseLeave={(e) => {
-          const el = e.currentTarget;
-          el.style.background = selected
-            ? "rgba(37, 99, 235, 0.1)"
-            : "var(--glass-bg)";
-          el.style.borderColor = selected
-            ? "var(--border-focus)"
-            : "var(--glass-border)";
-          el.style.boxShadow = "none";
-          el.style.transform = "scale(1)";
+          e.currentTarget.style.transform = selected
+            ? "scale(1.04)"
+            : "scale(1)";
         }}
       >
-        <Icon size={24} style={{ color: app.color }} strokeWidth={1.5} />
+        <AppIcon
+          iconName={app.icon}
+          color={app.color}
+          size={48}
+          ariaLabel={app.name}
+        />
       </div>
       <span
         style={{

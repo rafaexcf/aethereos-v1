@@ -1,14 +1,12 @@
 import { createPortal } from "react-dom";
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import * as LucideIcons from "lucide-react";
-import type { LucideProps } from "lucide-react";
-import type { ComponentType } from "react";
 import { X, Search } from "lucide-react";
 import { APP_REGISTRY } from "../apps/registry";
 import { useInstalledModulesStore } from "../stores/installedModulesStore";
 import { useOSStore } from "../stores/osStore";
 import { AppContextMenu } from "./os/AppContextMenu";
+import { AppIcon } from "./shared/AppIcon";
 
 interface AppsLauncherProps {
   open: boolean;
@@ -197,14 +195,6 @@ export function AppsLauncher({ open, onClose, onOpenApp }: AppsLauncherProps) {
               }}
             >
               {filtered.map((app) => {
-                const Icon =
-                  (
-                    LucideIcons as unknown as Record<
-                      string,
-                      ComponentType<LucideProps>
-                    >
-                  )[app.icon] ?? LucideIcons.Box;
-
                 return (
                   <button
                     key={app.id}
@@ -254,38 +244,13 @@ export function AppsLauncher({ open, onClose, onOpenApp }: AppsLauncherProps) {
                       e.currentTarget.style.borderColor = "transparent";
                     }}
                   >
-                    {/* Icon container — padrão Dock */}
-                    <div
-                      style={{
-                        width: 52,
-                        height: 52,
-                        borderRadius: "var(--radius-lg)",
-                        background: "rgba(255,255,255,0.06)",
-                        border: "1px solid rgba(255,255,255,0.08)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                        transition:
-                          "background 140ms ease, border-color 140ms ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = `${app.color}28`;
-                        e.currentTarget.style.borderColor = `${app.color}44`;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background =
-                          "rgba(255,255,255,0.06)";
-                        e.currentTarget.style.borderColor =
-                          "rgba(255,255,255,0.08)";
-                      }}
-                    >
-                      <Icon
-                        size={24}
-                        strokeWidth={1.4}
-                        style={{ color: "rgba(255,255,255,0.75)" }}
-                      />
-                    </div>
+                    {/* Apple-style squircle */}
+                    <AppIcon
+                      iconName={app.icon}
+                      color={app.color}
+                      size={52}
+                      ariaLabel={app.name}
+                    />
 
                     {/* Label */}
                     <span

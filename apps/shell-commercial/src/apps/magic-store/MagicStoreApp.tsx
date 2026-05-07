@@ -2,7 +2,6 @@ import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ShoppingCart,
-  Truck,
   BarChart3,
   TrendingUp,
   Zap,
@@ -29,11 +28,6 @@ import {
   Monitor,
   PanelLeftClose,
   PanelLeftOpen,
-  Calculator,
-  StickyNote,
-  Kanban,
-  CalendarDays,
-  CloudSun,
   Bot,
   Trash2,
   Download,
@@ -44,6 +38,7 @@ import {
 } from "lucide-react";
 import { type MagicStoreApp as CatalogApp } from "../../data/magic-store-catalog";
 import { useMagicStoreCatalog } from "./catalog-adapter";
+import { AppIcon } from "../../components/shared/AppIcon";
 import { useAppRegistryStore } from "../../stores/appRegistryStore";
 import { isSensitiveScope } from "@aethereos/client";
 import { PermissionConsentModal } from "../../components/shared/PermissionConsentModal";
@@ -78,35 +73,6 @@ const STORE_SIDEBAR_W = 239;
 const STORE_SIDEBAR_ICON_W = 48;
 
 type Status = "available" | "beta" | "coming_soon";
-
-const ICON_MAP: Record<
-  string,
-  React.FC<{ size?: number; strokeWidth?: number; style?: React.CSSProperties }>
-> = {
-  ShoppingCart,
-  Truck,
-  BarChart3,
-  TrendingUp,
-  Zap,
-  Store,
-  Sparkles,
-  MessageSquare,
-  Search,
-  Bot,
-  Globe,
-  Calculator,
-  StickyNote,
-  Kanban,
-  CalendarDays,
-  CloudSun,
-  Grid3x3: LayoutGrid,
-  Layers,
-  LayoutGrid,
-  Tag,
-  Building2,
-  Package,
-  Puzzle,
-};
 
 type SidebarIcon = React.FC<{
   size?: number;
@@ -858,31 +824,21 @@ function AppIconBox({
   iconName,
   color,
   size = 56,
-  radius = 16,
+  radius,
 }: {
   iconName: string;
   color: string;
   size?: number;
   radius?: number;
 }) {
-  const Icon = ICON_MAP[iconName] ?? Store;
+  // Apple-style squircle (componente compartilhado).
   return (
-    <div
-      style={{
-        width: size,
-        height: size,
-        borderRadius: radius,
-        background: `linear-gradient(140deg, ${color}38, ${color}12)`,
-        border: `1px solid ${color}40`,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
-        boxShadow: `0 4px 16px ${color}1a`,
-      }}
-    >
-      <Icon size={Math.round(size * 0.5)} strokeWidth={1.6} style={{ color }} />
-    </div>
+    <AppIcon
+      iconName={iconName}
+      color={color}
+      size={size}
+      {...(radius !== undefined ? { radius } : {})}
+    />
   );
 }
 
