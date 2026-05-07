@@ -4577,3 +4577,98 @@ Para ativar Temporal em produção:
 Choreographies já funcionam em produção sem Temporal — basta criar
 via wizard e marcar como active. Steps com `wait` ficam pausados
 até integração Temporal estar pronta.
+
+---
+
+# Super Sprint E — Billing (2026-05-07)
+
+**Objetivo:** Billing completo (planos + portal + quotas + alertas).
+Lago é opt-in via Docker; produção usa Alternativa B (billing próprio
+em `kernel.*`). Stripe real fica para quando conta PJ verificada.
+
+## Milestones
+
+| Milestone | Descrição                                              | Status |
+| --------- | ------------------------------------------------------ | ------ |
+| MX232     | Lago opt-in compose + decisão Alternativa B            | DONE   |
+| MX233     | 3 planos + 3 métricas em @aethereos/kernel/billing     | DONE   |
+| MX234     | 4 tabelas + seed + trigger Free para nova company      | DONE   |
+| MX235     | Edge Function billing-sync                             | DONE   |
+| MX236     | Edge Function create-checkout (simulado, R9)           | DONE   |
+| MX237     | Edge Function billing-usage-report com métricas reais  | DONE   |
+| MX238     | Portal Gestor: PlanoAssinatura + ConsumoLimites + Hist | DONE   |
+| MX239     | QuotaEnforcer + integração no invite-member            | DONE   |
+| MX240     | Alertas em 80%/95% (notifications + banner)            | DONE   |
+| MX241     | NF-e opção D — emissão manual via contato              | DONE   |
+| MX242     | Testes + deploy notes + docs                           | DONE   |
+
+## Resultados-chave
+
+- **Decisão (MX232):** Alternativa B oficial. Lago no compose como opt-in
+  (`pnpm dev:lago`). Stripe simulado (R9). Razões em
+  `docs/billing/README.md`.
+- **Schema:** 4 tabelas novas (87 → 91): subscriptions (UNIQUE
+  company*id, lago*\*\_id reservados), invoices (com lago_invoice_id
+  reservado, pdf_url para NF-e futura), usage_events (append-only),
+  plan_limits (GLOBAL, R12). Trigger `companies_default_subscription`
+  cria Free para toda nova company (R13). Backfill via INSERT...
+  ON CONFLICT idempotente.
+- **Catálogo:** `@aethereos/kernel/billing/plans.ts` com 3 planos +
+  3 métricas. Helpers: getPlan, getLimit, isPlanCode, formatBytes,
+  formatBRL (Intl pt-BR). Mesmos valores em `plan_limits` (UPSERT).
+- **Edge Functions:** billing-sync (plan/sub/limits), billing-usage-report
+  (count tenant_memberships + sum kernel.files + count copilot_messages
+  via JOIN), create-checkout (atualiza sub + cria invoice paid + emite
+  SCP). Helper compartilhado `_shared/billing.ts` espelha kernel.
+- **Portal Gestor:** TabPlanoAssinatura (NOVO, substitui inline TabPlanos
+  de 340 linhas) com comparador real e upgrade flow; ConsumoLimites
+  e HistoricoPagamentos refatorados para dados reais via hooks
+  `useBillingSync`/`useUsageReport`. Cleanup: -568 linhas em
+  gestor/index.tsx (PLANS, CURRENT_PLAN_ID, GlareHover, InlineButton,
+  UsageBar/Row removidos).
+- **Quotas (MX239):** QuotaEnforcer com cache 5min, 13 unit tests.
+  invite-member chama checkUserInviteQuota — 403 com payload de
+  contexto se bloqueado.
+- **Alertas (MX240):** billing-usage-report persiste notifications em
+  kernel.notifications por métrica >=80% (source_id determinístico
+  por dia). PainelGeral exibe banner.
+- **NF-e (MX241):** Opção D — texto direcionando para
+  financeiro@aethereos.io. pdf_url reservado.
+
+## Gates finais
+
+- TypeCheck: 27/27 ✓
+- Lint: 25/25 ✓
+- Test: 21/21 ✓ (kernel 63 / scp-worker 38 / shell-commercial 37 /
+  comercio-digital 8 / outros)
+- Build: 12/12 ✓
+- deps:check: 0 errors (71 warnings em dist/ pré-existentes)
+
+Total kernel unit tests: 50 → 63 (+13 QuotaEnforcer).
+
+## Próximas etapas
+
+Para ativar Stripe real:
+
+1. Verificar conta PJ no Stripe BR
+2. Criar Price IDs para Pro e Enterprise no dashboard
+3. Substituir `create-checkout` por integração Stripe Checkout Session
+4. Adicionar Edge Function `stripe-webhook` para reconciliar
+   `kernel.subscriptions` e `kernel.invoices`
+5. Migrar PDF de fatura para usar URL gerada pelo Stripe
+
+Para integrar Lago:
+
+1. `pnpm dev:lago`
+2. Criar conta admin em localhost:3003, gerar API key
+3. Setar LAGO_API_KEY no .env.local
+4. Criar Edge Functions billing-webhook (recebe eventos Lago) e
+   atualizar billing-sync para consultar Lago em paralelo
+
+Para integrar NF-e:
+
+1. Decidir provedor (NFe.io / Enotas / Focus NFe)
+2. No webhook de invoice.paid: chamar API com CNPJ + valor + item
+3. Persistir PDF em `kernel.invoices.pdf_url`
+4. UI já está pronta (HistoricoPagamentos exibe link se pdf_url
+   estiver preenchido)

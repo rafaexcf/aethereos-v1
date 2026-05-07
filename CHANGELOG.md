@@ -11,6 +11,18 @@ Convenções:
 
 ---
 
+## Super Sprint E — Billing (2026-05-07)
+
+- **Selo:** Billing operacional sem Lago (Alternativa B). Planos, quotas, portal, alertas.
+- **Decisão (MX232):** Lago fica como opt-in no compose para quem quiser, mas o billing oficial usa tabelas próprias em `kernel.*`. Ver `docs/billing/README.md` para o racional. Stripe real fica para quando a conta PJ estiver verificada — checkout opera em modo simulado (R9).
+- **Schema:** 4 tabelas novas — `kernel.subscriptions` (UNIQUE company_id, default Free via trigger), `kernel.invoices` (com lago_invoice_id reservado), `kernel.usage_events` (append-only), `kernel.plan_limits` (catálogo global, R12). 87 → 91 tabelas kernel.\*.
+- **Catálogo:** `@aethereos/kernel/billing` define 3 planos (Free R$0, Pro R$199, Enterprise R$799) e 3 métricas (active_users / storage_bytes / ai_queries) em centavos (R17). Mesmo conteúdo seedado em `kernel.plan_limits` para Edge Functions Deno.
+- **Edge Functions:** `billing-sync` (plan + limits direto do banco), `billing-usage-report` (active_users + storage + ai_queries reais com alerts em 80%/95%), `create-checkout` (modo simulado: marca plano + cria invoice paid simbólica + emite SCP). Webhook de Lago/Stripe fica para sprint futuro.
+- **Quotas (MX239):** `QuotaEnforcer` driver-agnostic em `@aethereos/kernel/billing` com cache 5min e métodos `checkUserInvite` / `checkAIQuery` / `checkFileUpload`. R10 cumprida (sem bypass owner/admin). 13 unit tests novos. `invite-member` Edge Function chama `checkUserInviteQuota` antes do invite — bloqueio com 403 + payload `{ metric, current, limit, percent }`. Wire-up de copilot e file upload fica como TODO.
+- **Portal Gestor:** modo "Plano & Assinatura" deixa de ser placeholder. `tabs/PlanoAssinatura.tsx` (substitui inline TabPlanos) — comparador 3-coluna com upgrade modal. `tabs/ConsumoLimites.tsx` — 3 barras de progresso reais com cor dinâmica (verde/amarelo/laranja/vermelho) e banner amarelo quando há alertas. `tabs/HistoricoPagamentos.tsx` — tabela de invoices com Realtime, status badges, link para PDF e texto NF-e (MX241).
+- **Alertas (MX240):** notificações persistidas em `kernel.notifications` por métrica >80% (idempotente por dia via source_id). Banner `QuotaAlertBanner` no PainelGeral com botão "Ver plano".
+- **NF-e (MX241):** **Opção D** — emissão manual mediada por contato (`financeiro@aethereos.io`) até volume justificar provedor fiscal (NFe.io / Enotas / Focus NFe). `pdf_url` reservado em `kernel.invoices` para integração futura.
+
 ## Super Sprint D — Temporal + Choreography + Automacoes (2026-05-07)
 
 - **Selo:** Workflow engine durável (Temporal) + SCP Choreography declarativa + Automacoes UI conectada ao novo modelo.
