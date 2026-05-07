@@ -11,6 +11,19 @@ Convenções:
 
 ---
 
+## Super Sprint D — Temporal + Choreography + Automacoes (2026-05-07)
+
+- **Selo:** Workflow engine durável (Temporal) + SCP Choreography declarativa + Automacoes UI conectada ao novo modelo.
+- **Infra:** `docker-compose.dev.yml` ganha Temporal stack (auto-setup 1.24, Postgres dedicado port 5435, UI 2.28 em port 8233). Comando `pnpm dev:temporal`. R7: sistema funciona sem Temporal.
+- **Worker:** `apps/temporal-worker/` (novo) com Worker boot + NativeConnection, 6 activities (sendEmail/Resend ou log, querySupabase/insertSupabase/updateSupabase com identifier whitelist, emitSCPEvent, createNotification, evaluatePolicy + waitForApproval). 3 unit tests.
+- **Workflows:** `onboardingFlow` (drip D0/D3/D10), `inviteReminderFlow` (D3 reminder/D7 expiração), `lgpdExportFlow` (notify-export-cleanup). Retry policy 3 attempts × backoff x2. Trigger CLI para debug.
+- **Schema:** 3 tabelas novas — `kernel.choreographies` (per-company, RLS, YAML+JSON), `kernel.choreography_executions` (append-only via service_role), `kernel.choreography_step_approvals` (gate manual quando require_approval).
+- **Engine:** `ChoreographyEngine` em `@aethereos/kernel/choreography` — match/start/finish/resolveTemplates (`{{trigger.payload.x}}`, `{{trigger.actor_id}}`), cache 30s, reusa `evaluateConditions` do Policy Engine. 15 unit tests.
+- **Wiring server:** `ChoreographyConsumer` (5º inline consumer, `matches=*`) em scp-worker. Inline runner sem suporte a wait — força failed com mensagem clara (Temporal future).
+- **App Automacoes:** modo Avançado (toggle no sidebar) substitui main por `<ChoreographiesView />` — lista coreografias com badges, toggle ativar/pausar, arquivar, editor YAML com validação inline (js-yaml), histórico de execuções. 5 templates pré-construídos (notify-team, escalate-task, weekly-backup, alert-large-file, daily-summary). Modo Simples (kernel.automations) preservado.
+- **Seed:** 2 YAMLs em `infra/seed-data/choreographies/` (contact-to-sales inline-able, task-escalation Temporal-only).
+- **Produção:** Temporal Server hospedado separadamente (Temporal Cloud, k8s operator, ou VPS). `TEMPORAL_ADDRESS` controla worker. Edge Functions atuais (`create-company`, `invite-member`, `export-company-data`) ainda chamam fluxo síncrono — migração para Temporal fica para sprint futuro via HTTP wrapper ou consumer SCP.
+
 ## Super Sprint C — i18n PT-BR + EN (2026-05-06)
 
 - **Selo:** Sistema bilíngue (Português + Inglês) com framework completo.

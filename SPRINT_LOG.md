@@ -4513,41 +4513,67 @@ declarativa + Automacoes UI conectada ao novo modelo de coreografias.
 
 ## Milestones
 
-| Milestone | Descrição                                             | Status      |
-| --------- | ----------------------------------------------------- | ----------- |
-| MX224     | Docker compose: Temporal + Postgres dedicado + UI     | DONE        |
-| MX225     | apps/temporal-worker: boot + 6 activities             | DONE        |
-| MX226     | 3 workflows + trigger CLI (onboarding/invite/lgpd)    | DONE        |
-| MX227     | ChoreographyEngine + 3 tabelas + scp-worker consumer  | DONE        |
-| MX228     | 2 coreografias YAML de exemplo (contact-to-sales etc) | DONE        |
-| MX229     | Automacoes app: tab Coreografias (lista + editor)     | IN PROGRESS |
-| MX230     | 5 templates hardcoded                                 | PENDING     |
-| MX231     | Testes + deploy + docs                                | PENDING     |
+| Milestone | Descrição                                             | Status |
+| --------- | ----------------------------------------------------- | ------ |
+| MX224     | Docker compose: Temporal + Postgres dedicado + UI     | DONE   |
+| MX225     | apps/temporal-worker: boot + 6 activities             | DONE   |
+| MX226     | 3 workflows + trigger CLI (onboarding/invite/lgpd)    | DONE   |
+| MX227     | ChoreographyEngine + 3 tabelas + scp-worker consumer  | DONE   |
+| MX228     | 2 coreografias YAML de exemplo (contact-to-sales etc) | DONE   |
+| MX229     | Automacoes app: tab Coreografias (lista + editor)     | DONE   |
+| MX230     | 5 templates hardcoded                                 | DONE   |
+| MX231     | Testes + deploy + docs                                | DONE   |
 
-## Resultados-chave (parciais até MX228)
+## Resultados-chave
 
 - **Infra:** Temporal stack (Postgres dedicado port 5435, gRPC 7233,
-  UI 8233) opcional no compose. R7 cumprida — sistema funciona sem
-  Temporal. Docker indisponível no ambiente do sprint → R11 aplicada
-  (código pronto, deploy local fica como dever do operador).
+  UI 8233) opcional no compose. `pnpm dev:temporal` para subir.
+  R7 cumprida — sistema funciona sem Temporal. Docker indisponível
+  no ambiente do sprint → R11 aplicada (código pronto, deploy local
+  fica como dever do operador).
 - **Worker:** apps/temporal-worker com Worker boot, NativeConnection,
   6 activities (sendEmail/Resend ou log, querySupabase/insertSupabase
   /updateSupabase com identifier whitelist, emitSCPEvent, createNotification,
   evaluatePolicy + waitForApproval). 3 workflows: onboardingFlow (drip
   D0/D3/D10), inviteReminderFlow (D3 reminder/D7 expiração),
   lgpdExportFlow (notify-export-cleanup). trigger-cli para debug.
+  3 unit tests da activity sendEmail (cobre dev log + Resend success/fail).
 - **Choreography:** 3 tabelas novas (84 → 87 tabelas kernel.\*):
   choreographies, choreography_executions, choreography_step_approvals.
   ChoreographyEngine puro (cache 30s, match/start/finish, resolveTemplates
-  com `{{trigger.payload.x}}`). 15 unit tests novos (50 totais kernel).
+  com `{{trigger.payload.x}}` e `{{trigger.actor_id}}`, reusa
+  `evaluateConditions` do Policy Engine). 15 unit tests (50 totais
+  kernel: 35 → 50).
 - **scp-worker:** ChoreographyConsumer (5º inline consumer, matches=\*).
   Inline runner sem suporte a wait — wait força failed com mensagem
-  clara (Temporal future).
+  clara (Temporal future). 38 unit tests preservados.
+- **App Automacoes:** modo Avançado (toggle no sidebar) substitui main
+  por `<ChoreographiesView />` — lista com badges, toggle ativar/pausar,
+  arquivar, editor YAML com validação inline (js-yaml), histórico de
+  execuções via Realtime. 5 templates pré-construídos. Modo Simples
+  (kernel.automations) preservado intacto.
 - **Seed:** 2 YAMLs em infra/seed-data/choreographies/ — contact-to-sales
   (inline-able) e task-escalation (Temporal-only).
 
+## Gates finais
+
+- TypeCheck: 27/27 ✓
+- Lint: 25/25 ✓
+- Test: 21/21 ✓ (kernel 50 + scp-worker 38 + temporal-worker 3 + outros)
+- Build: 12/12 ✓
+- deps:check: 0 errors (71 warnings em dist/ pré-existentes)
+
 ## Próximas etapas
 
-Concluir MX229 (UI Coreografias no app Automacoes), MX230 (5 templates),
-MX231 (testes/deploy/docs). Em produção: provisionar Temporal Cloud ou
-operator k8s para ativar workflows reais.
+Para ativar Temporal em produção:
+
+1. Provisionar Temporal Cloud / operator k8s / VPS com
+   `temporalio/auto-setup`.
+2. Setar `TEMPORAL_ADDRESS` no temporal-worker em produção.
+3. Migrar Edge Functions (create-company, invite-member,
+   export-company-data) para chamar workflows via HTTP wrapper ou
+   consumer SCP (sprint futuro).
+
+Choreographies já funcionam em produção sem Temporal — basta criar
+via wizard e marcar como active. Steps com `wait` ficam pausados
+até integração Temporal estar pronta.

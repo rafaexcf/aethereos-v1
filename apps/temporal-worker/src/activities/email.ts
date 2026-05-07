@@ -5,9 +5,6 @@ export interface SendEmailParams {
   from?: string;
 }
 
-const RESEND_API_KEY = process.env["RESEND_API_KEY"] ?? "";
-const FROM_DEFAULT = process.env["EMAIL_FROM"] ?? "no-reply@aethereos.io";
-
 function jlog(event: string, fields: Record<string, unknown>): void {
   process.stdout.write(
     JSON.stringify({
@@ -22,9 +19,11 @@ function jlog(event: string, fields: Record<string, unknown>): void {
 export async function sendEmail(
   params: SendEmailParams,
 ): Promise<{ delivered: boolean; provider: string }> {
-  const from = params.from ?? FROM_DEFAULT;
+  const apiKey = process.env["RESEND_API_KEY"] ?? "";
+  const fromDefault = process.env["EMAIL_FROM"] ?? "no-reply@aethereos.io";
+  const from = params.from ?? fromDefault;
 
-  if (!RESEND_API_KEY) {
+  if (!apiKey) {
     jlog("dev_log_only", {
       to: params.to,
       subject: params.subject,
@@ -36,7 +35,7 @@ export async function sendEmail(
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${RESEND_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({

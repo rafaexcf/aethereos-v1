@@ -160,7 +160,9 @@ describe("ChoreographyEngine — start / finish", () => {
     const ds = new FakeDataSource([makeRow()]);
     const engine = new ChoreographyEngine(ds);
     const matches = await engine.match(makeEvent());
-    const executionId = await engine.start(matches[0]!);
+    const first = matches[0];
+    if (first === undefined) throw new Error("expected match");
+    const executionId = await engine.start(first);
     expect(executionId).toBe("exec-1");
     expect(ds.starts).toHaveLength(1);
     expect(ds.incremented).toEqual(["chor-1"]);
@@ -170,7 +172,9 @@ describe("ChoreographyEngine — start / finish", () => {
     const ds = new FakeDataSource([makeRow()]);
     const engine = new ChoreographyEngine(ds);
     const matches = await engine.match(makeEvent());
-    const executionId = await engine.start(matches[0]!);
+    const first = matches[0];
+    if (first === undefined) throw new Error("expected match");
+    const executionId = await engine.start(first);
     await engine.recordStepCompleted(executionId, "step-1");
     await engine.finish(executionId, "completed");
     expect(ds.stepsCompleted).toEqual([
