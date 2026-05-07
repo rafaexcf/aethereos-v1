@@ -1,0 +1,29 @@
+# Coreografia exemplo MX228 — "Novo contato → vendas"
+#
+# Quando um contato novo é criado, enriquece os dados (best-effort) e
+# notifica a equipe de vendas. Sem waits — executa inline pelo
+# ChoreographyConsumer (scp-worker).
+#
+# Para registrar: o wizard de Automacoes (MX229) oferece este YAML como
+# template; ao salvar, vai para kernel.choreographies com status='draft'.
+# Também pode ser inserido manualmente via SQL para uma company seed.
+
+name: "Novo contato → vendas"
+description: "Enriquece contato recém-criado e avisa o time de vendas"
+trigger_event_type: "kernel.contact.created"
+trigger_condition: null
+error_handling:
+  on_failure: "notify_human"
+steps:
+  - id: "enrich"
+    description: "Marca o contato como enriquecido (placeholder — futuro: integração externa)"
+    intent: "kernel.contact.update"
+    emit: "kernel.contact.enriched"
+
+  - id: "notify_sales"
+    description: "Notifica equipe de vendas sobre o novo contato"
+    intent: "kernel.notification.send"
+    inputs:
+      title: "Novo contato criado"
+      body: "{{trigger.payload.full_name}} foi adicionado por {{trigger.actor_id}}"
+    emit: "kernel.notification.sent"

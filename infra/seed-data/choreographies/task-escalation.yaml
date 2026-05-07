@@ -1,0 +1,37 @@
+# Coreografia exemplo MX228 — "Tarefa atrasada → escalar"
+#
+# Quando uma tarefa fica em atraso (kernel.task.overdue), alerta o
+# responsável imediatamente, espera 2 dias, e escala para o gerente
+# se ainda não resolvida.
+#
+# IMPORTANTE: este flow usa `wait: "2 days"` que NÃO é suportado pelo
+# inline runner do ChoreographyConsumer. Para executar este flow é
+# necessário o `choreographyWorkflow` no Temporal (sprint futuro).
+# Em modo inline, este flow falha no segundo step com mensagem clara.
+
+name: "Tarefa atrasada → escalar"
+description: "Alerta o responsável; após 2 dias escala para o gerente se ainda atrasada"
+trigger_event_type: "kernel.task.overdue"
+trigger_condition: null
+error_handling:
+  on_failure: "notify_human"
+steps:
+  - id: "alert_assignee"
+    description: "Alerta o responsável da tarefa"
+    intent: "kernel.notification.send"
+    inputs:
+      title: "Tarefa atrasada"
+      body: "A tarefa {{trigger.payload.title}} está em atraso desde {{trigger.payload.due_date}}"
+    emit: "kernel.task.alert_sent"
+
+  - id: "wait_2_days"
+    description: "Aguarda 2 dias antes de escalar"
+    wait: "2 days"
+
+  - id: "escalate_to_manager"
+    description: "Escala para o gerente se ainda não resolvida"
+    intent: "kernel.notification.send"
+    inputs:
+      title: "Tarefa atrasada — escalação"
+      body: "{{trigger.payload.title}} continua sem resolução. Escalando para gerência."
+    emit: "kernel.task.escalated"
