@@ -9,6 +9,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders, handlePreflight } from "../_shared/cors.ts";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rate-limit.ts";
+import { checkUserInviteQuota } from "../_shared/quota.ts";
 
 interface InviteBody {
   email?: string;
@@ -108,6 +109,20 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return json(403, { error: "Apenas owner ou admin podem convidar" });
   }
   const companyId = (callerMembership as { company_id: string }).company_id;
+
+  // Super Sprint E / MX239 — Quota enforcement (R10: aplica a TODOS).
+  const quota = await checkUserInviteQuota(admin, companyId);
+  if (!quota.allowed) {
+    return json(403, {
+      error: quota.reason ?? "Limite de usuários atingido",
+      quota: {
+        metric: quota.metric,
+        current: quota.current - 1,
+        limit: quota.limit,
+        percent: quota.percent,
+      },
+    });
+  }
 
   // 5. Verifica que email não é membro existente da company.
   const { data: existing } = await admin

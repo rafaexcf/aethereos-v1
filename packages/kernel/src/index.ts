@@ -58,8 +58,17 @@ export {
   isMetricCode,
   formatBytes,
   formatBRL,
+  QuotaEnforcer,
 } from "./billing/index.js";
-export type { Plan, PlanCode, MetricCode, PlanLimit } from "./billing/index.js";
+export type {
+  Plan,
+  PlanCode,
+  MetricCode,
+  PlanLimit,
+  QuotaCheckResult,
+  QuotaDataSource,
+  QuotaEnforcerOptions,
+} from "./billing/index.js";
 
 // Choreography Engine (Super Sprint D — MX227)
 export { ChoreographyEngine } from "./choreography/index.js";
