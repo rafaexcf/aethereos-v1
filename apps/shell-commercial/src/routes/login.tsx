@@ -72,12 +72,27 @@ function LoginPage() {
     setLoading(false);
   }
 
+  const PAGE_BG: React.CSSProperties = {
+    backgroundImage:
+      "linear-gradient(135deg, rgba(9,9,11,0.55) 0%, rgba(9,9,11,0.75) 100%), url('/login-bg.png')",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+  };
+
+  // Card translúcido + blur para ficar legível sobre qualquer foto.
+  const CARD_CLASSES =
+    "w-full max-w-sm rounded-2xl border border-white/10 bg-zinc-900/70 p-8 backdrop-blur-xl shadow-2xl";
+
   if (magicLinkSent) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-100">
-        <div className="w-full max-w-sm space-y-4 rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
+      <main
+        className="flex min-h-screen items-center justify-center text-zinc-100"
+        style={PAGE_BG}
+      >
+        <div className={`${CARD_CLASSES} space-y-4`}>
           <h1 className="text-xl font-semibold">Verifique seu e-mail</h1>
-          <p className="text-sm text-zinc-400">
+          <p className="text-sm text-zinc-300">
             Enviamos um link de acesso para <strong>{email}</strong>. Clique no
             link para entrar.
           </p>
@@ -87,8 +102,11 @@ function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-100">
-      <div className="w-full max-w-sm space-y-6 rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
+    <main
+      className="flex min-h-screen items-center justify-center text-zinc-100"
+      style={PAGE_BG}
+    >
+      <div className={`${CARD_CLASSES} space-y-6`}>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Aethereos</h1>
           <p className="mt-1 text-sm text-zinc-400">Entre na sua conta</p>
