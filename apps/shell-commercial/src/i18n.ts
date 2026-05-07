@@ -19,7 +19,7 @@ import LanguageDetector from "i18next-browser-languagedetector";
 // PT-BR namespaces
 import commonPtBR from "./locales/pt-BR/common.json";
 import shellPtBR from "./locales/pt-BR/shell.json";
-import gestorPtBR from "./locales/pt-BR/gestor.json";
+import adminConsolePtBR from "./locales/pt-BR/admin-console.json";
 import configuracoesPtBR from "./locales/pt-BR/configuracoes.json";
 import drivePtBR from "./locales/pt-BR/drive.json";
 import pessoasPtBR from "./locales/pt-BR/pessoas.json";
@@ -51,7 +51,7 @@ import notificationsPtBR from "./locales/pt-BR/notifications.json";
 // EN namespaces
 import commonEn from "./locales/en/common.json";
 import shellEn from "./locales/en/shell.json";
-import gestorEn from "./locales/en/gestor.json";
+import adminConsoleEn from "./locales/en/admin-console.json";
 import configuracoesEn from "./locales/en/configuracoes.json";
 import driveEn from "./locales/en/drive.json";
 import pessoasEn from "./locales/en/pessoas.json";
@@ -84,7 +84,7 @@ const RESOURCES = {
   "pt-BR": {
     common: commonPtBR,
     shell: shellPtBR,
-    gestor: gestorPtBR,
+    gestor: adminConsolePtBR,
     configuracoes: configuracoesPtBR,
     drive: drivePtBR,
     pessoas: pessoasPtBR,
@@ -116,7 +116,7 @@ const RESOURCES = {
   en: {
     common: commonEn,
     shell: shellEn,
-    gestor: gestorEn,
+    gestor: adminConsoleEn,
     configuracoes: configuracoesEn,
     drive: driveEn,
     pessoas: pessoasEn,

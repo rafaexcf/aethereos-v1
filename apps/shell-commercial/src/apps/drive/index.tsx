@@ -917,7 +917,7 @@ export function DriveApp() {
       if (!quotaCheck.allowed) {
         setError(
           quotaCheck.reason ??
-            "Limite de armazenamento atingido. Faça upgrade do plano em Gestor > Plano & Assinatura.",
+            "Limite de armazenamento atingido. Faça upgrade do plano em Admin Console > Plano & Assinatura.",
         );
         break;
       }

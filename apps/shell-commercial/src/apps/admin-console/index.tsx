@@ -46,8 +46,8 @@ import type { LucideProps } from "lucide-react";
 import type { ComponentType } from "react";
 import { APP_REGISTRY } from "../registry";
 import { TabPlanoAssinatura } from "./tabs/PlanoAssinatura";
-import { useGestorStore } from "../../stores/gestorStore";
-import type { GestorTabId } from "../../stores/gestorStore";
+import { useAdminConsoleStore } from "../../stores/adminConsoleStore";
+import type { AdminConsoleTabId } from "../../stores/adminConsoleStore";
 import { useDrivers } from "../../lib/drivers-context";
 import { useSessionStore } from "../../stores/session";
 // Sprint 26 — redesign do Gestor: tabs novos do plano completo (paralelo).
@@ -106,7 +106,11 @@ interface CnpjData {
 
 const NAV_SECTIONS: {
   label: string;
-  items: { id: GestorTabId; label: string; icon: typeof BriefcaseBusiness }[];
+  items: {
+    id: AdminConsoleTabId;
+    label: string;
+    icon: typeof BriefcaseBusiness;
+  }[];
 }[] = [
   {
     label: "Painel",
@@ -223,7 +227,7 @@ const NAV_SECTIONS: {
 
 const ALL_NAV_ITEMS = NAV_SECTIONS.flatMap((s) => s.items);
 
-const TAB_LABELS: Record<GestorTabId, string> = {
+const TAB_LABELS: Record<AdminConsoleTabId, string> = {
   "visao-geral": "Painel Geral",
   colaboradores: "Colaboradores",
   "cargos-hierarquia": "Cargos & Hierarquia",
@@ -1889,13 +1893,13 @@ const ASIDE_STYLE: React.CSSProperties = {
 const SIDEBAR_W = 239;
 const SIDEBAR_ICON_W = 48;
 
-function GestorSidebar({
+function AdminConsoleSidebar({
   active,
   onSelect,
   collapsed,
 }: {
-  active: GestorTabId;
-  onSelect: (id: GestorTabId) => void;
+  active: AdminConsoleTabId;
+  onSelect: (id: AdminConsoleTabId) => void;
   collapsed: boolean;
 }) {
   const [query, setQuery] = useState("");
@@ -2019,7 +2023,7 @@ function GestorSidebar({
       <button
         type="button"
         onClick={() => onSelect("visao-geral")}
-        aria-label="Painel do Gestor"
+        aria-label="Painel do Admin Console"
         aria-current={active === "visao-geral" ? "page" : undefined}
         style={{
           display: "flex",
@@ -2060,7 +2064,7 @@ function GestorSidebar({
             fontFamily: "var(--font-display)",
           }}
         >
-          Gestor
+          Admin Console
         </span>
       </button>
 
@@ -2217,11 +2221,11 @@ function GestorSidebar({
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
-export function GestorApp() {
-  const { pendingTab, clearPendingTab } = useGestorStore();
+export function AdminConsoleApp() {
+  const { pendingTab, clearPendingTab } = useAdminConsoleStore();
   const drivers = useDrivers();
   const { userId, activeCompanyId } = useSessionStore();
-  const [active, setActive] = useState<GestorTabId>(
+  const [active, setActive] = useState<AdminConsoleTabId>(
     pendingTab ?? "visao-geral",
   );
   const [collapsed, setCollapsed] = useState(false);
@@ -2323,7 +2327,7 @@ export function GestorApp() {
             lineHeight: 1.5,
           }}
         >
-          O Menu Gestor é exclusivo do owner e dos administradores da empresa.
+          O Admin Console é exclusivo do owner e dos administradores da empresa.
           Contate seu gestor se você precisar deste acesso.
         </div>
       </div>
@@ -2353,7 +2357,7 @@ export function GestorApp() {
           transition: "width 250ms ease",
         }}
       >
-        <GestorSidebar
+        <AdminConsoleSidebar
           active={active}
           onSelect={setActive}
           collapsed={collapsed}
@@ -2438,7 +2442,7 @@ export function GestorApp() {
                   strokeWidth={1.6}
                   style={{ color: "currentColor", flexShrink: 0 }}
                 />
-                Gestor
+                Admin Console
               </span>
               <ChevronRight
                 size={12}

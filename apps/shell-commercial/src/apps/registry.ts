@@ -62,7 +62,9 @@ export const COMPONENT_MAP: Record<
     })),
   ),
   gestor: lazyWithRetry(() =>
-    import("./gestor/index").then((m) => ({ default: m.GestorApp })),
+    import("./admin-console/index").then((m) => ({
+      default: m.AdminConsoleApp,
+    })),
   ),
   "ae-ai": makePlaceholder("Aether AI"),
   calendar: lazyWithRetry(() =>
@@ -249,11 +251,13 @@ export const APP_REGISTRY: OSApp[] = [
   },
   {
     id: "gestor",
-    name: "Gestor",
+    name: "Admin Console",
     icon: "BriefcaseBusiness",
     color: "#6366f1",
     component: lazyWithRetry(() =>
-      import("./gestor/index").then((m) => ({ default: m.GestorApp })),
+      import("./admin-console/index").then((m) => ({
+        default: m.AdminConsoleApp,
+      })),
     ),
     showInDock: false,
     closeable: true,

@@ -1,6 +1,6 @@
 // Sprint 26: Painel Geral — visao executiva do workspace.
 // Bento grid com 4 KPIs (colaboradores ativos, apps instalados, plano, sessoes
-// hoje). Atalhos rapidos para tabs frequentes via useGestorStore.setPendingTab.
+// hoje). Atalhos rapidos para tabs frequentes via useAdminConsoleStore.setPendingTab.
 // "Ultimas acoes" placeholder ate auditoria-log enviar feed real.
 
 import { useEffect, useState, type ComponentType } from "react";
@@ -28,7 +28,7 @@ import {
 } from "./_shared";
 import { useDrivers } from "../../../lib/drivers-context";
 import { useSessionStore } from "../../../stores/session";
-import { useGestorStore } from "../../../stores/gestorStore";
+import { useAdminConsoleStore } from "../../../stores/adminConsoleStore";
 
 interface CountResult {
   count: number | null;
@@ -150,7 +150,7 @@ function ShortcutButton({
 }
 
 function QuotaAlertBanner() {
-  const setPendingTab = useGestorStore((s) => s.setPendingTab);
+  const setPendingTab = useAdminConsoleStore((s) => s.setPendingTab);
   const { data, loading } = useUsageReport();
   if (loading || data === null || data.alerts.length === 0) return null;
   return (
@@ -199,7 +199,7 @@ function QuotaAlertBanner() {
 export function TabPainelGeral() {
   const drivers = useDrivers();
   const { activeCompanyId } = useSessionStore();
-  const setPendingTab = useGestorStore((s) => s.setPendingTab);
+  const setPendingTab = useAdminConsoleStore((s) => s.setPendingTab);
 
   const [stats, setStats] = useState<PanelStats>({
     activeMembers: null,

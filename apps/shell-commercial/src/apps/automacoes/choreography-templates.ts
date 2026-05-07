@@ -82,7 +82,7 @@ steps:
     intent: "kernel.notification.send"
     inputs:
       title: "Hora do backup"
-      body: "Lembrete: solicite exportação dos dados em Gestor > LGPD"
+      body: "Lembrete: solicite exportação dos dados em Admin Console > LGPD"
     emit: "platform.lgpd.export_reminded"
 `,
   },

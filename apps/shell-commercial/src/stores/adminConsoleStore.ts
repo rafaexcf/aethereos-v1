@@ -4,7 +4,7 @@ import { create } from "zustand";
 // Tabs antigas mantidas: aplicativos, integracoes, ia, planos, cadastros,
 // usuarios. Aliases conceituais — usuarios → colaboradores (rename).
 
-export type GestorTabId =
+export type AdminConsoleTabId =
   // Painel
   | "visao-geral"
   // Pessoas & Equipe
@@ -55,13 +55,13 @@ export type GestorTabId =
   // Compat — alias antigo
   | "usuarios";
 
-interface GestorState {
-  pendingTab: GestorTabId | null;
-  setPendingTab: (tab: GestorTabId) => void;
+interface AdminConsoleState {
+  pendingTab: AdminConsoleTabId | null;
+  setPendingTab: (tab: AdminConsoleTabId) => void;
   clearPendingTab: () => void;
 }
 
-export const useGestorStore = create<GestorState>((set) => ({
+export const useAdminConsoleStore = create<AdminConsoleState>((set) => ({
   pendingTab: null,
   setPendingTab: (tab) => set({ pendingTab: tab }),
   clearPendingTab: () => set({ pendingTab: null }),

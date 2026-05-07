@@ -829,7 +829,7 @@ export function CopilotDrawer({
         role: "assistant",
         content:
           quotaCheck.reason ??
-          "Limite de consultas IA atingido este mês. Faça upgrade do plano em Gestor > Plano & Assinatura.",
+          "Limite de consultas IA atingido este mês. Faça upgrade do plano em Admin Console > Plano & Assinatura.",
         isDegraded: false,
         createdAt: new Date(),
       };

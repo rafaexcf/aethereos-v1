@@ -71,7 +71,7 @@ import { useDockStore } from "../../stores/dockStore";
 import { useOSStore } from "../../stores/osStore";
 import { useUserPreference } from "../../hooks/useUserPreference";
 import { useTheme } from "../../lib/theme/theme-provider";
-import { useGestorStore } from "../../stores/gestorStore";
+import { useAdminConsoleStore } from "../../stores/adminConsoleStore";
 import { useRhStore } from "../../stores/rhStore";
 import { useSettingsNavStore } from "../../stores/settingsNavStore";
 import { TwoFactorAuth } from "../../components/shared/TwoFactorAuth";
@@ -1289,7 +1289,7 @@ function TabMinhaEmpresa({
   const drivers = useDrivers();
   const { activeCompanyId } = useSessionStore();
   const openApp = useOSStore((s) => s.openApp);
-  const setPendingTab = useGestorStore((s) => s.setPendingTab);
+  const setPendingTab = useAdminConsoleStore((s) => s.setPendingTab);
 
   const [cnpjDisplay, setCnpjDisplay] = useState("");
   const [cnpjPreview, setCnpjPreview] = useState<CnpjPreview | null>(null);
@@ -1439,7 +1439,7 @@ function TabMinhaEmpresa({
             type="button"
             onClick={() => {
               setPendingTab("cadastros");
-              openApp("gestor", "Gestor");
+              openApp("gestor", "Admin Console");
             }}
             style={{
               display: "inline-flex",
