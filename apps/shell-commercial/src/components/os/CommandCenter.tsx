@@ -18,7 +18,6 @@ import {
 import { useDrivers } from "../../lib/drivers-context";
 import { useSessionStore } from "../../stores/session";
 import { useOSStore } from "../../stores/osStore";
-import { useAppTranslation } from "../../hooks/useAppTranslation";
 import { useNotificationsStore } from "../../stores/notificationsStore";
 import { useTheme } from "../../lib/theme/theme-provider";
 import { useModalA11y } from "../shared/useModalA11y";
@@ -87,7 +86,6 @@ export function CommandCenter({
   avatarUrl,
   onSignOut,
 }: CommandCenterProps) {
-  const { t } = useAppTranslation("shell");
   const drivers = useDrivers();
   const userId = useSessionStore((s) => s.userId);
   const activeCompanyId = useSessionStore((s) => s.activeCompanyId);
@@ -279,14 +277,14 @@ export function CommandCenter({
     },
     {
       id: "company",
-      label: t("topbar.menu_switch_company"),
+      label: "Trocar empresa",
       icon: Building2,
       color: companyAccent,
       onClick: () => setCompanySheetOpen((v) => !v),
     },
     {
       id: "lock",
-      label: t("topbar.lock_screen"),
+      label: "Bloquear tela",
       icon: Lock,
       color: lockAccent,
       onClick: () => {
@@ -814,7 +812,7 @@ export function CommandCenter({
           }}
         >
           <LogOut size={13} strokeWidth={1.6} />
-          {t("topbar.menu_sign_out")}
+          Sair
         </button>
       </div>
 

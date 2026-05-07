@@ -1,3 +1,6 @@
+-- pgcrypto necessário para gen_random_bytes() em api_key default.
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Super Sprint F / MX243 — Developer Console schema.
 --
 -- Portal para desenvolvedores terceiros publicarem apps na Magic Store.
