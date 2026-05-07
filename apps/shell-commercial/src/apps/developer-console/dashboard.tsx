@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { useDrivers } from "../../lib/drivers-context";
 import { useDeveloperApps, useInstallationsByDeveloper } from "./hooks";
+import { Sandbox } from "./sandbox";
 import type {
   AppSubmission,
   AppSubmissionStatus,
@@ -108,6 +109,7 @@ export function DeveloperDashboard({
   const [keyCopied, setKeyCopied] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [regenError, setRegenError] = useState<string | null>(null);
+  const [sandboxApp, setSandboxApp] = useState<AppSubmission | null>(null);
 
   const counts = useMemo(() => {
     const list = apps ?? [];
@@ -513,32 +515,58 @@ export function DeveloperDashboard({
                     </div>
                   )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => onEditApp(app)}
-                  style={{
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.10)",
-                    borderRadius: 8,
-                    color: "var(--text-primary)",
-                    fontSize: 12,
-                    fontWeight: 600,
-                    padding: "6px 12px",
-                    cursor: "pointer",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 4,
-                    flexShrink: 0,
-                  }}
-                >
-                  <ExternalLink size={12} />
-                  Abrir
-                </button>
+                <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                  {app.entry_url.startsWith("https://") && (
+                    <button
+                      type="button"
+                      onClick={() => setSandboxApp(app)}
+                      style={{
+                        background: "rgba(167,139,250,0.10)",
+                        border: "1px solid rgba(167,139,250,0.30)",
+                        borderRadius: 8,
+                        color: "#a78bfa",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        padding: "6px 12px",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                    >
+                      Testar
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => onEditApp(app)}
+                    style={{
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.10)",
+                      borderRadius: 8,
+                      color: "var(--text-primary)",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      padding: "6px 12px",
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                    }}
+                  >
+                    <ExternalLink size={12} />
+                    Abrir
+                  </button>
+                </div>
               </article>
             );
           })
         )}
       </section>
+
+      {sandboxApp !== null && (
+        <Sandbox app={sandboxApp} onClose={() => setSandboxApp(null)} />
+      )}
     </div>
   );
 }
