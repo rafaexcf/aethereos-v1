@@ -85,10 +85,9 @@ function LoginPage() {
   //   profundidade 100 → outer shadow forte + inset shadow definindo bordo
   //   dispersão 0 → sem chromatic aberration
   //   gelo 100 → backdrop saturate 180% + blur (frost máximo)
-  //   splay 100 → inset highlight largo (12px blur radius)
+  //   splay 100 → inset shadow espalhada
   //   cor #000000 @ 20% → background rgba(0,0,0,0.20)
-  //   luz -45° @ 80% → highlight upper-left rgba(255,255,255,0.80) +
-  //                    shadow opposite (bottom-right) rgba(0,0,0,0.40)
+  //   (luz removida — sem highlight direcional)
   const CARD_STYLE: React.CSSProperties = {
     background: "rgba(0,0,0,0.20)",
     backdropFilter: "blur(50px) saturate(180%)",
@@ -96,12 +95,9 @@ function LoginPage() {
     border: "1px solid rgba(255,255,255,0.10)",
     borderRadius: 24,
     boxShadow: [
-      // Inset highlight (luz @ -45° / 80%) — cima-esquerda mais clara
-      "inset 2px 2px 12px rgba(255,255,255,0.55)",
-      "inset 1px 1px 0 rgba(255,255,255,0.80)",
-      // Inset shadow oposta (depth / 100) — baixo-direita mais escura
-      "inset -2px -2px 10px rgba(0,0,0,0.35)",
-      "inset -1px -1px 0 rgba(0,0,0,0.40)",
+      // Inset shadow neutra para definir o bordo do vidro (depth)
+      "inset 0 0 12px rgba(0,0,0,0.30)",
+      "inset 0 -1px 0 rgba(0,0,0,0.40)",
       // Outer drop shadow (profundidade 100)
       "0 30px 60px -10px rgba(0,0,0,0.65)",
       "0 8px 24px -4px rgba(0,0,0,0.50)",
