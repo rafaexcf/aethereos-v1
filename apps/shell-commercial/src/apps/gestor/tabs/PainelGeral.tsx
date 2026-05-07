@@ -13,8 +13,10 @@ import {
   Activity,
   UserPlus,
   Search,
+  AlertTriangle,
   type LucideProps,
 } from "lucide-react";
+import { useUsageReport } from "./use-billing";
 import {
   ContentHeader,
   SectionLabel,
@@ -147,6 +149,53 @@ function ShortcutButton({
   );
 }
 
+function QuotaAlertBanner() {
+  const setPendingTab = useGestorStore((s) => s.setPendingTab);
+  const { data, loading } = useUsageReport();
+  if (loading || data === null || data.alerts.length === 0) return null;
+  return (
+    <div
+      role="status"
+      style={{
+        padding: "12px 14px",
+        borderRadius: 12,
+        background: "rgba(251,191,36,0.10)",
+        border: "1px solid rgba(251,191,36,0.30)",
+        color: "#fbbf24",
+        fontSize: 13,
+        display: "flex",
+        gap: 10,
+        alignItems: "flex-start",
+      }}
+    >
+      <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+      <div
+        style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}
+      >
+        {data.alerts.map((msg) => (
+          <span key={msg}>{msg}</span>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={() => setPendingTab("planos")}
+        style={{
+          background: "rgba(251,191,36,0.18)",
+          border: "1px solid rgba(251,191,36,0.40)",
+          borderRadius: 8,
+          padding: "6px 12px",
+          color: "#fbbf24",
+          fontSize: 12,
+          fontWeight: 600,
+          cursor: "pointer",
+        }}
+      >
+        Ver plano
+      </button>
+    </div>
+  );
+}
+
 export function TabPainelGeral() {
   const drivers = useDrivers();
   const { activeCompanyId } = useSessionStore();
@@ -209,6 +258,8 @@ export function TabPainelGeral() {
         title="Painel Geral"
         subtitle="Visão geral da empresa"
       />
+
+      <QuotaAlertBanner />
 
       <div>
         <SectionLabel>Indicadores</SectionLabel>

@@ -168,12 +168,74 @@ Deno.serve(async (req: Request): Promise<Response> => {
   const aiPct = pctOf(aiQueries, aiLimit);
 
   const alerts: string[] = [];
-  if (usersPct >= ALERT_THRESHOLD)
+  const alertSpecs: Array<{ metric: string; pct: number; key: string }> = [];
+  if (usersPct >= ALERT_THRESHOLD) {
     alerts.push(`Você está usando ${usersPct}% do limite de usuários`);
-  if (storagePct >= ALERT_THRESHOLD)
+    alertSpecs.push({ metric: "active_users", pct: usersPct, key: "users" });
+  }
+  if (storagePct >= ALERT_THRESHOLD) {
     alerts.push(`Você está usando ${storagePct}% do limite de armazenamento`);
-  if (aiPct >= ALERT_THRESHOLD)
+    alertSpecs.push({
+      metric: "storage_bytes",
+      pct: storagePct,
+      key: "storage",
+    });
+  }
+  if (aiPct >= ALERT_THRESHOLD) {
     alerts.push(`Você está usando ${aiPct}% do limite de consultas IA`);
+    alertSpecs.push({ metric: "ai_queries", pct: aiPct, key: "ai" });
+  }
+
+  // MX240 — Persistir notificação por métrica > 80% (idempotente
+  // por dia via source_id determinístico). Owner da company recebe.
+  if (alertSpecs.length > 0) {
+    const { data: ownerRow } = await admin
+      .schema("kernel")
+      .from("tenant_memberships")
+      .select("user_id")
+      .eq("company_id", companyId)
+      .eq("role", "owner")
+      .eq("status", "active")
+      .limit(1)
+      .maybeSingle();
+    const ownerId = (ownerRow as { user_id?: string } | null)?.user_id;
+    if (ownerId !== undefined) {
+      const today = new Date().toISOString().slice(0, 10);
+      for (const spec of alertSpecs) {
+        const sourceId = `quota-alert:${spec.key}:${today}`;
+        const { data: dup } = await admin
+          .schema("kernel")
+          .from("notifications")
+          .select("id")
+          .eq("user_id", ownerId)
+          .eq("source_app", "billing")
+          .eq("source_id", sourceId)
+          .limit(1)
+          .maybeSingle();
+        if (dup === null) {
+          const severity = spec.pct >= 95 ? "warning" : "info";
+          await admin
+            .schema("kernel")
+            .from("notifications")
+            .insert({
+              user_id: ownerId,
+              company_id: companyId,
+              type: severity,
+              title:
+                spec.pct >= 95
+                  ? `Atenção: ${spec.pct}% do limite de ${spec.key === "ai" ? "consultas IA" : spec.key === "storage" ? "armazenamento" : "usuários"} usado`
+                  : `Limite próximo: ${spec.pct}% de ${spec.key === "ai" ? "consultas IA" : spec.key === "storage" ? "armazenamento" : "usuários"}`,
+              body:
+                spec.pct >= 95
+                  ? "Considere upgrade para evitar interrupção."
+                  : "Considere fazer upgrade no Gestor > Plano & Assinatura.",
+              source_app: "billing",
+              source_id: sourceId,
+            });
+        }
+      }
+    }
+  }
 
   const report: UsageReport = {
     plan: { code: planCode, name: PLAN_NAMES[planCode] },
