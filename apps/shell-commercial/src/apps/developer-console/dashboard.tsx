@@ -24,6 +24,7 @@ import {
   XCircle,
   ExternalLink,
   TrendingUp,
+  CreditCard,
 } from "lucide-react";
 import { useDrivers } from "../../lib/drivers-context";
 import {
@@ -392,6 +393,10 @@ export function DeveloperDashboard({
         </div>
       </section>
 
+      <RevenuePlaceholder
+        hasPaidApps={(apps ?? []).some((a) => a.pricing_model !== "free")}
+      />
+
       {timeline.length > 0 && totalInstalls > 0 && (
         <section
           style={{
@@ -686,6 +691,48 @@ function SubmitButton({ app }: { app: AppSubmission }): React.ReactElement {
         <span style={{ fontSize: 10, color: "#f87171" }}>{error}</span>
       )}
     </div>
+  );
+}
+
+function RevenuePlaceholder({
+  hasPaidApps,
+}: {
+  hasPaidApps: boolean;
+}): React.ReactElement | null {
+  if (!hasPaidApps) return null;
+  return (
+    <section
+      style={{
+        background: "rgba(52,211,153,0.06)",
+        border: "1px solid rgba(52,211,153,0.20)",
+        borderRadius: 12,
+        padding: 14,
+        display: "flex",
+        gap: 10,
+        alignItems: "flex-start",
+      }}
+    >
+      <CreditCard
+        size={16}
+        color="#34d399"
+        style={{ flexShrink: 0, marginTop: 2 }}
+      />
+      <div
+        style={{
+          fontSize: 12,
+          color: "var(--text-secondary)",
+          lineHeight: 1.5,
+        }}
+      >
+        <strong style={{ color: "var(--text-primary)" }}>
+          Revenue share 70/30
+        </strong>{" "}
+        — você tem apps com cobrança. A integração de pagamentos reais (Stripe +
+        transferência mensal) entra em operação assim que o billing F3+ estiver
+        ativado. Por enquanto, instalações de apps pagos não cobram. Detalhes em{" "}
+        <code>docs/developer/MONETIZATION.md</code>.
+      </div>
+    </section>
   );
 }
 
