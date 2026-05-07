@@ -47,6 +47,20 @@ export type {
   RequireApprovalRule,
 } from "./policy/index.js";
 
+// Billing — Plans + Quota Enforcer (Super Sprint E — MX233 / MX239)
+export {
+  PLANS,
+  PLAN_CODES,
+  METRIC_CODES,
+  getPlan,
+  getLimit,
+  isPlanCode,
+  isMetricCode,
+  formatBytes,
+  formatBRL,
+} from "./billing/index.js";
+export type { Plan, PlanCode, MetricCode, PlanLimit } from "./billing/index.js";
+
 // Choreography Engine (Super Sprint D — MX227)
 export { ChoreographyEngine } from "./choreography/index.js";
 export type {
