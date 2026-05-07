@@ -74,7 +74,7 @@ function LoginPage() {
 
   const PAGE_BG: React.CSSProperties = {
     backgroundImage:
-      "linear-gradient(135deg, rgba(9,9,11,0.55) 0%, rgba(9,9,11,0.75) 100%), url('/login-bg.png')",
+      "linear-gradient(135deg, rgba(9,9,11,0.55) 0%, rgba(9,9,11,0.75) 100%), url('/login-bg.webp')",
     backgroundSize: "cover",
     backgroundPosition: "center",
     backgroundRepeat: "no-repeat",
