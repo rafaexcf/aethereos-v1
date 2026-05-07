@@ -35,6 +35,8 @@
     "dev:observability": "docker compose -f infra/local/docker-compose.dev.yml up -d langfuse-postgres langfuse",
     "dev:feature-flags": "docker compose -f infra/local/docker-compose.dev.yml up -d unleash-postgres unleash",
     "dev:otel": "docker compose -f infra/local/docker-compose.dev.yml up -d otel-collector tempo loki prometheus grafana",
+    "dev:temporal": "docker compose -f infra/local/docker-compose.dev.yml up -d temporal-db temporal temporal-ui",
+    "dev:temporal-worker": "pnpm --filter @aethereos/temporal-worker dev",
     "dev:db": "supabase start && supabase db reset",
     "db:start": "supabase start",
     "db:stop": "supabase stop",

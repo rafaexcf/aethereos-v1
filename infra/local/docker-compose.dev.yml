@@ -236,6 +236,69 @@ services:
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
+  # Temporal — workflow engine (Super Sprint D / MX224)
+  # Postgres dedicado (NÃO compartilhar com Supabase). Auto-setup cria schemas.
+  # gRPC 7233 (worker) | UI 8233 | Postgres dedicado 5435
+  # Subir com: pnpm dev:temporal
+  # ---------------------------------------------------------------------------
+  temporal-db:
+    image: postgres:16-alpine
+    container_name: aethereos-temporal-db-dev
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
+    ports:
+      - "5435:5432"
+    volumes:
+      - temporal_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U temporal -d temporal"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  temporal:
+    image: temporalio/auto-setup:1.24
+    container_name: aethereos-temporal-dev
+    depends_on:
+      temporal-db:
+        condition: service_healthy
+    ports:
+      - "7233:7233" # gRPC para workers
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_USER: temporal
+      POSTGRES_PWD: temporal
+      POSTGRES_SEEDS: temporal-db
+      DYNAMIC_CONFIG_FILE_PATH: /etc/temporal/config/dynamicconfig/development.yaml
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "tctl --address temporal:7233 namespace describe default || exit 1",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    restart: unless-stopped
+
+  temporal-ui:
+    image: temporalio/ui:2.28.0
+    container_name: aethereos-temporal-ui-dev
+    depends_on:
+      - temporal
+    ports:
+      - "8233:8080"
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_CORS_ORIGINS: http://localhost:3000
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
   # Grafana — dashboards (Tempo + Loki + Prometheus)
   # Porta: 3002 | Login: admin / admin
   # ---------------------------------------------------------------------------
@@ -273,4 +336,6 @@ volumes:
   prometheus_data:
     driver: local
   grafana_data:
+    driver: local
+  temporal_db_data:
     driver: local
