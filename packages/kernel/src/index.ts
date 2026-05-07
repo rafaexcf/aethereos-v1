@@ -47,6 +47,19 @@ export type {
   RequireApprovalRule,
 } from "./policy/index.js";
 
+// Choreography Engine (Super Sprint D — MX227)
+export { ChoreographyEngine } from "./choreography/index.js";
+export type {
+  ChoreographyDataSource,
+  ChoreographyDefinition,
+  ChoreographyEngineOptions,
+  ChoreographyExecutionStart,
+  ChoreographyMatch,
+  ChoreographyRow,
+  ChoreographyStep,
+  ChoreographyTriggerEvent,
+} from "./choreography/index.js";
+
 // Invariants
 export {
   INVARIANT_OPERATIONS,

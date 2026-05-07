@@ -6,6 +6,10 @@ import { AuditConsumer } from "./consumers/audit-consumer.js";
 import { NotificationConsumer } from "./consumers/notification-consumer.js";
 import { EmbeddingConsumer } from "./consumers/embedding-consumer.js";
 import { EnrichmentConsumer } from "./consumers/enrichment-consumer.js";
+import {
+  ChoreographyConsumer,
+  buildChoreographyDataSource,
+} from "./consumers/choreography-consumer.js";
 import { startNatsConsumers } from "./nats-consumers.js";
 
 const POLL_INTERVAL_MS = Number(process.env["SCP_POLL_INTERVAL_MS"] ?? "2000");
@@ -95,6 +99,8 @@ async function main(): Promise<void> {
     new NotificationConsumer(),
     new EnrichmentConsumer(),
     new EmbeddingConsumer({ supabaseUrl, supabaseAnonKey }),
+    // Super Sprint D / MX227 — Choreography consumer (lookup-driven).
+    new ChoreographyConsumer(buildChoreographyDataSource),
   ];
 
   // Super Sprint B / MX210 — Connect NATS se NATS_URL definido.
