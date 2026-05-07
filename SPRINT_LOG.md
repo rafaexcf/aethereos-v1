@@ -4672,3 +4672,78 @@ Para integrar NF-e:
 3. Persistir PDF em `kernel.invoices.pdf_url`
 4. UI já está pronta (HistoricoPagamentos exibe link se pdf_url
    estiver preenchido)
+
+---
+
+# Super Sprint F — Developer Console (2026-05-07) — **F2 SEALED**
+
+**Objetivo:** Abrir o ecossistema Aethereos para developers terceiros.
+
+## Milestones
+
+| Milestone | Descrição                                             | Status |
+| --------- | ----------------------------------------------------- | ------ |
+| MX243     | 5 tabelas: developer_accounts/submissions/reviews/... | DONE   |
+| MX244     | Developer Console: registro + dashboard + API key     | DONE   |
+| MX245     | App CRUD com wizard 5 steps + edit + versioning       | DONE   |
+| MX246     | Sandbox iframe + mock bridge + console de logs        | DONE   |
+| MX247     | Submit para revisão (UPDATE status='submitted')       | DONE   |
+| MX248     | Edge Function app-review + tab Gestor + auto-publish  | DONE   |
+| MX249     | 6 markdowns docs/developer/ (SDK, manifest, etc)      | DONE   |
+| MX250     | Métricas: gráfico CSS de instalações últimos 30 dias  | DONE   |
+| MX251     | Revenue share placeholder (R15)                       | DONE   |
+| MX252     | Testes + deploy notes + docs F2 SEALED                | DONE   |
+
+## Resultados-chave
+
+- **Schema:** 5 tabelas novas (91 → 96): developer_accounts,
+  app_submissions, app_reviews, app_installations, developer_earnings.
+- **Developer Console:** novo app no shell-commercial com registro,
+  dashboard com 4 cards + API key + chart 30d + lista de apps.
+- **Wizard 5 steps:** identidade, aparência, técnico, permissões
+  (17 scopes do SCOPE_CATALOG + justificativa para sensíveis),
+  monetização. Versionamento com bump automático.
+- **Sandbox:** iframe + console de logs + mock bridge respondendo
+  a 8 métodos com dados fake (R13 simplificado).
+- **Edge Function `app-review`:** staff-only (is_staff JWT), audit
+  em app_reviews, approve faz UPSERT em app_registry com
+  app_type='third_party' (R18 auto-publish), notify dev via
+  helper que usa company ativa.
+- **Tab Gestor "Revisão de apps":** lista pendentes/todas, modal
+  com checklist 7 itens + notas, 3 botões action.
+- **6 markdowns developer:** README, SDK, MANIFEST, PERMISSIONS,
+  REVIEW, MONETIZATION.
+- **Revenue placeholder:** tabela developer_earnings reservada;
+  UI mostra banner para devs com apps pagos (cobrança real F3+).
+
+## Gates finais
+
+- TypeCheck 27/27, Lint 25/25, Test 21/21, Build ok, deps:check 0 errors.
+- 200+ unit tests no monorepo.
+
+## **F2 COMPLETA — TODOS OS 6 SUPER SPRINTS ENTREGUES**
+
+| Sprint | Tema                                        | Status |
+| ------ | ------------------------------------------- | ------ |
+| SS-A   | Policy Engine (Governance-as-Code)          | ✅     |
+| SS-B   | NATS Real (JetStream distribuído)           | ✅     |
+| SS-C   | i18n (PT-BR + EN, 30 namespaces)            | ✅     |
+| SS-D   | Temporal + SCP Choreography + Automacoes UI | ✅     |
+| SS-E   | Billing (Lago opt-in + Quotas + Portal)     | ✅     |
+| SS-F   | Developer Console (Portal + Review + Docs)  | ✅     |
+
+## Próximas etapas
+
+Próximo: **comercio.digital** (primeiro vertical da Camada 2)
+iniciado em paralelo aos 30 dias de dogfood.
+
+Pendências F2 → F3:
+
+- Stripe real (R9 simulado em SS-E)
+- NF-e automática (Opção D em SS-E)
+- Lago integração (Alternativa B em SS-E)
+- Cron scheduler para coreografias com `wait` (SS-D)
+- Migração Edge Functions → Temporal workflows
+- Wire-up QuotaEnforcer em Copilot e file upload (SS-E)
+- Site estático para docs developer (SS-F)
+- Revenue share automatizado Stripe + Pix (SS-F → F3+)

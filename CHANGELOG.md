@@ -11,6 +11,18 @@ Convenções:
 
 ---
 
+## Super Sprint F — Developer Console (2026-05-07) — **F2 SEALED**
+
+- **Selo:** Ecossistema Aethereos aberto para developers terceiros. Portal completo, app CRUD, sandbox, review, docs, métricas, revenue share.
+- **Schema:** 5 tabelas novas — `kernel.developer_accounts` (1:1 user, api_key gen_random_bytes), `kernel.app_submissions` (status: draft/submitted/in_review/approved/rejected/published/removed; UNIQUE developer+slug+version para versionamento), `kernel.app_reviews` (audit append-only), `kernel.app_installations` (tracking append-only), `kernel.developer_earnings` (revenue share 70/30 reservado). 91 → 96 tabelas kernel.\*.
+- **Developer Console** (`apps/shell-commercial/src/apps/developer-console/`): novo app no shell, registro com aceite de termos, dashboard com 4 cards (apps, instalações, em revisão, rascunhos), API key mascarada com show/hide/copy/regenerate (Web Crypto), gráfico CSS de instalações dos últimos 30 dias, lista de apps com badges de status.
+- **Wizard 5 steps** (`app-wizard.tsx`): identidade (slug auto-slugify), aparência (ícone Lucide + cor + screenshots URLs), técnico (HTTPS obrigatório, modo iframe/weblink, licença, tags), permissões (toggles dos 17 scopes do SCOPE_CATALOG, justificativa textarea para sensíveis 10+ chars, manifesto JSON preview), monetização (4 modelos, price em centavos, banner 70/30). Edit in-place para drafts, INSERT nova versão (bump automático) para publicados.
+- **Sandbox** (`sandbox.tsx`): iframe + console de logs side-by-side, mock bridge no parent window respondendo handshake e RPC com 8 mock responses (auth.session, drive.list, people.list, chat.channels, notifications.list, ai.chat, settings.get, theme.current). Sem simulação de shell completo (R13).
+- **Submit** + auto-publish via Edge Function `app-review`: staff (verificado por is_staff em app_metadata) chama com `{ submission_id, action, notes, checklist }`. Approve UPSERTs em `kernel.app_registry` com app_type='third_party' (R18) e marca submission published. Reject + request_changes notificam developer. Helper notifyDeveloper usa membership ativa do dev (notifications.company_id é NOT NULL).
+- **Tab Gestor "Revisão de apps"** (`StaffAppReview.tsx`): lista filtrada (pendentes/todas), modal com resumo + scopes + checklist 7 itens + notas + 3 botões (Pedir mudanças / Rejeitar / Aprovar). Guard !isStaff renderiza mensagem informativa.
+- **Docs developer**: 6 markdowns em `docs/developer/` — README (Getting Started + 5 min tutorial), SDK (10 módulos + bridge protocol), MANIFEST (formato + tabela de campos + Zod), PERMISSIONS (17 scopes em 9 categorias + consent flow), REVIEW (checklist + motivos + SLAs), MONETIZATION (4 modelos + 70/30 + benchmark mercado).
+- **Revenue share placeholder** (R15): tabela `kernel.developer_earnings` reservada; UI mostra banner verde apenas para developers com apps pagos. Cobrança real fica para F3+ quando Stripe verificado.
+
 ## Super Sprint E — Billing (2026-05-07)
 
 - **Selo:** Billing operacional sem Lago (Alternativa B). Planos, quotas, portal, alertas.
