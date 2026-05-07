@@ -4503,3 +4503,51 @@ Migração inline de literais para t() é dívida incremental que pode
 acontecer em qualquer momento — não bloqueia features. Outras línguas
 (es-ES, fr-FR) podem ser adicionadas criando locales/<lang>/\*.json e
 duas linhas em i18n.ts.
+
+---
+
+# Super Sprint D — Temporal + Choreography + Automacoes (2026-05-07)
+
+**Objetivo:** Workflow engine durável (Temporal) + SCP Choreography
+declarativa + Automacoes UI conectada ao novo modelo de coreografias.
+
+## Milestones
+
+| Milestone | Descrição                                             | Status      |
+| --------- | ----------------------------------------------------- | ----------- |
+| MX224     | Docker compose: Temporal + Postgres dedicado + UI     | DONE        |
+| MX225     | apps/temporal-worker: boot + 6 activities             | DONE        |
+| MX226     | 3 workflows + trigger CLI (onboarding/invite/lgpd)    | DONE        |
+| MX227     | ChoreographyEngine + 3 tabelas + scp-worker consumer  | DONE        |
+| MX228     | 2 coreografias YAML de exemplo (contact-to-sales etc) | DONE        |
+| MX229     | Automacoes app: tab Coreografias (lista + editor)     | IN PROGRESS |
+| MX230     | 5 templates hardcoded                                 | PENDING     |
+| MX231     | Testes + deploy + docs                                | PENDING     |
+
+## Resultados-chave (parciais até MX228)
+
+- **Infra:** Temporal stack (Postgres dedicado port 5435, gRPC 7233,
+  UI 8233) opcional no compose. R7 cumprida — sistema funciona sem
+  Temporal. Docker indisponível no ambiente do sprint → R11 aplicada
+  (código pronto, deploy local fica como dever do operador).
+- **Worker:** apps/temporal-worker com Worker boot, NativeConnection,
+  6 activities (sendEmail/Resend ou log, querySupabase/insertSupabase
+  /updateSupabase com identifier whitelist, emitSCPEvent, createNotification,
+  evaluatePolicy + waitForApproval). 3 workflows: onboardingFlow (drip
+  D0/D3/D10), inviteReminderFlow (D3 reminder/D7 expiração),
+  lgpdExportFlow (notify-export-cleanup). trigger-cli para debug.
+- **Choreography:** 3 tabelas novas (84 → 87 tabelas kernel.\*):
+  choreographies, choreography_executions, choreography_step_approvals.
+  ChoreographyEngine puro (cache 30s, match/start/finish, resolveTemplates
+  com `{{trigger.payload.x}}`). 15 unit tests novos (50 totais kernel).
+- **scp-worker:** ChoreographyConsumer (5º inline consumer, matches=\*).
+  Inline runner sem suporte a wait — wait força failed com mensagem
+  clara (Temporal future).
+- **Seed:** 2 YAMLs em infra/seed-data/choreographies/ — contact-to-sales
+  (inline-able) e task-escalation (Temporal-only).
+
+## Próximas etapas
+
+Concluir MX229 (UI Coreografias no app Automacoes), MX230 (5 templates),
+MX231 (testes/deploy/docs). Em produção: provisionar Temporal Cloud ou
+operator k8s para ativar workflows reais.
