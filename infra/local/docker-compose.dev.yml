@@ -299,6 +299,74 @@ services:
     restart: unless-stopped
 
   # ---------------------------------------------------------------------------
+  # Lago — billing engine (Super Sprint E / MX232)
+  # Postgres dedicado port 5436 + Redis 6380 (NÃO compartilhar com Supabase).
+  # API 3001 | UI 3003 (3002 já é Grafana)
+  # OPT-IN: o Aethereos usa "Alternativa B" (billing próprio em kernel.*)
+  # por padrão. Lago fica disponível para quem quiser orquestrar invoicing
+  # e overage por meio de um motor dedicado.
+  # Subir com: pnpm dev:lago
+  # ---------------------------------------------------------------------------
+  lago-db:
+    image: postgres:16-alpine
+    container_name: aethereos-lago-db-dev
+    environment:
+      POSTGRES_USER: lago
+      POSTGRES_PASSWORD: lago
+      POSTGRES_DB: lago
+    ports:
+      - "5436:5432"
+    volumes:
+      - lago_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lago -d lago"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  lago-redis:
+    image: redis:7-alpine
+    container_name: aethereos-lago-redis-dev
+    ports:
+      - "6380:6379"
+    restart: unless-stopped
+
+  lago-api:
+    image: getlago/api:v1.14.0
+    container_name: aethereos-lago-api-dev
+    depends_on:
+      lago-db:
+        condition: service_healthy
+      lago-redis:
+        condition: service_started
+    ports:
+      - "3001:3000"
+    environment:
+      LAGO_API_URL: http://localhost:3001
+      DATABASE_URL: postgresql://lago:lago@lago-db:5432/lago
+      REDIS_URL: redis://lago-redis:6379
+      RAILS_ENV: development
+      SECRET_KEY_BASE: aethereos-dev-secret-key-base-replace-in-prod-please
+      LAGO_RSA_PRIVATE_KEY: ""
+      ENCRYPTION_PRIMARY_KEY: aethereos-dev-encryption-primary-replace
+      ENCRYPTION_DETERMINISTIC_KEY: aethereos-dev-encryption-deterministic-replace
+      ENCRYPTION_KEY_DERIVATION_SALT: aethereos-dev-encryption-salt-replace
+    restart: unless-stopped
+
+  lago-front:
+    image: getlago/front:v1.14.0
+    container_name: aethereos-lago-front-dev
+    depends_on:
+      - lago-api
+    ports:
+      - "3003:80"
+    environment:
+      API_URL: http://localhost:3001
+      APP_ENV: development
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
   # Grafana — dashboards (Tempo + Loki + Prometheus)
   # Porta: 3002 | Login: admin / admin
   # ---------------------------------------------------------------------------
@@ -338,4 +406,6 @@ volumes:
   grafana_data:
     driver: local
   temporal_db_data:
+    driver: local
+  lago_db_data:
     driver: local
