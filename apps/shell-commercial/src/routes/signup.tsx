@@ -195,6 +195,24 @@ function SignupPage() {
             >
               {loading ? "Criando conta…" : "Criar conta"}
             </button>
+
+            <p className="text-center text-[11px] leading-relaxed text-zinc-400">
+              Ao continuar, você concorda com nossos{" "}
+              <a
+                href="/terms"
+                className="text-zinc-200 underline-offset-2 hover:underline"
+              >
+                Termos de Serviço
+              </a>{" "}
+              e{" "}
+              <a
+                href="/privacy"
+                className="text-zinc-200 underline-offset-2 hover:underline"
+              >
+                Política de Privacidade
+              </a>
+              .
+            </p>
           </form>
 
           <p className="mt-auto pt-8 text-center text-xs text-zinc-300">
