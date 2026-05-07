@@ -147,7 +147,12 @@ const RESOURCES = {
   },
 };
 
-void i18n
+// HOTFIX — main.tsx aguarda esta promise antes de createRoot.
+// Sem isso, a primeira render de componentes que usam t()
+// (ex: CommandCenter, login, LockScreen) acontecia ANTES do
+// sinal "ready" do i18next, e t() retornava a chave literal
+// (ex: botão logout exibia "topbar.menu_sign_out").
+export const i18nReady: Promise<unknown> = i18n
   .use(LanguageDetector)
   .use(initReactI18next)
   .init({

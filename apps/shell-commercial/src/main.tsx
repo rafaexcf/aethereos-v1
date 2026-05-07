@@ -26,7 +26,7 @@ import {
   installGlobalErrorHandlers,
   initSentryIfConfigured,
 } from "./lib/observability";
-import "./i18n"; // Super Sprint C / MX214 — inicializa react-i18next
+import { i18nReady } from "./i18n"; // Super Sprint C / MX214 — inicializa react-i18next
 import "./styles/globals.css";
 
 // Sprint 33 / MX186: inicializa Sentry se VITE_SENTRY_DSN estiver definida.
@@ -300,10 +300,17 @@ function App() {
 const container = document.getElementById("root");
 if (container === null) throw new Error("#root not found");
 
-createRoot(container).render(
-  <StrictMode>
-    <ThemeProvider>
-      <App />
-    </ThemeProvider>
-  </StrictMode>,
-);
+// HOTFIX — Aguarda i18n inicializar antes de montar React. Sem isso,
+// a primeira render de componentes que usam t() vê a chave literal
+// (botão logout exibia "topbar.menu_sign_out") porque o sinal "ready"
+// do i18next chega via microtask e useTranslation com useSuspense:false
+// retorna a key como fallback.
+void i18nReady.finally(() => {
+  createRoot(container).render(
+    <StrictMode>
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
+    </StrictMode>,
+  );
+});
