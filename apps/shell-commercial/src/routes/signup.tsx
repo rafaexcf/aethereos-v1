@@ -107,23 +107,8 @@ function SignupPage() {
             borderRight: "1px solid rgba(255,255,255,0.06)",
           }}
         >
-          {/* Brand — idêntico ao TopBar da área logada */}
-          <div className="flex items-center justify-center">
-            <span
-              style={{
-                fontSize: 15,
-                fontWeight: 700,
-                letterSpacing: "-0.02em",
-                color: "var(--text-primary)",
-                fontFamily: "var(--font-display)",
-              }}
-            >
-              ÆTHEREOS
-            </span>
-          </div>
-
           {/* Heading */}
-          <div className="mt-10 text-center">
+          <div className="text-center">
             <h1 style={{ ...SERIF, fontSize: 38, lineHeight: 1.1 }}>
               Criar conta
             </h1>
@@ -228,18 +213,19 @@ function SignupPage() {
 
         {/* Hero column (RIGHT — invertido em relação ao login) */}
         <section className="relative flex flex-col justify-between p-10 md:p-12">
-          {/* Top label with rule */}
-          <div className="flex items-center justify-end gap-3">
+          {/* Brand — mesmo estilo do TopBar, mas em escala hero (3×). */}
+          <div className="flex justify-end">
             <span
-              aria-hidden="true"
-              className="h-px flex-1 bg-zinc-300/40"
-              style={{ maxWidth: 120 }}
-            />
-            <span
-              className="text-[10px] font-semibold uppercase text-zinc-300"
-              style={{ letterSpacing: "0.18em" }}
+              style={{
+                fontSize: 45,
+                fontWeight: 700,
+                letterSpacing: "-0.02em",
+                color: "var(--text-primary)",
+                fontFamily: "var(--font-display)",
+                lineHeight: 1,
+              }}
             >
-              OS Empresarial · 2026
+              ÆTHEREOS
             </span>
           </div>
 

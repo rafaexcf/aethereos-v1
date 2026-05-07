@@ -139,20 +139,19 @@ function LoginPage() {
             borderRight: "1px solid rgba(255,255,255,0.06)",
           }}
         >
-          {/* Top label with rule */}
-          <div className="flex items-center gap-3">
-            <span
-              className="text-[10px] font-semibold uppercase text-zinc-300"
-              style={{ letterSpacing: "0.18em" }}
-            >
-              OS Empresarial · 2026
-            </span>
-            <span
-              aria-hidden="true"
-              className="h-px flex-1 bg-zinc-300/40"
-              style={{ maxWidth: 120 }}
-            />
-          </div>
+          {/* Brand — mesmo estilo do TopBar, mas em escala hero (3×). */}
+          <span
+            style={{
+              fontSize: 45,
+              fontWeight: 700,
+              letterSpacing: "-0.02em",
+              color: "var(--text-primary)",
+              fontFamily: "var(--font-display)",
+              lineHeight: 1,
+            }}
+          >
+            ÆTHEREOS
+          </span>
 
           {/* Headline + body */}
           <div className="mt-auto pt-16">
@@ -179,23 +178,8 @@ function LoginPage() {
 
         {/* Form column */}
         <section className="flex flex-col p-10 md:p-12">
-          {/* Brand — idêntico ao TopBar da área logada */}
-          <div className="flex items-center justify-center">
-            <span
-              style={{
-                fontSize: 15,
-                fontWeight: 700,
-                letterSpacing: "-0.02em",
-                color: "var(--text-primary)",
-                fontFamily: "var(--font-display)",
-              }}
-            >
-              ÆTHEREOS
-            </span>
-          </div>
-
           {/* Welcome heading */}
-          <div className="mt-10 text-center">
+          <div className="text-center">
             <h1 style={{ ...SERIF, fontSize: 38, lineHeight: 1.1 }}>
               Bem-vindo de volta
             </h1>
