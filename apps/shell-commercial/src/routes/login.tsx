@@ -180,16 +180,11 @@ function LoginPage() {
         {/* Form column */}
         <section className="flex flex-col p-10 md:p-12">
           {/* Brand */}
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center justify-center">
             <span
-              aria-hidden="true"
-              className="inline-block h-5 w-5 rounded-full"
-              style={{
-                background:
-                  "radial-gradient(circle at 30% 30%, #c4b5fd 0%, #6366f1 60%, #312e81 100%)",
-              }}
-            />
-            <span className="text-sm font-semibold tracking-tight">
+              className="text-sm font-semibold uppercase"
+              style={{ letterSpacing: "0.18em" }}
+            >
               Aethereos
             </span>
           </div>
