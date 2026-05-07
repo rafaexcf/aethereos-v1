@@ -267,10 +267,17 @@ function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-md bg-zinc-950 px-4 py-3 text-sm font-medium text-white transition-all hover:bg-black disabled:opacity-50"
+              className="w-full rounded-md px-4 py-3 text-sm font-medium text-white transition-all disabled:opacity-50"
               style={{
+                background: "#140086",
                 boxShadow:
-                  "0 1px 0 rgba(255,255,255,0.06) inset, 0 8px 24px rgba(0,0,0,0.45)",
+                  "0 1px 0 rgba(255,255,255,0.10) inset, 0 8px 24px rgba(20,0,134,0.45)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#1d00b3";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#140086";
               }}
             >
               {loading ? "Entrando…" : "Entrar"}
