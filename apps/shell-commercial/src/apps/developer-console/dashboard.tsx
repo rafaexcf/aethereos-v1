@@ -537,6 +537,9 @@ export function DeveloperDashboard({
                       Testar
                     </button>
                   )}
+                  {(app.status === "draft" || app.status === "rejected") && (
+                    <SubmitButton app={app} />
+                  )}
                   <button
                     type="button"
                     onClick={() => onEditApp(app)}
@@ -566,6 +569,79 @@ export function DeveloperDashboard({
 
       {sandboxApp !== null && (
         <Sandbox app={sandboxApp} onClose={() => setSandboxApp(null)} />
+      )}
+    </div>
+  );
+}
+
+function SubmitButton({ app }: { app: AppSubmission }): React.ReactElement {
+  const drivers = useDrivers();
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handle(): Promise<void> {
+    if (drivers === null || submitting) return;
+    // Validation pre-submit (mirrors wizard validateAll, simplified)
+    if (
+      !app.entry_url.startsWith("https://") ||
+      app.name.trim().length === 0 ||
+      app.description.trim().length === 0 ||
+      app.app_slug.trim().length === 0
+    ) {
+      setError("App incompleto — edite e preencha campos obrigatórios.");
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    const { error: err } = await drivers.data
+      .from("app_submissions")
+      .update({
+        status: "submitted",
+        submitted_at: new Date().toISOString(),
+        rejection_reason: null,
+      })
+      .eq("id", app.id);
+    setSubmitting(false);
+    if (err !== null && err !== undefined) {
+      setError(
+        typeof err === "object" && "message" in err
+          ? String(err.message)
+          : "Falha",
+      );
+    }
+  }
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-end",
+        gap: 4,
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => void handle()}
+        disabled={submitting}
+        style={{
+          background: "#10b981",
+          border: "none",
+          borderRadius: 8,
+          color: "#0b1015",
+          fontSize: 12,
+          fontWeight: 600,
+          padding: "6px 12px",
+          cursor: submitting ? "default" : "pointer",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 4,
+        }}
+      >
+        {submitting ? "Submetendo…" : "Submeter"}
+      </button>
+      {error !== null && (
+        <span style={{ fontSize: 10, color: "#f87171" }}>{error}</span>
       )}
     </div>
   );
