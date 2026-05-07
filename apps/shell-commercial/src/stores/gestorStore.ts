@@ -41,6 +41,8 @@ export type GestorTabId =
   | "sessoes-ativas"
   | "dispositivos"
   | "alertas-risco"
+  // Staff (Aethereos internal)
+  | "staff-app-review"
   // Auditoria
   | "auditoria-log"
   | "trilha-alteracoes"

@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Phone,
   BadgeCheck,
+  ShieldCheck,
   Settings2,
   UserCheck,
   Package,
@@ -73,6 +74,7 @@ import { TabSessoesAtivas } from "./tabs/SessoesAtivas";
 import { TabDispositivos } from "./tabs/Dispositivos";
 import { TabAlertasRisco } from "./tabs/AlertasRisco";
 import { TabAuditoriaLog } from "./tabs/AuditoriaLog";
+import { TabStaffAppReview } from "./tabs/StaffAppReview";
 import { TabTrilhaAlteracoes } from "./tabs/TrilhaAlteracoes";
 import { TabExportarRelatorio } from "./tabs/ExportarRelatorio";
 import { TabLogoBranding } from "./tabs/LogoBranding";
@@ -183,6 +185,16 @@ const NAV_SECTIONS: {
     ],
   },
   {
+    label: "Staff (Aethereos)",
+    items: [
+      {
+        id: "staff-app-review",
+        label: "Revisão de apps",
+        icon: ShieldCheck,
+      },
+    ],
+  },
+  {
     label: "Auditoria",
     items: [
       { id: "auditoria-log", label: "Log de Ações", icon: ClipboardList },
@@ -247,6 +259,7 @@ const TAB_LABELS: Record<GestorTabId, string> = {
   "logo-branding": "Logo & Branding",
   "fuso-idioma": "Fuso Horário & Idioma",
   lgpd: "LGPD & Privacidade",
+  "staff-app-review": "Revisão de apps",
   usuarios: "Colaboradores",
 };
 
@@ -2485,6 +2498,7 @@ export function GestorApp() {
             {active === "dispositivos" && <TabDispositivos />}
             {active === "alertas-risco" && <TabAlertasRisco />}
             {/* Auditoria */}
+            {active === "staff-app-review" && <TabStaffAppReview />}
             {active === "auditoria-log" && <TabAuditoriaLog />}
             {active === "trilha-alteracoes" && <TabTrilhaAlteracoes />}
             {active === "exportar-relatorio" && <TabExportarRelatorio />}
