@@ -26,7 +26,11 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useDrivers } from "../../lib/drivers-context";
-import { useDeveloperApps, useInstallationsByDeveloper } from "./hooks";
+import {
+  useDeveloperApps,
+  useInstallationsByDeveloper,
+  useInstallationsTimeline,
+} from "./hooks";
 import { Sandbox } from "./sandbox";
 import type {
   AppSubmission,
@@ -126,6 +130,7 @@ export function DeveloperDashboard({
     () => Object.values(byApp).reduce((acc, b) => acc + b.total, 0),
     [byApp],
   );
+  const { bins: timeline } = useInstallationsTimeline(slugs);
 
   async function handleCopy(): Promise<void> {
     await navigator.clipboard.writeText(account.api_key);
@@ -387,6 +392,43 @@ export function DeveloperDashboard({
         </div>
       </section>
 
+      {timeline.length > 0 && totalInstalls > 0 && (
+        <section
+          style={{
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.07)",
+            borderRadius: 12,
+            padding: 16,
+            display: "flex",
+            flexDirection: "column",
+            gap: 10,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <TrendingUp size={14} color="#34d399" />
+            <span
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: "var(--text-primary)",
+              }}
+            >
+              Instalações nos últimos 30 dias
+            </span>
+            <span
+              style={{
+                fontSize: 11,
+                color: "var(--text-tertiary)",
+                marginLeft: "auto",
+              }}
+            >
+              {timeline.reduce((acc, b) => acc + b.count, 0)} total
+            </span>
+          </div>
+          <InstallChart bins={timeline} />
+        </section>
+      )}
+
       <section style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <h2
           style={{
@@ -643,6 +685,34 @@ function SubmitButton({ app }: { app: AppSubmission }): React.ReactElement {
       {error !== null && (
         <span style={{ fontSize: 10, color: "#f87171" }}>{error}</span>
       )}
+    </div>
+  );
+}
+
+function InstallChart({
+  bins,
+}: {
+  bins: Array<{ date: string; count: number }>;
+}): React.ReactElement {
+  const max = Math.max(1, ...bins.map((b) => b.count));
+  return (
+    <div
+      style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 80 }}
+    >
+      {bins.map((bin) => (
+        <div
+          key={bin.date}
+          title={`${bin.date}: ${bin.count} instalações`}
+          style={{
+            flex: 1,
+            background: bin.count > 0 ? "#34d399" : "rgba(255,255,255,0.06)",
+            opacity: bin.count > 0 ? Math.max(0.4, bin.count / max) : 1,
+            height:
+              bin.count > 0 ? `${Math.max(6, (bin.count / max) * 100)}%` : 4,
+            borderRadius: 2,
+          }}
+        />
+      ))}
     </div>
   );
 }

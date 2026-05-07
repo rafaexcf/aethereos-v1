@@ -184,6 +184,57 @@ export function useAppReviews(
   return { data, loading, error, refresh };
 }
 
+/** MX250 — instalações últimos 30 dias por dia (para gráfico de barras simples). */
+export function useInstallationsTimeline(appSlugs: string[]): {
+  bins: Array<{ date: string; count: number }>;
+  loading: boolean;
+} {
+  const drivers = useDrivers();
+  const [bins, setBins] = useState<Array<{ date: string; count: number }>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (drivers === null || appSlugs.length === 0) {
+      setBins([]);
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      setLoading(true);
+      const since = new Date();
+      since.setDate(since.getDate() - 30);
+      since.setHours(0, 0, 0, 0);
+      const { data: rows } = await drivers.data
+        .from("app_installations")
+        .select("installed_at")
+        .in("app_slug", appSlugs)
+        .gte("installed_at", since.toISOString());
+      if (cancelled) return;
+      const counts = new Map<string, number>();
+      for (let d = 0; d < 30; d += 1) {
+        const day = new Date(since);
+        day.setDate(since.getDate() + d);
+        counts.set(day.toISOString().slice(0, 10), 0);
+      }
+      for (const row of (rows ?? []) as Array<{ installed_at: string }>) {
+        const key = row.installed_at.slice(0, 10);
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      }
+      const sorted = [...counts.entries()]
+        .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+        .map(([date, count]) => ({ date, count }));
+      setBins(sorted);
+      setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [drivers, appSlugs.join(",")]);
+
+  return { bins, loading };
+}
+
 export function useInstallationsByDeveloper(appSlugs: string[]): {
   byApp: Record<string, { total: number; month: number }>;
   loading: boolean;
