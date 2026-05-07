@@ -25,7 +25,32 @@ Worker TypeScript que processa workflows Temporal do Aethereos.
 pnpm --filter @aethereos/temporal-worker build
 pnpm --filter @aethereos/temporal-worker dev      # watch mode
 pnpm --filter @aethereos/temporal-worker start    # produção
+
+# Disparar workflow ad-hoc (debug / dev)
+pnpm --filter @aethereos/temporal-worker trigger \
+  onboardingFlow \
+  onboarding-<companyId> \
+  --input='{"companyId":"…","ownerUserId":"…","ownerEmail":"…","ownerName":"…","companyName":"…"}'
 ```
+
+## Trigger points
+
+Em produção, três caminhos para iniciar workflows a partir do produto:
+
+1. **HTTP wrapper (recomendado, futuro):** subir um endpoint
+   `POST /trigger` no temporal-worker (ou serviço dedicado) que recebe
+   `{ workflowName, workflowId, input }` e usa `getTemporalClient()` para
+   iniciar. Edge Functions chamam esse endpoint após `create-company`,
+   `invite-member` e `export-company-data`.
+2. **Consumer SCP:** registrar um consumer que escuta
+   `platform.company.created`, `platform.invite.created`,
+   `platform.lgpd.export_requested` e dispara o workflow correspondente.
+   Mais desacoplado mas adiciona latência de outbox poll.
+3. **CLI (apenas debug):** comando `trigger` acima — não usar em
+   produção.
+
+Por enquanto: dispara via UI Temporal (localhost:8233) ou CLI `trigger`.
+HTTP wrapper fica para sprint futuro.
 
 ## Activities expostas
 

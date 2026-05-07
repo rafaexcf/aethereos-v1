@@ -1,4 +1,11 @@
-// Workflows are registered in MX226 (onboarding, invite reminder, lgpd export)
-// and MX227 (choreography). Empty for now — worker bundle requires this file.
+// Aethereos Temporal workflows.
+// Workflows are bundled in isolation by Temporal — keep imports pure.
 
-export {};
+export { onboardingFlow } from "./onboarding.js";
+export type { OnboardingFlowInput } from "./onboarding.js";
+
+export { inviteReminderFlow } from "./invite-reminder.js";
+export type { InviteReminderFlowInput } from "./invite-reminder.js";
+
+export { lgpdExportFlow } from "./lgpd-export.js";
+export type { LgpdExportFlowInput } from "./lgpd-export.js";
